@@ -1,0 +1,38 @@
+{
+  "name": "@time-provider/test",
+  "description": "Library tests",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
+    "@time-provider/plugin-dayjs": "workspace:*",
+    "@time-provider/plugin-luxon": "workspace:*",
+    "@time-provider/plugin-moment": "workspace:*",
+    "@time-provider/plugin-native": "workspace:*",
+    "@time-provider/plugin-temporal": "workspace:*",
+    "@time-provider/test-shared": "workspace:*",
+    "@time-provider/time": "workspace:*",
+    "@types/luxon": "^3.7.2",
+    "dayjs": "~1.8.15",
+    "dayjs-plugin-utc": "~0.1.2",
+    "luxon": "^3.7.2",
+    "moment": "~2.30.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "bumpp": "^11.1.0",
+    "typescript": "^6.0.3",
+    "vite-plus": "catalog:"
+  }
+}
