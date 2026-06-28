@@ -18,6 +18,6 @@ jobs:
           cache: true
 
       - run: vp install --frozen-lockfile
-      - run: vp build
+      - run: vp run build
       - run: vp check
-      - run: bun test
+      - run: vp test
