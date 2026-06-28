@@ -30,3 +30,7 @@ bun.lock
 !.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# stryker temp files
+.stryker-tmp
+reports/*
