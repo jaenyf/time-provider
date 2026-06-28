@@ -3,13 +3,13 @@
 
 # Time-Provider
 
-A library to rapidly have time !
+A tiny library to rapidly have time !
 
 ## Description
 
-This is for now a simple library that allows you to handle time providers for both your production codebase and your tests.
-The time provider works with any compatible adapter (even for native time), so you must both import the core library and the plugin of your choice.
-Supported plugins are for now :
+It's a simple typescript library that allows you to handle time providers for both your production codebase and your tests.
+A time provider works with a compatible adapter (even for native time), so you must both import the core library and the plugin of your choice ([See usage](#Usage)).
+Currently supported plugins are :
 
 - **Native time**
 - **Dayjs**
@@ -18,6 +18,8 @@ Supported plugins are for now :
 - **Temporal**
 
 ## Usage
+
+### For your production code
 
 ```typescript
 //Import the library
@@ -28,7 +30,7 @@ import { createTimeAdapter } from "@time-provider/plugin-native";
 const timeProvider = createTimeProvider(createTimeAdapter());
 ```
 
-### And for your tests
+### Or for your tests (fixed time)
 
 ```typescript
 //Import the library
@@ -48,15 +50,15 @@ interface Provider<TDate> {
 }
 ```
 
-### TDate types per plugin
+### Plugins information
 
-| Plugin    | TDate    |
-| --------- | -------- |
-| Native    | Date     |
-| Day.js    | Dayjs    |
-| Moment.js | Moment   |
-| Luxon     | DateTime |
-| Temporal  | Instant  |
+| Plugin    | Name                           | Returned Type |
+| --------- | ------------------------------ | ------------- |
+| Native    | @time-provider/plugin-native   | Date          |
+| Day.js    | @time-provider/plugin-dayjs    | Dayjs         |
+| Moment.js | @time-provider/plugin-moment   | Moment        |
+| Luxon     | @time-provider/plugin-luxon    | DateTime      |
+| Temporal  | @time-provider/plugin-temporal | Instant       |
 
 ## Development
 
