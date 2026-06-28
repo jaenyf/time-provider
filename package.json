@@ -28,18 +28,15 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run test && vp run -r build",
+    "ready": "vp run test && vp run build && vp run check",
     "dev": "vp run website#dev",
     "prepare": "vp config",
-    "barrels": "barrelsby -d $(find packages -type d -name src) --delete --exclude \"\\\\.(test|spec)\\\\.ts$\"",
     "build": "vp run -r build",
-    "OLDtest": "vp run -r test",
-    "test": "bun test",
+    "test": "vp test",
     "check": "vp run -r check"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.9",
-    "barrelsby": "~2.8.1",
     "vite-plus": "^0.2.1"
   },
   "engines": {
