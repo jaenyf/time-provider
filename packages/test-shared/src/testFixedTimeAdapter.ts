@@ -38,14 +38,14 @@ export function testFixedTimeAdapter<TDate>(
     });
 
     describe("parse", () => {
-      test.each(["2026-01-01 01:01:01", 100, createDate()])(
+      test.each(["2026-01-01T00:00Z", 100, createDate()])(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createFixedTimeAdapter();
           expect(() => sut.parse(toParse)).not.toThrow();
         },
       );
-      test.each(["2026-01-01 01:01:01", 100, createDate()])(
+      test.each(["2026-01-01T00:00Z", 100, createDate()])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createFixedTimeAdapter();
