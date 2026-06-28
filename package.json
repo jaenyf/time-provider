@@ -28,12 +28,13 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp run test && vp run build && vp run check",
+    "ready": "vp run test && vp run build && vp run check && vp run stryker",
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
     "test": "vp test",
-    "check": "vp run -r check"
+    "check": "vp run -r check",
+    "stryker": "stryker run"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.9",
