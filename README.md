@@ -1,3 +1,5 @@
+[![CI](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml)
+
 # Time-Provider
 
 A library to rapidly have time !
