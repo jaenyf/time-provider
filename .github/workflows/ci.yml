@@ -20,4 +20,10 @@ jobs:
       - run: vp install --frozen-lockfile
       - run: vp run build
       - run: vp check
-      - run: vp test
+      - run: vp test --coverage
+      - run: test -f coverage/lcov.info
+
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info

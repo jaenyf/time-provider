@@ -13,4 +13,12 @@ export default defineConfig({
   run: {
     cache: true,
   },
+  test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      clean: true,
+      reportsDirectory: "coverage",
+    },
+  },
 });
