@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@time-provider/core": ["./packages/core/src"],
+      "@time-provider/test-shared": ["./packages/test-shared/src"],
+      "@time-provider/test": ["./packages/test/src"],
+      "@time-provider/plugin-dayjs": ["./packages/plugin-dayjs/src"],
+      "@time-provider/plugin-luxon": ["./packages/plugin-luxon/src"],
+      "@time-provider/plugin-moment": ["./packages/plugin-moment/src"],
+      "@time-provider/plugin-native": ["./packages/plugin-native/src"],
+      "@time-provider/plugin-temporal": ["./packages/plugin-temporal/src"]
+    }
+  }
+}
