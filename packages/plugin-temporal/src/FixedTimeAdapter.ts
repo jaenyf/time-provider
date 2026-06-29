@@ -1,20 +1,9 @@
-import { type Adapter } from "@time-provider/core";
-import type { Temporal } from "@js-temporal/polyfill";
+import { BaseFixedTimeAdapter } from "@time-provider/core";
 import { TimeAdapter } from "./TimeAdapter.ts";
+import type { Temporal } from "@js-temporal/polyfill";
 
-export class FixedTimeAdapter implements Adapter<Temporal.Instant> {
-  #referenceDate: Temporal.Instant;
-  constructor(referenceDate: string | number | Temporal.Instant) {
-    this.#referenceDate = new TimeAdapter().parse(referenceDate);
+export class FixedTimeAdapter extends BaseFixedTimeAdapter<Temporal.Instant> {
+  createFixedTime(fixedDate: string | number | Temporal.Instant): Temporal.Instant {
+    return new TimeAdapter().parse(fixedDate);
   }
-
-  localNow = () => {
-    return this.#referenceDate;
-  };
-  utcNow = () => {
-    return this.#referenceDate;
-  };
-  parse = (_input: string | number | Temporal.Instant) => {
-    return this.#referenceDate;
-  };
 }

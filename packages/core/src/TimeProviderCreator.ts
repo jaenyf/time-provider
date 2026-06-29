@@ -1,6 +1,6 @@
-import type { Adapter } from "./Adapter.ts";
-import type { Provider } from "./Provider.ts";
+import type { ITimeAdapter } from "./ITimeAdapter.ts";
+import type { ITimeProvider } from "./ITimeProvider.ts";
 
 export class TimeProviderCreator {
-  for = <TDate>(adapter: Adapter<TDate>): Provider<TDate> => adapter;
+  for = <TDate>(adapter: ITimeAdapter<TDate>): ITimeProvider<TDate> => adapter;
 }

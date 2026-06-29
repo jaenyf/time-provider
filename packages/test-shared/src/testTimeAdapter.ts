@@ -1,8 +1,8 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { Adapter } from "@time-provider/core";
+import type { ITimeAdapter } from "@time-provider/core";
 
 export function testTimeAdapter<TDate>(
-  createTimeAdapter: () => Adapter<TDate>,
+  createTimeAdapter: () => ITimeAdapter<TDate>,
   createDate: (initialValue: string | number | TDate) => TDate,
 ) {
   describe("createTimeAdapter", () => {

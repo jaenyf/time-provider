@@ -1,19 +1,8 @@
-import { type Adapter } from "@time-provider/core";
+import { BaseFixedTimeAdapter } from "@time-provider/core";
 import moment from "moment";
 
-export class FixedTimeAdapter implements Adapter<moment.Moment> {
-  #referenceDate: moment.Moment;
-  constructor(referenceDate: string | number | moment.Moment) {
-    this.#referenceDate = moment(referenceDate);
+export class FixedTimeAdapter extends BaseFixedTimeAdapter<moment.Moment> {
+  createFixedTime(fixedDate: string | number | moment.Moment): moment.Moment {
+    return moment(fixedDate);
   }
-
-  localNow = () => {
-    return this.#referenceDate;
-  };
-  utcNow = () => {
-    return this.#referenceDate;
-  };
-  parse = (_input: string | number | moment.Moment) => {
-    return this.#referenceDate;
-  };
 }

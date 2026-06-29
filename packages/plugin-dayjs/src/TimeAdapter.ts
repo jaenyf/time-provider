@@ -1,8 +1,8 @@
+import { BaseTimeAdapter } from "@time-provider/core";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/plugin/utc.js";
-import { type Adapter } from "@time-provider/core";
 
-export class TimeAdapter implements Adapter<Dayjs> {
+export class TimeAdapter extends BaseTimeAdapter<Dayjs> {
   localNow(): Dayjs {
     return dayjs();
   }

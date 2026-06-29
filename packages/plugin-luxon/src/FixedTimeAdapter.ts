@@ -1,20 +1,9 @@
-import { type Adapter } from "@time-provider/core";
-import { DateTime } from "luxon";
+import { BaseFixedTimeAdapter } from "@time-provider/core";
 import { TimeAdapter } from "./TimeAdapter.ts";
+import { DateTime } from "luxon";
 
-export class FixedTimeAdapter implements Adapter<DateTime> {
-  #referenceDate: DateTime;
-  constructor(referenceDate: string | number | DateTime) {
-    this.#referenceDate = new TimeAdapter().parse(referenceDate);
+export class FixedTimeAdapter extends BaseFixedTimeAdapter<DateTime> {
+  createFixedTime(fixedDate: string | number | DateTime<boolean>): DateTime<boolean> {
+    return new TimeAdapter().parse(fixedDate);
   }
-
-  localNow = () => {
-    return this.#referenceDate;
-  };
-  utcNow = () => {
-    return this.#referenceDate;
-  };
-  parse = (_input: string | number | DateTime) => {
-    return this.#referenceDate;
-  };
 }
