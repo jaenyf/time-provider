@@ -1,6 +1,6 @@
-import { type Adapter } from "@time-provider/core";
+import { BaseTimeAdapter } from "@time-provider/core";
 
-export class TimeAdapter implements Adapter<Date> {
+export class TimeAdapter extends BaseTimeAdapter<Date> {
   localNow = () => new Date();
   utcNow = () => new Date();
   parse = (input: string | number | Date) => new Date(input);

@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
-import { type Adapter } from "@time-provider/core";
+import { BaseTimeAdapter } from "@time-provider/core";
 
-export class TimeAdapter implements Adapter<DateTime> {
+export class TimeAdapter extends BaseTimeAdapter<DateTime> {
   localNow(): DateTime {
     return DateTime.now();
   }
@@ -19,6 +19,6 @@ export class TimeAdapter implements Adapter<DateTime> {
           return referenceDate;
         }
     }
-    throw new Error("Undefined referenceDate type");
+    throw new Error(`Undefined referenceDate type (value was '${referenceDate as string}')`);
   }
 }

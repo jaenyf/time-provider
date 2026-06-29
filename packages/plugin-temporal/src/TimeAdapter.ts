@@ -1,7 +1,7 @@
-import { type Adapter } from "@time-provider/core";
+import { BaseTimeAdapter } from "@time-provider/core";
 import { Temporal } from "@js-temporal/polyfill";
 
-export class TimeAdapter implements Adapter<Temporal.Instant> {
+export class TimeAdapter extends BaseTimeAdapter<Temporal.Instant> {
   localNow(): Temporal.Instant {
     return Temporal.Now.instant();
   }

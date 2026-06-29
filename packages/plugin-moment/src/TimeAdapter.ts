@@ -1,7 +1,7 @@
 import moment from "moment";
-import { type Adapter } from "@time-provider/core";
+import { BaseTimeAdapter } from "@time-provider/core";
 
-export class TimeAdapter implements Adapter<moment.Moment> {
+export class TimeAdapter extends BaseTimeAdapter<moment.Moment> {
   localNow(): moment.Moment {
     return moment();
   }

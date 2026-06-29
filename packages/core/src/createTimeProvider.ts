@@ -1,3 +1,3 @@
 import { TimeProviderCreator } from "./TimeProviderCreator.ts";
 
-export const createTimeProvider = () => new TimeProviderCreator();
+export const createTimeProvider = new TimeProviderCreator();

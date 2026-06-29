@@ -1,19 +1,8 @@
-import { type Adapter } from "@time-provider/core";
+import { BaseFixedTimeAdapter } from "@time-provider/core";
 import dayjs, { Dayjs } from "dayjs";
 
-export class FixedTimeAdapter implements Adapter<Dayjs> {
-  #referenceDate: Dayjs;
-  constructor(referenceDate: string | number | Dayjs) {
-    this.#referenceDate = dayjs(referenceDate);
+export class FixedTimeAdapter extends BaseFixedTimeAdapter<Dayjs> {
+  createFixedTime(fixedDate: string | number | Dayjs): Dayjs {
+    return dayjs(fixedDate);
   }
-
-  localNow = () => {
-    return this.#referenceDate;
-  };
-  utcNow = () => {
-    return this.#referenceDate;
-  };
-  parse = (_input: string | number | Dayjs) => {
-    return this.#referenceDate;
-  };
 }

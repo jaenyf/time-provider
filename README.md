@@ -7,7 +7,7 @@ A tiny library to rapidly have time !
 
 ## Description
 
-It's a simple typescript library that allows you to handle time providers for both your production codebase and your tests.
+It's a very simple typescript library to setup a source of time.
 A time provider works with a compatible adapter (even for native time), so you must both import the core library and the plugin of your choice ([See usage](#Usage)).
 Currently supported plugins are :
 
@@ -19,34 +19,37 @@ Currently supported plugins are :
 
 ## Usage
 
+- Each plugin (adapter) offers a `TimeAdapter` and a `FixedTimeAdapter` class
+- Select your desired plugin (`native/dayjs/moment/luxon/temporal`)
+- call `createTimeProvider.for(/*your adapter here*/)`
+
 ### For your production code
 
 ```typescript
-//Import the library
-import { createTimeProvider } from "@time-provider/time";
+import { createTimeProvider } from "@time-provider/core";
 //Import the plugin of your choice (here the native time plugin)
-import { createTimeAdapter } from "@time-provider/plugin-native";
-//And you can now have time
-const timeProvider = createTimeProvider(createTimeAdapter());
+import { TimeAdapter } from "@time-provider/plugin-native";
+const timeProvider = createTimeProvider.for(new TimeAdapter());
 ```
 
 ### Or for your tests (fixed time)
 
 ```typescript
-//Import the library
-import { createFixedTimeProvider } from "@time-provider/time";
+import { createTimeProvider } from "@time-provider/core";
 //Import the plugin of your choice (here the native time plugin)
-import { createFixedTimeAdapter } from "@time-provider/plugin-native";
-//And you can now take your time on a fixed one of your choice
-const fixedTimeProvider = createFixedTimeProvider(createFixedTimeAdapter(new Date("2026-01-01")));
+import { FixedTimeAdapter } from "@time-provider/plugin-native";
+const fixedTimeProvider = createTimeProvider.for(
+  new FixedTimeAdapter(new Date("2026-01-01T00:00Z")),
+);
 ```
 
 ## API
 
 ```typescript
-interface Provider<TDate> {
+interface ITimeProvider<TDate> {
   localNow(): TDate;
   utcNow(): TDate;
+  parse(input: string | number | TDate): TDate;
 }
 ```
 
