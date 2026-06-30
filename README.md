@@ -9,7 +9,13 @@ A tiny library to rapidly have time !
 ## Description
 
 It's a very simple typescript library to setup a source of time.
-A time provider works with a compatible adapter (even for native time), so you must both import the [core library](https://www.npmjs.com/package/@time-provider/core) and the [plugin](#plugins) of your choice ([See usage](#usage)).
+A time provider works with a compatible adapter (even for [native Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) or [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)), so you must both import the [core library](https://www.npmjs.com/package/@time-provider/core) and the [plugin](#plugins) of your choice ([See usage](#usage)).
+
+## Core library
+
+| Name                                                                     | NPM package                                                                                                         |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| [@time-provider/core](https://www.npmjs.com/package/@time-provider/core) | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core) |
 
 ## Plugins
 
@@ -25,7 +31,7 @@ Currently supported plugins are :
 
 ## Usage
 
-- Each plugin (adapter) offers a `TimeAdapter` and a `FixedTimeAdapter` class
+- Each plugin (adapter) exports a `TimeAdapter` and a `FixedTimeAdapter` class
 - Select your desired plugin (`native/dayjs/moment/luxon/temporal`)
 - call `createTimeProvider.for(/*your adapter here*/)`
 
