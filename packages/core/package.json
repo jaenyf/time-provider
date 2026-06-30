@@ -1,6 +1,26 @@
 {
   "name": "@time-provider/core",
   "version": "0.0.1",
+  "private": false,
+  "description": "Time-Provider : Core ~ A tiny library to rapidly have time!",
+  "keywords": [
+    "date",
+    "fake",
+    "fixed",
+    "provider",
+    "running",
+    "time"
+  ],
+  "homepage": "https://github.com/jaenyf/time-provider#readme",
+  "bugs": {
+    "url": "https://github.com/jaenyf/time-provider/issues"
+  },
+  "license": "MIT",
+  "author": "jaenyf",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaenyf/time-provider.git"
+  },
   "files": [
     "dist"
   ],
@@ -17,7 +37,8 @@
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "prepublishOnly": "vp run build",
+    "publish": "vpx npm publish"
   },
   "devDependencies": {
     "@types/node": "^25.6.2",

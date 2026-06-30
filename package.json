@@ -34,10 +34,13 @@
     "build": "vp run -r build",
     "test": "vp test",
     "check": "vp run -r check",
-    "stryker": "stryker run"
+    "stryker": "stryker run",
+    "bump": "vpx bumpp --recursive",
+    "publish": "false && vp run build && vp run bump && vpx npm login && vp run -r publish"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.9",
+    "bumpp": "^11.1.0",
     "vite-plus": "^0.2.1"
   },
   "engines": {
