@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-moment",
   "version": "0.0.0",
   "private": false,
-  "description": "A tiny library to rapidly take time!",
+  "description": "Time-Provider : Moment.js plugin ~ A tiny library to rapidly have time!",
   "keywords": [
     "date",
     "fake",
@@ -46,7 +46,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@time-provider/core": "workspace:*",
+    "@time-provider/core": "^0.0.0",
     "moment": "~2.30.1"
   }
 }

@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-luxon",
   "version": "0.0.0",
   "private": false,
-  "description": "A tiny library to rapidly take time!",
+  "description": "Time-Provider : Luxon plugin ~ A tiny library to rapidly have time!",
   "keywords": [
     "date",
     "fake",
@@ -47,7 +47,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@time-provider/core": "workspace:*",
+    "@time-provider/core": "^0.0.0",
     "luxon": "^3.7.2"
   }
 }

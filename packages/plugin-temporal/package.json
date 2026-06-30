@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-temporal",
   "version": "0.0.0",
   "private": false,
-  "description": "A tiny library to rapidly take time!",
+  "description": "Time-Provider : Temporal plugin ~ A tiny library to rapidly have time!",
   "keywords": [
     "date",
     "fake",
@@ -46,6 +46,6 @@
   },
   "peerDependencies": {
     "@js-temporal/polyfill": "~0.5.1",
-    "@time-provider/core": "workspace:*"
+    "@time-provider/core": "^0.0.0"
   }
 }
