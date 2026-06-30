@@ -1,21 +1,27 @@
+[![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
 [![CI](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 
-# Time-Provider
+# [Time-Provider](https://github.com/jaenyf/time-provider)
 
 A tiny library to rapidly have time !
 
 ## Description
 
 It's a very simple typescript library to setup a source of time.
-A time provider works with a compatible adapter (even for native time), so you must both import the core library and the plugin of your choice ([See usage](#Usage)).
+A time provider works with a compatible adapter (even for native time), so you must both import the [core library](https://www.npmjs.com/package/@time-provider/core) and the [plugin](#plugins) of your choice ([See usage](#usage)).
+
+## Plugins
+
 Currently supported plugins are :
 
-- **Native time**
-- **Dayjs**
-- **Moment.js**
-- **Luxon**
-- **Temporal**
+| Plugin        | Name                                                                                           | Returned Type | NPM package                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Temporal**  | [@time-provider/plugin-temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal) | Instant       | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-temporal.svg)](https://www.npmjs.com/package/@time-provider/plugin-temporal) |
+| **Native**    | [@time-provider/plugin-native](https://www.npmjs.com/package/@time-provider/plugin-native)     | Date          | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-native.svg)](https://www.npmjs.com/package/@time-provider/plugin-native)     |
+| **Luxon**     | [@time-provider/plugin-luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon)       | DateTime      | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-luxon.svg)](https://www.npmjs.com/package/@time-provider/plugin-luxon)       |
+| **Day.js**    | [@time-provider/plugin-dayjs](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       | Dayjs         | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       |
+| **Moment.js** | [@time-provider/plugin-moment](https://www.npmjs.com/package/@time-provider/plugin-moment)     | Moment        | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-moment.svg)](https://www.npmjs.com/package/@time-provider/plugin-moment)     |
 
 ## Usage
 
@@ -27,8 +33,9 @@ Currently supported plugins are :
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
-//Import the plugin of your choice (here the native time plugin)
-import { TimeAdapter } from "@time-provider/plugin-native";
+//Import the plugin of your choice (here the temporal plugin)
+import { TimeAdapter } from "@time-provider/plugin-temporal";
+import { Temporal } from "@js-temporal/polyfill";
 const timeProvider = createTimeProvider.for(new TimeAdapter());
 ```
 
@@ -36,10 +43,11 @@ const timeProvider = createTimeProvider.for(new TimeAdapter());
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
-//Import the plugin of your choice (here the native time plugin)
-import { FixedTimeAdapter } from "@time-provider/plugin-native";
+//Import the plugin of your choice (here the temporal plugin)
+import { FixedTimeAdapter } from "@time-provider/plugin-temporal";
+import { Temporal } from "@js-temporal/polyfill";
 const fixedTimeProvider = createTimeProvider.for(
-  new FixedTimeAdapter(new Date("2026-01-01T00:00Z")),
+  new FixedTimeAdapter(Temporal.Instant.from("2026-01-01T00:00Z")),
 );
 ```
 
@@ -52,13 +60,3 @@ interface ITimeProvider<TDate> {
   parse(input: string | number | TDate): TDate;
 }
 ```
-
-### Plugins information
-
-| Plugin    | Name                           | Returned Type |
-| --------- | ------------------------------ | ------------- |
-| Native    | @time-provider/plugin-native   | Date          |
-| Day.js    | @time-provider/plugin-dayjs    | Dayjs         |
-| Moment.js | @time-provider/plugin-moment   | Moment        |
-| Luxon     | @time-provider/plugin-luxon    | DateTime      |
-| Temporal  | @time-provider/plugin-temporal | Instant       |
