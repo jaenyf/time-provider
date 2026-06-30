@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-native",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "description": "Time-Provider : Native Date plugin ~ A tiny library to rapidly have time!",
   "keywords": [
