@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-luxon",
   "version": "0.0.0",
   "private": false,
-  "description": "A tiny library to rapidly take time!",
+  "description": "Time-Provider : Luxon plugin ~ A tiny library to rapidly have time!",
   "keywords": [
     "date",
     "fake",

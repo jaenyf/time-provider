@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-dayjs",
   "version": "0.0.0",
   "private": false,
-  "description": "A tiny library to rapidly take time!",
+  "description": "Time-Provider : Day.js plugin ~ A tiny library to rapidly have time!",
   "keywords": [
     "date",
     "fake",
