@@ -2,20 +2,18 @@
 [![CI](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 
-# [Time-Provider](https://github.com/jaenyf/time-provider)
+# [Time-Provider ~ Core](https://github.com/jaenyf/time-provider)
 
 A tiny library to rapidly have time !
 
 ## Description
 
+This is the core Time-Provider library.
+
+## What is Time-Provider ?
+
 It's a very simple typescript library to setup a source of time.
 A time provider works with a compatible adapter (even for [native Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) or [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)), so you must both import the [core library](https://www.npmjs.com/package/@time-provider/core) and the [plugin](#plugins) of your choice ([See usage](#usage)).
-
-## Core library
-
-| Name                                                                     | NPM package                                                                                                         |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| [@time-provider/core](https://www.npmjs.com/package/@time-provider/core) | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core) |
 
 ## Plugins
 
