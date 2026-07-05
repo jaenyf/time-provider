@@ -1,33 +1,133 @@
+# Time-Provider
+
+**Inject time without committing to a date library.**
+
 [![CodecovApp](https://github.com/codecov/engineering-team/assets/152432831/e90313f4-9d3a-4b63-8b54-cfe14e7ec20d)](https://codecov.io/gh/jaenyf/time-provider)
 [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
 [![CI](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 
-# [Time-Provider](https://github.com/jaenyf/time-provider)
+A TypeScript library providing **injectable clocks** with adapters for multiple date libraries.
 
-A tiny TypeScript library for injectable, deterministic time that works with your favorite date library.
+Supported adapters:
 
-`time-provider` is a single injectable typescript source of time  
-→ **System clock** in production  
-→ **Deterministic clock** in tests  
-with the date library of your choice !
+- Native `Date`
+- `Temporal`
+- `Day.js`
+- `Luxon`
+- `Moment.js`
+
+---
+
+## Overview
+
+`Time-Provider` exposes a clock abstraction that can be swapped depending on runtime context:
+
+- system clock (production)
+- fixed clock (tests)
+- manual clock (controlled time progression)
+
+It is designed to remain **agnostic of the underlying date library**.
+
+---
+
+## Quick start
 
 ```typescript
-// before
-const createdAt = new Date();
+import { createTimeProvider } from "@time-provider/core";
+import { plugin } from "@time-provider/plugin-temporal";
 
-// after
-const createdAt = timeProvider.utcNow();
+const clock = createTimeProvider.for(plugin).create();
+
+console.log(clock.utcNow());
 ```
 
-A time provider works with a compatible **adapter** (aka. plugin) (even for [native Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) or [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal)), so you must both import the [core library](https://www.npmjs.com/package/@time-provider/core) and the [plugin](#plugins) of your choice ([See usage](#usage)).
+## Usage
 
-## For example
+### Injection example
 
 ```typescript
-const timeProvider = createTimeProvider.for(plugin).create();
-/* ... */
-const userService = new UserService(timeProvider);
+import { createTimeProvider } from "@time-provider/core";
+import type { ITimeProvider } from "@time-provider/core";
+import { plugin } from "@time-provider/plugin-temporal";
+import { Temporal } from "@js-temporal/polyfill";
+
+const clock = createTimeProvider.for(plugin).create();
+
+class UserService {
+  constructor(private readonly clock: ITimeProvider<Temporal.Instant>) {}
+
+  createUser() {
+    return {
+      createdAt: this.clock.utcNow(),
+    };
+  }
+}
+```
+
+## Clock types
+
+### System clock (default)
+
+```typescript
+const clock = createTimeProvider.for(plugin).create();
+```
+
+## Fixed clock
+
+Deterministic clock always returning the same instant.
+
+```typescript
+const clock = createTimeProvider
+  .for(plugin)
+  .as("fixed")
+  .withInitialTime("2026-01-01T00:00Z")
+  .create();
+```
+
+## Manual clock
+
+Clock that can be advanced explicitly.
+
+```typescript
+const clock = createTimeProvider
+  .for(plugin)
+  .as("manual")
+  .withInitialTime("2026-01-01T00:00Z")
+  .create();
+
+clock.advance({
+  seconds: 5,
+});
+```
+
+Full example:
+
+```typescript
+clock.advance({
+  years: 1,
+  months: 2,
+  days: 3,
+  hours: 4,
+  minutes: 5,
+  seconds: 6,
+  milliseconds: 7,
+});
+```
+
+## Installation
+
+```bash
+npm install @time-provider/core @time-provider/plugin-temporal
+```
+
+## Other adapters
+
+```bash
+npm install @time-provider/plugin-native
+npm install @time-provider/plugin-dayjs
+npm install @time-provider/plugin-luxon
+npm install @time-provider/plugin-moment
 ```
 
 ## Core library
@@ -36,9 +136,7 @@ const userService = new UserService(timeProvider);
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | [@time-provider/core](https://www.npmjs.com/package/@time-provider/core) | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core) |
 
-## Plugins
-
-Currently supported plugins are :
+## Supported adapters
 
 | Plugin        | Name                                                                                           | Returned Type | NPM package                                                                                                                               |
 | ------------- | ---------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -48,52 +146,11 @@ Currently supported plugins are :
 | **Day.js**    | [@time-provider/plugin-dayjs](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       | Dayjs         | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       |
 | **Moment.js** | [@time-provider/plugin-moment](https://www.npmjs.com/package/@time-provider/plugin-moment)     | Moment        | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-moment.svg)](https://www.npmjs.com/package/@time-provider/plugin-moment)     |
 
-## Usage
+## Fake timers
 
-- Each plugin (adapter) exports a `plugin` instance implementing `IPlugin`
-- Select your desired plugin (`native/dayjs/moment/luxon/temporal`)
-- call `createTimeProvider.for(plugin).create()`
+Fake timers mutate global runtime behavior.
 
-### For your production code
-
-```typescript
-import { createTimeProvider } from "@time-provider/core";
-//Import the plugin of your choice (here the temporal plugin)
-import { plugin } from "@time-provider/plugin-temporal";
-import { Temporal } from "@js-temporal/polyfill";
-const timeProvider = createTimeProvider.for(plugin).create();
-```
-
-### Or for your tests (frozen aka. fixed time)
-
-```typescript
-import { createTimeProvider } from "@time-provider/core";
-//Import the plugin of your choice (here the temporal plugin)
-import { plugin } from "@time-provider/plugin-temporal";
-import "@js-temporal/polyfill";
-const fixedTimeProvider = createTimeProvider
-  .for(plugin)
-  .as("fixed")
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
-```
-
-### For more time control you can use a "manual" TimeProvider (that lets you advance time at your own pace)
-
-```typescript
-import { createTimeProvider } from "@time-provider/core";
-//Import the plugin of your choice (here the dayjs plugin)
-import { plugin } from "@time-provider/plugin-dayjs";
-import "dayjs";
-import "dayjs/plugin/utc.js";
-const manualTimeProvider = createTimeProvider
-  .for(plugin)
-  .as("manual")
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
-/* ... */
-manualTimeProvider.advance({ seconds: 5 });
-```
+`Time-Provider` uses explicit dependency injection instead of global state, allowing multiple clock implementations to coexist safely within the same process.
 
 ## API
 
@@ -104,3 +161,35 @@ interface ITimeProvider<TDate> {
   parse(input: string | number | TDate): TDate;
 }
 ```
+
+Manual clock
+
+```typescript
+interface IManualTimeAdapter<TDate> extends ITimeAdapter<TDate> {
+  advance(duration: IAdvanceConfiguration): IManualTimeAdapter<TDate>;
+}
+```
+
+## Architecture
+
+The library is split into:
+
+`@time-provider/core`
+adapter packages per date library
+
+Core logic is date-library agnostic. Adapters are responsible for mapping time operations to the underlying implementation while preserving native return types.
+
+App  
+│  
+▼  
+Time-Provider (core)  
+│  
+├── Temporal adapter ──> Temporal.Instant  
+├── Native adapter ──> Date  
+├── Luxon adapter ──> DateTime  
+├── Dayjs adapter ──> Dayjs  
+└── Moment adapter ──> Moment
+
+## License
+
+MIT
