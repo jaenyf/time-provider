@@ -4,9 +4,13 @@
   "private": true,
   "description": "A tiny library to rapidly have time!",
   "keywords": [
+    "clock",
     "date",
+    "deterministic",
     "fake",
     "fixed",
+    "frozen",
+    "manual",
     "provider",
     "running",
     "time"
@@ -41,7 +45,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.9",
     "bumpp": "^11.1.0",
-    "vite-plus": "^0.2.1"
+    "vite-plus": "^0.2.2"
   },
   "engines": {
     "node": ">=22.12.0"

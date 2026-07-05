@@ -1,1 +1,1 @@
-console.info("It's time for a change !");
+// oxlint-disable unicorn/no-empty-file

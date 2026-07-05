@@ -1,35 +1,52 @@
 import { describe } from "vite-plus/test";
 import { testTimeAdapter } from "./testTimeAdapter.ts";
 import { testFixedTimeAdapter } from "./testFixedTimeAdapter.ts";
-import { createTimeProvider, type ITimeAdapter } from "@time-provider/core";
+import { testManualTimeAdapter } from "./testManualTimeAdapter.ts";
+import { createTimeProvider, type IPlugin } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
-import { testFixedTimeProvider } from "./testFixedTimeProvider.ts";
+import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
 
-export function testAll<TDate>(
-  pluginName: string,
-  createFixedDate: (fixedDate: number | string | TDate) => TDate,
-  createTimeAdapter: () => ITimeAdapter<TDate>,
-  createFixedTimeAdapter: () => ITimeAdapter<TDate>,
-) {
+export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
+  const createFixedDate = (initialValue: number | string | TDate) =>
+    plugin.createTimeAdapter().parse(initialValue);
+
   describe("TimeAdapters", () => {
     describe(pluginName, () => {
-      testTimeAdapter(
-        () => createTimeAdapter(),
-        (fixedDate: number | string | TDate) => createFixedDate(fixedDate),
+      testTimeAdapter(plugin, (fixedDate: number | string | TDate) => createFixedDate(fixedDate));
+
+      testFixedTimeAdapter(plugin, (fixedDate: number | string | TDate) =>
+        createFixedDate(fixedDate),
       );
 
-      testFixedTimeAdapter(
-        () => createFixedTimeAdapter(),
-        (fixedDate: number | string | TDate) => createFixedDate(fixedDate),
+      testManualTimeAdapter(pluginName, plugin, (fixedDate: number | string | TDate) =>
+        createFixedDate(fixedDate),
       );
+    });
+  });
+
+  describe("TimeProviderCreators", () => {
+    describe(pluginName, () => {
+      testTimeProviderCreator(plugin);
     });
   });
 
   describe("TimeProviders", () => {
     describe(pluginName, () => {
-      testTimeProvider(() => createTimeProvider.for(createTimeAdapter()));
-
-      testFixedTimeProvider(() => createTimeProvider.for(createFixedTimeAdapter()));
+      testTimeProvider(() => createTimeProvider.for(plugin).as("continuous").create());
+      testTimeProvider(() =>
+        createTimeProvider
+          .for(plugin)
+          .as("fixed")
+          .withInitialTime("2026-01-01T00:00:00.000Z")
+          .create(),
+      );
+      testTimeProvider(() =>
+        createTimeProvider
+          .for(plugin)
+          .as("manual")
+          .withInitialTime("2026-01-01T00:00:00.000Z")
+          .create(),
+      );
     });
   });
 }

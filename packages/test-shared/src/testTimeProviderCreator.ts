@@ -1,0 +1,83 @@
+import { expect, test, describe } from "vite-plus/test";
+import { TimeProviderCreator, type IPlugin } from "@time-provider/core";
+
+export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
+  test("throws when forcing an unknown mode", () => {
+    const sut = new TimeProviderCreator()
+      .for(plugin)
+      .as("unknownMode" as "fixed" | "manual" | "continuous");
+    expect(() => {
+      sut.create();
+    }).toThrow("Unhandled plugin mode 'unknownMode'");
+  });
+
+  describe("can create continuous TimeProvider", () => {
+    test.each([null, undefined])("returns a value", (undefinedValue) => {
+      const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
+      expect(sut).not.toBe(undefinedValue);
+    });
+    test("creates an object", () => {
+      const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
+      expect(typeof sut).toBe("object");
+    });
+    test("throws when using withInitialTime", () => {
+      const sut = new TimeProviderCreator()
+        .for(plugin)
+        .as("continuous")
+        .withInitialTime("2026-01-01T00:00Z");
+      expect(() => {
+        sut.create();
+      }).toThrow("An initial time can not be set when using 'continuous' mode");
+    });
+  });
+
+  describe("can create fixed TimeProvider", () => {
+    test.each([null, undefined])("returns a value", (undefinedValue) => {
+      const sut = new TimeProviderCreator()
+        .for(plugin)
+        .as("fixed")
+        .withInitialTime("2026-01-01T00:00Z")
+        .create();
+      expect(sut).not.toBe(undefinedValue);
+    });
+    test("creates an object", () => {
+      const sut = new TimeProviderCreator()
+        .for(plugin)
+        .as("fixed")
+        .withInitialTime("2026-01-01T00:00Z")
+        .create();
+      expect(typeof sut).toBe("object");
+    });
+    test("throws when omitting withInitialTime", () => {
+      const sut = new TimeProviderCreator().for(plugin).as("fixed");
+      expect(() => {
+        sut.create();
+      }).toThrow("An initial time have to be set when using 'fixed' mode");
+    });
+  });
+
+  describe("can create manual TimeProvider", () => {
+    test.each([null, undefined])("returns a value", (undefinedValue) => {
+      const sut = new TimeProviderCreator()
+        .for(plugin)
+        .as("manual")
+        .withInitialTime("2026-01-01T00:00Z")
+        .create();
+      expect(sut).not.toBe(undefinedValue);
+    });
+    test("creates an object", () => {
+      const sut = new TimeProviderCreator()
+        .for(plugin)
+        .as("manual")
+        .withInitialTime("2026-01-01T00:00Z")
+        .create();
+      expect(typeof sut).toBe("object");
+    });
+    test("throws when omitting withInitialTime", () => {
+      const sut = new TimeProviderCreator().for(plugin).as("manual");
+      expect(() => {
+        sut.create();
+      }).toThrow("An initial time have to be set when using 'manual' mode");
+    });
+  });
+}

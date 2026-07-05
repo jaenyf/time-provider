@@ -4,9 +4,13 @@
   "private": false,
   "description": "Time-Provider : Native Date plugin ~ A tiny library to rapidly have time!",
   "keywords": [
+    "clock",
     "date",
+    "deterministic",
     "fake",
     "fixed",
+    "frozen",
+    "manual",
     "provider",
     "running",
     "time"

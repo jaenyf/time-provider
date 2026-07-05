@@ -1,2 +1,3 @@
-export * from "./TimeAdapter.ts";
-export * from "./FixedTimeAdapter.ts";
+import { Plugin } from "./Plugin.ts";
+
+export const plugin = new Plugin();
