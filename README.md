@@ -5,7 +5,7 @@
 
 # [Time-Provider](https://github.com/jaenyf/time-provider)
 
-A tiny typescript library to rapidly have time !
+A tiny TypeScript library for injectable, deterministic time that works with your favorite date library.
 
 `time-provider` is a single injectable typescript source of time  
 → **System clock** in production  
