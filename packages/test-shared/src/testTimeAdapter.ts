@@ -1,10 +1,12 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { ITimeAdapter } from "@time-provider/core";
+import type { IPlugin } from "@time-provider/core";
 
 export function testTimeAdapter<TDate>(
-  createTimeAdapter: () => ITimeAdapter<TDate>,
+  plugin: IPlugin<TDate>,
   createDate: (initialValue: string | number | TDate) => TDate,
 ) {
+  const createTimeAdapter = () => plugin.createTimeAdapter();
+
   describe("createTimeAdapter", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
       expect(createTimeAdapter()).not.toBe(undefinedValue);

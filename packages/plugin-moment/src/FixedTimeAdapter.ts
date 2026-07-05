@@ -1,8 +1,8 @@
-import { BaseFixedTimeAdapter } from "@time-provider/core";
-import moment from "moment";
+import { BaseDeterministicTimeAdapter } from "@time-provider/core";
+import moment, { type Moment } from "moment";
 
-export class FixedTimeAdapter extends BaseFixedTimeAdapter<moment.Moment> {
-  createFixedTime(fixedDate: string | number | moment.Moment): moment.Moment {
+export class FixedTimeAdapter extends BaseDeterministicTimeAdapter<Moment> {
+  protected createDeterminedTime(fixedDate: string | number | Moment): Moment {
     return moment(fixedDate);
   }
 }

@@ -1,7 +1,7 @@
-import { BaseFixedTimeAdapter } from "@time-provider/core";
+import { BaseDeterministicTimeAdapter } from "@time-provider/core";
 
-export class FixedTimeAdapter extends BaseFixedTimeAdapter<Date> {
-  createFixedTime(fixedDate: string | number | Date): Date {
-    return new Date(fixedDate);
+export class FixedTimeAdapter extends BaseDeterministicTimeAdapter<Date> {
+  protected createDeterminedTime(determinedTime: string | number | Date): Date {
+    return new Date(determinedTime);
   }
 }
