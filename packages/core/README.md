@@ -38,21 +38,40 @@ Currently supported plugins are :
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
 //Import the plugin of your choice (here the temporal plugin)
-import { TimeAdapter } from "@time-provider/plugin-temporal";
+import { plugin } from "@time-provider/plugin-temporal";
 import { Temporal } from "@js-temporal/polyfill";
-const timeProvider = createTimeProvider.for(new TimeAdapter());
+const timeProvider = createTimeProvider.for(plugin).create();
 ```
 
-### Or for your tests (fixed time)
+### Or for your tests (frozen aka. fixed time)
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
 //Import the plugin of your choice (here the temporal plugin)
-import { FixedTimeAdapter } from "@time-provider/plugin-temporal";
-import { Temporal } from "@js-temporal/polyfill";
-const fixedTimeProvider = createTimeProvider.for(
-  new FixedTimeAdapter(Temporal.Instant.from("2026-01-01T00:00Z")),
-);
+import { plugin } from "@time-provider/plugin-temporal";
+import "@js-temporal/polyfill";
+const fixedTimeProvider = createTimeProvider
+  .for(plugin)
+  .as("fixed")
+  .withInitialTime("2026-01-01T00:00Z")
+  .create();
+```
+
+### For more time control you can use a "manual" TimeProvider (that lets you advance time at your own pace)
+
+```typescript
+import { createTimeProvider } from "@time-provider/core";
+//Import the plugin of your choice (here the dayjs plugin)
+import { plugin } from "@time-provider/plugin-dayjs";
+import "dayjs";
+import "dayjs/plugin/utc.js";
+const manualTimeProvider = createTimeProvider
+  .for(plugin)
+  .as("manual")
+  .withInitialTime("2026-01-01T00:00Z")
+  .create();
+/* ... */
+manualTimeProvider.advance({ seconds: 5 });
 ```
 
 ## API
