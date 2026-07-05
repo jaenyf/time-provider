@@ -11,7 +11,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     }).toThrow("Unhandled plugin mode 'unknownMode'");
   });
 
-  describe("can create continuous TimeProvider", () => {
+  describe("continuous", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
       const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
       expect(sut).not.toBe(undefinedValue);
@@ -19,6 +19,12 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     test("creates an object", () => {
       const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
       expect(typeof sut).toBe("object");
+    });
+    test("throws when omitting a plugin", () => {
+      const sut = new TimeProviderCreator().as("continuous");
+      expect(() => {
+        sut.create();
+      }).toThrow("Method 'for' has not been called with the plugin that should be used !");
     });
     test("throws when using withInitialTime", () => {
       const sut = new TimeProviderCreator()
@@ -31,7 +37,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     });
   });
 
-  describe("can create fixed TimeProvider", () => {
+  describe("fixed", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
       const sut = new TimeProviderCreator()
         .for(plugin)
@@ -47,6 +53,12 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
         .withInitialTime("2026-01-01T00:00Z")
         .create();
       expect(typeof sut).toBe("object");
+    });
+    test("throws when omitting a plugin", () => {
+      const sut = new TimeProviderCreator().as("fixed").withInitialTime("2026-01-01T00:00Z");
+      expect(() => {
+        sut.create();
+      }).toThrow("Method 'for' has not been called with the plugin that should be used !");
     });
     test("throws when omitting withInitialTime", () => {
       const sut = new TimeProviderCreator().for(plugin).as("fixed");
@@ -56,7 +68,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     });
   });
 
-  describe("can create manual TimeProvider", () => {
+  describe("manual", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
       const sut = new TimeProviderCreator()
         .for(plugin)
@@ -72,6 +84,12 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
         .withInitialTime("2026-01-01T00:00Z")
         .create();
       expect(typeof sut).toBe("object");
+    });
+    test("throws when omitting a plugin", () => {
+      const sut = new TimeProviderCreator().as("manual").withInitialTime("2026-01-01T00:00Z");
+      expect(() => {
+        sut.create();
+      }).toThrow("Method 'for' has not been called with the plugin that should be used !");
     });
     test("throws when omitting withInitialTime", () => {
       const sut = new TimeProviderCreator().for(plugin).as("manual");
