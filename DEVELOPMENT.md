@@ -1,6 +1,6 @@
 # Time-Provider
 
-A tiny library to rapidly have time !
+A tiny TypeScript library for injectable, deterministic time that works with your favorite date library.
 
 ## Development
 
