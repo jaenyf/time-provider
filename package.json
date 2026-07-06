@@ -1,12 +1,16 @@
 {
   "name": "time-provider",
-  "version": "0.0.0",
+  "version": "0.0.3",
   "private": true,
   "description": "A tiny library to rapidly have time!",
   "keywords": [
+    "clock",
     "date",
+    "deterministic",
     "fake",
     "fixed",
+    "frozen",
+    "manual",
     "provider",
     "running",
     "time"
@@ -34,11 +38,14 @@
     "build": "vp run -r build",
     "test": "vp test",
     "check": "vp run -r check",
-    "stryker": "stryker run"
+    "stryker": "stryker run",
+    "bump": "vpx bumpp --recursive",
+    "publish": "false && vp run build && vp run bump && vpx npm login && vp run -r publish"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.9",
-    "vite-plus": "^0.2.1"
+    "bumpp": "^11.1.0",
+    "vite-plus": "^0.2.2"
   },
   "engines": {
     "node": ">=22.12.0"
