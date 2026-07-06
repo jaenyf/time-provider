@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.3 - 2026-07-06
+
+### Changed
+
+- Updated TimeProviderCreator builder api
+- Improved readme files
+- Improved codebase
+
 ## 0.0.2 - 2026-06-30
 
 ### Fixed

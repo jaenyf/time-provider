@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-temporal",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": false,
   "description": "Time-Provider : Temporal plugin ~ A tiny library to rapidly have time!",
   "keywords": [
