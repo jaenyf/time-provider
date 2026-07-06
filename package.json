@@ -1,6 +1,6 @@
 {
   "name": "time-provider",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "A tiny library to rapidly have time!",
   "keywords": [
