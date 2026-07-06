@@ -5,23 +5,23 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
   test("throws when forcing an unknown mode", () => {
     const sut = new TimeProviderCreator()
       .for(plugin)
-      .as("unknownMode" as "fixed" | "manual" | "continuous");
+      .as("unknownMode" as "fixed" | "manual" | "system");
     expect(() => {
       sut.create();
     }).toThrow("Unhandled plugin mode 'unknownMode'");
   });
 
-  describe("continuous", () => {
+  describe("system", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
-      const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
+      const sut = new TimeProviderCreator().for(plugin).as("system").create();
       expect(sut).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      const sut = new TimeProviderCreator().for(plugin).as("continuous").create();
+      const sut = new TimeProviderCreator().for(plugin).as("system").create();
       expect(typeof sut).toBe("object");
     });
     test("throws when omitting a plugin", () => {
-      const sut = new TimeProviderCreator().as("continuous");
+      const sut = new TimeProviderCreator().as("system");
       expect(() => {
         sut.create();
       }).toThrow("Method 'for' has not been called with the plugin that should be used !");
@@ -29,11 +29,11 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     test("throws when using withInitialTime", () => {
       const sut = new TimeProviderCreator()
         .for(plugin)
-        .as("continuous")
+        .as("system")
         .withInitialTime("2026-01-01T00:00Z");
       expect(() => {
         sut.create();
-      }).toThrow("An initial time can not be set when using 'continuous' mode");
+      }).toThrow("An initial time can not be set when using 'system' mode");
     });
   });
 

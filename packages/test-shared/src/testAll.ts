@@ -32,7 +32,7 @@ export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
 
   describe("TimeProviders", () => {
     describe(pluginName, () => {
-      testTimeProvider(() => createTimeProvider.for(plugin).as("continuous").create());
+      testTimeProvider(() => createTimeProvider.for(plugin).as("system").create());
       testTimeProvider(() =>
         createTimeProvider
           .for(plugin)

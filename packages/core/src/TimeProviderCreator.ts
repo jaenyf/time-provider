@@ -3,12 +3,12 @@ import type { ITimeProvider } from "./ITimeProvider.ts";
 
 export class TimeProviderCreator<TDate> {
   #plugin?: IPlugin<TDate>;
-  #mode: "continuous" | "fixed" | "manual";
+  #mode: "system" | "fixed" | "manual";
   #initialDateTime?: string | number | TDate;
 
   constructor() {
     this.#plugin = undefined;
-    this.#mode = "continuous";
+    this.#mode = "system";
     this.#initialDateTime = undefined;
   }
 
@@ -17,7 +17,7 @@ export class TimeProviderCreator<TDate> {
     return this;
   }
 
-  as(mode: "continuous" | "fixed" | "manual"): TimeProviderCreator<TDate> {
+  as(mode: "system" | "fixed" | "manual"): TimeProviderCreator<TDate> {
     this.#mode = mode;
     return this;
   }
@@ -32,9 +32,9 @@ export class TimeProviderCreator<TDate> {
       throw new Error("Method 'for' has not been called with the plugin that should be used !");
     }
     switch (this.#mode) {
-      case "continuous":
+      case "system":
         if (undefined !== this.#initialDateTime) {
-          throw new Error("An initial time can not be set when using 'continuous' mode");
+          throw new Error("An initial time can not be set when using 'system' mode");
         }
         return this.#plugin.createTimeAdapter();
       case "fixed":
