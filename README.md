@@ -1,50 +1,75 @@
 # Time-Provider
 
-**Inject time without committing to a date library.**
+**Inject time into your application—without global state.**
 
 [![CodecovApp](https://github.com/codecov/engineering-team/assets/152432831/e90313f4-9d3a-4b63-8b54-cfe14e7ec20d)](https://codecov.io/gh/jaenyf/time-provider)
 [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
 [![CI](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 
-A TypeScript library providing **injectable clocks** with adapters for multiple date libraries.
+> Time-dependent code is notoriously difficult to test. Instead of calling new Date() or Temporal.Now.instant() directly throughout your application, inject a clock that can be swapped for a fixed or manually controlled implementation during testing.
 
-Supported adapters:
+## What is it?
 
-- Native `Date`
+A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.
+
+Supported adapters include:
+
 - `Temporal`
+- Native `Date`
 - `Day.js`
 - `Luxon`
 - `Moment.js`
 
 ---
 
+## Why not fake timers?
+
+- ❌ Fake timers mutate global runtime behavior by overriding global APIs like Date and setTimeout.
+- ❌ They can leak between tests and cause flaky behavior.
+- ❌ They don’t compose well across libraries.
+
+✅ Unlike fake timers (Jest, Vitest, Sinon), `time-provider` doesn't modify global state. Every clock is explicit, isolated, and can coexist with other clocks in the same process.
+
 ## Overview
 
-`Time-Provider` exposes a clock abstraction that can be swapped depending on runtime context:
+`time-provider` exposes a clock abstraction that can be swapped depending on runtime context:
 
-- system clock (production)
-- fixed clock (tests)
-- manual clock (controlled time progression)
+- System clock (production): The default clock.
+- Fixed clock (for testing): A deterministic clock always returning the same instant.
+- Manual clock (controlled time progression): A clock that can be advanced manually.
 
-It is designed to remain **agnostic of the underlying date library**.
+It remains agnostic to the underlying date library, so you can adopt it with your existing stack.
 
----
+## Features
+
+- Dependency-injectable clocks
+- Multiple time strategies (system, fixed, manual)
+- Pluggable date libraries
+- Type-safe return types
 
 ## Quick start
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
-import { plugin } from "@time-provider/plugin-temporal";
+import { plugin } from "@time-provider/plugin-native";
 
+// production
 const clock = createTimeProvider.for(plugin).create();
+
+// test
+const clock = createTimeProvider
+  .for(plugin)
+  .as("fixed")
+  .withInitialTime("2026-01-01T00:00Z")
+  .create();
 
 console.log(clock.utcNow());
 ```
 
 ## Usage
 
-### Injection example
+### Dependency injection example
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
@@ -65,6 +90,22 @@ class UserService {
 }
 ```
 
+### Testing example
+
+```typescript
+it("sets createdAt deterministically", () => {
+  const clock = createTimeProvider
+    .for(plugin)
+    .as("fixed")
+    .withInitialTime("2026-01-01T00:00Z")
+    .create();
+
+  const service = new UserService(clock);
+
+  expect(service.createUser().createdAt).toEqual(clock.utcNow());
+});
+```
+
 ## Clock types
 
 ### System clock (default)
@@ -73,7 +114,7 @@ class UserService {
 const clock = createTimeProvider.for(plugin).create();
 ```
 
-## Fixed clock
+### Fixed clock
 
 Deterministic clock always returning the same instant.
 
@@ -85,7 +126,7 @@ const clock = createTimeProvider
   .create();
 ```
 
-## Manual clock
+### Manual clock
 
 Clock that can be advanced explicitly.
 
@@ -101,7 +142,7 @@ clock.advance({
 });
 ```
 
-Full example:
+Full example
 
 ```typescript
 clock.advance({
@@ -146,11 +187,12 @@ npm install @time-provider/plugin-moment
 | **Day.js**    | [@time-provider/plugin-dayjs](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       | Dayjs         | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)       |
 | **Moment.js** | [@time-provider/plugin-moment](https://www.npmjs.com/package/@time-provider/plugin-moment)     | Moment        | [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-moment.svg)](https://www.npmjs.com/package/@time-provider/plugin-moment)     |
 
-## Fake timers
+## Use cases
 
-Fake timers mutate global runtime behavior.
-
-`Time-Provider` uses explicit dependency injection instead of global state, allowing multiple clock implementations to coexist safely within the same process.
+- Testing time-dependent logic (expiration, retries, scheduling)
+- Simulating time progression in integration tests
+- Decoupling business logic from date libraries
+- Running multiple clocks in the same process
 
 ## API
 
@@ -162,7 +204,9 @@ interface ITimeProvider<TDate> {
 }
 ```
 
-Manual clock
+### Manual clock (adapter)
+
+The core library exposes `ITimeProvider`, while adapters extend it via `ITimeAdapter` to implement library-specific behavior.
 
 ```typescript
 interface IManualTimeAdapter<TDate> extends ITimeAdapter<TDate> {
@@ -174,21 +218,21 @@ interface IManualTimeAdapter<TDate> extends ITimeAdapter<TDate> {
 
 The library is split into:
 
-`@time-provider/core`
-adapter packages per date library
+- `@time-provider/core` provides the core abstraction.
+- Each adapter maps the generic API to its native date type.
 
-Core logic is date-library agnostic. Adapters are responsible for mapping time operations to the underlying implementation while preserving native return types.
+`time-provider` is date-library agnostic. Adapters are responsible for mapping time operations to the underlying implementation while preserving native return types.
 
 App  
 │  
 ▼  
-Time-Provider (core)  
+Library `@time-provider/core`  
 │  
-├── Temporal adapter ──> Temporal.Instant  
-├── Native adapter ──> Date  
-├── Luxon adapter ──> DateTime  
-├── Dayjs adapter ──> Dayjs  
-└── Moment adapter ──> Moment
+├── Temporal adapter `@time-provider/plugin-temporal` ──> Temporal.Instant  
+├── Native adapter `@time-provider/plugin-native` ──> Date  
+├── Luxon adapter `@time-provider/plugin-luxon` ──> DateTime  
+├── Day.js adapter `@time-provider/plugin-dayjs` ──> Dayjs  
+└── Moment adapter `@time-provider/plugin-moment` ──> Moment
 
 ## License
 
