@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*",
-    "@types/node": "^25.6.2",
+    "@types/node": "^26.1.0",
     "typescript": "^6.0.3",
     "vite-plus": "catalog:"
   },
