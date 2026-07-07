@@ -2,7 +2,7 @@
   "name": "time-provider",
   "version": "0.0.3",
   "private": true,
-  "description": "A tiny library to rapidly have time!",
+  "description": "A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.",
   "keywords": [
     "clock",
     "date",
@@ -10,9 +10,11 @@
     "fake",
     "fixed",
     "frozen",
+    "injection",
     "manual",
     "provider",
     "running",
+    "system",
     "time"
   ],
   "homepage": "https://github.com/jaenyf/time-provider#readme",
@@ -36,6 +38,7 @@
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
+    "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** coverage reports bun.lock",
     "test": "vp test",
     "check": "vp run -r check",
     "stryker": "stryker run",
@@ -46,6 +49,7 @@
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.9",
+    "rimraf": "^6.1.3",
     "vite-plus": "^0.2.2"
   },
   "engines": {
