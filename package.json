@@ -43,6 +43,8 @@
     "publish": "false && vp run build && vp run bump && vpx npm login && vp run -r publish"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.9",
     "vite-plus": "^0.2.2"
   },
