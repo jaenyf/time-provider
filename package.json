@@ -43,8 +43,9 @@
     "publish": "false && vp run build && vp run bump && vpx npm login && vp run -r publish"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.9",
-    "bumpp": "^11.1.0",
     "vite-plus": "^0.2.2"
   },
   "engines": {
@@ -52,8 +53,6 @@
   },
   "packageManager": "bun@1.3.14",
   "catalog": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
     "vite-plus": "latest"
   }
 }
