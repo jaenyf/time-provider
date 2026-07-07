@@ -2,7 +2,7 @@
   "name": "time-provider",
   "version": "0.0.3",
   "private": true,
-  "description": "A tiny library to rapidly have time!",
+  "description": "A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.",
   "keywords": [
     "clock",
     "date",
@@ -10,9 +10,11 @@
     "fake",
     "fixed",
     "frozen",
+    "injection",
     "manual",
     "provider",
     "running",
+    "system",
     "time"
   ],
   "homepage": "https://github.com/jaenyf/time-provider#readme",

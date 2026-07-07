@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-moment",
   "version": "0.0.3",
   "private": false,
-  "description": "Time-Provider : Moment.js plugin ~ A tiny library to rapidly have time!",
+  "description": "Time-Provider : Moment.js plugin ~ A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.",
   "keywords": [
     "clock",
     "date",
@@ -10,9 +10,11 @@
     "fake",
     "fixed",
     "frozen",
+    "injection",
     "manual",
     "provider",
     "running",
+    "system",
     "time"
   ],
   "homepage": "https://github.com/jaenyf/time-provider#readme",
