@@ -14,7 +14,7 @@ describe("plugin-luxon", () => {
         (illegal) => {
           const sut = createTimeProvider.for(plugin).create();
           expect(() => {
-            sut.parse(illegal);
+            sut.parse(illegal as string | number | DateTime<boolean>);
           }).toThrow(`Undefined time type (value was '${illegal as string}')`);
         },
       );
