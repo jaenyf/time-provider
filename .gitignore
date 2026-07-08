@@ -31,6 +31,9 @@ bun.lock
 !.vscode/settings.json
 !.vscode/extensions.json
 
+# test report files
+test-report.junit.xml
+
 # code coverage files
 coverage/*
 
