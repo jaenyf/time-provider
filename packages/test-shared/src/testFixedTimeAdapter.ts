@@ -3,7 +3,7 @@ import type { IPlugin } from "@time-provider/core";
 
 export function testFixedTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
-  createDate: (initialValue: string | number | TDate) => TDate,
+  parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSUT = () => plugin.createFixedTimeAdapter("2026-01-01T00:00:00.000Z");
 
@@ -24,7 +24,7 @@ export function testFixedTimeAdapter<TDate>(
       plugin.createFixedTimeAdapter(milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createFixedTimeAdapter(createDate("2026-01-01T00:00:00.000Z"));
+      plugin.createFixedTimeAdapter(parseTime("2026-01-01T00:00:00.000Z"));
     });
   });
 
@@ -40,7 +40,7 @@ export function testFixedTimeAdapter<TDate>(
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.localNow()).toEqual(createDate("2026-01-01T00:00:00.000Z"));
+        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
@@ -55,19 +55,19 @@ export function testFixedTimeAdapter<TDate>(
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.utcNow()).toEqual(createDate("2026-01-01T00:00:00.000Z"));
+        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
     describe("parse", () => {
-      test.each(["2026-01-01T00:00Z", 100, createDate("2026-01-01T00:00:00.000Z")])(
+      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
           expect(() => sut.parse(toParse)).not.toThrow();
         },
       );
-      test.each(["2026-01-01T00:00Z", 100, createDate("2026-01-01T00:00:00.000Z")])(
+      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "returns a value",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
@@ -75,11 +75,11 @@ export function testFixedTimeAdapter<TDate>(
           expect(sut.parse(toParse)).not.toEqual(null);
         },
       );
-      test.each(["2026-01-01T00:00Z", 100, createDate("2026-01-01T00:00:00.000Z")])(
+      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).toEqual(createDate(toParse));
+          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });

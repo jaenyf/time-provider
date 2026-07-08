@@ -1,9 +1,9 @@
 import { expect, test, describe } from "vite-plus/test";
 import type { IPlugin } from "@time-provider/core";
 
-export function testTimeAdapter<TDate>(
+export function testSystemTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
-  createDate: (initialValue: string | number | TDate) => TDate,
+  parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
   const createTimeAdapter = () => plugin.createTimeAdapter();
 
@@ -40,18 +40,18 @@ export function testTimeAdapter<TDate>(
     });
 
     describe("parse", () => {
-      test.each(["2026-01-01T00:00Z", 100, createDate("2026-01-01T00:00Z")])(
+      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00Z")])(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createTimeAdapter();
           expect(() => sut.parse(toParse)).not.toThrow();
         },
       );
-      test.each(["2026-01-01T00:00Z", 100, createDate("2026-01-01T00:00Z")])(
+      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createTimeAdapter();
-          expect(sut.parse(toParse)).toEqual(createDate(toParse));
+          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });
