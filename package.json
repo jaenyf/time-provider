@@ -38,7 +38,7 @@
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
-    "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** coverage reports bun.lock",
+    "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports bun.lock",
     "test": "vp test",
     "check": "vp run -r check",
     "stryker": "stryker run",

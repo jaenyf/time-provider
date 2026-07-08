@@ -119,11 +119,7 @@ const clock = createTimeProvider.for(plugin).create();
 Deterministic clock always returning the same instant.
 
 ```typescript
-const clock = createTimeProvider
-  .for(plugin)
-  .asFixed()
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
+const clock = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
 ```
 
 ### Manual clock
