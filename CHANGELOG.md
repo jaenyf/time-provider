@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.4 - 2026-07-08
+
+### Added
+
+- Sequential time adapters
+
+### Changed
+
+- Updated builder api
+- Unminified NPM packages files
+- Improved codebase and code coverage to 100%
+
 ## 0.0.3 - 2026-07-06
 
 ### Changed
