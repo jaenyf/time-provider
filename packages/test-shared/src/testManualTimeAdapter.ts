@@ -97,10 +97,22 @@ export function testManualTimeAdapter<TDate>(
         expect(sut.utcNow()).toEqual(parseTime("2027-01-01T00:00:00.000Z"));
       });
 
+      test("moves down years", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ years: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-01-01T00:00:00.000Z"));
+      });
+
       test("moves up months", () => {
         const sut = createManualTimeAdapter();
         sut.advance({ months: 1 });
         expect(sut.utcNow()).toEqual(parseTime("2026-02-01T00:00:00.000Z"));
+      });
+
+      test("moves down months", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ months: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-01T00:00:00.000Z"));
       });
 
       test("moves up days", () => {
@@ -109,10 +121,22 @@ export function testManualTimeAdapter<TDate>(
         expect(sut.utcNow()).toEqual(parseTime("2026-01-02T00:00:00.000Z"));
       });
 
+      test("moves down days", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ days: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T00:00:00.000Z"));
+      });
+
       test("moves up hours", () => {
         const sut = createManualTimeAdapter();
         sut.advance({ hours: 1 });
         expect(sut.utcNow()).toEqual(parseTime("2026-01-01T01:00:00.000Z"));
+      });
+
+      test("moves down hours", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ hours: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:00:00.000Z"));
       });
 
       test("moves up minutes", () => {
@@ -121,16 +145,34 @@ export function testManualTimeAdapter<TDate>(
         expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:01:00.000Z"));
       });
 
+      test("moves down minutes", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ minutes: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:00.000Z"));
+      });
+
       test("moves up seconds", () => {
         const sut = createManualTimeAdapter();
         sut.advance({ seconds: 1 });
         expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
       });
 
+      test("moves down seconds", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ seconds: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.000Z"));
+      });
+
       test("moves up milliseconds", () => {
         const sut = createManualTimeAdapter();
         sut.advance({ milliseconds: 1 });
         expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.001Z"));
+      });
+
+      test("moves down milliseconds", () => {
+        const sut = createManualTimeAdapter();
+        sut.advance({ milliseconds: -1 });
+        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.999Z"));
       });
     });
   });
