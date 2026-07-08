@@ -8,17 +8,17 @@ export class TimeAdapter extends BaseTimeAdapter<DateTime> {
   utcNow(): DateTime {
     return DateTime.utc();
   }
-  parse(referenceDate: string | number | DateTime): DateTime {
-    switch (typeof referenceDate) {
+  protected convertToDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
+    switch (typeof time) {
       case "number":
-        return DateTime.fromMillis(referenceDate);
+        return DateTime.fromMillis(time);
       case "string":
-        return DateTime.fromISO(referenceDate);
+        return DateTime.fromISO(time);
       case "object":
-        if (referenceDate instanceof DateTime) {
-          return referenceDate;
+        if (time instanceof DateTime) {
+          return time;
         }
     }
-    throw new Error(`Undefined referenceDate type (value was '${referenceDate as string}')`);
+    throw new Error(`Undefined time type (value was '${time as string}')`);
   }
 }

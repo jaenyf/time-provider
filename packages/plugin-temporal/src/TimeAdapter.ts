@@ -8,9 +8,9 @@ export class TimeAdapter extends BaseTimeAdapter<Temporal.Instant> {
   utcNow(): Temporal.Instant {
     return Temporal.Now.zonedDateTimeISO("UTC").toInstant();
   }
-  parse(initialValue: string | number | Temporal.Instant): Temporal.Instant {
-    if (typeof initialValue === "number")
-      return Temporal.Instant.fromEpochMilliseconds(initialValue);
-    return Temporal.Instant.from(initialValue);
+
+  protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
+    if (typeof time === "number") return Temporal.Instant.fromEpochMilliseconds(time);
+    return Temporal.Instant.from(time);
   }
 }

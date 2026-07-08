@@ -3,15 +3,21 @@ import { TimeAdapter } from "./TimeAdapter.ts";
 import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
 import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
 import moment, { type Moment } from "moment";
+import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
 
 export class Plugin implements IPlugin<Moment> {
   createTimeAdapter(): ITimeAdapter<Moment> {
     return new TimeAdapter();
   }
-  createManualAdapter(initialTime?: string | number | Moment): IManualTimeAdapter<Moment> {
-    return new ManualTimeAdapter(initialTime ? initialTime : moment().utc());
+  createManualTimeAdapter(initialTime?: string | number | Moment): IManualTimeAdapter<Moment> {
+    return new ManualTimeAdapter(initialTime ? initialTime : 0);
   }
-  createFixedAdapter(initialTime: string | number | Moment): ITimeAdapter<Moment> {
+  createFixedTimeAdapter(initialTime: string | number | Moment): ITimeAdapter<Moment> {
     return new FixedTimeAdapter(initialTime);
+  }
+  createSequentialTimeAdapter(
+    sequentialTimes: (string | number | moment.Moment)[],
+  ): ITimeAdapter<moment.Moment> {
+    return new SequentialTimeAdapter(sequentialTimes);
   }
 }

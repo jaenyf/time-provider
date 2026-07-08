@@ -1,18 +1,17 @@
-import type { ITimeAdapter } from "./ITimeAdapter.ts";
+import { BaseTimeAdapter } from "./BaseTimeAdapter.ts";
 
-export abstract class BaseDeterministicTimeAdapter<TDate> implements ITimeAdapter<TDate> {
+export abstract class BaseDeterministicTimeAdapter<TDate> extends BaseTimeAdapter<TDate> {
   #deterministicTime: TDate;
   constructor(determinedTime: string | number | TDate) {
-    this.#deterministicTime = this.createDeterminedTime(determinedTime);
+    super();
+    this.#deterministicTime = this.convertToDateImpl(determinedTime);
   }
-
-  protected abstract createDeterminedTime(determinedTime: string | number | TDate): TDate;
 
   protected setDeterminedTime(determinedTime: TDate): void {
-    this.#deterministicTime = this.createDeterminedTime(determinedTime);
+    this.#deterministicTime = this.convertToDateImpl(determinedTime);
   }
 
-  localNow = () => this.createDeterminedTime(this.#deterministicTime);
-  utcNow = () => this.createDeterminedTime(this.#deterministicTime);
-  parse = (input: string | number | TDate) => this.createDeterminedTime(input);
+  localNow = () => this.convertToDateImpl(this.#deterministicTime);
+  utcNow = () => this.convertToDateImpl(this.#deterministicTime);
+  parse = (input: string | number | TDate) => this.convertToDateImpl(input);
 }

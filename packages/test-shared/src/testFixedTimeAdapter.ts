@@ -5,7 +5,7 @@ export function testFixedTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
   createDate: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createSUT = () => plugin.createFixedAdapter("2026-01-01T00:00:00.000Z");
+  const createSUT = () => plugin.createFixedTimeAdapter("2026-01-01T00:00:00.000Z");
 
   describe("createFixedTimeAdapter", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
@@ -17,14 +17,14 @@ export function testFixedTimeAdapter<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createFixedAdapter(isoTimeText);
+        plugin.createFixedTimeAdapter(isoTimeText);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createFixedAdapter(milliseconds);
+      plugin.createFixedTimeAdapter(milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createFixedAdapter(createDate("2026-01-01T00:00:00.000Z"));
+      plugin.createFixedTimeAdapter(createDate("2026-01-01T00:00:00.000Z"));
     });
   });
 

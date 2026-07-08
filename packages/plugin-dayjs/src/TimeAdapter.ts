@@ -9,7 +9,7 @@ export class TimeAdapter extends BaseTimeAdapter<Dayjs> {
   utcNow(): Dayjs {
     return dayjs.utc();
   }
-  parse(initialValue: string | number | Dayjs): Dayjs {
-    return dayjs(initialValue);
+  protected convertToDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+    return dayjs(time);
   }
 }
