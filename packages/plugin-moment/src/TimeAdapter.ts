@@ -8,7 +8,7 @@ export class TimeAdapter extends BaseTimeAdapter<moment.Moment> {
   utcNow(): moment.Moment {
     return moment.utc();
   }
-  parse(initialValue: string | number | moment.Moment): moment.Moment {
-    return moment(initialValue);
+  protected convertToDateImpl(time: string | number | moment.Moment): moment.Moment {
+    return moment(time);
   }
 }

@@ -60,7 +60,7 @@ const clock = createTimeProvider.for(plugin).create();
 // test
 const clock = createTimeProvider
   .for(plugin)
-  .as("fixed")
+  .asFixed()
   .withInitialTime("2026-01-01T00:00Z")
   .create();
 
@@ -96,7 +96,7 @@ class UserService {
 it("sets createdAt deterministically", () => {
   const clock = createTimeProvider
     .for(plugin)
-    .as("fixed")
+    .asFixed()
     .withInitialTime("2026-01-01T00:00Z")
     .create();
 
@@ -121,7 +121,7 @@ Deterministic clock always returning the same instant.
 ```typescript
 const clock = createTimeProvider
   .for(plugin)
-  .as("fixed")
+  .asFixed()
   .withInitialTime("2026-01-01T00:00Z")
   .create();
 ```
@@ -133,7 +133,7 @@ Clock that can be advanced explicitly.
 ```typescript
 const clock = createTimeProvider
   .for(plugin)
-  .as("manual")
+  .asManual()
   .withInitialTime("2026-01-01T00:00Z")
   .create();
 
@@ -154,6 +154,20 @@ clock.advance({
   seconds: 6,
   milliseconds: 7,
 });
+```
+
+### Sequential clock
+
+Clock that give values from a list of sequential times.
+
+```typescript
+const clock = createTimeProvider
+  .for(plugin)
+  .asSequential()
+  .withSequentialTime("2026-01-01T00:01Z")
+  .withSequentialTime("2026-01-01T00:02Z")
+  .withSequentialTime("2026-01-01T00:03Z")
+  .create();
 ```
 
 ## Installation

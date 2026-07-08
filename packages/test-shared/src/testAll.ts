@@ -2,6 +2,7 @@ import { describe } from "vite-plus/test";
 import { testTimeAdapter } from "./testTimeAdapter.ts";
 import { testFixedTimeAdapter } from "./testFixedTimeAdapter.ts";
 import { testManualTimeAdapter } from "./testManualTimeAdapter.ts";
+import { testSequentialTimeAdapter } from "./testSequentialTimeAdapter.ts";
 import { createTimeProvider, type IPlugin } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
@@ -21,6 +22,10 @@ export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
       testManualTimeAdapter(pluginName, plugin, (fixedDate: number | string | TDate) =>
         createFixedDate(fixedDate),
       );
+
+      testSequentialTimeAdapter(pluginName, plugin, (fixedDate: number | string | TDate) =>
+        createFixedDate(fixedDate),
+      );
     });
   });
 
@@ -32,19 +37,22 @@ export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
 
   describe("TimeProviders", () => {
     describe(pluginName, () => {
-      testTimeProvider(() => createTimeProvider.for(plugin).as("system").create());
+      testTimeProvider(() => createTimeProvider.for(plugin).create());
+      testTimeProvider(() =>
+        createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00:00.000Z").create(),
+      );
       testTimeProvider(() =>
         createTimeProvider
           .for(plugin)
-          .as("fixed")
+          .asManual()
           .withInitialTime("2026-01-01T00:00:00.000Z")
           .create(),
       );
       testTimeProvider(() =>
         createTimeProvider
           .for(plugin)
-          .as("manual")
-          .withInitialTime("2026-01-01T00:00:00.000Z")
+          .asSequential()
+          .withSequentialTime("2026-01-01T00:00:00.000Z")
           .create(),
       );
     });

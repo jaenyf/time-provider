@@ -6,7 +6,7 @@ export function testManualTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
   createDate: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createManualTimeAdapter = () => plugin.createManualAdapter("2026-01-01T00:00:00.000Z");
+  const createManualTimeAdapter = () => plugin.createManualTimeAdapter("2026-01-01T00:00:00.000Z");
 
   describe("createManualTimeAdapter", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
@@ -18,14 +18,14 @@ export function testManualTimeAdapter<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createManualAdapter(isoTimeText);
+        plugin.createManualTimeAdapter(isoTimeText);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createManualAdapter(milliseconds);
+      plugin.createManualTimeAdapter(milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createManualAdapter(createDate("2026-01-01T00:00:00.000Z"));
+      plugin.createManualTimeAdapter(createDate("2026-01-01T00:00:00.000Z"));
     });
   });
 

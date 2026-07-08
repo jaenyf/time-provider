@@ -3,6 +3,9 @@ import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
 import dayjs, { Dayjs } from "dayjs";
 
 export class ManualTimeAdapter extends FixedTimeAdapter implements IManualTimeAdapter<Dayjs> {
+  constructor(time: string | number | dayjs.Dayjs) {
+    super(time);
+  }
   advance(advanceConfiguration: IAdvanceConfiguration): IManualTimeAdapter<dayjs.Dayjs> {
     if (advanceConfiguration.days) {
       this.setDeterminedTime(this.utcNow().add(advanceConfiguration.days, "day"));
