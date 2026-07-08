@@ -6,6 +6,7 @@ import type {
   IManualTimeProviderCreator,
   IPluggedTimeProviderCreator,
   ISequentialTimeProviderCreator,
+  ITimeProviderCreator,
 } from "./ITimeProviderCreators.ts";
 
 abstract class BaseTimeProviderCreator<TDate> {
@@ -85,8 +86,8 @@ export class SequentialTimeProviderCreator<TDate>
   }
 }
 
-export class TimeProviderCreator<TDate> {
-  for(adapter: IPlugin<TDate>): PluggedTimeProviderCreator<TDate> {
+export class TimeProviderCreator implements ITimeProviderCreator {
+  for<TDate>(adapter: IPlugin<TDate>): PluggedTimeProviderCreator<TDate> {
     return new PluggedTimeProviderCreator(adapter);
   }
 }

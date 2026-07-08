@@ -47,10 +47,10 @@ export interface IPluggedTimeProviderCreator<TDate> {
   asSequential(): ISequentialTimeProviderCreator<TDate>;
 }
 
-export interface ITimeProviderCreator<TDate> {
+export interface ITimeProviderCreator {
   /**
    * Setup a Time-Provider for a given plugin (adapter)
    * @param adapter The instance of the plugin (adapter) to use.
    */
-  for(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
 }
