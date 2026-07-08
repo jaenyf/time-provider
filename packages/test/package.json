@@ -23,7 +23,7 @@
     "@time-provider/plugin-temporal": "workspace:*",
     "@time-provider/test-shared": "workspace:*",
     "@types/luxon": "^3.7.2",
-    "dayjs": "~1.8.15",
+    "dayjs": "~1.11.21",
     "dayjs-plugin-utc": "~0.1.2",
     "luxon": "^3.7.2",
     "moment": "~2.30.1"
