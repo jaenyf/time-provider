@@ -3,6 +3,9 @@ import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
 import { DateTime } from "luxon";
 
 export class ManualTimeAdapter extends FixedTimeAdapter implements IManualTimeAdapter<DateTime> {
+  constructor(time: string | number | DateTime<boolean>) {
+    super(time);
+  }
   advance(advanceConfiguration: IAdvanceConfiguration): IManualTimeAdapter<DateTime> {
     if (advanceConfiguration.days) {
       this.setDeterminedTime(this.utcNow().plus({ days: advanceConfiguration.days }));

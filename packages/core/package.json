@@ -1,8 +1,8 @@
 {
   "name": "@time-provider/core",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
-  "description": "Time-Provider : Core ~ A tiny library to rapidly have time!",
+  "description": "Time-Provider : Core library ~ A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.",
   "keywords": [
     "clock",
     "date",
@@ -10,9 +10,11 @@
     "fake",
     "fixed",
     "frozen",
+    "injection",
     "manual",
     "provider",
     "running",
+    "system",
     "time"
   ],
   "homepage": "https://github.com/jaenyf/time-provider#readme",
@@ -37,7 +39,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack --minify --dts",
+    "build": "vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
@@ -46,8 +48,6 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.2",
-    "@typescript/native-preview": "7.0.0-dev.20260509.2",
-    "bumpp": "^11.1.0",
     "typescript": "^6.0.3",
     "vite-plus": "catalog:"
   }

@@ -5,13 +5,13 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    ignorePatterns: ["coverage/**", "dist/**", "release-please-*.json"],
+    ignorePatterns: ["coverage/**", "dist/**"],
   },
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },
-    ignorePatterns: ["coverage/**", "dist/**", "release-please-*.json"],
+    ignorePatterns: ["coverage/**", "dist/**"],
   },
   run: {
     cache: true,
@@ -20,6 +20,8 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
+    reporters: ["junit"],
+    outputFile: "test-report.junit.xml",
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
