@@ -1,20 +1,29 @@
-import type { IManualTimeAdapter, IPlugin, ITimeAdapter } from "@time-provider/core";
+import type { IManualTimeAdapter, IPlugin, IScheduler, ITimeAdapter } from "@time-provider/core";
 import { TimeAdapter } from "./TimeAdapter.ts";
 import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
 import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
 import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
 
 export class Plugin implements IPlugin<Date> {
-  createTimeAdapter(): ITimeAdapter<Date> {
-    return new TimeAdapter();
+  createTimeAdapter(scheduler: IScheduler): ITimeAdapter<Date> {
+    return new TimeAdapter(scheduler);
   }
-  createManualTimeAdapter(initialTime?: string | number | Date): IManualTimeAdapter<Date> {
-    return new ManualTimeAdapter(initialTime ? initialTime : 0);
+  createManualTimeAdapter(
+    scheduler: IScheduler,
+    initialTime?: string | number | Date,
+  ): IManualTimeAdapter<Date> {
+    return new ManualTimeAdapter(scheduler, initialTime ? initialTime : 0);
   }
-  createFixedTimeAdapter(initialTime: string | number | Date): ITimeAdapter<Date> {
-    return new FixedTimeAdapter(initialTime);
+  createFixedTimeAdapter(
+    scheduler: IScheduler,
+    initialTime: string | number | Date,
+  ): ITimeAdapter<Date> {
+    return new FixedTimeAdapter(scheduler, initialTime);
   }
-  createSequentialTimeAdapter(sequentialTimes: (string | number | Date)[]): ITimeAdapter<Date> {
-    return new SequentialTimeAdapter(sequentialTimes);
+  createSequentialTimeAdapter(
+    scheduler: IScheduler,
+    sequentialTimes: (string | number | Date)[],
+  ): ITimeAdapter<Date> {
+    return new SequentialTimeAdapter(scheduler, sequentialTimes);
   }
 }

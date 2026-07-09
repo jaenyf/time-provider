@@ -1,12 +1,13 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IPlugin, IScheduler } from "@time-provider/core";
 
 export function testSequentialTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
+  scheduler: IScheduler,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSequentialTimeAdapter = () =>
-    plugin.createSequentialTimeAdapter([
+    plugin.createSequentialTimeAdapter(scheduler, [
       "2026-01-01T00:00:01.000Z",
       "2026-01-01T00:00:02.000Z",
       "2026-01-01T00:00:03.000Z",
@@ -22,14 +23,14 @@ export function testSequentialTimeAdapter<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createSequentialTimeAdapter([isoTimeText]);
+        plugin.createSequentialTimeAdapter(scheduler, [isoTimeText]);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createSequentialTimeAdapter([milliseconds]);
+      plugin.createSequentialTimeAdapter(scheduler, [milliseconds]);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createSequentialTimeAdapter([parseTime("2026-01-01T00:00:00.000Z")]);
+      plugin.createSequentialTimeAdapter(scheduler, [parseTime("2026-01-01T00:00:00.000Z")]);
     });
   });
 

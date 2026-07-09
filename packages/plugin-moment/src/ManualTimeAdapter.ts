@@ -4,9 +4,6 @@ import { type Moment } from "moment";
 import moment from "moment";
 
 export class ManualTimeAdapter extends FixedTimeAdapter implements IManualTimeAdapter<Moment> {
-  constructor(time: string | number | moment.Moment) {
-    super(time);
-  }
   private ensureDeterminedTime(time: Moment) {
     this.setDeterminedTime(moment(time.toISOString()));
   }

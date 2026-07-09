@@ -1,11 +1,12 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IPlugin, IScheduler } from "@time-provider/core";
 
 export function testFixedTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
+  scheduler: IScheduler,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createSUT = () => plugin.createFixedTimeAdapter("2026-01-01T00:00:00.000Z");
+  const createSUT = () => plugin.createFixedTimeAdapter(scheduler, "2026-01-01T00:00:00.000Z");
 
   describe("createFixedTimeAdapter", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
@@ -17,14 +18,14 @@ export function testFixedTimeAdapter<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createFixedTimeAdapter(isoTimeText);
+        plugin.createFixedTimeAdapter(scheduler, isoTimeText);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createFixedTimeAdapter(milliseconds);
+      plugin.createFixedTimeAdapter(scheduler, milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createFixedTimeAdapter(parseTime("2026-01-01T00:00:00.000Z"));
+      plugin.createFixedTimeAdapter(scheduler, parseTime("2026-01-01T00:00:00.000Z"));
     });
   });
 

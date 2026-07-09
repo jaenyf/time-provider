@@ -8,6 +8,8 @@ import type {
   ISequentialTimeProviderCreator,
   ITimeProviderCreator,
 } from "./ITimeProviderCreators.ts";
+import { DeterministicScheduler } from "./scheduler/DeterministicScheduler.ts";
+import { SystemScheduler } from "./scheduler/SystemScheduler.ts";
 
 abstract class BaseTimeProviderCreator<TDate> {
   #plugin: IPlugin<TDate>;
@@ -38,6 +40,7 @@ export class FixedTimeProviderCreator<TDate>
   }
   create(): ITimeProvider<TDate> {
     return this.plugin.createFixedTimeAdapter(
+      new DeterministicScheduler(),
       undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0,
     );
   }
@@ -59,6 +62,7 @@ export class ManualTimeProviderCreator<TDate>
   #initialDateTime?: string | number | TDate;
   create(): ITimeProvider<TDate> {
     return this.plugin.createManualTimeAdapter(
+      new DeterministicScheduler(),
       undefined !== this.#initialDateTime ? this.#initialDateTime : 0,
     );
   }
@@ -82,7 +86,10 @@ export class SequentialTimeProviderCreator<TDate>
   }
 
   create(): ITimeProvider<TDate> {
-    return this.plugin.createSequentialTimeAdapter(this.#sequentialTimes);
+    return this.plugin.createSequentialTimeAdapter(
+      new DeterministicScheduler(),
+      this.#sequentialTimes,
+    );
   }
 }
 
@@ -99,7 +106,7 @@ export class PluggedTimeProviderCreator<TDate> implements IPluggedTimeProviderCr
   }
 
   create(): ITimeProvider<TDate> {
-    return this.#plugin.createTimeAdapter();
+    return this.#plugin.createTimeAdapter(new SystemScheduler());
   }
   asManual(): IManualTimeProviderCreator<TDate> {
     return new ManualTimeProviderCreator(this.#plugin);

@@ -3,10 +3,7 @@ import { TimeAdapter } from "./TimeAdapter.ts";
 import type { Temporal } from "@js-temporal/polyfill";
 
 export class FixedTimeAdapter extends BaseDeterministicTimeAdapter<Temporal.Instant> {
-  constructor(time: string | number | Temporal.Instant) {
-    super(time);
-  }
   protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
-    return new TimeAdapter().parse(time);
+    return new TimeAdapter(this.scheduler).parse(time);
   }
 }

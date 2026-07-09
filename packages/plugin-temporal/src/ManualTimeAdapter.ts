@@ -6,9 +6,6 @@ export class ManualTimeAdapter
   extends FixedTimeAdapter
   implements IManualTimeAdapter<Temporal.Instant>
 {
-  constructor(time: string | number | Temporal.Instant) {
-    super(time);
-  }
   advance(advanceConfiguration: IAdvanceConfiguration): IManualTimeAdapter<Temporal.Instant> {
     if (advanceConfiguration.days) {
       this.setDeterminedTime(

@@ -1,9 +1,10 @@
+import type { IScheduler } from "../scheduler/IScheduler.ts";
 import { BaseTimeAdapter } from "./BaseTimeAdapter.ts";
 
 export abstract class BaseSequentialTimeAdapter<TDate> extends BaseTimeAdapter<TDate> {
   #sequentialTimes: TDate[];
-  constructor(sequentialTimes: (string | number | TDate)[]) {
-    super();
+  constructor(scheduler: IScheduler, sequentialTimes: (string | number | TDate)[]) {
+    super(scheduler);
     this.#sequentialTimes = sequentialTimes.map((t) => this.convertToDateImpl(t));
   }
 

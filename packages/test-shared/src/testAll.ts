@@ -3,20 +3,22 @@ import { testSystemTimeAdapter } from "./testSystemTimeAdapter.ts";
 import { testFixedTimeAdapter } from "./testFixedTimeAdapter.ts";
 import { testManualTimeAdapter } from "./testManualTimeAdapter.ts";
 import { testSequentialTimeAdapter } from "./testSequentialTimeAdapter.ts";
-import { createTimeProvider, type IPlugin } from "@time-provider/core";
+import { createTimeProvider, type IPlugin, type IScheduler } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
 
-export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
+export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>, scheduler: IScheduler) {
   const parseTime = (initialValue: number | string | TDate) =>
-    plugin.createTimeAdapter().parse(initialValue);
+    plugin.createTimeAdapter(scheduler).parse(initialValue);
 
   describe("TimeAdapters", () => {
     describe(pluginName, () => {
-      testSystemTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testFixedTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testManualTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testSequentialTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
+      testSystemTimeAdapter(plugin, scheduler, (time: number | string | TDate) => parseTime(time));
+      testFixedTimeAdapter(plugin, scheduler, (time: number | string | TDate) => parseTime(time));
+      testManualTimeAdapter(plugin, scheduler, (time: number | string | TDate) => parseTime(time));
+      testSequentialTimeAdapter(plugin, scheduler, (time: number | string | TDate) =>
+        parseTime(time),
+      );
     });
   });
 

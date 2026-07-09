@@ -2,9 +2,6 @@ import { type IManualTimeAdapter, type IAdvanceConfiguration } from "@time-provi
 import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
 
 export class ManualTimeAdapter extends FixedTimeAdapter implements IManualTimeAdapter<Date> {
-  constructor(time: string | number | Date) {
-    super(time);
-  }
   advance(advanceConfiguration: IAdvanceConfiguration): IManualTimeAdapter<Date> {
     const time = this.utcNow();
     if (advanceConfiguration.days) {

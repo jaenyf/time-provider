@@ -4,6 +4,6 @@ import type { Temporal } from "@js-temporal/polyfill";
 
 export class SequentialTimeAdapter extends BaseSequentialTimeAdapter<Temporal.Instant> {
   protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
-    return new TimeAdapter().parse(time);
+    return new TimeAdapter(this.scheduler).parse(time);
   }
 }

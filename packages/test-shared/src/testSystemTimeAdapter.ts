@@ -1,11 +1,12 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IPlugin, IScheduler } from "@time-provider/core";
 
 export function testSystemTimeAdapter<TDate>(
   plugin: IPlugin<TDate>,
+  scheduler: IScheduler,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createTimeAdapter = () => plugin.createTimeAdapter();
+  const createTimeAdapter = () => plugin.createTimeAdapter(scheduler);
 
   describe("createTimeAdapter", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {

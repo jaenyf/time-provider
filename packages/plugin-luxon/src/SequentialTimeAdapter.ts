@@ -4,6 +4,6 @@ import { DateTime } from "luxon";
 
 export class SequentialTimeAdapter extends BaseSequentialTimeAdapter<DateTime> {
   protected convertToDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
-    return new TimeAdapter().parse(time);
+    return new TimeAdapter(this.scheduler).parse(time);
   }
 }
