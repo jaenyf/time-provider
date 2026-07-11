@@ -1,4 +1,4 @@
-import type { ITimeProviderCreator } from "./ITimeProviderCreators.ts";
-import { TimeProviderCreator } from "./TimeProviderCreators.ts";
+import type { ITimeProviderCreator } from "./builder/ITimeProviderCreators.ts";
+import { TimeProviderCreator } from "./builder/TimeProviderCreators.ts";
 
 export const createTimeProvider: ITimeProviderCreator = new TimeProviderCreator();

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { testAll } from "@time-provider/test-shared";
-import { createTimeProvider, DeterministicScheduler } from "@time-provider/core";
+import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-luxon";
 import { DateTime } from "luxon";
 
-testAll<DateTime>("plugin-luxon", plugin, new DeterministicScheduler());
+testAll<DateTime>("plugin-luxon", plugin);
 
 describe("plugin-luxon", () => {
   describe("additionals", () => {

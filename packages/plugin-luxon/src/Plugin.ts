@@ -1,30 +1,27 @@
-import type { IManualTimeAdapter, IPlugin, IScheduler, ITimeAdapter } from "@time-provider/core";
-import { TimeAdapter } from "./TimeAdapter.ts";
-import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
-import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
+import { type IManualRuntime, type IPlugin, type IRuntime } from "@time-provider/core";
+import { SystemRuntime } from "./SystemRuntime.ts";
+import { ManualRuntime } from "./ManualRuntime.ts";
+import { SequentialRuntime } from "./SequentialRuntime.ts";
+import { FixedRuntime } from "./FixedRuntime.ts";
 import { DateTime } from "luxon";
-import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
 
-export class Plugin implements IPlugin<DateTime> {
-  createTimeAdapter(scheduler: IScheduler): ITimeAdapter<DateTime> {
-    return new TimeAdapter(scheduler);
+export class Plugin implements IPlugin<DateTime<boolean>> {
+  createSystemRuntime(): IRuntime<DateTime<boolean>> {
+    return new SystemRuntime();
   }
-  createManualTimeAdapter(
-    scheduler: IScheduler,
-    initialTime?: string | number | DateTime,
-  ): IManualTimeAdapter<DateTime> {
-    return new ManualTimeAdapter(scheduler, initialTime ? initialTime : 0);
+  createManualRuntime(
+    initialTime?: string | number | DateTime<boolean>,
+  ): IManualRuntime<DateTime<boolean>> {
+    return new ManualRuntime(initialTime ? initialTime : 0);
   }
-  createFixedTimeAdapter(
-    scheduler: IScheduler,
-    initialTime: string | number | DateTime,
-  ): ITimeAdapter<DateTime> {
-    return new FixedTimeAdapter(scheduler, initialTime);
+  createFixedRuntime(
+    initialTime: string | number | DateTime<boolean>,
+  ): IRuntime<DateTime<boolean>> {
+    return new FixedRuntime(initialTime);
   }
-  createSequentialTimeAdapter(
-    scheduler: IScheduler,
+  createSequentialRuntime(
     sequentialTimes: (string | number | DateTime<boolean>)[],
-  ): ITimeAdapter<DateTime<boolean>> {
-    return new SequentialTimeAdapter(scheduler, sequentialTimes);
+  ): IRuntime<DateTime<boolean>> {
+    return new SequentialRuntime(sequentialTimes);
   }
 }

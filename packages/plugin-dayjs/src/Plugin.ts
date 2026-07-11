@@ -1,30 +1,23 @@
-import type { IManualTimeAdapter, IPlugin, IScheduler, ITimeAdapter } from "@time-provider/core";
-import { TimeAdapter } from "./TimeAdapter.ts";
-import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
-import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
+import { type IManualRuntime, type IPlugin, type IRuntime } from "@time-provider/core";
+import { SystemRuntime } from "./SystemRuntime.ts";
+import { ManualRuntime } from "./ManualRuntime.ts";
+import { SequentialRuntime } from "./SequentialRuntime.ts";
+import { FixedRuntime } from "./FixedRuntime.ts";
 import dayjs, { Dayjs } from "dayjs";
-import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
 
 export class Plugin implements IPlugin<Dayjs> {
-  createTimeAdapter(scheduler: IScheduler): ITimeAdapter<Dayjs> {
-    return new TimeAdapter(scheduler);
+  createSystemRuntime(): IRuntime<Dayjs> {
+    return new SystemRuntime();
   }
-  createManualTimeAdapter(
-    scheduler: IScheduler,
-    initialTime?: string | number | Dayjs,
-  ): IManualTimeAdapter<Dayjs> {
-    return new ManualTimeAdapter(scheduler, initialTime ? initialTime : 0);
+  createManualRuntime(initialTime?: string | number | Dayjs): IManualRuntime<Dayjs> {
+    return new ManualRuntime(initialTime ? initialTime : 0);
   }
-  createFixedTimeAdapter(
-    scheduler: IScheduler,
-    initialTime: string | number | Dayjs,
-  ): ITimeAdapter<Dayjs> {
-    return new FixedTimeAdapter(scheduler, initialTime);
+  createFixedRuntime(initialTime: string | number | Dayjs): IRuntime<Dayjs> {
+    return new FixedRuntime(initialTime);
   }
-  createSequentialTimeAdapter(
-    scheduler: IScheduler,
+  createSequentialRuntime(
     sequentialTimes: (string | number | dayjs.Dayjs)[],
-  ): ITimeAdapter<dayjs.Dayjs> {
-    return new SequentialTimeAdapter(scheduler, sequentialTimes);
+  ): IRuntime<dayjs.Dayjs> {
+    return new SequentialRuntime(sequentialTimes);
   }
 }
