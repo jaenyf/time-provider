@@ -20,7 +20,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    reporters: ["junit"],
+    reporters: ["default", "junit"],
     outputFile: "test-report.junit.xml",
     coverage: {
       provider: "v8",
