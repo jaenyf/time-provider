@@ -329,6 +329,20 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          test.each([3, 30, 300])(
+            "runs callbacks multiple times if time advance consequently",
+            (expectedRetries: number) => {
+              const sut = plugin.createManualRuntime(0);
+              let retries = 0;
+              sut.scheduler.setInterval(() => {
+                retries++;
+              }, 1000);
+              sut.advance({
+                seconds: expectedRetries,
+              });
+              expect(retries).toBe(expectedRetries);
+            },
+          );
         });
       });
     });
