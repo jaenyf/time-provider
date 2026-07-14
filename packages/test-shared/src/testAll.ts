@@ -1,22 +1,22 @@
 import { describe } from "vite-plus/test";
-import { testSystemTimeAdapter } from "./testSystemTimeAdapter.ts";
-import { testFixedTimeAdapter } from "./testFixedTimeAdapter.ts";
-import { testManualTimeAdapter } from "./testManualTimeAdapter.ts";
-import { testSequentialTimeAdapter } from "./testSequentialTimeAdapter.ts";
+import { testSystemRuntime } from "./testSystemRuntime.ts";
+import { testFixedRuntime } from "./testFixedRuntime.ts";
+import { testManualRuntime } from "./testManualRuntime.ts";
+import { testSequentialRuntime } from "./testSequentialRuntime.ts";
 import { createTimeProvider, type IPlugin } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
 
 export function testAll<TDate>(pluginName: string, plugin: IPlugin<TDate>) {
   const parseTime = (initialValue: number | string | TDate) =>
-    plugin.createTimeAdapter().parse(initialValue);
+    plugin.createSystemRuntime().parse(initialValue);
 
-  describe("TimeAdapters", () => {
+  describe("Runtimes", () => {
     describe(pluginName, () => {
-      testSystemTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testFixedTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testManualTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
-      testSequentialTimeAdapter(plugin, (time: number | string | TDate) => parseTime(time));
+      testSystemRuntime(plugin, (time: number | string | TDate) => parseTime(time));
+      testFixedRuntime(plugin, (time: number | string | TDate) => parseTime(time));
+      testManualRuntime(plugin, (time: number | string | TDate) => parseTime(time));
+      testSequentialRuntime(plugin, (time: number | string | TDate) => parseTime(time));
     });
   });
 
