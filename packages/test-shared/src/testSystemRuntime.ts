@@ -95,6 +95,45 @@ export function testSystemRuntime<TDate>(
           expect(callbackBCalled).toBe(false);
         });
       });
+
+      describe("setInterval", async () => {
+        beforeEach(async () => {
+          vi.useFakeTimers();
+        });
+        afterEach(async () => {
+          vi.useRealTimers();
+        });
+        test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
+          const sut = plugin.createSystemRuntime().scheduler;
+          let callbackCalled = false;
+          const callback = () => (callbackCalled = true);
+          sut.setInterval(immediateDelay, callback);
+          vi.advanceTimersByTime(1000);
+          expect(callbackCalled).toBe(true);
+        });
+        test.each([1, 20, 100])("ignore future callback", async (futureDelay: number) => {
+          const sut = plugin.createSystemRuntime().scheduler;
+          let callbackCalled = false;
+          const callback = () => (callbackCalled = true);
+          sut.setInterval(futureDelay * 2, callback);
+          vi.advanceTimersByTime(futureDelay);
+          expect(callbackCalled).toBe(false);
+        });
+        test.each([1, 20, 100])("ignore cleared callback", async (futureDelay: number) => {
+          const sut = plugin.createSystemRuntime().scheduler;
+          let callbackACalled = false;
+          const callbackA = () => (callbackACalled = true);
+          let callbackBCalled = false;
+          const callbackB = () => (callbackBCalled = true);
+          const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
+          const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+          sut.clearInterval(timeoutHandleA);
+          sut.clearInterval(timeoutHandleB);
+          vi.advanceTimersByTime(futureDelay);
+          expect(callbackACalled).toBe(false);
+          expect(callbackBCalled).toBe(false);
+        });
+      });
     });
   });
 }

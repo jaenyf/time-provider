@@ -19,6 +19,7 @@ export abstract class BaseManualRuntime<TDate>
   advance(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate> {
     const returnValue = this.advanceImpl(advanceConfiguration);
     this.mayRunTimeoutCallbacks(this.timestamp());
+    this.mayRunIntervalCallbacks(this.timestamp());
     return returnValue;
   }
 

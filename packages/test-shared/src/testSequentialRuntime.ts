@@ -113,106 +113,279 @@ export function testSequentialRuntime<TDate>(
     describe("scheduler", () => {
       testScheduler(() => createSUT().scheduler);
       describe("additionnal", () => {
-        test.each([1, 20, 100])(
-          "executes next callbacks when time advance with localNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
+        describe("setTimeout", () => {
+          test.each([2, 20, 100])(
+            "executes next callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setTimeout(futureDelay, callbackA);
+              sut.setTimeout(futureDelay, callbackB);
+              sut.localNow();
+              sut.localNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore future callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setTimeout(futureDelay * 2, callbackA);
+              sut.setTimeout(futureDelay * 2, callbackB);
+              sut.localNow();
+              sut.localNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore cleared callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
+              const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+              sut.clearTimeout(timeoutHandleA);
+              sut.clearTimeout(timeoutHandleB);
+              sut.localNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([2, 20, 100])(
+            "executes next callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setTimeout(futureDelay, callbackA);
+              sut.setTimeout(futureDelay, callbackB);
+              sut.utcNow();
+              sut.utcNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore future callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setTimeout(futureDelay * 2, callbackA);
+              sut.setTimeout(futureDelay * 2, callbackB);
+              sut.utcNow();
+              sut.utcNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore cleared callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
+              const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+              sut.clearTimeout(timeoutHandleA);
+              sut.clearTimeout(timeoutHandleB);
+              sut.utcNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+        });
+
+        describe("setInterval", () => {
+          test.each([2, 20, 100])(
+            "executes next callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.localNow();
+              sut.localNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore future callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay * 2, callbackA);
+              sut.setInterval(futureDelay * 2, callbackB);
+              sut.localNow();
+              sut.localNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore cleared callbacks when time advance with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
+              const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+              sut.clearInterval(timeoutHandleA);
+              sut.clearInterval(timeoutHandleB);
+              sut.localNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([2, 20, 100])(
+            "run next interval callbacks if delay has elapsed with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.localNow();
+              callbackACalled = false;
               callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            sut.setTimeout(futureDelay, callbackA);
-            sut.setTimeout(futureDelay, callbackB);
-            sut.localNow();
-            sut.localNow();
-            expect(callbackACalled).toBe(true);
-            expect(callbackBCalled).toBe(true);
-          },
-        );
-        test.each([1, 20, 100])(
-          "ignore future callbacks when time advance with localNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
+              sut.localNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([2, 20, 100])(
+            "ignore next interval callbacks if delay has not elapsed with localNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.localNow();
+              callbackACalled = false;
               callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            sut.setTimeout(futureDelay * 2, callbackA);
-            sut.setTimeout(futureDelay * 2, callbackB);
-            sut.localNow();
-            sut.localNow();
-            expect(callbackACalled).toBe(false);
-            expect(callbackBCalled).toBe(false);
-          },
-        );
-        test.each([1, 20, 100])(
-          "ignore cleared callbacks when time advance with localNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
+              sut.localNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([2, 20, 100])(
+            "executes next callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.utcNow();
+              sut.utcNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore future callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay * 2, callbackA);
+              sut.setInterval(futureDelay * 2, callbackB);
+              sut.utcNow();
+              sut.utcNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore cleared callbacks when time advance with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
+              const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+              sut.clearInterval(timeoutHandleA);
+              sut.clearInterval(timeoutHandleB);
+              sut.utcNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([2, 20, 100])(
+            "run next interval callbacks if delay has elapsed with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.utcNow();
+              callbackACalled = false;
               callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-            const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
-            sut.clearTimeout(timeoutHandleA);
-            sut.clearTimeout(timeoutHandleB);
-            sut.localNow();
-            sut.localNow();
-            expect(callbackACalled).toBe(false);
-            expect(callbackBCalled).toBe(false);
-          },
-        );
-        test.each([1, 20, 100])(
-          "executes next callbacks when time advance with utcNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
+              sut.utcNow();
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([2, 20, 100])(
+            "ignore next interval callbacks if delay has not elapsed with utcNow",
+            (futureDelay: number) => {
+              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const callbackA = () => (callbackACalled = true);
+              const callbackB = () => (callbackBCalled = true);
+              sut.setInterval(futureDelay, callbackA);
+              sut.setInterval(futureDelay, callbackB);
+              sut.utcNow();
+              callbackACalled = false;
               callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            sut.setTimeout(futureDelay, callbackA);
-            sut.setTimeout(futureDelay, callbackB);
-            sut.utcNow();
-            sut.utcNow();
-            expect(callbackACalled).toBe(true);
-            expect(callbackBCalled).toBe(true);
-          },
-        );
-        test.each([1, 20, 100])(
-          "ignore future callbacks when time advance with utcNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
-              callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            sut.setTimeout(futureDelay * 2, callbackA);
-            sut.setTimeout(futureDelay * 2, callbackB);
-            sut.utcNow();
-            sut.utcNow();
-            expect(callbackACalled).toBe(false);
-            expect(callbackBCalled).toBe(false);
-          },
-        );
-        test.each([1, 20, 100])(
-          "ignore cleared callbacks when time advance with utcNow",
-          (futureDelay: number) => {
-            const sut = plugin.createSequentialRuntime([0, futureDelay]);
-            let callbackACalled = false,
-              callbackBCalled = false;
-            const callbackA = () => (callbackACalled = true);
-            const callbackB = () => (callbackBCalled = true);
-            const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-            const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
-            sut.clearTimeout(timeoutHandleA);
-            sut.clearTimeout(timeoutHandleB);
-            sut.utcNow();
-            sut.utcNow();
-            expect(callbackACalled).toBe(false);
-            expect(callbackBCalled).toBe(false);
-          },
-        );
+              sut.utcNow();
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+        });
       });
     });
   });
