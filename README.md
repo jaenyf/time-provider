@@ -42,8 +42,8 @@ It remains agnostic to the underlying date library, so you can adopt it with you
 
 ## Features
 
-- Dependency-injectable clocks
-- Multiple time strategies (system, fixed, manual)
+- Dependency-injectable clocks and schedulers
+- Multiple time strategies (system, fixed, manual, sequential)
 - Pluggable date libraries
 - Type-safe return types
 
@@ -54,16 +54,14 @@ import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-native";
 
 // production
-const clock = createTimeProvider.for(plugin).create();
+const tp = createTimeProvider.for(plugin).create();
 
 // test
-const clock = createTimeProvider
-  .for(plugin)
-  .asFixed()
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
+const tp = createTimeProvider.for(plugin).asFixed().withInitialTime("2026-01-01T00:00Z").create();
 
-console.log(clock.utcNow());
+tp.scheduler.setInterval(() => {
+  console.log(tp.utcNow());
+}, 100);
 ```
 
 ## Usage
@@ -93,15 +91,11 @@ class UserService {
 
 ```typescript
 it("sets createdAt deterministically", () => {
-  const clock = createTimeProvider
-    .for(plugin)
-    .asFixed()
-    .withInitialTime("2026-01-01T00:00Z")
-    .create();
+  const tp = createTimeProvider.for(plugin).asFixed().withInitialTime("2026-01-01T00:00Z").create();
 
-  const service = new UserService(clock);
+  const service = new UserService(tp);
 
-  expect(service.createUser().createdAt).toEqual(clock.utcNow());
+  expect(service.createUser().createdAt).toEqual(tp.utcNow());
 });
 ```
 
@@ -110,7 +104,7 @@ it("sets createdAt deterministically", () => {
 ### System clock (default)
 
 ```typescript
-const clock = createTimeProvider.for(plugin).create();
+const tp = createTimeProvider.for(plugin).create();
 ```
 
 ### Fixed clock
@@ -118,7 +112,7 @@ const clock = createTimeProvider.for(plugin).create();
 Deterministic clock always returning the same instant.
 
 ```typescript
-const clock = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
+const tp = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
 ```
 
 ### Manual clock
@@ -126,13 +120,9 @@ const clock = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01
 Clock that can be advanced explicitly.
 
 ```typescript
-const clock = createTimeProvider
-  .for(plugin)
-  .asManual()
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
+const tp = createTimeProvider.for(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
 
-clock.advance({
+tp.advance({
   seconds: 5,
 });
 ```
@@ -140,7 +130,7 @@ clock.advance({
 Full example
 
 ```typescript
-clock.advance({
+tp.advance({
   years: 1,
   months: 2,
   days: 3,
@@ -156,7 +146,7 @@ clock.advance({
 Clock that give values from a list of sequential times.
 
 ```typescript
-const clock = createTimeProvider
+const tp = createTimeProvider
   .for(plugin)
   .asSequential()
   .withSequentialTime("2026-01-01T00:01Z")
@@ -209,7 +199,14 @@ npm install @time-provider/plugin-moment
 interface ITimeProvider<TDate> {
   localNow(): TDate;
   utcNow(): TDate;
+  scheduler: IScheduler;
   parse(input: string | number | TDate): TDate;
+}
+interface IScheduler {
+  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
+  clearTimeout(handle: SetTimeoutHandle): void;
+  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
+  clearInterval(handle: SetIntervalHandle): void;
 }
 ```
 
