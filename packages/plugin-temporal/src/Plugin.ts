@@ -1,27 +1,25 @@
-import type { IManualTimeAdapter, IPlugin, ITimeAdapter } from "@time-provider/core";
-import { TimeAdapter } from "./TimeAdapter.ts";
-import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
-import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
+import { type IManualRuntime, type IPlugin, type IRuntime } from "@time-provider/core";
+import { SystemRuntime } from "./SystemRuntime.ts";
+import { ManualRuntime } from "./ManualRuntime.ts";
+import { SequentialRuntime } from "./SequentialRuntime.ts";
+import { FixedRuntime } from "./FixedRuntime.ts";
 import { Temporal } from "@js-temporal/polyfill";
-import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
 
 export class Plugin implements IPlugin<Temporal.Instant> {
-  createTimeAdapter(): ITimeAdapter<Temporal.Instant> {
-    return new TimeAdapter();
+  createSystemRuntime(): IRuntime<Temporal.Instant> {
+    return new SystemRuntime();
   }
-  createManualTimeAdapter(
+  createManualRuntime(
     initialTime?: string | number | Temporal.Instant,
-  ): IManualTimeAdapter<Temporal.Instant> {
-    return new ManualTimeAdapter(initialTime ? initialTime : 0);
+  ): IManualRuntime<Temporal.Instant> {
+    return new ManualRuntime(initialTime ? initialTime : 0);
   }
-  createFixedTimeAdapter(
-    initialTime: string | number | Temporal.Instant,
-  ): ITimeAdapter<Temporal.Instant> {
-    return new FixedTimeAdapter(initialTime);
+  createFixedRuntime(initialTime: string | number | Temporal.Instant): IRuntime<Temporal.Instant> {
+    return new FixedRuntime(initialTime);
   }
-  createSequentialTimeAdapter(
+  createSequentialRuntime(
     sequentialTimes: (string | number | Temporal.Instant)[],
-  ): ITimeAdapter<Temporal.Instant> {
-    return new SequentialTimeAdapter(sequentialTimes);
+  ): IRuntime<Temporal.Instant> {
+    return new SequentialRuntime(sequentialTimes);
   }
 }

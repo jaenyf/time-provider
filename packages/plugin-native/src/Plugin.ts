@@ -1,20 +1,20 @@
-import type { IManualTimeAdapter, IPlugin, ITimeAdapter } from "@time-provider/core";
-import { TimeAdapter } from "./TimeAdapter.ts";
-import { ManualTimeAdapter } from "./ManualTimeAdapter.ts";
-import { FixedTimeAdapter } from "./FixedTimeAdapter.ts";
-import { SequentialTimeAdapter } from "./SequentialTimeAdapter.ts";
+import { type IManualRuntime, type IPlugin, type IRuntime } from "@time-provider/core";
+import { SystemRuntime } from "./SystemRuntime.ts";
+import { ManualRuntime } from "./ManualRuntime.ts";
+import { SequentialRuntime } from "./SequentialRuntime.ts";
+import { FixedRuntime } from "./FixedRuntime.ts";
 
 export class Plugin implements IPlugin<Date> {
-  createTimeAdapter(): ITimeAdapter<Date> {
-    return new TimeAdapter();
+  createSystemRuntime(): IRuntime<Date> {
+    return new SystemRuntime();
   }
-  createManualTimeAdapter(initialTime?: string | number | Date): IManualTimeAdapter<Date> {
-    return new ManualTimeAdapter(initialTime ? initialTime : 0);
+  createManualRuntime(initialTime?: string | number | Date): IManualRuntime<Date> {
+    return new ManualRuntime(initialTime ? initialTime : 0);
   }
-  createFixedTimeAdapter(initialTime: string | number | Date): ITimeAdapter<Date> {
-    return new FixedTimeAdapter(initialTime);
+  createFixedRuntime(initialTime: string | number | Date): IRuntime<Date> {
+    return new FixedRuntime(initialTime);
   }
-  createSequentialTimeAdapter(sequentialTimes: (string | number | Date)[]): ITimeAdapter<Date> {
-    return new SequentialTimeAdapter(sequentialTimes);
+  createSequentialRuntime(sequentialTimes: (string | number | Date)[]): IRuntime<Date> {
+    return new SequentialRuntime(sequentialTimes);
   }
 }
