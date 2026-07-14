@@ -4,9 +4,8 @@ import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-luxon";
 import { DateTime } from "luxon";
 
-testAll<DateTime>("plugin-luxon", plugin);
-
 describe("plugin-luxon", () => {
+  testAll<DateTime>(plugin);
   describe("additionals", () => {
     describe("parse", () => {
       test.each([null, undefined, {}, true, false])(
