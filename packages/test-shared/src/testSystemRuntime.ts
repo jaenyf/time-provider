@@ -64,11 +64,19 @@ export function testSystemRuntime<TDate>(
         afterEach(async () => {
           vi.useRealTimers();
         });
+        test("can be called without specified delay", () => {
+          const sut = plugin.createSystemRuntime().scheduler;
+          let callbackCalled = false;
+          const callback = () => (callbackCalled = true);
+          sut.setTimeout(callback);
+          vi.advanceTimersByTime(4);
+          expect(callbackCalled).toBe(true);
+        });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
           const sut = plugin.createSystemRuntime().scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setTimeout(immediateDelay, callback);
+          sut.setTimeout(callback, immediateDelay);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
@@ -76,7 +84,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime().scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setTimeout(futureDelay * 2, callback);
+          sut.setTimeout(callback, futureDelay * 2);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
@@ -86,8 +94,8 @@ export function testSystemRuntime<TDate>(
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-          const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+          const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
+          const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
           sut.clearTimeout(timeoutHandleA);
           sut.clearTimeout(timeoutHandleB);
           vi.advanceTimersByTime(futureDelay);
@@ -103,11 +111,19 @@ export function testSystemRuntime<TDate>(
         afterEach(async () => {
           vi.useRealTimers();
         });
+        test("can be called without specified delay", () => {
+          const sut = plugin.createSystemRuntime().scheduler;
+          let callbackCalled = false;
+          const callback = () => (callbackCalled = true);
+          sut.setInterval(callback);
+          vi.advanceTimersByTime(4);
+          expect(callbackCalled).toBe(true);
+        });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
           const sut = plugin.createSystemRuntime().scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setInterval(immediateDelay, callback);
+          sut.setInterval(callback, immediateDelay);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
@@ -115,7 +131,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime().scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setInterval(futureDelay * 2, callback);
+          sut.setInterval(callback, futureDelay * 2);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
@@ -125,8 +141,8 @@ export function testSystemRuntime<TDate>(
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
-          const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+          const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
+          const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
           sut.clearInterval(timeoutHandleA);
           sut.clearInterval(timeoutHandleB);
           vi.advanceTimersByTime(futureDelay);

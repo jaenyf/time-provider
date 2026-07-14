@@ -181,6 +181,14 @@ export function testManualRuntime<TDate>(
       testScheduler(() => createSUT().scheduler);
       describe("additionnal", () => {
         describe("setTimeout", () => {
+          test("can be called without specified delay", () => {
+            const sut = createSUT();
+            let callbackCalled = false;
+            const callback = () => (callbackCalled = true);
+            sut.setTimeout(callback);
+            sut.localNow();
+            expect(callbackCalled).toBe(true);
+          });
           test.each([1, 20, 100])(
             "executes next callbacks when time advance",
             (futureDelay: number) => {
@@ -189,8 +197,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay, callbackA);
-              sut.setTimeout(futureDelay, callbackB);
+              sut.setTimeout(callbackA, futureDelay);
+              sut.setTimeout(callbackB, futureDelay);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
@@ -204,8 +212,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay * 2, callbackA);
-              sut.setTimeout(futureDelay * 2, callbackB);
+              sut.setTimeout(callbackA, futureDelay * 2);
+              sut.setTimeout(callbackB, futureDelay * 2);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -219,8 +227,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-              const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+              const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
+              const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
               sut.advance({ milliseconds: futureDelay });
@@ -230,6 +238,14 @@ export function testManualRuntime<TDate>(
           );
         });
         describe("setInterval", () => {
+          test("can be called without specified delay", () => {
+            const sut = createSUT();
+            let callbackCalled = false;
+            const callback = () => (callbackCalled = true);
+            sut.setInterval(callback);
+            sut.localNow();
+            expect(callbackCalled).toBe(true);
+          });
           test.each([1, 20, 100])(
             "executes next callbacks when time advance",
             (futureDelay: number) => {
@@ -238,8 +254,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
@@ -253,8 +269,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay * 2, callbackA);
-              sut.setInterval(futureDelay * 2, callbackB);
+              sut.setInterval(callbackA, futureDelay * 2);
+              sut.setInterval(callbackB, futureDelay * 2);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -268,8 +284,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
-              const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+              const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
+              const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
               sut.advance({ milliseconds: futureDelay });
@@ -285,8 +301,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.advance({ milliseconds: futureDelay });
               callbackACalled = false;
               callbackBCalled = false;
@@ -303,8 +319,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.advance({ milliseconds: futureDelay });
               callbackACalled = false;
               callbackBCalled = false;

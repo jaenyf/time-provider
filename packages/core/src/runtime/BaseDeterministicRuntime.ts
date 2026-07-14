@@ -29,8 +29,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     this.#intervalCallbacksMap = new Map<SetIntervalHandle, IntervalEntry>();
   }
 
-  setTimeout(millisecondsDelay: number, callback: () => void): SetTimeoutHandle {
-    millisecondsDelay = Math.max(0, millisecondsDelay);
+  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
+    millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
 
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
@@ -65,8 +65,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     }
   }
 
-  setInterval(millisecondsDelay: number, callback: () => void): SetIntervalHandle {
-    millisecondsDelay = Math.max(0, millisecondsDelay);
+  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
+    millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
     this.#intervalCallbacksMap.set(this.#nextIntervalHandle, {

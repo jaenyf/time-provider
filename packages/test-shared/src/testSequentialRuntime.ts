@@ -126,6 +126,14 @@ export function testSequentialRuntime<TDate>(
       testScheduler(() => createSUT().scheduler);
       describe("additionnal", () => {
         describe("setTimeout", () => {
+          test("can be called without specified delay", () => {
+            const sut = plugin.createSequentialRuntime([0, 1000]);
+            let callbackCalled = false;
+            const callback = () => (callbackCalled = true);
+            sut.setTimeout(callback);
+            sut.localNow();
+            expect(callbackCalled).toBe(true);
+          });
           test.each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
@@ -134,8 +142,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay, callbackA);
-              sut.setTimeout(futureDelay, callbackB);
+              sut.setTimeout(callbackA, futureDelay);
+              sut.setTimeout(callbackB, futureDelay);
               sut.localNow();
               sut.localNow();
               expect(callbackACalled).toBe(true);
@@ -150,8 +158,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay * 2, callbackA);
-              sut.setTimeout(futureDelay * 2, callbackB);
+              sut.setTimeout(callbackA, futureDelay * 2);
+              sut.setTimeout(callbackB, futureDelay * 2);
               sut.localNow();
               sut.localNow();
               expect(callbackACalled).toBe(false);
@@ -166,8 +174,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-              const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+              const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
+              const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
               sut.localNow();
@@ -183,8 +191,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay, callbackA);
-              sut.setTimeout(futureDelay, callbackB);
+              sut.setTimeout(callbackA, futureDelay);
+              sut.setTimeout(callbackB, futureDelay);
               sut.utcNow();
               sut.utcNow();
               expect(callbackACalled).toBe(true);
@@ -199,8 +207,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(futureDelay * 2, callbackA);
-              sut.setTimeout(futureDelay * 2, callbackB);
+              sut.setTimeout(callbackA, futureDelay * 2);
+              sut.setTimeout(callbackB, futureDelay * 2);
               sut.utcNow();
               sut.utcNow();
               expect(callbackACalled).toBe(false);
@@ -215,8 +223,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setTimeout(futureDelay, callbackA);
-              const timeoutHandleB = sut.setTimeout(futureDelay, callbackB);
+              const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
+              const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
               sut.utcNow();
@@ -227,6 +235,14 @@ export function testSequentialRuntime<TDate>(
         });
 
         describe("setInterval", () => {
+          test("can be called without specified delay", () => {
+            const sut = plugin.createSequentialRuntime([0, 1000]);
+            let callbackCalled = false;
+            const callback = () => (callbackCalled = true);
+            sut.setInterval(callback);
+            sut.localNow();
+            expect(callbackCalled).toBe(true);
+          });
           test.each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
@@ -235,8 +251,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.localNow();
               sut.localNow();
               expect(callbackACalled).toBe(true);
@@ -251,8 +267,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay * 2, callbackA);
-              sut.setInterval(futureDelay * 2, callbackB);
+              sut.setInterval(callbackA, futureDelay * 2);
+              sut.setInterval(callbackB, futureDelay * 2);
               sut.localNow();
               sut.localNow();
               expect(callbackACalled).toBe(false);
@@ -267,8 +283,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
-              const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+              const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
+              const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
               sut.localNow();
@@ -284,8 +300,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.localNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -302,8 +318,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.localNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -320,8 +336,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.utcNow();
               sut.utcNow();
               expect(callbackACalled).toBe(true);
@@ -336,8 +352,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay * 2, callbackA);
-              sut.setInterval(futureDelay * 2, callbackB);
+              sut.setInterval(callbackA, futureDelay * 2);
+              sut.setInterval(callbackB, futureDelay * 2);
               sut.utcNow();
               sut.utcNow();
               expect(callbackACalled).toBe(false);
@@ -352,8 +368,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setInterval(futureDelay, callbackA);
-              const timeoutHandleB = sut.setInterval(futureDelay, callbackB);
+              const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
+              const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
               sut.utcNow();
@@ -369,8 +385,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.utcNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -387,8 +403,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(futureDelay, callbackA);
-              sut.setInterval(futureDelay, callbackB);
+              sut.setInterval(callbackA, futureDelay);
+              sut.setInterval(callbackB, futureDelay);
               sut.utcNow();
               callbackACalled = false;
               callbackBCalled = false;

@@ -1,8 +1,8 @@
 export type SetTimeoutHandle = ReturnType<typeof setTimeout>;
 export type SetIntervalHandle = ReturnType<typeof setInterval>;
 export interface IScheduler {
-  setTimeout(millisecondsDelay: number, callback: () => void): SetTimeoutHandle;
+  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
   clearTimeout(handle: SetTimeoutHandle): void;
-  setInterval(millisecondsDelay: number, callback: () => void): SetIntervalHandle;
+  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   clearInterval(handle: SetIntervalHandle): void;
 }

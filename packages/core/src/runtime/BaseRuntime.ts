@@ -9,9 +9,9 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get scheduler(): IScheduler {
     return this;
   }
-  abstract setTimeout(millisecondsDelay: number, callback: () => void): SetTimeoutHandle;
+  abstract setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
   abstract clearTimeout(handle: SetTimeoutHandle): void;
-  abstract setInterval(millisecondsDelay: number, callback: () => void): SetIntervalHandle;
+  abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   abstract clearInterval(handle: SetTimeoutHandle): void;
 
   abstract localNow(): TDate;

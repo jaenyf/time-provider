@@ -9,8 +9,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.setTimeout(immediateDelay, callbackA);
-      sut.setTimeout(immediateDelay, callbackB);
+      sut.setTimeout(callbackA, immediateDelay);
+      sut.setTimeout(callbackB, immediateDelay);
       expect(callbackACalled).toBe(true);
       expect(callbackBCalled).toBe(true);
     });
@@ -20,8 +20,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.setTimeout(futureDelay, callbackA);
-      sut.setTimeout(futureDelay, callbackB);
+      sut.setTimeout(callbackA, futureDelay);
+      sut.setTimeout(callbackB, futureDelay);
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
     });
@@ -33,8 +33,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.setInterval(immediateDelay, callbackA);
-      sut.setInterval(immediateDelay, callbackB);
+      sut.setInterval(callbackA, immediateDelay);
+      sut.setInterval(callbackB, immediateDelay);
       expect(callbackACalled).toBe(true);
       expect(callbackBCalled).toBe(true);
     });
@@ -44,8 +44,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.setInterval(futureDelay, callbackA);
-      sut.setInterval(futureDelay, callbackB);
+      sut.setInterval(callbackA, futureDelay);
+      sut.setInterval(callbackB, futureDelay);
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
     });
