@@ -149,6 +149,18 @@ export function testSystemRuntime<TDate>(
           expect(callbackACalled).toBe(false);
           expect(callbackBCalled).toBe(false);
         });
+        test.each([3, 30, 300])(
+          "runs callbacks multiple times if time advance consequently",
+          (expectedRetries: number) => {
+            const sut = plugin.createSystemRuntime();
+            let retries = 0;
+            sut.scheduler.setInterval(() => {
+              retries++;
+            }, 1000);
+            vi.advanceTimersByTime(expectedRetries * 1000);
+            expect(retries).toBe(expectedRetries);
+          },
+        );
       });
     });
   });
