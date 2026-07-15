@@ -194,7 +194,7 @@ const time = createTimeProvider.for(plugin).create();
 Testing:
 
 ```typescript
-const time = createTimeProvider
+const timeProvider = createTimeProvider
   .for(plugin)
   .asManual()
   .withInitialTime("2026-01-01T00:00Z")
@@ -202,11 +202,11 @@ const time = createTimeProvider
 
 let retries = 0;
 
-time.scheduler.setInterval(() => {
+timeProvider.scheduler.setInterval(() => {
   retries++;
 }, 1000);
 
-time.advance({
+timeProvider.clock.advance({
   seconds: 3,
 });
 
@@ -224,11 +224,11 @@ import type { ITimeProvider } from "@time-provider/core";
 import { Temporal } from "@js-temporal/polyfill";
 
 class UserService {
-  constructor(private readonly time: ITimeProvider<Temporal.Instant>) {}
+  constructor(private readonly timeProvider: ITimeProvider<Temporal.Instant>) {}
 
   createUser() {
     return {
-      createdAt: this.time.utcNow(),
+      createdAt: this.timeProvider.clock.utcNow(),
     };
   }
 }
@@ -248,11 +248,15 @@ It only depends on the time capability it receives.
 ## Testing deterministic time
 
 ```typescript
-const time = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
+const timeProvider = createTimeProvider
+  .for(plugin)
+  .asFixed()
+  .withFixedTime("2026-01-01T00:00Z")
+  .create();
 
-const service = new UserService(time);
+const sut = new UserService(time);
 
-expect(service.createUser().createdAt).toEqual(time.utcNow());
+expect(sut.createUser().createdAt).toEqual(timeProvider.clock.utcNow());
 ```
 
 ---
@@ -264,7 +268,7 @@ The scheduler follows the selected clock strategy.
 With a manual clock, callbacks execute when time advances.
 
 ```typescript
-const time = createTimeProvider
+const timeProvider = createTimeProvider
   .for(plugin)
   .asManual()
   .withInitialTime("2026-01-01T00:00Z")
@@ -272,11 +276,11 @@ const time = createTimeProvider
 
 let count = 0;
 
-time.scheduler.setInterval(() => {
+timeProvider.scheduler.setInterval(() => {
   count++;
 }, 1000);
 
-time.advance({
+timeProvider.clock.advance({
   seconds: 3,
 });
 

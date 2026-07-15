@@ -33,30 +33,30 @@ export function testManualRuntime<TDate>(
     describe("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.localNow()).not.toThrow();
+        expect(() => sut.clock.localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.localNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.utcNow()).not.toThrow();
+        expect(() => sut.clock.utcNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.utcNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
@@ -65,22 +65,22 @@ export function testManualRuntime<TDate>(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(() => sut.parse(toParse)).not.toThrow();
+          expect(() => sut.parser.parse(toParse)).not.toThrow();
         },
       );
       test.each(["2026-01-01T00:00:00.000Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "returns a value",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).not.toEqual(undefined);
-          expect(sut.parse(toParse)).not.toEqual(null);
+          expect(sut.parser.parse(toParse)).not.toEqual(undefined);
+          expect(sut.parser.parse(toParse)).not.toEqual(null);
         },
       );
       test.each(["2026-01-01T00:00:00.000Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
+          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });
@@ -95,85 +95,85 @@ export function testManualRuntime<TDate>(
       test("moves up years", () => {
         const sut = createSUT();
         sut.advance({ years: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2027-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2027-01-01T00:00:00.000Z"));
       });
 
       test("moves down years", () => {
         const sut = createSUT();
         sut.advance({ years: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-01-01T00:00:00.000Z"));
       });
 
       test("moves up months", () => {
         const sut = createSUT();
         sut.advance({ months: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-02-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-02-01T00:00:00.000Z"));
       });
 
       test("moves down months", () => {
         const sut = createSUT();
         sut.advance({ months: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-01T00:00:00.000Z"));
       });
 
       test("moves up days", () => {
         const sut = createSUT();
         sut.advance({ days: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-02T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-02T00:00:00.000Z"));
       });
 
       test("moves down days", () => {
         const sut = createSUT();
         sut.advance({ days: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T00:00:00.000Z"));
       });
 
       test("moves up hours", () => {
         const sut = createSUT();
         sut.advance({ hours: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T01:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T01:00:00.000Z"));
       });
 
       test("moves down hours", () => {
         const sut = createSUT();
         sut.advance({ hours: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T23:00:00.000Z"));
       });
 
       test("moves up minutes", () => {
         const sut = createSUT();
         sut.advance({ minutes: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:01:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:01:00.000Z"));
       });
 
       test("moves down minutes", () => {
         const sut = createSUT();
         sut.advance({ minutes: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T23:59:00.000Z"));
       });
 
       test("moves up seconds", () => {
         const sut = createSUT();
         sut.advance({ seconds: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
       });
 
       test("moves down seconds", () => {
         const sut = createSUT();
         sut.advance({ seconds: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.000Z"));
       });
 
       test("moves up milliseconds", () => {
         const sut = createSUT();
         sut.advance({ milliseconds: 1 });
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.001Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.001Z"));
       });
 
       test("moves down milliseconds", () => {
         const sut = createSUT();
         sut.advance({ milliseconds: -1 });
-        expect(sut.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.999Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.999Z"));
       });
     });
 
@@ -186,7 +186,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
-            sut.localNow();
+            sut.clock.localNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(
@@ -243,7 +243,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
-            sut.localNow();
+            sut.clock.localNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(

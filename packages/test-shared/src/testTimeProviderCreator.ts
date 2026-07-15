@@ -32,7 +32,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     });
     test("uses default epoch time", () => {
       const sut = new TimeProviderCreator().for(plugin).asFixed().create();
-      expect(sut.utcNow()).toEqual(sut.parse(0));
+      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });
 
@@ -55,7 +55,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     });
     test("uses default epoch time", () => {
       const sut = new TimeProviderCreator().for(plugin).asManual().create();
-      expect(sut.utcNow()).toEqual(sut.parse(0));
+      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });
 
@@ -78,7 +78,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
     });
     test("uses default epoch time", () => {
       const sut = new TimeProviderCreator().for(plugin).asSequential().create();
-      expect(sut.utcNow()).toEqual(sut.parse(0));
+      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });
 }

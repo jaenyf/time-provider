@@ -1,7 +1,7 @@
-import type { IPlugin } from "../IPlugin.ts";
-import type { ITimeProvider } from "../clock/ITimeProvider.ts";
+import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
+import type { IPlugin } from "../api/IPlugin.ts";
+import type { ITimeProvider } from "../api/ITimeProvider.ts";
 import type {
-  ICreateTimeProvider,
   IFixedTimeProviderCreator,
   IManualTimeProviderCreator,
   IPluggedTimeProviderCreator,
@@ -32,7 +32,7 @@ export class FixedTimeProviderCreator<TDate>
     this.#fixedDateTime = undefined;
   }
 
-  withFixedTime(initialDateTime: string | number | TDate): ICreateTimeProvider<TDate> {
+  withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate> {
     this.#fixedDateTime = initialDateTime;
     return this;
   }
@@ -52,12 +52,12 @@ export class ManualTimeProviderCreator<TDate>
     this.#initialDateTime = undefined;
   }
 
-  withInitialTime(initialDateTime: string | number | TDate): ICreateTimeProvider<TDate> {
+  withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate> {
     this.#initialDateTime = initialDateTime;
     return this;
   }
   #initialDateTime?: string | number | TDate;
-  create(): ITimeProvider<TDate> {
+  create(): IManualTimeProvider<TDate> {
     return this.plugin.createManualRuntime(
       undefined !== this.#initialDateTime ? this.#initialDateTime : 0,
     );

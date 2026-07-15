@@ -1,15 +1,15 @@
-import type { IRuntime } from "./IRuntime.ts";
+import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
+import type { IClock } from "../clock/IClock.ts";
+import type { IManualClock } from "../clock/IManualClock.ts";
+import type { IManualClockOnlyProvider } from "../clock/IManualClockOnlyProvider.ts";
+import type { IParser } from "../parser/IParser.ts";
+import type { IScheduler } from "../scheduler/IScheduler.ts";
 
-export interface IAdvanceConfiguration {
-  hours?: number;
-  minutes?: number;
-  seconds?: number;
-  milliseconds?: number;
-  years?: number;
-  months?: number;
-  days?: number;
-}
-
-export interface IManualRuntime<TDate> extends IRuntime<TDate> {
-  advance(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate>;
-}
+export interface IManualRuntime<TDate>
+  extends
+    IManualClock<TDate>,
+    IManualClockOnlyProvider<TDate>,
+    IScheduler,
+    IClock<TDate>,
+    IParser<TDate>,
+    IManualTimeProvider<TDate> {}
