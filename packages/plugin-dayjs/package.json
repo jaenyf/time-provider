@@ -44,7 +44,7 @@
     "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
-    "publish": "vpx npm publish"
+    "publish": "vpx npm publish --provenance"
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*",
