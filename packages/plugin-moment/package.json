@@ -54,7 +54,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@time-provider/core": "^0.0.0",
+    "@time-provider/core": "^0.0.4",
     "moment": "~2.30.1"
   }
 }

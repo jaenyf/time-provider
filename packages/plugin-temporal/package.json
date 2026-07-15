@@ -54,6 +54,6 @@
   },
   "peerDependencies": {
     "@js-temporal/polyfill": "~0.5.1",
-    "@time-provider/core": "^0.0.0"
+    "@time-provider/core": "^0.0.4"
   }
 }

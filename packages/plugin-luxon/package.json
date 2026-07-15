@@ -55,7 +55,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@time-provider/core": "^0.0.0",
+    "@time-provider/core": "^0.0.4",
     "luxon": "^3.7.2"
   }
 }
