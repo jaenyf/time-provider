@@ -2,7 +2,7 @@ import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
 import type { IPlugin } from "../api/IPlugin.ts";
 import type { ITimeProvider } from "../api/ITimeProvider.ts";
 
-export interface ICreateTimeProvider<TDate> {
+interface ICreateTimeProvider<TDate> {
   create(): ITimeProvider<TDate>;
 }
 
