@@ -73,10 +73,31 @@ It provides a single boundary for:
 
 ```typescript
 interface ITimeProvider<TDate> {
+  clock: IClock<TDate>;
+  parser: IParser<TDate>;
+  scheduler: IScheduler;
+}
+```
+
+```typescript
+interface IClock<TDate> {
   localNow(): TDate;
   utcNow(): TDate;
+}
+```
+
+```typescript
+interface IParser<TDate> {
   parse(input: string | number | TDate): TDate;
-  scheduler: IScheduler;
+}
+```
+
+```typescript
+interface IScheduler {
+  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
+  clearTimeout(handle: SetTimeoutHandle): void;
+  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
+  clearInterval(handle: SetIntervalHandle): void;
 }
 ```
 
@@ -188,7 +209,7 @@ Production:
 import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-native";
 
-const time = createTimeProvider.for(plugin).create();
+const timeProvider = createTimeProvider.for(plugin).create();
 ```
 
 Testing:
@@ -301,7 +322,7 @@ Uses:
 - native runtime timers
 
 ```typescript
-const time = createTimeProvider.for(plugin).create();
+const timeProvider = createTimeProvider.for(plugin).create();
 ```
 
 ---
@@ -313,7 +334,11 @@ Always returns the same instant.
 Useful for deterministic tests.
 
 ```typescript
-const time = createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
+const timeProvider = createTimeProvider
+  .for(plugin)
+  .asFixed()
+  .withFixedTime("2026-01-01T00:00Z")
+  .create();
 ```
 
 ---
@@ -343,7 +368,7 @@ Returns a predefined sequence of instants.
 Useful when testing code that depends on changing timestamps.
 
 ```typescript
-const time = createTimeProvider
+const timeProvider = createTimeProvider
   .for(plugin)
   .asSequential()
   .withSequentialTime("2026-01-01T00:01Z")
