@@ -1,5 +1,6 @@
-import type { IAdvanceConfiguration, IManualRuntime } from "./IManualRuntime.ts";
+import type { IManualRuntime } from "./IManualRuntime.ts";
 import { BaseSequentialRuntime } from "./BaseSequentialRuntime.ts";
+import type { IAdvanceConfiguration, IManualClock } from "../clock/IManualClock.ts";
 
 /**
  * Base class for a deterministically manual runtime
@@ -14,6 +15,10 @@ export abstract class BaseManualRuntime<TDate>
 
   protected setDeterminedTime(time: TDate) {
     this._sequentialTimestamps[0] = this.convertToTimestampImpl(time);
+  }
+
+  get clock(): IManualClock<TDate> {
+    return this;
   }
 
   advance(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate> {

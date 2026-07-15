@@ -5,11 +5,9 @@ import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
  */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
   protected _sequentialTimestamps: number[];
-  #suspendTimeShift: boolean;
   constructor(sequentialTimes: (string | number | TDate)[]) {
     super();
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToTimestampImpl(t));
-    this.#suspendTimeShift = false;
   }
 
   timestampImpl() {
@@ -17,18 +15,14 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   }
   localNowImpl() {
     const nowTimestamp = this.getNextSequentialTimestamp();
-    this.#suspendTimeShift = true;
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    this.#suspendTimeShift = false;
     return this.convertToDateImpl(nowTimestamp);
   }
   utcNowImpl() {
     const nowTimestamp = this.getNextSequentialTimestamp();
-    this.#suspendTimeShift = true;
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    this.#suspendTimeShift = false;
     return this.convertToDateImpl(nowTimestamp);
   }
 
@@ -37,10 +31,6 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   }
 
   private getNextSequentialTimestamp(): number {
-    if (this.#suspendTimeShift) {
-      return this.peekTimestamp();
-    }
-
     return this._sequentialTimestamps.length > 1
       ? (this._sequentialTimestamps.shift() as number)
       : this._sequentialTimestamps.length > 0

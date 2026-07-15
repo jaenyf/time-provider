@@ -1,5 +1,5 @@
-import type { IManualRuntime } from "./runtime/IManualRuntime.ts";
-import type { IRuntime } from "./runtime/IRuntime.ts";
+import type { IManualRuntime } from "../runtime/IManualRuntime.ts";
+import type { IRuntime } from "../runtime/IRuntime.ts";
 
 export interface IPlugin<TDate> {
   /**

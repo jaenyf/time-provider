@@ -38,62 +38,62 @@ export function testSequentialRuntime<TDate>(
     describe("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.localNow()).not.toThrow();
+        expect(() => sut.clock.localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.localNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
       });
       test("returns first added value", () => {
         const sut = createSUT();
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
       });
       test("returns epoch time when no added value", () => {
         const sut = plugin.createSequentialRuntime([]);
-        expect(sut.localNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
       });
       test("overflowing calls returns last defined time", () => {
         const sut = plugin.createSequentialRuntime(["2026-01-01T00:00Z"]);
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
       });
     });
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.utcNow()).not.toThrow();
+        expect(() => sut.clock.utcNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.utcNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
       });
       test("returns first added value", () => {
         const sut = createSUT();
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
       });
       test("returns epoch time when no added value", () => {
         const sut = plugin.createSequentialRuntime([]);
-        expect(sut.utcNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
       });
       test("overflowing calls returns last defined time", () => {
         const sut = plugin.createSequentialRuntime(["2026-01-01T00:00Z"]);
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
       });
     });
 
@@ -102,22 +102,22 @@ export function testSequentialRuntime<TDate>(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(() => sut.parse(toParse)).not.toThrow();
+          expect(() => sut.parser.parse(toParse)).not.toThrow();
         },
       );
       test.each(["2026-01-01T00:00:00.000Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "returns a value",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).not.toEqual(undefined);
-          expect(sut.parse(toParse)).not.toEqual(null);
+          expect(sut.parser.parse(toParse)).not.toEqual(undefined);
+          expect(sut.parser.parse(toParse)).not.toEqual(null);
         },
       );
       test.each(["2026-01-01T00:00:00.000Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
+          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });
@@ -131,7 +131,7 @@ export function testSequentialRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
-            sut.localNow();
+            sut.clock.localNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([2, 20, 100])(
@@ -144,8 +144,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay);
               sut.setTimeout(callbackB, futureDelay);
-              sut.localNow();
-              sut.localNow();
+              sut.clock.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -160,8 +160,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay * 2);
               sut.setTimeout(callbackB, futureDelay * 2);
-              sut.localNow();
-              sut.localNow();
+              sut.clock.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -178,7 +178,7 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
-              sut.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -193,8 +193,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay);
               sut.setTimeout(callbackB, futureDelay);
-              sut.utcNow();
-              sut.utcNow();
+              sut.clock.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -209,8 +209,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay * 2);
               sut.setTimeout(callbackB, futureDelay * 2);
-              sut.utcNow();
-              sut.utcNow();
+              sut.clock.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -227,7 +227,7 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
-              sut.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -240,7 +240,7 @@ export function testSequentialRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
-            sut.localNow();
+            sut.clock.localNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([2, 20, 100])(
@@ -253,8 +253,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.localNow();
-              sut.localNow();
+              sut.clock.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -269,8 +269,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay * 2);
               sut.setInterval(callbackB, futureDelay * 2);
-              sut.localNow();
-              sut.localNow();
+              sut.clock.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -287,7 +287,7 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
-              sut.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -302,10 +302,10 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.localNow();
+              sut.clock.localNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -320,10 +320,10 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.localNow();
+              sut.clock.localNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.localNow();
+              sut.clock.localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -338,8 +338,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.utcNow();
-              sut.utcNow();
+              sut.clock.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -354,8 +354,8 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay * 2);
               sut.setInterval(callbackB, futureDelay * 2);
-              sut.utcNow();
-              sut.utcNow();
+              sut.clock.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -372,7 +372,7 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
-              sut.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -387,10 +387,10 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.utcNow();
+              sut.clock.utcNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
@@ -405,10 +405,10 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.utcNow();
+              sut.clock.utcNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.utcNow();
+              sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -421,8 +421,8 @@ export function testSequentialRuntime<TDate>(
               sut.scheduler.setInterval(() => {
                 retries++;
               }, 1000);
-              sut.utcNow();
-              sut.utcNow();
+              sut.clock.utcNow();
+              sut.clock.utcNow();
               expect(retries).toBe(expectedRetries);
             },
           );

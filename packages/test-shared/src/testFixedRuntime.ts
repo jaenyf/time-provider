@@ -33,30 +33,30 @@ export function testFixedRuntime<TDate>(
     describe("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.localNow()).not.toThrow();
+        expect(() => sut.clock.localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.localNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.utcNow()).not.toThrow();
+        expect(() => sut.clock.utcNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.utcNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
       });
     });
 
@@ -65,22 +65,22 @@ export function testFixedRuntime<TDate>(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(() => sut.parse(toParse)).not.toThrow();
+          expect(() => sut.parser.parse(toParse)).not.toThrow();
         },
       );
       test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "returns a value",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).not.toEqual(undefined);
-          expect(sut.parse(toParse)).not.toEqual(null);
+          expect(sut.parser.parse(toParse)).not.toEqual(undefined);
+          expect(sut.parser.parse(toParse)).not.toEqual(null);
         },
       );
       test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createSUT();
-          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
+          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });
