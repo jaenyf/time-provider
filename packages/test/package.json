@@ -29,7 +29,7 @@
     "moment": "~2.30.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.2",
+    "@types/node": "^26.1.1",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
     "typescript": "^6.0.3",
     "vite-plus": "catalog:"
