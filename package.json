@@ -38,14 +38,14 @@
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
+    "publish": "vp run -r publish",
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports bun.lock",
     "test": "vp test",
     "check": "vp run -r check",
-    "stryker": "stryker run",
-    "bump": "vpx bumpp --recursive",
-    "publish": "false && vp run build && vp run bump && vpx npm login && vp run -r publish"
+    "stryker": "stryker run"
   },
   "devDependencies": {
+    "@commitlint/config-conventional": "^21.2.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.10",

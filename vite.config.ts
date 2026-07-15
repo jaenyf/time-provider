@@ -5,7 +5,7 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    ignorePatterns: ["coverage/**", "dist/**"],
+    ignorePatterns: ["coverage/**", "dist/**", "**/CHANGELOG.md"],
   },
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
@@ -20,14 +20,15 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    reporters: ["junit"],
+    reporters: ["default", "junit"],
     outputFile: "test-report.junit.xml",
+    include: ["packages/**/*.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
       clean: true,
       reportsDirectory: "coverage",
-      exclude: ["index.ts"],
+      exclude: ["index.ts", "**/test-shared/**"],
     },
   },
 });

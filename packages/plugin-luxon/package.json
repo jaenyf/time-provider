@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-luxon",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "private": false,
   "description": "Time-Provider : Luxon plugin ~ A TypeScript library for injecting time into your application, making time-dependent code deterministic, easy to test, and independent of your date library.",
   "keywords": [
@@ -55,7 +55,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@time-provider/core": "^0.0.0",
+    "@time-provider/core": "^0.0.4",
     "luxon": "^3.7.2"
   }
 }

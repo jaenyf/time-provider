@@ -1,0 +1,8 @@
+{
+  "packages/core": "1.0.0",
+  "packages/plugin-dayjs": "0.1.0",
+  "packages/plugin-luxon": "0.1.0",
+  "packages/plugin-moment": "0.1.0",
+  "packages/plugin-native": "0.1.0",
+  "packages/plugin-temporal": "0.1.0"
+}
