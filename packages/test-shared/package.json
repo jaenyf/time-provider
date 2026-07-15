@@ -23,7 +23,6 @@
     "@types/node": "^25.6.2",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
     "@voidzero-dev/vite-plus-test": "0.1.24",
-    "bumpp": "^11.1.0",
     "typescript": "^6.0.3",
     "vite-plus": "catalog:"
   }
