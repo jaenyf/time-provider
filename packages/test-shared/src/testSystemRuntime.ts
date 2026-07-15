@@ -20,22 +20,22 @@ export function testSystemRuntime<TDate>(
     describe("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSystemRuntime();
-        expect(() => sut.localNow()).not.toThrow();
+        expect(() => sut.clock.localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSystemRuntime();
-        expect(sut.localNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
       });
     });
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
         const sut = createSystemRuntime();
-        expect(() => sut.utcNow()).not.toThrow();
+        expect(() => sut.clock.utcNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSystemRuntime();
-        expect(sut.utcNow()).not.toEqual(undefinedValue);
+        expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
       });
     });
 
@@ -44,14 +44,14 @@ export function testSystemRuntime<TDate>(
         "doesn't throw",
         (toParse: string | number | TDate) => {
           const sut = createSystemRuntime();
-          expect(() => sut.parse(toParse)).not.toThrow();
+          expect(() => sut.parser.parse(toParse)).not.toThrow();
         },
       );
       test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00Z")])(
         "aligns with native TDate construction",
         (toParse: string | number | TDate) => {
           const sut = createSystemRuntime();
-          expect(sut.parse(toParse)).toEqual(parseTime(toParse));
+          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
         },
       );
     });

@@ -1,5 +1,6 @@
-import type { IPlugin } from "../IPlugin.ts";
-import type { ITimeProvider } from "../clock/ITimeProvider.ts";
+import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
+import type { IPlugin } from "../api/IPlugin.ts";
+import type { ITimeProvider } from "../api/ITimeProvider.ts";
 
 export interface ICreateTimeProvider<TDate> {
   create(): ITimeProvider<TDate>;
@@ -9,14 +10,18 @@ export interface IFixedTimeProviderCreator<TDate> extends ICreateTimeProvider<TD
   /**
    * Store the fixed time of the fixed time provider
    */
-  withFixedTime(initialDateTime: string | number | TDate): ICreateTimeProvider<TDate>;
+  withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate>;
 }
 
 export interface IManualTimeProviderCreator<TDate> extends ICreateTimeProvider<TDate> {
   /**
    * Store the initial time of the manual time provider
    */
-  withInitialTime(initialDateTime: string | number | TDate): ICreateTimeProvider<TDate>;
+  withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate>;
+  /**
+   * Create a manual Time-Provider.
+   */
+  create(): IManualTimeProvider<TDate>;
 }
 
 export interface ISequentialTimeProviderCreator<TDate> extends ICreateTimeProvider<TDate> {
