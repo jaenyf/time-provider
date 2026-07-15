@@ -5,7 +5,7 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    ignorePatterns: ["coverage/**", "dist/**"],
+    ignorePatterns: ["coverage/**", "dist/**", "**/CHANGELOG.md"],
   },
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
