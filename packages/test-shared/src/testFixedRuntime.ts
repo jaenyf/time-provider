@@ -85,7 +85,42 @@ export function testFixedRuntime<TDate>(
       );
     });
     describe("scheduler", () => {
-      testScheduler(() => createSUT().scheduler);
+      testScheduler(() => createSUT().scheduler, true);
+      describe("issue#57", () => {
+        //see: https://github.com/jaenyf/time-provider/issues/57
+        test.each([0, -1, -100])("a zero-or-negative-delay timeout should not fire", (delay) => {
+          const sut = plugin.createFixedRuntime("2026-01-01T00:00:00.000Z");
+          let timeoutCalled = false;
+          sut.scheduler.setTimeout(() => {
+            timeoutCalled = true;
+          }, delay);
+          expect(timeoutCalled).toBe(false);
+        });
+        test.each([0, -1, -100])("a zero-or-negative-delay interval should not fire", (delay) => {
+          const sut = plugin.createFixedRuntime("2026-01-01T00:00:00.000Z");
+          let intervalCalled = false;
+          sut.scheduler.setInterval(() => {
+            intervalCalled = true;
+          }, delay);
+          expect(intervalCalled).toBe(false);
+        });
+        test.each([1, 2, 100])("a positive-delay timeout should not fire", (delay) => {
+          const sut = plugin.createFixedRuntime("2026-01-01T00:00:00.000Z");
+          let timeoutCalled = false;
+          sut.scheduler.setTimeout(() => {
+            timeoutCalled = true;
+          }, delay);
+          expect(timeoutCalled).toBe(false);
+        });
+        test.each([1, 2, 100])("a positive-delay interval should not fire", (delay) => {
+          const sut = plugin.createFixedRuntime("2026-01-01T00:00:00.000Z");
+          let intervalCalled = false;
+          sut.scheduler.setInterval(() => {
+            intervalCalled = true;
+          }, delay);
+          expect(intervalCalled).toBe(false);
+        });
+      });
     });
   });
 }

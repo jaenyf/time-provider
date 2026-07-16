@@ -1,7 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import type { IScheduler } from "@time-provider/core";
 
-export function testScheduler(createSUT: () => IScheduler) {
+export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean = false) {
   describe("setTimeout", () => {
     test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
       const sut = createSUT();
@@ -11,8 +11,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       const callbackB = () => (callbackBCalled = true);
       sut.setTimeout(callbackA, immediateDelay);
       sut.setTimeout(callbackB, immediateDelay);
-      expect(callbackACalled).toBe(true);
-      expect(callbackBCalled).toBe(true);
+      expect(callbackACalled).toBe(!isTimeFrozen);
+      expect(callbackBCalled).toBe(!isTimeFrozen);
     });
     test.each([1, 20, 100])("ignore future callback", (futureDelay: number) => {
       const sut = createSUT();
@@ -35,8 +35,8 @@ export function testScheduler(createSUT: () => IScheduler) {
       const callbackB = () => (callbackBCalled = true);
       sut.setInterval(callbackA, immediateDelay);
       sut.setInterval(callbackB, immediateDelay);
-      expect(callbackACalled).toBe(true);
-      expect(callbackBCalled).toBe(true);
+      expect(callbackACalled).toBe(!isTimeFrozen);
+      expect(callbackBCalled).toBe(!isTimeFrozen);
     });
     test.each([1, 20, 100])("ignore future callbacks", (futureDelay: number) => {
       const sut = createSUT();

@@ -7,4 +7,11 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
   constructor(fixedTime: string | number | TDate) {
     super([fixedTime]);
   }
+
+  protected override mayRunTimeoutCallbacks(_nowTimestamp: number): void {
+    /* time is frozen */
+  }
+  protected override mayRunIntervalCallbacks(_nowTimestamp: number): void {
+    /* time is frozen */
+  }
 }
