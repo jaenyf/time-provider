@@ -175,6 +175,49 @@ export function testManualRuntime<TDate>(
         sut.advance({ milliseconds: -1 });
         expect(sut.clock.utcNow()).toEqual(parseTime("2025-12-31T23:59:59.999Z"));
       });
+
+      describe("issue#56", () => {
+        describe("atomicity (mixed-sign multi-field advance)", () => {
+          test.each([
+            ["days -> hours", { days: 1, hours: -48 }],
+            ["hours -> milliseconds", { hours: 1, milliseconds: -7_200_000 }],
+            ["milliseconds -> minutes", { milliseconds: 1, minutes: -1 }],
+            ["minutes -> months", { minutes: 1, months: -1 }],
+            ["months -> seconds", { months: 1, seconds: -3_000_000 }],
+            ["seconds -> years", { seconds: 1, years: -1 }],
+          ] as const)(
+            "does not fire a timeout that isn't due given the final advanced time (%s)",
+            (_label, advanceConfiguration) => {
+              const sut = createSUT(); // 2026-01-01T00:00:00.000Z
+              let callbackCount = 0;
+              sut.scheduler.setTimeout(() => {
+                ++callbackCount;
+              }, 1);
+              sut.advance(advanceConfiguration);
+              expect(callbackCount).toBe(0);
+            },
+          );
+          test.each([
+            ["days -> hours", { days: 1, hours: -48 }],
+            ["hours -> milliseconds", { hours: 1, milliseconds: -7_200_000 }],
+            ["milliseconds -> minutes", { milliseconds: 1, minutes: -1 }],
+            ["minutes -> months", { minutes: 1, months: -1 }],
+            ["months -> seconds", { months: 1, seconds: -3_000_000 }],
+            ["seconds -> years", { seconds: 1, years: -1 }],
+          ] as const)(
+            "does not fire an interval that isn't due given the final advanced time (%s)",
+            (_label, advanceConfiguration) => {
+              const sut = createSUT(); // 2026-01-01T00:00:00.000Z
+              let callbackCount = 0;
+              sut.scheduler.setInterval(() => {
+                ++callbackCount;
+              }, 1);
+              sut.advance(advanceConfiguration);
+              expect(callbackCount).toBe(0);
+            },
+          );
+        });
+      });
     });
 
     describe("scheduler", () => {

@@ -1,36 +1,34 @@
-import {
-  type IAdvanceConfiguration,
-  BaseManualRuntime,
-  type IManualRuntime,
-} from "@time-provider/core";
+import { BaseManualRuntime } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class ManualRuntime extends BaseManualRuntime<Date> {
-  override advanceImpl(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<Date> {
-    const time = this.utcNow();
-    if (advanceConfiguration.days) {
-      time.setDate(time.getDate() + advanceConfiguration.days);
-    }
-    if (advanceConfiguration.hours) {
-      time.setHours(time.getHours() + advanceConfiguration.hours);
-    }
-    if (advanceConfiguration.milliseconds) {
-      time.setMilliseconds(time.getMilliseconds() + advanceConfiguration.milliseconds);
-    }
-    if (advanceConfiguration.minutes) {
-      time.setMinutes(time.getMinutes() + advanceConfiguration.minutes);
-    }
-    if (advanceConfiguration.months) {
-      time.setMonth(time.getMonth() + advanceConfiguration.months);
-    }
-    if (advanceConfiguration.seconds) {
-      time.setSeconds(time.getSeconds() + advanceConfiguration.seconds);
-    }
-    if (advanceConfiguration.years) {
-      time.setFullYear(time.getFullYear() + advanceConfiguration.years);
-    }
-    this.setDeterminedTime(time);
-    return this;
+  protected advanceYears(time: Date, years: number): Date {
+    time.setFullYear(time.getFullYear() + years);
+    return time;
+  }
+  protected advanceMonths(time: Date, months: number): Date {
+    time.setMonth(time.getMonth() + months);
+    return time;
+  }
+  protected advanceDays(time: Date, days: number): Date {
+    time.setDate(time.getDate() + days);
+    return time;
+  }
+  protected advanceHours(time: Date, hours: number): Date {
+    time.setHours(time.getHours() + hours);
+    return time;
+  }
+  protected advanceMinutes(time: Date, minutes: number): Date {
+    time.setMinutes(time.getMinutes() + minutes);
+    return time;
+  }
+  protected advanceSeconds(time: Date, seconds: number): Date {
+    time.setSeconds(time.getSeconds() + seconds);
+    return time;
+  }
+  protected advanceMilliseconds(time: Date, milliseconds: number): Date {
+    time.setMilliseconds(time.getMilliseconds() + milliseconds);
+    return time;
   }
   protected convertToTimestampImpl(time: string | number | Date): number {
     return RuntimeHelper.convertToTimestamp(time);

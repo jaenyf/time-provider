@@ -1,74 +1,32 @@
-import {
-  type IAdvanceConfiguration,
-  BaseManualRuntime,
-  type IManualRuntime,
-} from "@time-provider/core";
+import { BaseManualRuntime } from "@time-provider/core";
 
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 import type { Temporal } from "@js-temporal/polyfill";
 
 export class ManualRuntime extends BaseManualRuntime<Temporal.Instant> {
-  override advanceImpl(
-    advanceConfiguration: IAdvanceConfiguration,
-  ): IManualRuntime<Temporal.Instant> {
-    if (advanceConfiguration.days) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({ days: advanceConfiguration.days })
-          .toInstant(),
-      );
-    }
-    if (advanceConfiguration.hours) {
-      this.setDeterminedTime(this.utcNow().add({ hours: advanceConfiguration.hours }));
-    }
-    if (advanceConfiguration.milliseconds) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({
-            milliseconds: advanceConfiguration.milliseconds,
-          })
-          .toInstant(),
-      );
-    }
-    if (advanceConfiguration.minutes) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({
-            minutes: advanceConfiguration.minutes,
-          })
-          .toInstant(),
-      );
-    }
-    if (advanceConfiguration.months) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({ months: advanceConfiguration.months })
-          .toInstant(),
-      );
-    }
-    if (advanceConfiguration.seconds) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({
-            seconds: advanceConfiguration.seconds,
-          })
-          .toInstant(),
-      );
-    }
-    if (advanceConfiguration.years) {
-      this.setDeterminedTime(
-        this.utcNow()
-          .toZonedDateTimeISO("UTC")
-          .add({ years: advanceConfiguration.years })
-          .toInstant(),
-      );
-    }
-    return this;
+  protected advanceYears(time: Temporal.Instant, years: number): Temporal.Instant {
+    return this.toZoned(time).add({ years }).toInstant();
+  }
+  protected advanceMonths(time: Temporal.Instant, months: number): Temporal.Instant {
+    return this.toZoned(time).add({ months }).toInstant();
+  }
+  protected advanceDays(time: Temporal.Instant, days: number): Temporal.Instant {
+    return this.toZoned(time).add({ days }).toInstant();
+  }
+  protected advanceHours(time: Temporal.Instant, hours: number): Temporal.Instant {
+    return time.add({ hours });
+  }
+  protected advanceMinutes(time: Temporal.Instant, minutes: number): Temporal.Instant {
+    return time.add({ minutes });
+  }
+  protected advanceSeconds(time: Temporal.Instant, seconds: number): Temporal.Instant {
+    return time.add({ seconds });
+  }
+  protected advanceMilliseconds(time: Temporal.Instant, milliseconds: number): Temporal.Instant {
+    return time.add({ milliseconds });
+  }
+  private toZoned(time: Temporal.Instant): Temporal.ZonedDateTime {
+    return time.toZonedDateTimeISO("UTC");
   }
   protected convertToTimestampImpl(time: string | number | Temporal.Instant): number {
     return RuntimeHelper.convertToTimestamp(time);

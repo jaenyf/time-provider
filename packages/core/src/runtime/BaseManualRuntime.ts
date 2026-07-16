@@ -22,11 +22,41 @@ export abstract class BaseManualRuntime<TDate>
   }
 
   advance(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate> {
-    const returnValue = this.advanceImpl(advanceConfiguration);
+    let time = this.utcNow();
+
+    if (advanceConfiguration.days) {
+      time = this.advanceDays(time, advanceConfiguration.days);
+    }
+    if (advanceConfiguration.hours) {
+      time = this.advanceHours(time, advanceConfiguration.hours);
+    }
+    if (advanceConfiguration.milliseconds) {
+      time = this.advanceMilliseconds(time, advanceConfiguration.milliseconds);
+    }
+    if (advanceConfiguration.minutes) {
+      time = this.advanceMinutes(time, advanceConfiguration.minutes);
+    }
+    if (advanceConfiguration.months) {
+      time = this.advanceMonths(time, advanceConfiguration.months);
+    }
+    if (advanceConfiguration.seconds) {
+      time = this.advanceSeconds(time, advanceConfiguration.seconds);
+    }
+    if (advanceConfiguration.years) {
+      time = this.advanceYears(time, advanceConfiguration.years);
+    }
+
+    this.setDeterminedTime(time);
     this.mayRunTimeoutCallbacks(this.timestamp());
     this.mayRunIntervalCallbacks(this.timestamp());
-    return returnValue;
+    return this;
   }
 
-  abstract advanceImpl(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate>;
+  protected abstract advanceYears(time: TDate, years: number): TDate;
+  protected abstract advanceMonths(time: TDate, months: number): TDate;
+  protected abstract advanceDays(time: TDate, days: number): TDate;
+  protected abstract advanceHours(time: TDate, hours: number): TDate;
+  protected abstract advanceMinutes(time: TDate, minutes: number): TDate;
+  protected abstract advanceSeconds(time: TDate, seconds: number): TDate;
+  protected abstract advanceMilliseconds(time: TDate, milliseconds: number): TDate;
 }

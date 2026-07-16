@@ -1,36 +1,28 @@
-import {
-  type IAdvanceConfiguration,
-  BaseManualRuntime,
-  type IManualRuntime,
-} from "@time-provider/core";
+import { BaseManualRuntime } from "@time-provider/core";
 import dayjs from "dayjs";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class ManualRuntime extends BaseManualRuntime<dayjs.Dayjs> {
-  override advanceImpl(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<dayjs.Dayjs> {
-    if (advanceConfiguration.days) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.days, "day"));
-    }
-    if (advanceConfiguration.hours) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.hours, "hour"));
-    }
-    if (advanceConfiguration.milliseconds) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.milliseconds, "millisecond"));
-    }
-    if (advanceConfiguration.minutes) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.minutes, "minute"));
-    }
-    if (advanceConfiguration.months) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.months, "month"));
-    }
-    if (advanceConfiguration.seconds) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.seconds, "second"));
-    }
-    if (advanceConfiguration.years) {
-      this.setDeterminedTime(this.utcNow().add(advanceConfiguration.years, "year"));
-    }
-
-    return this;
+  protected advanceYears(time: dayjs.Dayjs, years: number): dayjs.Dayjs {
+    return time.add(years, "year");
+  }
+  protected advanceMonths(time: dayjs.Dayjs, months: number): dayjs.Dayjs {
+    return time.add(months, "month");
+  }
+  protected advanceDays(time: dayjs.Dayjs, days: number): dayjs.Dayjs {
+    return time.add(days, "day");
+  }
+  protected advanceHours(time: dayjs.Dayjs, hours: number): dayjs.Dayjs {
+    return time.add(hours, "hour");
+  }
+  protected advanceMinutes(time: dayjs.Dayjs, minutes: number): dayjs.Dayjs {
+    return time.add(minutes, "minute");
+  }
+  protected advanceSeconds(time: dayjs.Dayjs, seconds: number): dayjs.Dayjs {
+    return time.add(seconds, "second");
+  }
+  protected advanceMilliseconds(time: dayjs.Dayjs, milliseconds: number): dayjs.Dayjs {
+    return time.add(milliseconds, "millisecond");
   }
   protected convertToTimestampImpl(time: string | number | dayjs.Dayjs): number {
     return RuntimeHelper.convertToTimestamp(time);
