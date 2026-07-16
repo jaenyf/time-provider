@@ -47,6 +47,8 @@ class ManualTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<TDate>
   implements IManualTimeProviderCreator<TDate>
 {
+  #initialDateTime?: string | number | TDate;
+
   constructor(plugin: IPlugin<TDate>) {
     super(plugin);
     this.#initialDateTime = undefined;
@@ -56,7 +58,6 @@ class ManualTimeProviderCreator<TDate>
     this.#initialDateTime = initialDateTime;
     return this;
   }
-  #initialDateTime?: string | number | TDate;
   create(): IManualTimeProvider<TDate> {
     return this.plugin.createManualRuntime(
       undefined !== this.#initialDateTime ? this.#initialDateTime : 0,

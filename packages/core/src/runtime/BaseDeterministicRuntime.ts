@@ -88,6 +88,14 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     for (const [_handle, entry] of this.#intervalCallbacksMap) {
       while (entry.runAt <= nowTimestamp) {
         entry.callback();
+        /*
+          Real environments (Node, browsers) clamp an interval delay below 1ms
+          up to 1ms - a 0ms interval still fires roughly once per millisecond,
+          not "as fast as infinitely possible". Falling back to 1 here mirrors
+          that: a live interval genuinely re-fires proportionally to elapsed
+          time when advance()-d far into the future, matching what it would
+          do in a real environment.
+        */
         entry.runAt += entry.delay ? entry.delay : 1;
       }
     }
