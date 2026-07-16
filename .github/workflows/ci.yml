@@ -18,10 +18,10 @@ jobs:
           cache: true
 
       - run: vp install --frozen-lockfile
-      - run: vp test --coverage
-      - run: test -f coverage/lcov.info
       - run: vp run build
       - run: vp check
+      - run: vp test --coverage
+      - run: test -f coverage/lcov.info
 
       - uses: codecov/codecov-action@v5
         with:
