@@ -5,7 +5,6 @@
   "coverageAnalysis": "perTest",
   "vitest": {
     "configFile": "vite.config.ts",
-    "dir": "packages",
     "related": false
   },
   "mutate": [
