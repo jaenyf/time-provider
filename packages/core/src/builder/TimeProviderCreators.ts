@@ -21,7 +21,7 @@ abstract class BaseTimeProviderCreator<TDate> {
   }
 }
 
-export class FixedTimeProviderCreator<TDate>
+class FixedTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<TDate>
   implements IFixedTimeProviderCreator<TDate>
 {
@@ -43,7 +43,7 @@ export class FixedTimeProviderCreator<TDate>
   }
 }
 
-export class ManualTimeProviderCreator<TDate>
+class ManualTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<TDate>
   implements IManualTimeProviderCreator<TDate>
 {
@@ -64,7 +64,7 @@ export class ManualTimeProviderCreator<TDate>
   }
 }
 
-export class SequentialTimeProviderCreator<TDate>
+class SequentialTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<TDate>
   implements ISequentialTimeProviderCreator<TDate>
 {
