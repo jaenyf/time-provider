@@ -1,0 +1,41 @@
+import { describe, expect, test } from "vite-plus/test";
+import { createTimeProvider } from "../../../core/dist/index.mjs";
+import { plugin } from "../../../plugin-dayjs/dist/index.mjs";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+dayjs.extend(utc);
+
+describe("e2e plugin-dayjs", () => {
+  test("createTimeProvider for plugin returns a value", () => {
+    const creator = createTimeProvider.for(plugin);
+
+    const system = creator.create();
+    const fixed = creator.asFixed().create();
+    const manual = creator.asManual().create();
+    const sequential = creator.asSequential().create();
+
+    expect(system.clock.utcNow().toISOString()).toBeDefined();
+    expect(system.clock.localNow().toISOString()).toBeDefined();
+    expect(system.parser.parse(dayjs.utc().toISOString()).unix()).toBeDefined();
+
+    expect(fixed.clock.utcNow().toISOString()).toBeDefined();
+    expect(fixed.clock.localNow().toISOString()).toBeDefined();
+    expect(fixed.parser.parse(dayjs.utc().toISOString()).unix()).toBeDefined();
+
+    expect(manual.clock.utcNow().toISOString()).toBeDefined();
+    expect(manual.clock.localNow().toISOString()).toBeDefined();
+    expect(manual.parser.parse(dayjs.utc().toISOString()).unix()).toBeDefined();
+
+    expect(sequential.clock.utcNow().toISOString()).toBeDefined();
+    expect(sequential.clock.localNow().toISOString()).toBeDefined();
+    expect(sequential.parser.parse(dayjs.utc().toISOString()).unix()).toBeDefined();
+
+    expect(() => {
+      system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));
+    }).not.toThrow();
+    expect(() => {
+      system.scheduler.clearTimeout(system.scheduler.setTimeout(() => {}));
+    }).not.toThrow();
+  });
+});
