@@ -5,24 +5,39 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   publish:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: "24"
-          cache: true
+          registry-url: "https://registry.npmjs.org"
+          scope: "@time-provider"
+          cache: false
+          run-install: false
 
       - run: vp install --frozen-lockfile
 
-      - run: vp run build
+      # TODO: restore when issue 2189 ( https://github.com/voidzero-dev/vite-plus/issues/2189 ) is solved
+      # - name: Publishing
+      #   env:
+      #     ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+      #     ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+      #   run: vp run release
 
-      - run: vp run publish
+      # Because of issue 2189 ( https://github.com/voidzero-dev/vite-plus/issues/2189 ), we explicitely run packages release from here, instead of calling "vp run release"
+      - name: Publishing
+        run: |
+          npm run -w @time-provider/core release
+          npm run -w @time-provider/plugin-dayjs release
+          npm run -w @time-provider/plugin-luxon release
+          npm run -w @time-provider/plugin-moment release
+          npm run -w @time-provider/plugin-native release
+          npm run -w @time-provider/plugin-temporal release

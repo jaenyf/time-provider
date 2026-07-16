@@ -38,7 +38,8 @@
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
-    "publish": "vp run -r publish",
+    "BROKENrelease": "vp run -r release",
+    "release": "npm run -w @time-provider/core release",
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports bun.lock",
     "test": "vp test",
     "check": "vp run -r check",
@@ -50,7 +51,7 @@
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.10",
     "rimraf": "^6.1.3",
-    "vite-plus": "^0.2.2"
+    "vite-plus": "catalog:"
   },
   "engines": {
     "node": ">=22.12.0"
