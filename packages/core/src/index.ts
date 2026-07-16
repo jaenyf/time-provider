@@ -1,3 +1,4 @@
+export * from "./builder/ITimeProviderCreators.ts";
 export * from "./builder/TimeProviderCreators.ts";
 export * from "./clock/IClock.ts";
 export * from "./clock/IClockOnlyProvider.ts";
