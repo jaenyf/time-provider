@@ -2,13 +2,38 @@ name: Publish
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["Check"]
     types: [completed]
     branches: [main]
 
 jobs:
-  publish:
+  aggregate-changelog:
     if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - run: node scripts/aggregate-changelog.ts
+
+      - name: Commit aggregated changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git diff --cached --quiet || git commit -m "chore: regenerate aggregated changelog [skip ci]"
+          git push
+
+  publish:
+    needs: aggregate-changelog
     permissions:
       contents: read
       id-token: write
@@ -17,10 +42,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # Pin to the exact commit CI just validated, not whatever main's
+          # Pin to the exact commit Check just validated, not whatever main's
           # tip happens to be by the time this job starts - protects against
           # publishing a different, unvalidated commit if another push
-          # landed on main in the meantime.
+          # landed on main in the meantime. The aggregate-changelog job above
+          # may have since pushed its own commit on top of this one, but that
+          # commit only touches the root CHANGELOG.md, which doesn't affect
+          # what gets published.
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: voidzero-dev/setup-vp@v1
