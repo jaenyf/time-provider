@@ -1,12 +1,14 @@
 name: Publish
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 jobs:
   publish:
+    if: github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
       id-token: write
@@ -14,6 +16,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Pin to the exact commit CI just validated, not whatever main's
+          # tip happens to be by the time this job starts - protects against
+          # publishing a different, unvalidated commit if another push
+          # landed on main in the meantime.
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: voidzero-dev/setup-vp@v1
         with:
