@@ -67,7 +67,7 @@ jobs:
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
