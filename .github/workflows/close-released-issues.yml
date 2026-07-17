@@ -1,0 +1,60 @@
+name: Close released issues
+
+on:
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+    branches: [main]
+
+# Shares its group with "Label issues awaiting release" - see that workflow
+# No need to queue.
+# This workflow needs "Auto-close issues with merged linked pull requests" is unchecked on github.
+concurrency:
+  group: issue-lifecycle
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+
+jobs:
+  close-released-issues:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = "awaiting-release";
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: label,
+              state: "open",
+            });
+
+            for (const issue of issues) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: "Released to `main`. Closing.",
+                });
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  name: label,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: "closed",
+                });
+              } catch (error) {
+                core.warning(`Failed to close issue #${issue.number}: ${error.message}`);
+              }
+            }
