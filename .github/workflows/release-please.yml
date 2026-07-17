@@ -5,6 +5,12 @@ on:
     branches:
       - dev
 
+# Never cancel an in-progress run: interrupting release-please mid-update could leave the release PR (or the manifest) in an inconsistent state.
+# Queue instead.
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write

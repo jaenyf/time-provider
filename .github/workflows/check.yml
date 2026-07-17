@@ -6,6 +6,14 @@ on:
   push:
     branches: "**"
 
+# A newer push/PR update makes the previous, still-running Check obsolete -
+# cancel it rather than let it finish for nothing. github.ref is already
+# unique per PR (refs/pull/N/merge) and per branch, so different PRs/branches
+# never share a group and always run independently.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   commitlint:
     permissions:

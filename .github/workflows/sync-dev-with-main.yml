@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
 
+# Never cancel an in-progress run: interrupting mid-rebase-and-push could leave dev in a half-rebased state.
+# Queue instead.
+concurrency:
+  group: sync-dev-with-main
+  cancel-in-progress: false
+
 permissions:
   contents: write
 

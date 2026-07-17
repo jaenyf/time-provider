@@ -6,6 +6,14 @@ on:
     types: [completed]
     branches: [main]
 
+# Never cancel an in-progress run.
+# Interrupting mid-npm-publish (or mid-commit-and-push for the changelog) could leave things in a half-done state.
+# Queue instead.
+concurrency:
+  group: publish-main
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   aggregate-changelog:
     if: github.event.workflow_run.conclusion == 'success'
