@@ -1,0 +1,79 @@
+name: Check
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  push:
+    branches: "**"
+
+jobs:
+  commitlint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+
+      - run: vp add -D @commitlint/cli @commitlint/config-conventional
+
+      - name: Lint commits (pull request range)
+        if: github.event_name == 'pull_request'
+        run: vpx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+      # A squash-merge uses the PR title as the final commit message on dev - release-please reads that message to classify the change.
+      # Lint it too, with the same rules, so a non-conventional title can't slip through and silently drop out of the changelog.
+      - name: Lint PR title (squash-merge commit message)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | vpx commitlint --verbose
+
+      # Direct pushes bypass PR review entirely.
+      # This step re-validates, server-side, whichever commits actually landed by this push
+      - name: Lint commits (pushed range)
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000' && github.event.forced == false
+        run: vpx commitlint --from ${{ github.event.before }} --to ${{ github.sha }} --verbose
+
+      # No reliable prior ref to diff against, either because the branch was just created or because this was a force-push.
+      # In both cases, lint the single tip commit instead of skipping validation entirely.
+      - name: Lint commit (new branch or force-push, no reliable prior ref)
+        if: github.event_name == 'push' && (github.event.before == '0000000000000000000000000000000000000000' || github.event.forced == true)
+        run: git log -1 --format=%B ${{ github.sha }} | vpx commitlint --verbose
+
+  build-test:
+    needs: commitlint
+    # A pure PR title edit doesn't change any code - no need to rebuild/retest
+    if: github.event_name != 'pull_request' || github.event.action != 'edited'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          cache: true
+
+      - run: vp install --frozen-lockfile
+      - run: vp run build
+      - run: vp check
+      - run: vp test --coverage
+      - run: test -f coverage/lcov.info
+
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+
+      - if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: test-report.junit.xml
