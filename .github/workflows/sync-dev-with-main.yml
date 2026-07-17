@@ -1,0 +1,53 @@
+name: Sync dev with main
+
+on:
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  rebase-dev:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Rebase dev onto main
+        id: rebase
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          # Rebase onto main's actual current tip, not the Check-validated SHA
+          # this workflow chain started from - Publish's aggregate-changelog
+          # job has, by now, pushed its own commit on top of that SHA, and
+          # dev should pick that up too.
+          if git rebase origin/main; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            # Leave dev untouched on the remote - abort the local rebase
+            # rather than pushing a half-resolved history.
+            git rebase --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Safe (and a no-op) even when the rebase above was a pure fast-forward
+      # with nothing to replay - --force-with-lease only overwrites the
+      # remote if it still matches what we just fetched.
+      - name: Push rebased dev
+        if: steps.rebase.outputs.conflict == 'false'
+        run: git push --force-with-lease origin dev
+
+      - name: Warn on conflict
+        if: steps.rebase.outputs.conflict == 'true'
+        run: |
+          echo "::warning title=dev/main sync conflict::Rebasing dev onto main hit a conflict (likely a direct hotfix on main touching the same lines as unreleased work on dev). dev was left untouched on the remote - resolve this manually with 'git rebase origin/main' locally."
