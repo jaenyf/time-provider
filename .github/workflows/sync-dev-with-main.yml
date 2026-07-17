@@ -44,10 +44,23 @@ jobs:
       # with nothing to replay - --force-with-lease only overwrites the
       # remote if it still matches what we just fetched.
       - name: Push rebased dev
+        id: push
         if: steps.rebase.outputs.conflict == 'false'
-        run: git push --force-with-lease origin dev
+        run: |
+          if git push --force-with-lease origin dev; then
+            echo "rejected=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rejected=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Warn on conflict
         if: steps.rebase.outputs.conflict == 'true'
         run: |
           echo "::warning title=dev/main sync conflict::Rebasing dev onto main hit a conflict (likely a direct hotfix on main touching the same lines as unreleased work on dev). dev was left untouched on the remote - resolve this manually with 'git rebase origin/main' locally."
+
+      # dev moved on the remote between our fetch and this push.
+      # Surface it as a warning rather than a failed job; the next push to main will simply retry the whole sync.
+      - name: Warn on concurrent push to dev
+        if: steps.rebase.outputs.conflict == 'false' && steps.push.outputs.rejected == 'true'
+        run: |
+          echo "::warning title=dev/main sync conflict::Pushing the rebased dev was rejected (--force-with-lease) - dev was updated by someone else between this job's fetch and push. dev was left untouched on the remote - resolve this manually with 'git rebase origin/main' locally."
