@@ -28,7 +28,7 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       clean: true,
       reportsDirectory: "coverage",
-      exclude: ["index.ts", "**/test-shared/**"],
+      exclude: ["index.ts", "**/test-shared/**", "**/dist/**"],
     },
   },
 });
