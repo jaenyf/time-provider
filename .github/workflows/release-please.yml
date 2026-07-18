@@ -21,23 +21,11 @@ jobs:
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Generate config with branch-appropriate versioning
-        run: |
-          VERSIONING="always-bump-minor"
-          if [[ "${{ github.ref_name }}" == hotfix/* ]]; then
-            VERSIONING="always-bump-patch"
-          fi
-          jq --arg v "$VERSIONING" \
-            '.packages |= map_values(. + {versioning: $v})' \
-            release-please-config.json > /tmp/release-please-config.json
-
       - id: release
         uses: googleapis/release-please-action@v5
         with:
           target-branch: ${{ github.ref_name }}
-          config-file: /tmp/release-please-config.json
+          config-file: ${{ startsWith(github.ref_name, 'hotfix/') && 'release-please-config.hotfix.json' || 'release-please-config.json' }}
           manifest-file: .release-please-manifest.json
           include-component-in-tag: true
           token: ${{ secrets.GITHUB_TOKEN }}
