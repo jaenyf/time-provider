@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-luxon-0.1.1...plugin-luxon-v0.2.0) (2026-07-18)
+
+
+### Bug Fixes
+
+* automation ([#60](https://github.com/jaenyf/time-provider/issues/60)) ([fd3a078](https://github.com/jaenyf/time-provider/commit/fd3a0789ef1b02ded435678f227263531c0c0b7a))
+* **core,plugins:** atomicity of manual advance ([#58](https://github.com/jaenyf/time-provider/issues/58)) ([2086dcd](https://github.com/jaenyf/time-provider/commit/2086dcd32ef7bd3d2ab7e105ee37314d3253507c)), closes [#56](https://github.com/jaenyf/time-provider/issues/56)
+
 ## [0.1.1](https://github.com/jaenyf/time-provider/compare/plugin-luxon-v0.1.0...plugin-luxon-v0.1.1) (2026-07-16)
 
 
