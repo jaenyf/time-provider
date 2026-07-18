@@ -36,7 +36,7 @@ export function testParser<TDate>(
       "2026-01-0IT00:00Z",
       "2026-01-01TOO:00Z",
       "2026-01-01T00:OOZ",
-      "NaN" as unknown as number,
+      Number("NaN"),
       undefined as unknown as number,
       null as unknown as number,
       undefined as unknown as string,
