@@ -1,0 +1,18 @@
+export class TimeInputValidator {
+  /**
+   * Guards against invalid values.
+   */
+  /* @__INLINE__ */
+  static assertValid<TDate>(
+    time: string | number | TDate,
+  ): asserts time is string | number | TDate {
+    if (
+      time === undefined ||
+      time === null ||
+      (typeof time === "number" && Number.isNaN(time)) ||
+      (typeof time === "string" && time.trim() === "")
+    ) {
+      throw new Error(`Invalid time value (value was '${String(time)}')`);
+    }
+  }
+}

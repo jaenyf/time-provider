@@ -1,3 +1,5 @@
+import { TimeInputValidator } from "@time-provider/core";
+
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp = (time: string | number | Date) =>
@@ -5,9 +7,7 @@ export class RuntimeHelper {
 
   /* @__INLINE__ */
   static convertToDate = (time: string | number | Date) => {
-    if (time === undefined || time === null || (typeof time === "number" && Number.isNaN(time))) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
-    }
+    TimeInputValidator.assertValid(time);
     const result = new Date(time);
     if (Number.isNaN(result.getTime())) {
       throw new Error(`Invalid time value (value was '${String(time)}')`);

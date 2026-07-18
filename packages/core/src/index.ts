@@ -7,6 +7,7 @@ export * from "./clock/IManualClockOnlyProvider.ts";
 export * from "./createTimeProvider.ts";
 export * from "./parser/IParser.ts";
 export * from "./parser/IParserOnlyProvider.ts";
+export * from "./parser/TimeInputValidator.ts";
 export * from "./api/BasePlugin.ts";
 export * from "./api/IPlugin.ts";
 export * from "./api/ITimeProvider.ts";

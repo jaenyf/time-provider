@@ -1,3 +1,4 @@
+import { TimeInputValidator } from "@time-provider/core";
 import { DateTime } from "luxon";
 
 export class RuntimeHelper {
@@ -7,15 +8,10 @@ export class RuntimeHelper {
   }
   /* @__INLINE__ */
   static convertToDate(time: string | number | DateTime<boolean>): DateTime<boolean> {
-    if (time === undefined || time === null) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
-    }
+    TimeInputValidator.assertValid(time);
     let returnTime: DateTime<boolean> | undefined = undefined;
     switch (typeof time) {
       case "number":
-        if (Number.isNaN(time)) {
-          throw new Error(`Invalid time value (value was '${String(time)}')`);
-        }
         returnTime = DateTime.fromMillis(time);
         break;
       case "string":
@@ -28,7 +24,7 @@ export class RuntimeHelper {
         break;
     }
     if (undefined === returnTime || !returnTime.isValid) {
-      throw new Error(`Invalid time value (value was '${time as string}')`);
+      throw new Error(`Invalid time value (value was '${String(time)}')`);
     }
     return returnTime;
   }
