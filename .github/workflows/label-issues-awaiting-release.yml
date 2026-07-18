@@ -18,9 +18,11 @@ permissions:
 
 jobs:
   label-awaiting-release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/github-script@v7
         with:
@@ -86,6 +88,14 @@ jobs:
 
             for (const issueNumber of issueNumbers) {
               try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
+
+                if (issue.state !== "open") continue;
+
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
