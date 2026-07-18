@@ -1,5 +1,6 @@
 import { expect, test, describe, beforeEach, afterEach, vi } from "vite-plus/test";
 import type { IPlugin } from "@time-provider/core";
+import { testParser } from "./testParser.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: IPlugin<TDate>,
@@ -39,21 +40,8 @@ export function testSystemRuntime<TDate>(
       });
     });
 
-    describe("parse", () => {
-      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00Z")])(
-        "doesn't throw",
-        (toParse: string | number | TDate) => {
-          const sut = createSystemRuntime();
-          expect(() => sut.parser.parse(toParse)).not.toThrow();
-        },
-      );
-      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00Z")])(
-        "aligns with native TDate construction",
-        (toParse: string | number | TDate) => {
-          const sut = createSystemRuntime();
-          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
-        },
-      );
+    describe("parser", () => {
+      testParser(() => plugin.createSystemRuntime().parser, parseTime);
     });
 
     describe("scheduler", () => {
