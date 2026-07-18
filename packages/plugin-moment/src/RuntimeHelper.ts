@@ -10,7 +10,7 @@ export class RuntimeHelper {
     if (time === undefined || time === null || (typeof time === "number" && Number.isNaN(time))) {
       throw new Error(`Invalid time value (value was '${String(time)}')`);
     }
-    const result = moment(time);
+    const result = typeof time === "string" ? moment(time, moment.ISO_8601, true) : moment(time);
     if (!result.isValid()) {
       throw new Error(`Invalid time value (value was '${String(time)}')`);
     }
