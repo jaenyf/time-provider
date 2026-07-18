@@ -3,7 +3,7 @@
   "changelog-path": "CHANGELOG.md",
   "separate-pull-requests": false,
   "include-component-in-tag": true,
-  "group-pull-request-title-pattern": "chore: next release",
+  "group-pull-request-title-pattern": "chore${scope}: next release${component} ${version}",
   "packages": {
     "packages/core": {
       "release-type": "node",
