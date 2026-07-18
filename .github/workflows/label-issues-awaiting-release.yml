@@ -5,7 +5,7 @@ on:
     types: [closed]
 
 # Shares its group with "Close released issues" so the two can never run at the same time.
-# queue: max ensures every merge to dev gets processed (each is responsible for a distinct issue), none silently dropped if several land close together.
+# queue: max ensures every merge to main gets processed (each is responsible for a distinct issue), none silently dropped if several land close together.
 # This workflow needs "Auto-close issues with merged linked pull requests" is unchecked on github.
 concurrency:
   group: issue-lifecycle
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   label-awaiting-release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +35,7 @@ jobs:
                 repo: context.repo.repo,
                 name: label,
                 color: "fbca04",
-                description: "Fix merged to dev, not yet released to main",
+                description: "Fix merged, not yet released",
               });
             } catch (error) {
               if (error.status !== 422) throw error;
@@ -90,7 +90,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issueNumber,
-                  body: `Fixed by #${prNumber}, merged into \`dev\`. This issue will be closed once released to \`main\`.`,
+                  body: `Fixed by #${prNumber}. This issue will be closed once released.`,
                 });
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
@@ -99,6 +99,7 @@ jobs:
                   labels: [label],
                 });
               } catch (error) {
+                // Don't let one problematic issue block labelling the rest.
                 core.warning(`Failed to label issue #${issueNumber}: ${error.message}`);
               }
             }
