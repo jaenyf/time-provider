@@ -7,32 +7,32 @@
     "packages/core": {
       "release-type": "node",
       "component": "core",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     },
     "packages/plugin-dayjs": {
       "release-type": "node",
       "component": "plugin-dayjs",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     },
     "packages/plugin-luxon": {
       "release-type": "node",
       "component": "plugin-luxon",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     },
     "packages/plugin-moment": {
       "release-type": "node",
       "component": "plugin-moment",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     },
     "packages/plugin-native": {
       "release-type": "node",
       "component": "plugin-native",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     },
     "packages/plugin-temporal": {
       "release-type": "node",
       "component": "plugin-temporal",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-patch"
     }
   }
 }
