@@ -13,21 +13,21 @@ describe("e2e moment", () => {
     const manual = creator.asManual().create();
     const sequential = creator.asSequential().create();
 
-    expect(system.clock.utcNow().toString()).toBeDefined();
-    expect(system.clock.localNow().toString()).toBeDefined();
+    expect(system.clock.utcNow().toISOString()).toBeDefined();
+    expect(system.clock.localNow().toISOString()).toBeDefined();
     expect(system.parser.parse(moment.utc().milliseconds())).toBeDefined();
 
-    expect(fixed.clock.utcNow().toString()).toBeDefined();
-    expect(fixed.clock.localNow().toString()).toBeDefined();
-    expect(fixed.parser.parse(moment.utc().toString()).milliseconds()).toBeDefined();
+    expect(fixed.clock.utcNow().toISOString()).toBeDefined();
+    expect(fixed.clock.localNow().toISOString()).toBeDefined();
+    expect(fixed.parser.parse(moment.utc().toISOString()).milliseconds()).toBeDefined();
 
-    expect(manual.clock.utcNow().toString()).toBeDefined();
-    expect(manual.clock.localNow().toString()).toBeDefined();
-    expect(manual.parser.parse(moment.utc().toString()).milliseconds()).toBeDefined();
+    expect(manual.clock.utcNow().toISOString()).toBeDefined();
+    expect(manual.clock.localNow().toISOString()).toBeDefined();
+    expect(manual.parser.parse(moment.utc().toISOString()).milliseconds()).toBeDefined();
 
-    expect(sequential.clock.utcNow().toString()).toBeDefined();
-    expect(sequential.clock.localNow().toString()).toBeDefined();
-    expect(sequential.parser.parse(moment.utc().toString()).milliseconds()).toBeDefined();
+    expect(sequential.clock.utcNow().toISOString()).toBeDefined();
+    expect(sequential.clock.localNow().toISOString()).toBeDefined();
+    expect(sequential.parser.parse(moment.utc().toISOString()).milliseconds()).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

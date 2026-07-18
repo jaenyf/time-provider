@@ -17,15 +17,15 @@ type IntervalEntry = {
  */
 export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
   #timeoutCallbacksMap: Map<SetTimeoutHandle, TimeoutEntry>;
-  #nextTimeoutHandle: SetTimeoutHandle;
+  #nextTimeoutHandleValue: number;
   #intervalCallbacksMap: Map<SetIntervalHandle, IntervalEntry>;
-  #nextIntervalHandle: SetIntervalHandle;
+  #nextIntervalHandleValue: number;
 
   constructor() {
     super();
-    this.#nextTimeoutHandle = 1 as unknown as SetTimeoutHandle;
+    this.#nextTimeoutHandleValue = 1;
     this.#timeoutCallbacksMap = new Map<SetTimeoutHandle, TimeoutEntry>();
-    this.#nextIntervalHandle = 1 as unknown as SetIntervalHandle;
+    this.#nextIntervalHandleValue = 1;
     this.#intervalCallbacksMap = new Map<SetIntervalHandle, IntervalEntry>();
   }
 
@@ -34,14 +34,11 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
-    this.#timeoutCallbacksMap.set(this.#nextTimeoutHandle, { runAt, callback });
-
-    const returnValue = this.#nextTimeoutHandle;
-
-    this.#nextTimeoutHandle = ((this.#nextTimeoutHandle as unknown as number) +
-      1) as unknown as SetTimeoutHandle;
+    const handle = this.#nextTimeoutHandleValue as unknown as SetTimeoutHandle;
+    this.#timeoutCallbacksMap.set(handle, { runAt, callback });
+    this.#nextTimeoutHandleValue += 1;
     this.mayRunTimeoutCallbacks(now);
-    return returnValue;
+    return handle;
   }
   clearTimeout(handle: SetTimeoutHandle) {
     this.#timeoutCallbacksMap.delete(handle);
@@ -69,17 +66,15 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
-    this.#intervalCallbacksMap.set(this.#nextIntervalHandle, {
+    const handle = this.#nextIntervalHandleValue as unknown as SetIntervalHandle;
+    this.#intervalCallbacksMap.set(handle, {
       runAt: runAt,
       delay: millisecondsDelay,
       callback: callback,
     });
-    const returnValue = this.#nextIntervalHandle;
-
-    this.#nextIntervalHandle = ((this.#nextIntervalHandle as unknown as number) +
-      1) as unknown as SetIntervalHandle;
+    this.#nextIntervalHandleValue += 1;
     this.mayRunIntervalCallbacks(now);
-    return returnValue;
+    return handle;
   }
   clearInterval(handle: SetIntervalHandle) {
     this.#intervalCallbacksMap.delete(handle);

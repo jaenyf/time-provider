@@ -7,16 +7,29 @@ export class RuntimeHelper {
   }
   /* @__INLINE__ */
   static convertToDate(time: string | number | DateTime<boolean>): DateTime<boolean> {
+    if (time === undefined || time === null) {
+      throw new Error(`Invalid time value (value was '${String(time)}')`);
+    }
+    let returnTime: DateTime<boolean> | undefined = undefined;
     switch (typeof time) {
       case "number":
-        return DateTime.fromMillis(time);
+        if (Number.isNaN(time)) {
+          throw new Error(`Invalid time value (value was '${String(time)}')`);
+        }
+        returnTime = DateTime.fromMillis(time);
+        break;
       case "string":
-        return DateTime.fromISO(time);
+        returnTime = DateTime.fromISO(time);
+        break;
       case "object":
         if (time instanceof DateTime) {
-          return time;
+          returnTime = time;
         }
+        break;
     }
-    throw new Error(`Undefined time type (value was '${time as string}')`);
+    if (undefined === returnTime || !returnTime.isValid) {
+      throw new Error(`Invalid time value (value was '${time as string}')`);
+    }
+    return returnTime;
   }
 }

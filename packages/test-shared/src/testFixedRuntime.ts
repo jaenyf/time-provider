@@ -1,6 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import type { IPlugin } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
+import { testParser } from "./testParser.ts";
 
 export function testFixedRuntime<TDate>(
   plugin: IPlugin<TDate>,
@@ -60,30 +61,10 @@ export function testFixedRuntime<TDate>(
       });
     });
 
-    describe("parse", () => {
-      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
-        "doesn't throw",
-        (toParse: string | number | TDate) => {
-          const sut = createSUT();
-          expect(() => sut.parser.parse(toParse)).not.toThrow();
-        },
-      );
-      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
-        "returns a value",
-        (toParse: string | number | TDate) => {
-          const sut = createSUT();
-          expect(sut.parser.parse(toParse)).not.toEqual(undefined);
-          expect(sut.parser.parse(toParse)).not.toEqual(null);
-        },
-      );
-      test.each(["2026-01-01T00:00Z", 100, parseTime("2026-01-01T00:00:00.000Z")])(
-        "aligns with native TDate construction",
-        (toParse: string | number | TDate) => {
-          const sut = createSUT();
-          expect(sut.parser.parse(toParse)).toEqual(parseTime(toParse));
-        },
-      );
+    describe("parser", () => {
+      testParser(() => createSUT().parser, parseTime);
     });
+
     describe("scheduler", () => {
       testScheduler(() => createSUT().scheduler, true);
       describe("issue#57", () => {

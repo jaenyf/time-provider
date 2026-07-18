@@ -24,26 +24,26 @@ export abstract class BaseManualRuntime<TDate>
   advance(advanceConfiguration: IAdvanceConfiguration): IManualRuntime<TDate> {
     let time = this.utcNow();
 
+    if (advanceConfiguration.years) {
+      time = this.advanceYears(time, advanceConfiguration.years);
+    }
+    if (advanceConfiguration.months) {
+      time = this.advanceMonths(time, advanceConfiguration.months);
+    }
     if (advanceConfiguration.days) {
       time = this.advanceDays(time, advanceConfiguration.days);
     }
     if (advanceConfiguration.hours) {
       time = this.advanceHours(time, advanceConfiguration.hours);
     }
-    if (advanceConfiguration.milliseconds) {
-      time = this.advanceMilliseconds(time, advanceConfiguration.milliseconds);
-    }
     if (advanceConfiguration.minutes) {
       time = this.advanceMinutes(time, advanceConfiguration.minutes);
-    }
-    if (advanceConfiguration.months) {
-      time = this.advanceMonths(time, advanceConfiguration.months);
     }
     if (advanceConfiguration.seconds) {
       time = this.advanceSeconds(time, advanceConfiguration.seconds);
     }
-    if (advanceConfiguration.years) {
-      time = this.advanceYears(time, advanceConfiguration.years);
+    if (advanceConfiguration.milliseconds) {
+      time = this.advanceMilliseconds(time, advanceConfiguration.milliseconds);
     }
 
     this.setDeterminedTime(time);
