@@ -3,6 +3,7 @@
   "changelog-path": "CHANGELOG.md",
   "separate-pull-requests": false,
   "include-component-in-tag": true,
+  "group-pull-request-title-pattern": "chore: next hotfix release",
   "packages": {
     "packages/core": {
       "release-type": "node",
