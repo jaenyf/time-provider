@@ -15,7 +15,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  branchlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+      - run: vp add -D validate-branch-name
+      - if: github.event_name == 'push'
+        run: vpx validate-branch-name -t ${{ github.ref_name }}
+
   commitlint:
+    # Enforces Conventional Commit
+    needs: branchlint
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -35,7 +48,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: vpx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
-      # A squash-merge uses the PR title as the final commit message on dev - release-please reads that message to classify the change.
+      # A squash-merge uses the PR title as the final commit message on main - release-please reads that message to classify the change.
       # Lint it too, with the same rules, so a non-conventional title can't slip through and silently drop out of the changelog.
       - name: Lint PR title (squash-merge commit message)
         if: github.event_name == 'pull_request'
@@ -56,6 +69,7 @@ jobs:
         run: git log -1 --format=%B ${{ github.sha }} | vpx commitlint --verbose
 
   build-test:
+    # Ensure project build, tests pass and forward coverage to codecov
     needs: commitlint
     # A pure PR title edit doesn't change any code - no need to rebuild/retest
     if: github.event_name != 'pull_request' || github.event.action != 'edited'

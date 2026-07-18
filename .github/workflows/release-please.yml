@@ -3,10 +3,9 @@ name: Release Please
 on:
   push:
     branches:
-      - dev
+      - main
+      - "hotfix/**"
 
-# Never cancel an in-progress run: interrupting release-please mid-update could leave the release PR (or the manifest) in an inconsistent state.
-# Queue instead.
 concurrency:
   group: release-please
   cancel-in-progress: false
@@ -19,12 +18,125 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: actions/checkout@v7
+
+      - name: Generate config with branch-appropriate versioning
+        run: |
+          VERSIONING="always-bump-minor"
+          if [[ "${{ github.ref_name }}" == hotfix/* ]]; then
+            VERSIONING="always-bump-patch"
+          fi
+          jq --arg v "$VERSIONING" \
+            '.packages |= map_values(. + {versioning: $v})' \
+            release-please-config.json > /tmp/release-please-config.json
+
+      - id: release
+        uses: googleapis/release-please-action@v5
         with:
-          target-branch: main
-          config-file: release-please-config.json
+          target-branch: ${{ github.ref_name }}
+          config-file: /tmp/release-please-config.json
           manifest-file: .release-please-manifest.json
           include-component-in-tag: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: release
+    if: needs.release.outputs.releases_created == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@time-provider"
+          cache: false
+          run-install: false
+
+      - run: vp install --frozen-lockfile
+
+      # TODO: restore when issue 2189 ( https://github.com/voidzero-dev/vite-plus/issues/2189 ) is solved
+      - name: Publishing
+        run: |
+          npm run -w @time-provider/core release
+          npm run -w @time-provider/plugin-dayjs release
+          npm run -w @time-provider/plugin-luxon release
+          npm run -w @time-provider/plugin-moment release
+          npm run -w @time-provider/plugin-native release
+          npm run -w @time-provider/plugin-temporal release
+
+  aggregate-changelog:
+    needs: release
+    if: needs.release.outputs.releases_created == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - run: node scripts/aggregate-changelog.ts
+
+      - name: Commit aggregated changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git diff --cached --quiet || git commit -m "chore: regenerate aggregated changelog [skip ci]"
+          git push
+
+  close-released-issues:
+    needs: publish
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = "awaiting-release";
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: label,
+              state: "open",
+            });
+
+            for (const issue of issues) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `Released - see [CHANGELOG.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CHANGELOG.md). Closing.`,
+                });
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  name: label,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: "closed",
+                });
+              } catch (error) {
+                core.warning(`Failed to close issue #${issue.number}: ${error.message}`);
+              }
+            }
