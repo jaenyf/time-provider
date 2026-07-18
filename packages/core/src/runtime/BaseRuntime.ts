@@ -26,8 +26,20 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
 
-  parse = (time: string | number | TDate) =>
-    this.convertToDateImpl(this.convertToTimestampImpl(this.convertToDateImpl(time)));
+  /**
+   * Parses any accepted input (an ISO string, an epoch-milliseconds number,
+   * or a TDate) into a normalized TDate instance.
+   */
+  parse = (time: string | number | TDate) => {
+    /*
+     * The input is first converted to a TDate (accepting any of the three
+     * input shapes), then round-tripped through a timestamp and back to a
+     * TDate again. This ensures the result is always a fresh, canonical
+     * instance produced the same way regardless of what shape the input was,
+     * rather than potentially returning the original object as-is.
+     */
+    return this.convertToDateImpl(this.convertToTimestampImpl(this.convertToDateImpl(time)));
+  };
   protected abstract convertToDateImpl(time: string | number | TDate): TDate;
   protected abstract convertToTimestampImpl(time: string | number | TDate): number;
 }
