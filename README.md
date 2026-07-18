@@ -308,6 +308,16 @@ timeProvider.clock.advance({
 expect(count).toBe(3);
 ```
 
+### Execution model: synchronous vs. asynchronous
+
+This is a deliberate difference from native timers, and it's important to keep in mind:
+
+- **System clock**: `setTimeout`/`setInterval` delegate to the real, native timers. Callbacks run **asynchronously**, on the real event loop, exactly like in production code.
+- **Manual and Sequential clocks**: callbacks run **synchronously, in-line**, at the moment they become due. A due callback can run as a direct side effect of `setTimeout`/`setInterval` itself (e.g. a delay of `0` or a negative value is already due when scheduled), or of `advance()`, `clock.localNow()`, or `clock.utcNow()` (whichever call causes the clock to reach or pass the callback's due time). There is no event loop tick involved: the callback has already run by the time the triggering call returns.
+- **Fixed clock**: time never advances, so no scheduled `setTimeout`/`setInterval` callback is ever due — it never runs, regardless of the delay it was registered with.
+
+This synchronous execution is what makes the manual and sequential clocks deterministic: there is no need to `await` anything, or to yield to the event loop, for a due callback to have run. The trade-off is that call ordering can differ subtly from a real asynchronous run — for instance, code that assumes a `setTimeout(fn, 0)` always defers `fn` past the current synchronous block will observe it running immediately instead when using a manual or sequential clock.
+
 ---
 
 # Clock strategies
