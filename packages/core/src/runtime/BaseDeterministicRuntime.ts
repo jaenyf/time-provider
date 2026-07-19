@@ -37,20 +37,29 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const handle = this.#nextTimeoutHandleValue as unknown as SetTimeoutHandle;
     this.#timeoutCallbacksMap.set(handle, { runAt, callback });
     this.#nextTimeoutHandleValue += 1;
-    this.mayRunTimeoutCallbacks(now);
+    // `now` can't have moved since any earlier call, so nothing already in the map can have newly become due
+    this.mayRunTimeoutCallbacks(now, handle);
     return handle;
   }
   clearTimeout(handle: SetTimeoutHandle) {
     this.#timeoutCallbacksMap.delete(handle);
   }
-  protected mayRunTimeoutCallbacks(nowTimestamp: number): void {
+  protected mayRunTimeoutCallbacks(nowTimestamp: number, onlyHandle?: SetTimeoutHandle): void {
     const handlesToClear: SetTimeoutHandle[] = [];
     const callbacksToRun: (() => void)[] = [];
 
-    for (const [handle, entry] of this.#timeoutCallbacksMap) {
-      if (entry.runAt <= nowTimestamp) {
-        handlesToClear.push(handle);
+    if (onlyHandle !== undefined) {
+      const entry = this.#timeoutCallbacksMap.get(onlyHandle);
+      if (entry !== undefined && entry.runAt <= nowTimestamp) {
+        handlesToClear.push(onlyHandle);
         callbacksToRun.push(entry.callback);
+      }
+    } else {
+      for (const [handle, entry] of this.#timeoutCallbacksMap) {
+        if (entry.runAt <= nowTimestamp) {
+          handlesToClear.push(handle);
+          callbacksToRun.push(entry.callback);
+        }
       }
     }
 
@@ -73,26 +82,41 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       callback: callback,
     });
     this.#nextIntervalHandleValue += 1;
-    this.mayRunIntervalCallbacks(now);
+    // `now` can't have moved since any earlier call, so nothing already in the map can have newly become due
+    this.mayRunIntervalCallbacks(now, handle);
     return handle;
   }
   clearInterval(handle: SetIntervalHandle) {
     this.#intervalCallbacksMap.delete(handle);
   }
-  protected mayRunIntervalCallbacks(nowTimestamp: number): void {
-    for (const [_handle, entry] of this.#intervalCallbacksMap) {
-      while (entry.runAt <= nowTimestamp) {
-        entry.callback();
-        /*
-          Real environments (Node, browsers) clamp an interval delay below 1ms
-          up to 1ms - a 0ms interval still fires roughly once per millisecond,
-          not "as fast as infinitely possible". Falling back to 1 here mirrors
-          that: a live interval genuinely re-fires proportionally to elapsed
-          time when advance()-d far into the future, matching what it would
-          do in a real environment.
-        */
-        entry.runAt += entry.delay ? entry.delay : 1;
-      }
+  protected mayRunIntervalCallbacks(nowTimestamp: number, onlyHandle?: SetIntervalHandle): void {
+    if (onlyHandle !== undefined) {
+      /*
+       * `onlyHandle` is only ever passed here by setInterval(), synchronously right after that same handle was inserted.
+       * Nothing can have removed it yet, so we can safely assume it's always present.
+       */
+      const entry = this.#intervalCallbacksMap.get(onlyHandle)!;
+      this.#fireDueIntervalEntry(entry, nowTimestamp);
+
+      return;
+    }
+    for (const entry of this.#intervalCallbacksMap.values()) {
+      this.#fireDueIntervalEntry(entry, nowTimestamp);
+    }
+  }
+
+  #fireDueIntervalEntry(entry: IntervalEntry, nowTimestamp: number): void {
+    while (entry.runAt <= nowTimestamp) {
+      entry.callback();
+      /*
+        Real environments (Node, browsers) clamp an interval delay below 1ms
+        up to 1ms - a 0ms interval still fires roughly once per millisecond,
+        not "as fast as infinitely possible". Falling back to 1 here mirrors
+        that: a live interval genuinely re-fires proportionally to elapsed
+        time when advance()-d far into the future, matching what it would
+        do in a real environment.
+      */
+      entry.runAt += entry.delay ? entry.delay : 1;
     }
   }
 
