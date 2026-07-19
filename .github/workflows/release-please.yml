@@ -31,8 +31,41 @@ jobs:
           include-component-in-tag: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  publish:
+  post-release-updates:
     needs: release
+    if: needs.release.outputs.releases_created == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          cache: true
+
+      - run: vp install --frozen-lockfile
+      - run: vp run build
+
+      - name: Aggregate changelog
+        run: node scripts/aggregate-changelog.ts
+
+      - name: Run benchmark suite and update BENCHMARK.md
+        working-directory: tools/benchmark
+        run: bun run bench:changelog
+
+      - name: Commit changelog and benchmark history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md BENCHMARK.md
+          git diff --cached --quiet || git commit -m "chore: update changelog and benchmark history [skip ci]"
+          git push
+
+  publish:
+    needs: post-release-updates
     if: needs.release.outputs.releases_created == 'true'
     permissions:
       contents: read
@@ -58,30 +91,6 @@ jobs:
 
       - name: Publish ${{ matrix.path }}
         run: npm run -w ${{ matrix.path }} release
-
-  aggregate-changelog:
-    needs: release
-    if: needs.release.outputs.releases_created == 'true'
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-
-      - run: node scripts/aggregate-changelog.ts
-
-      - name: Commit aggregated changelog
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git diff --cached --quiet || git commit -m "chore: regenerate aggregated changelog [skip ci]"
-          git push
 
   close-released-issues:
     needs: publish

@@ -5,48 +5,16 @@
  * worker/process.
  * Run after `vitest bench` completes: `node bench/shared/report.ts`
  */
-import { readdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import {
+  buildScenarioRows,
+  groupSamples,
+  passCountFor,
+  readSamples,
+  summarize,
+  median,
+} from "./aggregate.ts";
 
-const RESULTS_DIR = fileURLToPath(new URL("../../bench-results/", import.meta.url));
-
-type Sample = { adapter: string; scenario: string; elapsedMs: number; pass?: string };
-
-function readSamples(): Sample[] {
-  const samples: Sample[] = [];
-  for (const file of readdirSync(RESULTS_DIR)) {
-    if (!file.endsWith(".ndjson")) continue;
-    for (const line of readFileSync(`${RESULTS_DIR}/${file}`, "utf8").split("\n").filter(Boolean)) {
-      samples.push(JSON.parse(line));
-    }
-  }
-  return samples;
-}
-
-function summarize(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  return { count: values.length, mean, min: sorted[0], max: sorted.at(-1)! };
-}
-
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-function percentile(sortedValues: number[], p: number): number {
-  const index = Math.min(sortedValues.length - 1, Math.ceil((p / 100) * sortedValues.length) - 1);
-  return sortedValues[Math.max(0, index)];
-}
-
-const byScenario = new Map<string, Map<string, Map<string, number[]>>>();
-for (const { adapter, scenario, elapsedMs, pass = "1" } of readSamples()) {
-  const byAdapter = byScenario.get(scenario) ?? byScenario.set(scenario, new Map()).get(scenario)!;
-  const byPass = byAdapter.get(adapter) ?? byAdapter.set(adapter, new Map()).get(adapter)!;
-  const values = byPass.get(pass) ?? byPass.set(pass, []).get(pass)!;
-  values.push(elapsedMs);
-}
+const byScenario = groupSamples(readSamples());
 
 for (const [scenario, byAdapter] of byScenario) {
   console.log(`\n${scenario}`);
@@ -65,57 +33,13 @@ for (const [scenario, byAdapter] of byScenario) {
     );
   }
 }
-type Row = {
-  adapter: string;
-  hz: number;
-  min: number;
-  max: number;
-  mean: number;
-  p75: number;
-  p99: number;
-  p995: number;
-  p999: number;
-  rme: number;
-  samples: number;
-};
-
-function buildRow(adapter: string, byPass: Map<string, number[]>): Row {
-  const allValues = [...byPass.values()].flat();
-  const sorted = [...allValues].sort((a, b) => a - b);
-  const passMeans = [...byPass.values()].map(
-    (values) => values.reduce((sum, v) => sum + v, 0) / values.length,
-  );
-  const robustMean = median(passMeans);
-
-  const n = allValues.length;
-  const variance =
-    n > 1 ? allValues.reduce((sum, v) => sum + (v - robustMean) ** 2, 0) / (n - 1) : 0;
-  const standardErrorOfMean = Math.sqrt(variance) / Math.sqrt(n);
-  const rme = robustMean > 0 ? (standardErrorOfMean / robustMean) * 100 : 0;
-
-  return {
-    adapter,
-    hz: robustMean > 0 ? 1000 / robustMean : 0,
-    min: sorted[0],
-    max: sorted.at(-1)!,
-    mean: robustMean,
-    p75: percentile(sorted, 75),
-    p99: percentile(sorted, 99),
-    p995: percentile(sorted, 99.5),
-    p999: percentile(sorted, 99.9),
-    rme,
-    samples: n,
-  };
-}
 
 function formatVitestStyleTable(
   scenario: string,
   byAdapter: Map<string, Map<string, number[]>>,
 ): void {
-  const rows = [...byAdapter.entries()]
-    .map(([adapter, byPass]) => buildRow(adapter, byPass))
-    .sort((a, b) => b.hz - a.hz);
-  const passCount = Math.max(...[...byAdapter.values()].map((byPass) => byPass.size));
+  const rows = buildScenarioRows(byAdapter);
+  const passCount = passCountFor(byAdapter);
 
   console.log(`\n ✓ ${scenario} (median across ${passCount} pass${passCount === 1 ? "" : "es"})`);
   console.log(
