@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
     steps:
       - id: release
         uses: googleapis/release-please-action@v5
@@ -37,6 +38,10 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJson(needs.release.outputs.paths_released) }}
 
     steps:
       - uses: actions/checkout@v7
@@ -51,15 +56,8 @@ jobs:
 
       - run: vp install --frozen-lockfile
 
-      # TODO: restore when issue 2189 ( https://github.com/voidzero-dev/vite-plus/issues/2189 ) is solved
-      - name: Publishing
-        run: |
-          npm run -w @time-provider/core release
-          npm run -w @time-provider/plugin-dayjs release
-          npm run -w @time-provider/plugin-luxon release
-          npm run -w @time-provider/plugin-moment release
-          npm run -w @time-provider/plugin-native release
-          npm run -w @time-provider/plugin-temporal release
+      - name: Publish ${{ matrix.path }}
+        run: npm run -w ${{ matrix.path }} release
 
   aggregate-changelog:
     needs: release
