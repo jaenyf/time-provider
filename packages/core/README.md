@@ -43,20 +43,27 @@ Application
 Global runtime clock
 ```
 
-you get:
+### What if I already have a Clock abstraction? 🦆
 
-```
-Application boundary
-    |
-    ▼
-TimeProvider
-    |
-    ├── Time access
-    ├── Parser
-    └── Scheduler
-```
+You might already have a Clock abstraction and replace its implementation in tests with a fake timer-based solution.
 
-Time becomes an explicit dependency that can be replaced depending on the context.
+If so, you may want to consider these points :
+
+- ❌ [A clock interface may be insufficient](#why-not-just-create-a-clock-interface).
+- ✅ `time-provider` provides a **lightweight alternative** to traditional fake timer libraries, as demonstrated by our [benchmark](BENCHMARK.md).
+- ✅ `time-provider` has a neat and concise builder interface to create your runtime ([see below](#usage)).
+- ✅ You are not bound to the Date object or a single date library. Use the date library you already have and keep type-safe access through the adapter.
+
+|                                         | Jest/Sinon | time-provider |
+| --------------------------------------- | ---------- | ------------- |
+| Leaves globals untouched                | ❌         | ✅            |
+| Allows multiple time contexts           | ❌         | ✅            |
+| Works with domain injection             | ❌         | ✅            |
+| Provides a runtime abstraction boundary | ❌         | ✅            |
+| Controls scheduling                     | ✅         | ✅            |
+| Preserves date abstraction boundary     | ❌         | ✅            |
+
+You may want to give it a try!
 
 ---
 
