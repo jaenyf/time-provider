@@ -60,7 +60,7 @@
     "vite-plus": "latest"
   },
   "validate-branch-name": {
-    "pattern": "^(main)$|^(feature|fix|hotfix|chore|refactor|docs|ci)/.+$",
-    "errorMsg": "Branch name must be main, or <type>/<description> (feature, fix, hotfix, chore, refactor, docs, ci) - see conventionalbranch.org"
+    "pattern": "^(main)$|^(ai|bugfix|chore|ci|docs|feat|feature|fix|hotfix|perf|release|refactor)/.+$",
+    "errorMsg": "Branch name must be main, or <type>/<description> (ai, bugfix, chore, ci, docs, feat, feature, fix, hotfix, perf, release, refactor) - see conventionalbranch.org"
   }
 }
