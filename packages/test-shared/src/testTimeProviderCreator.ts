@@ -1,83 +1,71 @@
 import { expect, test, describe } from "vite-plus/test";
-import { TimeProviderCreator, type IPlugin } from "@time-provider/core";
+import { TimeProviderCreator, type IPlugin, type IUtcOnlyPlugin } from "@time-provider/core";
 
-export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate>) {
+function getBuilderFor<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
+  return plugin.supportsLocalTime
+    ? new TimeProviderCreator().for(plugin)
+    : new TimeProviderCreator().for(plugin);
+}
+
+export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
   describe("system", () => {
     test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = new TimeProviderCreator().for(plugin).create();
+      const sut = getBuilderFor(plugin).create();
       expect(sut).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      const sut = new TimeProviderCreator().for(plugin).create();
+      const sut = getBuilderFor(plugin).create();
       expect(typeof sut).toBe("object");
     });
   });
 
   describe("fixed", () => {
     test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
-        .asFixed()
-        .withFixedTime("2026-01-01T00:00Z")
-        .create();
+      const sut = getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
       expect(sut).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
-        .asFixed()
-        .withFixedTime("2026-01-01T00:00Z")
-        .create();
+      const sut = getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
       expect(typeof sut).toBe("object");
     });
     test("uses default epoch time", () => {
-      const sut = new TimeProviderCreator().for(plugin).asFixed().create();
+      const sut = getBuilderFor(plugin).asFixed().create();
       expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });
 
   describe("manual", () => {
     test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
-        .asManual()
-        .withInitialTime("2026-01-01T00:00Z")
-        .create();
+      const sut = getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
       expect(sut).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
-        .asManual()
-        .withInitialTime("2026-01-01T00:00Z")
-        .create();
+      const sut = getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
       expect(typeof sut).toBe("object");
     });
     test("uses default epoch time", () => {
-      const sut = new TimeProviderCreator().for(plugin).asManual().create();
+      const sut = getBuilderFor(plugin).asManual().create();
       expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });
 
   describe("sequential", () => {
     test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
+      const sut = getBuilderFor(plugin)
         .asSequential()
         .withSequentialTime("2026-01-01T00:00Z")
         .create();
       expect(sut).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      const sut = new TimeProviderCreator()
-        .for(plugin)
+      const sut = getBuilderFor(plugin)
         .asSequential()
         .withSequentialTime("2026-01-01T00:00Z")
         .create();
       expect(typeof sut).toBe("object");
     });
     test("uses default epoch time", () => {
-      const sut = new TimeProviderCreator().for(plugin).asSequential().create();
+      const sut = getBuilderFor(plugin).asSequential().create();
       expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
     });
   });

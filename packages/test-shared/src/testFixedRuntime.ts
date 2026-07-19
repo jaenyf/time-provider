@@ -1,10 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testFixedRuntime<TDate>(
-  plugin: IPlugin<TDate>,
+  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSUT = () => plugin.createFixedRuntime("2026-01-01T00:00:00.000Z");
@@ -31,18 +31,20 @@ export function testFixedRuntime<TDate>(
   });
 
   describe("fixed", () => {
-    describe("localNow", () => {
+    describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.clock.localNow()).not.toThrow();
+        expect(() => (sut.clock as IClock<TDate>).localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
+        expect((sut.clock as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:00.000Z"),
+        );
       });
     });
 

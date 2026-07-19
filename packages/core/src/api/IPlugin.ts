@@ -1,7 +1,15 @@
 import type { IManualRuntime } from "../runtime/IManualRuntime.ts";
 import type { IRuntime } from "../runtime/IRuntime.ts";
 
+/**
+ * A plugin whose underlying date library has timezone-aware date type, so it can expose both local and UTC time.
+ */
 export interface IPlugin<TDate> {
+  /**
+   * Whether or not this plugin supports timezones and local time.
+   * Also serves as discriminant by `createTimeProvider.for()`.
+   */
+  readonly supportsLocalTime: true;
   /**
    * Create a runtime for system time and scheduler
    */

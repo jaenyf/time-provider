@@ -1,10 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testSequentialRuntime<TDate>(
-  plugin: IPlugin<TDate>,
+  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSUT = () =>
@@ -36,34 +36,44 @@ export function testSequentialRuntime<TDate>(
   });
 
   describe("sequential", () => {
-    describe("localNow", () => {
+    describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.clock.localNow()).not.toThrow();
+        expect(() => (sut.clock as IClock<TDate>).localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
+        expect((sut.clock as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
       });
       test("returns first added value", () => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:01.000Z"),
+        );
       });
       test("returns epoch time when no added value", () => {
         const sut = plugin.createSequentialRuntime([]);
-        expect(sut.clock.localNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("1970-01-01T00:00:00.000Z"),
+        );
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:01.000Z"),
+        );
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:02.000Z"),
+        );
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:03.000Z"),
+        );
       });
       test("overflowing calls returns last defined time", () => {
         const sut = plugin.createSequentialRuntime(["2026-01-01T00:00Z"]);
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
       });
     });
 
@@ -111,10 +121,10 @@ export function testSequentialRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
-          test.each([2, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
@@ -124,13 +134,13 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay);
               sut.setTimeout(callbackB, futureDelay);
-              sut.clock.localNow();
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
           );
-          test.each([1, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore future callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
@@ -140,13 +150,13 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setTimeout(callbackA, futureDelay * 2);
               sut.setTimeout(callbackB, futureDelay * 2);
-              sut.clock.localNow();
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
           );
-          test.each([1, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore cleared callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
@@ -158,7 +168,7 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
               sut.clearTimeout(timeoutHandleA);
               sut.clearTimeout(timeoutHandleB);
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
@@ -220,10 +230,10 @@ export function testSequentialRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
-          test.each([2, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
@@ -233,13 +243,13 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.clock.localNow();
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
           );
-          test.each([1, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore future callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
@@ -249,13 +259,13 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay * 2);
               sut.setInterval(callbackB, futureDelay * 2);
-              sut.clock.localNow();
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
           );
-          test.each([1, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore cleared callbacks when time advance with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
@@ -267,12 +277,12 @@ export function testSequentialRuntime<TDate>(
               const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
               sut.clearInterval(timeoutHandleA);
               sut.clearInterval(timeoutHandleB);
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },
           );
-          test.each([2, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "run next interval callbacks if delay has elapsed with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
@@ -282,15 +292,15 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
             },
           );
-          test.each([2, 20, 100])(
+          test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "ignore next interval callbacks if delay has not elapsed with localNow",
             (futureDelay: number) => {
               const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
@@ -300,10 +310,10 @@ export function testSequentialRuntime<TDate>(
               const callbackB = () => (callbackBCalled = true);
               sut.setInterval(callbackA, futureDelay);
               sut.setInterval(callbackB, futureDelay);
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               callbackACalled = false;
               callbackBCalled = false;
-              sut.clock.localNow();
+              (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
             },

@@ -1,7 +1,7 @@
 import type { IAdvanceableClockConfiguration } from "./IAdvanceableClockConfiguration.ts";
-import type { IClock } from "./IClock.ts";
+import type { IUtcOnlyClock } from "./IUtcOnlyClock.ts";
 
-export interface IManualClock<TDate> extends IClock<TDate> {
+export interface IUtcOnlyManualClock<TDate> extends IUtcOnlyClock<TDate> {
   /**
    * Moves this clock's time forward (or backward, using negative values) by
    * the given amount.
@@ -12,5 +12,5 @@ export interface IManualClock<TDate> extends IClock<TDate> {
    * {@link IScheduler} for details on this execution model.
    */
 
-  advance(advanceConfiguration: IAdvanceableClockConfiguration): IManualClock<TDate>;
+  advance(advanceConfiguration: IAdvanceableClockConfiguration): IUtcOnlyManualClock<TDate>;
 }
