@@ -1,0 +1,20 @@
+{
+  "name": "@time-provider/benchmark",
+  "private": true,
+  "description": "Library benchmark",
+  "type": "module",
+  "scripts": {
+    "bench": "rimraf bench-results && vitest bench bench/clock-read.bench.ts && vitest bench bench/manual-scheduling.bench.ts && vitest bench bench/sequential-scheduling.bench.ts && node bench/shared/report.ts",
+    "bench:multi": "node bench/run-multi.ts",
+    "bench:report": "node bench/shared/report.ts",
+    "bench:changelog": "node bench/generate-benchmark-md.ts"
+  },
+  "devDependencies": {
+    "@jest/fake-timers": "^30",
+    "@sinonjs/fake-timers": "^15",
+    "@time-provider/core": "workspace:*",
+    "@time-provider/plugin-native": "workspace:*",
+    "rimraf": "6.1.3",
+    "vite-plus": "catalog:"
+  }
+}
