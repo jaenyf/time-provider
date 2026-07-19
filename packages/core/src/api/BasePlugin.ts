@@ -6,6 +6,8 @@ import type { IPlugin } from "./IPlugin.ts";
  * Base class for plugin implementation
  */
 export abstract class BasePlugin<TDate> implements IPlugin<TDate> {
+  readonly supportsLocalTime = true as const;
+
   protected abstract readonly SystemRuntimeCtor: new () => IRuntime<TDate>;
   protected abstract readonly ManualRuntimeCtor: new (
     initialTime: string | number | TDate,

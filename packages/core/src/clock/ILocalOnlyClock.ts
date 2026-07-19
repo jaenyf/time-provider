@@ -1,4 +1,4 @@
-import type { TimezoneDefinition } from "./TimezoneDefinition.js";
+import type { TimezoneDefinition } from "./TimezoneDefinition.ts";
 
 export interface ILocalOnlyClock<TDate> {
   /**

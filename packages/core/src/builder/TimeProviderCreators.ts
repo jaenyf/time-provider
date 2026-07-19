@@ -1,5 +1,6 @@
 import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
 import type { IPlugin } from "../api/IPlugin.ts";
+import type { IUtcOnlyPlugin } from "../api/IUtcOnlyPlugin.ts";
 import type { ITimeProvider } from "../api/ITimeProvider.ts";
 import type {
   IFixedTimeProviderCreator,
@@ -91,10 +92,15 @@ class SequentialTimeProviderCreator<TDate>
 }
 
 export class TimeProviderCreator implements ITimeProviderCreator {
+  for<TDate>(adapter: IUtcOnlyPlugin<TDate>): IUtcOnlyPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
   for<TDate>(
-    adapter: IPlugin<TDate>,
+    adapter: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   ): IPluggedTimeProviderCreator<TDate> | IUtcOnlyPluggedTimeProviderCreator<TDate> {
-    return new PluggedTimeProviderCreator(adapter);
+    // The underlying runtime objects always have the full capability regardless of which
+    // overload matched - only the declared type at this boundary is restricted for
+    // IUtcOnlyPlugin adapters, so this widening is safe.
+    return new PluggedTimeProviderCreator(adapter as IPlugin<TDate>);
   }
 }
 

@@ -3,6 +3,11 @@ import type { IRuntime } from "../runtime/IRuntime.ts";
 
 export interface IPlugin<TDate> {
   /**
+   * Discriminates a full (timezone-aware) plugin from an `IUtcOnlyPlugin`, so
+   * `createTimeProvider.for()` can pick the right overload for a given plugin.
+   */
+  readonly supportsLocalTime: true;
+  /**
    * Create a runtime for system time and scheduler
    */
   createSystemRuntime(): IRuntime<TDate>;

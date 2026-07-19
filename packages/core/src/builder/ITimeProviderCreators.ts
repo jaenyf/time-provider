@@ -3,6 +3,7 @@ import type {
   IUtcOnlyManualTimeProvider,
 } from "../api/IManualTimeProvider.ts";
 import type { IPlugin } from "../api/IPlugin.ts";
+import type { IUtcOnlyPlugin } from "../api/IUtcOnlyPlugin.ts";
 import type { ITimeProvider, IUtcOnlyTimeProvider } from "../api/ITimeProvider.ts";
 
 interface ICreateTimeProvider<TDate> {
@@ -114,17 +115,12 @@ export interface IUtcOnlyPluggedTimeProviderCreator<TDate> {
 export interface ITimeProviderCreator {
   /**
    * Setup a Time-Provider for a given plugin (adapter)
+   *
+   * Overload order matters: `IUtcOnlyPlugin` must be checked first. Both interfaces are
+   * discriminated by `supportsLocalTime` (`false` vs `true`), so a full `IPlugin` never
+   * accidentally matches the narrower overload.
    * @param adapter The instance of the plugin (adapter) to use.
    */
-  for<TDate>(
-    adapter: IPlugin<TDate>,
-  ): IPluggedTimeProviderCreator<TDate> | IUtcOnlyPluggedTimeProviderCreator<TDate>;
-}
-
-export interface IUtcOnlyTimeProviderCreator {
-  /**
-   * Setup a Time-Provider for a given plugin (adapter)
-   * @param adapter The instance of the plugin (adapter) to use.
-   */
-  for<TDate>(adapter: IPlugin<TDate>): IUtcOnlyPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IUtcOnlyPlugin<TDate>): IUtcOnlyPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
 }

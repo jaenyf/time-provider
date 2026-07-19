@@ -1,11 +1,12 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testManualRuntime<TDate>(
-  plugin: IPlugin<TDate>,
+  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   parseTime: (initialValue: string | number | TDate) => TDate,
+  supportsLocalTime: boolean,
 ) {
   const createSUT = () => plugin.createManualRuntime("2026-01-01T00:00:00.000Z");
 
@@ -31,18 +32,20 @@ export function testManualRuntime<TDate>(
   });
 
   describe("manual", () => {
-    describe("localNow", () => {
+    describe.skipIf(!supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.clock.localNow()).not.toThrow();
+        expect(() => (sut.clock as unknown as IClock<TDate>).localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
+        expect((sut.clock as unknown as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect((sut.clock as unknown as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T00:00:00.000Z"),
+        );
       });
     });
 
@@ -209,7 +212,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(
@@ -266,7 +269,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(

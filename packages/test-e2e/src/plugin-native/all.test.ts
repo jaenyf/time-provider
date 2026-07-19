@@ -12,19 +12,15 @@ describe("e2e native", () => {
     const sequential = creator.asSequential().create();
 
     expect(system.clock.utcNow().toString()).toBeDefined();
-    expect(system.clock.localNow().toString()).toBeDefined();
     expect(system.parser.parse(new Date().getTime())).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
-    expect(fixed.clock.localNow().toString()).toBeDefined();
     expect(fixed.parser.parse(new Date().toString()).getTime()).toBeDefined();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
-    expect(manual.clock.localNow().toString()).toBeDefined();
     expect(manual.parser.parse(new Date().toString()).getTime()).toBeDefined();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
-    expect(sequential.clock.localNow().toString()).toBeDefined();
     expect(sequential.parser.parse(new Date().toString()).getTime()).toBeDefined();
 
     expect(() => {
