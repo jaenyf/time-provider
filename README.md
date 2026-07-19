@@ -1,4 +1,4 @@
-# Time-Provider
+# 🕰️ Time-Provider
 
 [![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
@@ -14,34 +14,27 @@
 
 ---
 
-## Time should be SOLID! (that's ~~DEEP~~ _DIP_)
+## Time should be SOLID! (that's ~~DEEP~~ _DIP_) 🌱
 
-Most applications access time through global APIs:
+Stop accessing time through global APIs:
 
 - `Date`
 - `Temporal.Now`
 - `setTimeout`
 - `setInterval`
 
-These APIs are convenient, but they make time an implicit dependency.
+This makes time an implicit dependency. And that's why you might have started using _**global fake timers**_.
 
 This creates problems:
 
-- business logic becomes coupled to the system clock
-- tests depend on real time passing
-- timers are difficult to control deterministically
-- different application boundaries cannot easily define their own notion of time
+- ❌ business logic becomes coupled to the system clock
+- ❌ tests depend on real time passing
+- ❌ timers are difficult to control deterministically
+- ❌ different application boundaries cannot easily define their own notion of time
 
-`time-provider` applies dependency inversion to time.
+✅ `time-provider` applies dependency inversion to time.
 
-Instead of:
-
-```
-Application
-    |
-    ▼
-Global runtime clock
-```
+Time becomes an explicit dependency that can be replaced depending on the context.
 
 ### What if I already have a Clock abstraction? 🦆
 
@@ -69,7 +62,7 @@ You may want to give it a try!
 
 ## What is it?
 
-`time-provider` is a TypeScript library for injecting **time and timers** into applications.
+`time-provider` is a TypeScript library for injecting **time and timers** into applications with the date library of your choice.
 
 It provides a single boundary for:
 
@@ -77,6 +70,8 @@ It provides a single boundary for:
 - parsing timestamps
 - scheduling future actions
 - controlling time progression during tests
+
+... with the date library of your choice.
 
 ```typescript
 interface ITimeProvider<TDate> {
@@ -135,7 +130,7 @@ With dependency injection, each boundary receives the time provider it needs.
 
 ---
 
-## Keep your date library
+## 💫 Keep your date library
 
 `time-provider` neither introduces a new date model nor forces you into one.
 
@@ -155,7 +150,9 @@ The adapter preserves the native date type with type-safe signatures.
 
 ---
 
-## Why not just create a Clock interface?
+## Why not just create a Clock interface? 🧭
+
+**A clock tells you what time it is. A time provider defines how your application interacts with time.**
 
 A clock abstraction solves one problem:
 
@@ -190,19 +187,19 @@ TimeProvider
 
 ---
 
-## Features
+## 🧩 Features
 
-- Dependency-injectable clocks and timers
-- Deterministic timers without replacing global APIs
-- Multiple clock strategies
-- Multiple isolated time contexts in the same application
-- Support for multiple date libraries
-- Native date types preserved
-- Type-safe return values
+- ✅ Dependency-injectable clocks and timers
+- ✅ Deterministic timers without replacing global APIs
+- ✅ Multiple clock strategies
+- ✅ Multiple isolated time contexts in the same application
+- ✅ Support for multiple date libraries
+- ✅ Native date types preserved
+- ✅ Type-safe return values
 
 ---
 
-# Quick start
+# 🚀 Quick start
 
 Install the core package and an adapter:
 
@@ -282,7 +279,7 @@ const timeProvider = createTimeProvider
   .withFixedTime("2026-01-01T00:00Z")
   .create();
 
-const sut = new UserService(time);
+const sut = new UserService(timeProvider);
 
 expect(sut.createUser().createdAt).toEqual(timeProvider.clock.utcNow());
 ```
@@ -293,7 +290,7 @@ expect(sut.createUser().createdAt).toEqual(timeProvider.clock.utcNow());
 
 The scheduler follows the selected clock strategy.
 
-With a manual clock, callbacks execute when time advances.
+With a [manual clock](#manual-clock), callbacks execute when time advances.
 
 ```typescript
 const timeProvider = createTimeProvider
@@ -318,6 +315,8 @@ expect(count).toBe(3);
 ### Execution model: synchronous vs. asynchronous
 
 This is a deliberate difference from native timers, and it's important to keep in mind:
+
+> ⚠️ Deterministic clocks intentionally do not emulate the JavaScript event loop. They are synchronous.
 
 - **System clock**: `setTimeout`/`setInterval` delegate to the real, native timers. Callbacks run **asynchronously**, on the real event loop, exactly like in production code.
 - **Manual and Sequential clocks**: callbacks run **synchronously, in-line**, at the moment they become due. A due callback can run as a direct side effect of `setTimeout`/`setInterval` itself (e.g. a delay of `0` or a negative value is already due when scheduled), or of `advance()`, `clock.localNow()`, or `clock.utcNow()` (whichever call causes the clock to reach or pass the callback's due time). There is no event loop tick involved: the callback has already run by the time the triggering call returns.
@@ -395,7 +394,7 @@ const timeProvider = createTimeProvider
 
 ---
 
-# Installation
+# 🛠️ Installation
 
 ```bash
 npm install @time-provider/core @time-provider/plugin-temporal
@@ -439,6 +438,6 @@ The library is split into:
 
 ---
 
-# License
+# License 📜
 
 MIT
