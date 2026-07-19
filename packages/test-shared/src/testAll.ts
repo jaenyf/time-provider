@@ -3,9 +3,9 @@ import { testSystemRuntime } from "./testSystemRuntime.ts";
 import { testFixedRuntime } from "./testFixedRuntime.ts";
 import { testManualRuntime } from "./testManualRuntime.ts";
 import { testSequentialRuntime } from "./testSequentialRuntime.ts";
-import { createTimeProvider, type IPlugin } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
+import { createTimeProvider, type IPlugin } from "@time-provider/core";
 
 export function testAll<TDate>(plugin: IPlugin<TDate>) {
   const parseTime = (initialValue: number | string | TDate) =>
