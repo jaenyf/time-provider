@@ -7,7 +7,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   protected _sequentialTimestamps: number[];
   constructor(sequentialTimes: (string | number | TDate)[]) {
     super();
-    this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToTimestampImpl(t));
+    this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
   }
 
   timestampImpl() {
@@ -17,13 +17,13 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    return this.convertToDateImpl(nowTimestamp);
+    return this.convertToUtcDateImpl(nowTimestamp);
   }
   utcNowImpl() {
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    return this.convertToDateImpl(nowTimestamp);
+    return this.convertToUtcDateImpl(nowTimestamp);
   }
 
   private peekTimestamp(): number {

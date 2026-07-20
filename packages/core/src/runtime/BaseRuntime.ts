@@ -1,4 +1,5 @@
 import type { IClock } from "../clock/IClock.ts";
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { IParser } from "../parser/IParser.ts";
 import type { IScheduler, SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
 import type { IRuntime } from "./IRuntime.ts";
@@ -23,7 +24,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   abstract clearInterval(handle: SetTimeoutHandle): void;
 
-  abstract localNow(): TDate;
+  abstract localNow(timezone?: TimezoneDefinition): TDate;
   abstract utcNow(): TDate;
 
   /**
@@ -38,8 +39,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
      * instance produced the same way regardless of what shape the input was,
      * rather than potentially returning the original object as-is.
      */
-    return this.convertToDateImpl(this.convertToTimestampImpl(this.convertToDateImpl(time)));
+    return this.convertToUtcDateImpl(
+      this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
+    );
   };
-  protected abstract convertToDateImpl(time: string | number | TDate): TDate;
-  protected abstract convertToTimestampImpl(time: string | number | TDate): number;
+  protected abstract convertToUtcDateImpl(time: string | number | TDate): TDate;
+  protected abstract convertToEpochTimestampImpl(time: string | number | TDate): number;
 }

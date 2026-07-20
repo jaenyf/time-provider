@@ -9,11 +9,11 @@ export class SystemRuntime extends BaseSystemRuntime<DateTime<boolean>> {
   utcNow(): DateTime {
     return DateTime.utc();
   }
-  protected convertToTimestampImpl(time: string | number | DateTime<boolean>): number {
+  protected convertToEpochTimestampImpl(time: string | number | DateTime<boolean>): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
 
-  protected convertToDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
+  protected convertToUtcDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
     return RuntimeHelper.convertToDate(time);
   }
 }

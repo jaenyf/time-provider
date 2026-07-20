@@ -30,10 +30,10 @@ export class ManualRuntime extends BaseManualRuntime<Date> {
     time.setMilliseconds(time.getMilliseconds() + milliseconds);
     return time;
   }
-  protected convertToTimestampImpl(time: string | number | Date): number {
+  protected convertToEpochTimestampImpl(time: string | number | Date): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | Date): Date {
+  protected convertToUtcDateImpl(time: string | number | Date): Date {
     return RuntimeHelper.convertToDate(time);
   }
 }

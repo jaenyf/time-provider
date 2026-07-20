@@ -25,10 +25,10 @@ export class ManualRuntime extends BaseManualRuntime<moment.Moment> {
   protected advanceMilliseconds(time: moment.Moment, milliseconds: number): moment.Moment {
     return time.add({ milliseconds });
   }
-  protected convertToTimestampImpl(time: string | number | moment.Moment): number {
+  protected convertToEpochTimestampImpl(time: string | number | moment.Moment): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | moment.Moment): moment.Moment {
+  protected convertToUtcDateImpl(time: string | number | moment.Moment): moment.Moment {
     return RuntimeHelper.convertToDate(time);
   }
 }

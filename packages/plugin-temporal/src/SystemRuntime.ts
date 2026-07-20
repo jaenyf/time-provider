@@ -9,10 +9,10 @@ export class SystemRuntime extends BaseSystemRuntime<Temporal.Instant> {
   utcNow(): Temporal.Instant {
     return Temporal.Now.zonedDateTimeISO("UTC").toInstant();
   }
-  protected convertToTimestampImpl(time: string | number | Temporal.Instant): number {
+  protected convertToEpochTimestampImpl(time: string | number | Temporal.Instant): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
+  protected convertToUtcDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
     return RuntimeHelper.convertToDate(time);
   }
 }

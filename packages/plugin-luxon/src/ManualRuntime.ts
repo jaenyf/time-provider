@@ -24,10 +24,10 @@ export class ManualRuntime extends BaseManualRuntime<DateTime<boolean>> {
   protected advanceMilliseconds(time: DateTime<boolean>, milliseconds: number): DateTime<boolean> {
     return time.plus({ milliseconds });
   }
-  protected convertToTimestampImpl(time: string | number | DateTime<boolean>): number {
+  protected convertToEpochTimestampImpl(time: string | number | DateTime<boolean>): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
+  protected convertToUtcDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
     return RuntimeHelper.convertToDate(time);
   }
 }

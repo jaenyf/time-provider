@@ -9,11 +9,11 @@ export class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
   utcNow(): moment.Moment {
     return moment.utc();
   }
-  protected convertToTimestampImpl(time: string | number | moment.Moment): number {
+  protected convertToEpochTimestampImpl(time: string | number | moment.Moment): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
 
-  protected convertToDateImpl(time: string | number | moment.Moment): moment.Moment {
+  protected convertToUtcDateImpl(time: string | number | moment.Moment): moment.Moment {
     return RuntimeHelper.convertToDate(time);
   }
 }

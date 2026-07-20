@@ -24,10 +24,10 @@ export class ManualRuntime extends BaseManualRuntime<dayjs.Dayjs> {
   protected advanceMilliseconds(time: dayjs.Dayjs, milliseconds: number): dayjs.Dayjs {
     return time.add(milliseconds, "millisecond");
   }
-  protected convertToTimestampImpl(time: string | number | dayjs.Dayjs): number {
+  protected convertToEpochTimestampImpl(time: string | number | dayjs.Dayjs): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+  protected convertToUtcDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
     return RuntimeHelper.convertToDate(time);
   }
 }

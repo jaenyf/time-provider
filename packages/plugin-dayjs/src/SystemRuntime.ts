@@ -10,11 +10,11 @@ export class SystemRuntime extends BaseSystemRuntime<Dayjs> {
   utcNow(): dayjs.Dayjs {
     return dayjs.utc();
   }
-  protected convertToTimestampImpl(time: string | number | dayjs.Dayjs): number {
+  protected convertToEpochTimestampImpl(time: string | number | dayjs.Dayjs): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
 
-  protected convertToDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+  protected convertToUtcDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
     return RuntimeHelper.convertToDate(time);
   }
 }

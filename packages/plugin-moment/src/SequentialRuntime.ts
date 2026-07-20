@@ -3,10 +3,10 @@ import { RuntimeHelper } from "./RuntimeHelper.ts";
 import moment from "moment";
 
 export class SequentialRuntime extends BaseSequentialRuntime<moment.Moment> {
-  protected convertToTimestampImpl(time: string | number | moment.Moment): number {
+  protected convertToEpochTimestampImpl(time: string | number | moment.Moment): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | moment.Moment): moment.Moment {
+  protected convertToUtcDateImpl(time: string | number | moment.Moment): moment.Moment {
     return RuntimeHelper.convertToDate(time);
   }
 }

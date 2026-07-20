@@ -28,10 +28,10 @@ export class ManualRuntime extends BaseManualRuntime<Temporal.Instant> {
   private toZoned(time: Temporal.Instant): Temporal.ZonedDateTime {
     return time.toZonedDateTimeISO("UTC");
   }
-  protected convertToTimestampImpl(time: string | number | Temporal.Instant): number {
+  protected convertToEpochTimestampImpl(time: string | number | Temporal.Instant): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
+  protected convertToUtcDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
     return RuntimeHelper.convertToDate(time);
   }
 }

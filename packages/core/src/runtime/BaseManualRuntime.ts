@@ -15,7 +15,7 @@ export abstract class BaseManualRuntime<TDate>
   }
 
   protected setDeterminedTime(time: TDate) {
-    this._sequentialTimestamps[0] = this.convertToTimestampImpl(time);
+    this._sequentialTimestamps[0] = this.convertToEpochTimestampImpl(time);
   }
 
   get clock(): IManualClock<TDate> {
