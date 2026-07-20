@@ -1,14 +1,22 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-  parseTime: (initialValue: string | number | TDate) => TDate,
+  parseTime: (initialValue: string | number | TDate, expressesAsLocal?: boolean) => TDate,
 ) {
+  const createSequentialRuntime = (
+    timezone: TimezoneDefinition,
+    sequentialTimes: (string | number | TDate)[],
+  ) =>
+    plugin.supportsLocalTime
+      ? plugin.createSequentialRuntime(timezone, sequentialTimes)
+      : plugin.createSequentialRuntime(sequentialTimes);
+
   const createSUT = () =>
-    plugin.createSequentialRuntime([
+    createSequentialRuntime("Pacific/Kiritimati", [
       "2026-01-01T00:00:01.000Z",
       "2026-01-01T00:00:02.000Z",
       "2026-01-01T00:00:03.000Z",
@@ -24,14 +32,14 @@ export function testSequentialRuntime<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createSequentialRuntime([isoTimeText]);
+        createSequentialRuntime("Pacific/Kiritimati", [isoTimeText]);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createSequentialRuntime([milliseconds]);
+      createSequentialRuntime("Pacific/Kiritimati", [milliseconds]);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createSequentialRuntime([parseTime("2026-01-01T00:00:00.000Z")]);
+      createSequentialRuntime("Pacific/Kiritimati", [parseTime("2026-01-01T00:00:00.000Z")]);
     });
   });
 
@@ -48,32 +56,38 @@ export function testSequentialRuntime<TDate>(
       test("returns first added value", () => {
         const sut = createSUT();
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T00:00:01.000Z"),
+          parseTime("2026-01-01T14:00:01+14:00", true),
         );
       });
       test("returns epoch time when no added value", () => {
-        const sut = plugin.createSequentialRuntime([]);
+        const sut = createSequentialRuntime("Pacific/Kiritimati", []);
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("1970-01-01T00:00:00.000Z"),
+          parseTime("1970-01-01T14:00+14:00", true),
         );
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T00:00:01.000Z"),
+          parseTime("2026-01-01T14:00:01+14:00", true),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T00:00:02.000Z"),
+          parseTime("2026-01-01T14:00:02+14:00", true),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T00:00:03.000Z"),
+          parseTime("2026-01-01T14:00:03+14:00", true),
         );
       });
       test("overflowing calls returns last defined time", () => {
-        const sut = plugin.createSequentialRuntime(["2026-01-01T00:00Z"]);
-        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect((sut.clock as IClock<TDate>).localNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        const sut = createSequentialRuntime("Pacific/Kiritimati", ["2026-01-01T00:00Z"]);
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T14:00+14:00", true),
+        );
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T14:00+14:00", true),
+        );
+        expect((sut.clock as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T14:00+14:00", true),
+        );
       });
     });
 
@@ -91,7 +105,7 @@ export function testSequentialRuntime<TDate>(
         expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
       });
       test("returns epoch time when no added value", () => {
-        const sut = plugin.createSequentialRuntime([]);
+        const sut = createSequentialRuntime("Pacific/Kiritimati", []);
         expect(sut.clock.utcNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
       });
       test("multiple calls returns sequentially defined times", () => {
@@ -101,7 +115,7 @@ export function testSequentialRuntime<TDate>(
         expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
       });
       test("overflowing calls returns last defined time", () => {
-        const sut = plugin.createSequentialRuntime(["2026-01-01T00:00Z"]);
+        const sut = createSequentialRuntime("Pacific/Kiritimati", ["2026-01-01T00:00Z"]);
         expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
         expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
         expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
@@ -117,7 +131,7 @@ export function testSequentialRuntime<TDate>(
       describe("additionnal", () => {
         describe("setTimeout", () => {
           test("can be called without specified delay", () => {
-            const sut = plugin.createSequentialRuntime([0, 1000]);
+            const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
@@ -127,7 +141,7 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, futureDelay * 2]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -143,7 +157,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore future callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -159,7 +176,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore cleared callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -176,7 +196,7 @@ export function testSequentialRuntime<TDate>(
           test.each([2, 20, 100])(
             "executes next callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, futureDelay * 2]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -192,7 +212,10 @@ export function testSequentialRuntime<TDate>(
           test.each([1, 20, 100])(
             "ignore future callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -208,7 +231,10 @@ export function testSequentialRuntime<TDate>(
           test.each([1, 20, 100])(
             "ignore cleared callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -226,7 +252,7 @@ export function testSequentialRuntime<TDate>(
 
         describe("setInterval", () => {
           test("can be called without specified delay", () => {
-            const sut = plugin.createSequentialRuntime([0, 1000]);
+            const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
@@ -236,7 +262,7 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "executes next callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, futureDelay * 2]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -252,7 +278,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore future callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -268,7 +297,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([1, 20, 100])(
             "ignore cleared callbacks when time advance with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -285,7 +317,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "run next interval callbacks if delay has elapsed with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -303,7 +338,10 @@ export function testSequentialRuntime<TDate>(
           test.skipIf(!plugin.supportsLocalTime).each([2, 20, 100])(
             "ignore next interval callbacks if delay has not elapsed with localNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -321,7 +359,7 @@ export function testSequentialRuntime<TDate>(
           test.each([2, 20, 100])(
             "executes next callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([0, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, futureDelay * 2]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -337,7 +375,10 @@ export function testSequentialRuntime<TDate>(
           test.each([1, 20, 100])(
             "ignore future callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -353,7 +394,10 @@ export function testSequentialRuntime<TDate>(
           test.each([1, 20, 100])(
             "ignore cleared callbacks when time advance with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -370,7 +414,10 @@ export function testSequentialRuntime<TDate>(
           test.each([2, 20, 100])(
             "run next interval callbacks if delay has elapsed with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay * 2]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay * 2,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -388,7 +435,10 @@ export function testSequentialRuntime<TDate>(
           test.each([2, 20, 100])(
             "ignore next interval callbacks if delay has not elapsed with utcNow",
             (futureDelay: number) => {
-              const sut = plugin.createSequentialRuntime([futureDelay, futureDelay + 1]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                futureDelay,
+                futureDelay + 1,
+              ]);
               let callbackACalled = false,
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
@@ -406,7 +456,10 @@ export function testSequentialRuntime<TDate>(
           test.each([3, 30, 300])(
             "runs callbacks multiple times if time advance consequently",
             (expectedRetries: number) => {
-              const sut = plugin.createSequentialRuntime([0, expectedRetries * 1000]);
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                0,
+                expectedRetries * 1000,
+              ]);
               let retries = 0;
               sut.scheduler.setInterval(() => {
                 retries++;

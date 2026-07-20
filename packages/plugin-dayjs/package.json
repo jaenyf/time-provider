@@ -54,7 +54,6 @@
   },
   "peerDependencies": {
     "@time-provider/core": "^0.0.4",
-    "dayjs": "~1.8.15",
-    "dayjs-plugin-utc": "~0.1.2"
+    "dayjs": "~1.8.15"
   }
 }

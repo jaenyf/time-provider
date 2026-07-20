@@ -1,17 +1,21 @@
-import { TimeInputValidator } from "@time-provider/core";
+import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp = (time: string | number | Date) =>
-    RuntimeHelper.convertToDate(time).getTime();
+    RuntimeHelper.convertToUtcDate(time).getTime();
 
   /* @__INLINE__ */
-  static convertToDate = (time: string | number | Date) => {
+  static convertToUtcDate = (time: string | number | Date) => {
     TimeInputValidator.assertValid(time);
     const result = new Date(time);
     if (Number.isNaN(result.getTime())) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
+      TimeInputValidator.throwInvalidTimeValue(time);
     }
     return result;
   };
+  /* @__INLINE__ */
+  static convertToLocalDate(_timezone: TimezoneDefinition, _time: string | number | Date): Date {
+    throw new Error("Operation not supported");
+  }
 }

@@ -1,4 +1,4 @@
-import { BaseSequentialRuntime } from "@time-provider/core";
+import { BaseSequentialRuntime, type TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class SequentialRuntime extends BaseSequentialRuntime<Date> {
@@ -6,6 +6,12 @@ export class SequentialRuntime extends BaseSequentialRuntime<Date> {
     return RuntimeHelper.convertToTimestamp(time);
   }
   protected convertToUtcDateImpl(time: string | number | Date): Date {
-    return RuntimeHelper.convertToDate(time);
+    return RuntimeHelper.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | Date,
+  ): Date {
+    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }

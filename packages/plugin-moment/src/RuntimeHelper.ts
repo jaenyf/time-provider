@@ -1,17 +1,28 @@
-import { TimeInputValidator } from "@time-provider/core";
-import moment from "moment";
+import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
+import moment from "moment-timezone";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp(time: string | number | moment.Moment): number {
-    return RuntimeHelper.convertToDate(time).valueOf();
+    return RuntimeHelper.convertToUtcDate(time).valueOf();
   }
   /* @__INLINE__ */
-  static convertToDate(time: string | number | moment.Moment): moment.Moment {
+  static convertToUtcDate(time: string | number | moment.Moment): moment.Moment {
     TimeInputValidator.assertValid(time);
     const result = typeof time === "string" ? moment(time, moment.ISO_8601, true) : moment(time);
     if (!result.isValid()) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
+      TimeInputValidator.throwInvalidTimeValue(time);
+    }
+    return result;
+  }
+  /* @__INLINE__ */
+  static convertToLocalDate(
+    timezone: TimezoneDefinition,
+    time: string | number | moment.Moment,
+  ): moment.Moment {
+    const result = this.convertToUtcDate(time).tz(timezone);
+    if (!result.isValid) {
+      TimeInputValidator.throwInvalidTimeValue(time);
     }
     return result;
   }

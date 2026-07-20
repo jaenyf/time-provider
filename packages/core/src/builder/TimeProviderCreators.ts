@@ -10,16 +10,29 @@ import type {
   ITimeProviderCreator,
   IUtcOnlyPluggedTimeProviderCreator,
 } from "./ITimeProviderCreators.ts";
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 
 abstract class BaseTimeProviderCreator<TDate> {
-  #plugin: IPlugin<TDate>;
+  #plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>;
+  #localTimezone: TimezoneDefinition;
 
-  constructor(plugin: IPlugin<TDate>) {
+  static defaultTimezone: TimezoneDefinition = "Etc/UTC";
+
+  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
     this.#plugin = plugin;
+    this.#localTimezone = localTimezone;
   }
 
   protected get plugin() {
     return this.#plugin;
+  }
+
+  protected get localTimezone() {
+    return this.#localTimezone;
+  }
+
+  protected set localTimezone(value: TimezoneDefinition) {
+    this.#localTimezone = value;
   }
 }
 
@@ -29,9 +42,18 @@ class FixedTimeProviderCreator<TDate>
 {
   #fixedDateTime?: string | number | TDate;
 
-  constructor(plugin: IPlugin<TDate>) {
-    super(plugin);
+  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+    super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
+  }
+  withLocalTimezone(timezone: TimezoneDefinition): IFixedTimeProviderCreator<TDate> {
+    this.localTimezone = timezone;
+    return this;
+  }
+
+  withDefaultLocalTimezone(): IFixedTimeProviderCreator<TDate> {
+    this.localTimezone = FixedTimeProviderCreator.defaultTimezone;
+    return this;
   }
 
   withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate> {
@@ -39,9 +61,10 @@ class FixedTimeProviderCreator<TDate>
     return this;
   }
   create(): ITimeProvider<TDate> {
-    return this.plugin.createFixedRuntime(
-      undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0,
-    );
+    const initialTime = undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0;
+    return this.plugin.supportsLocalTime
+      ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
+      : (this.plugin.createFixedRuntime(initialTime) as unknown as ITimeProvider<TDate>);
   }
 }
 
@@ -51,9 +74,19 @@ class ManualTimeProviderCreator<TDate>
 {
   #initialDateTime?: string | number | TDate;
 
-  constructor(plugin: IPlugin<TDate>) {
-    super(plugin);
+  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+    super(plugin, localTimezone);
     this.#initialDateTime = undefined;
+  }
+
+  withLocalTimezone(timezone: TimezoneDefinition): IManualTimeProviderCreator<TDate> {
+    this.localTimezone = timezone;
+    return this;
+  }
+
+  withDefaultLocalTimezone(): IManualTimeProviderCreator<TDate> {
+    this.localTimezone = ManualTimeProviderCreator.defaultTimezone;
+    return this;
   }
 
   withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate> {
@@ -61,9 +94,10 @@ class ManualTimeProviderCreator<TDate>
     return this;
   }
   create(): IManualTimeProvider<TDate> {
-    return this.plugin.createManualRuntime(
-      undefined !== this.#initialDateTime ? this.#initialDateTime : 0,
-    );
+    const initialTime = undefined !== this.#initialDateTime ? this.#initialDateTime : 0;
+    return this.plugin.supportsLocalTime
+      ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
+      : (this.plugin.createManualRuntime(initialTime) as unknown as IManualTimeProvider<TDate>);
   }
 }
 
@@ -73,8 +107,18 @@ class SequentialTimeProviderCreator<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
 
-  constructor(plugin: IPlugin<TDate>) {
-    super(plugin);
+  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+    super(plugin, localTimezone);
+  }
+
+  withLocalTimezone(timezone: TimezoneDefinition): ISequentialTimeProviderCreator<TDate> {
+    this.localTimezone = timezone;
+    return this;
+  }
+
+  withDefaultLocalTimezone(): ISequentialTimeProviderCreator<TDate> {
+    this.localTimezone = SequentialTimeProviderCreator.defaultTimezone;
+    return this;
   }
 
   withSequentialTime(
@@ -85,9 +129,10 @@ class SequentialTimeProviderCreator<TDate>
   }
 
   create(): ITimeProvider<TDate> {
-    return this.plugin.createSequentialRuntime(
-      this.#sequentialTimes.length ? this.#sequentialTimes : [0],
-    );
+    const sequentialTimes = this.#sequentialTimes.length ? this.#sequentialTimes : [0];
+    return this.plugin.supportsLocalTime
+      ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
+      : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as ITimeProvider<TDate>);
   }
 }
 
@@ -101,26 +146,40 @@ export class TimeProviderCreator implements ITimeProviderCreator {
   for<TDate>(
     adapter: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   ): IPluggedTimeProviderCreator<TDate> | IUtcOnlyPluggedTimeProviderCreator<TDate> {
-    return new PluggedTimeProviderCreator(adapter as IPlugin<TDate>);
+    return new PluggedTimeProviderCreator(adapter, "Etc/UTC");
   }
 }
 
-export class PluggedTimeProviderCreator<TDate> implements IPluggedTimeProviderCreator<TDate> {
-  #plugin: IPlugin<TDate>;
-  constructor(plugin: IPlugin<TDate>) {
-    this.#plugin = plugin;
+export class PluggedTimeProviderCreator<TDate>
+  extends BaseTimeProviderCreator<TDate>
+  implements IPluggedTimeProviderCreator<TDate>
+{
+  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+    super(plugin, localTimezone);
+  }
+
+  withLocalTimezone(timezone: TimezoneDefinition): IPluggedTimeProviderCreator<TDate> {
+    this.localTimezone = timezone;
+    return this;
+  }
+
+  withDefaultLocalTimezone(): IPluggedTimeProviderCreator<TDate> {
+    this.localTimezone = PluggedTimeProviderCreator.defaultTimezone;
+    return this;
   }
 
   create(): ITimeProvider<TDate> {
-    return this.#plugin.createSystemRuntime();
+    return this.plugin.supportsLocalTime
+      ? this.plugin.createSystemRuntime(this.localTimezone)
+      : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>);
   }
   asManual(): IManualTimeProviderCreator<TDate> {
-    return new ManualTimeProviderCreator(this.#plugin);
+    return new ManualTimeProviderCreator(this.plugin, this.localTimezone);
   }
   asFixed(): IFixedTimeProviderCreator<TDate> {
-    return new FixedTimeProviderCreator(this.#plugin);
+    return new FixedTimeProviderCreator(this.plugin, this.localTimezone);
   }
   asSequential(): ISequentialTimeProviderCreator<TDate> {
-    return new SequentialTimeProviderCreator(this.#plugin);
+    return new SequentialTimeProviderCreator(this.plugin, this.localTimezone);
   }
 }

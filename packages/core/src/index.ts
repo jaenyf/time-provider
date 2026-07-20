@@ -1,5 +1,6 @@
 export * from "./builder/TimeProviderCreators.ts";
 export * from "./clock/IClock.ts";
+export * from "./clock/TimezoneDefinition.ts";
 export * from "./createTimeProvider.ts";
 export * from "./parser/IParser.ts";
 export * from "./parser/TimeInputValidator.ts";

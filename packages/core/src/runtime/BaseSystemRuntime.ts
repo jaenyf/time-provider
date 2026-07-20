@@ -1,3 +1,4 @@
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
 import { BaseRuntime } from "./BaseRuntime.ts";
 
@@ -5,6 +6,10 @@ import { BaseRuntime } from "./BaseRuntime.ts";
  * Base class for a system runtime
  */
 export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
+  constructor(localTimezone: TimezoneDefinition) {
+    super(localTimezone);
+  }
+
   setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
     if (millisecondsDelay === undefined || millisecondsDelay < 0) {
       millisecondsDelay = 0;

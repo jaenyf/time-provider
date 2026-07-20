@@ -1,47 +1,48 @@
 import { expect, test, describe, beforeEach, afterEach, vi } from "vite-plus/test";
-import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
 import { testParser } from "./testParser.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
   parseTime: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createSystemRuntime = () => plugin.createSystemRuntime();
+  const createSystemRuntime = (timezone: TimezoneDefinition) =>
+    plugin.supportsLocalTime ? plugin.createSystemRuntime(timezone) : plugin.createSystemRuntime();
 
   describe("createSystemRuntime", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
-      expect(createSystemRuntime()).not.toBe(undefinedValue);
+      expect(createSystemRuntime("Pacific/Kiritimati")).not.toBe(undefinedValue);
     });
     test("creates an object", () => {
-      expect(typeof createSystemRuntime()).toBe("object");
+      expect(typeof createSystemRuntime("Pacific/Kiritimati")).toBe("object");
     });
   });
 
   describe("system", () => {
     describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
-        const sut = createSystemRuntime();
+        const sut = createSystemRuntime("Pacific/Kiritimati");
         expect(() => (sut.clock as IClock<TDate>).localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
-        const sut = createSystemRuntime();
+        const sut = createSystemRuntime("Pacific/Kiritimati");
         expect((sut.clock as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
       });
     });
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
-        const sut = createSystemRuntime();
+        const sut = createSystemRuntime("Pacific/Kiritimati");
         expect(() => sut.clock.utcNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
-        const sut = createSystemRuntime();
+        const sut = createSystemRuntime("Pacific/Kiritimati");
         expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
       });
     });
 
     describe("parser", () => {
-      testParser(() => plugin.createSystemRuntime().parser, parseTime);
+      testParser(() => plugin.createSystemRuntime("Pacific/Kiritimati").parser, parseTime);
     });
 
     describe("scheduler", () => {
@@ -53,7 +54,7 @@ export function testSystemRuntime<TDate>(
           vi.useRealTimers();
         });
         test("can be called without specified delay", () => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setTimeout(callback);
@@ -61,7 +62,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(true);
         });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setTimeout(callback, immediateDelay);
@@ -69,7 +70,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(true);
         });
         test.each([1, 20, 100])("ignore future callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setTimeout(callback, futureDelay * 2);
@@ -77,7 +78,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(false);
         });
         test.each([1, 20, 100])("ignore cleared callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackACalled = false;
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
@@ -100,7 +101,7 @@ export function testSystemRuntime<TDate>(
           vi.useRealTimers();
         });
         test("can be called without specified delay", () => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setInterval(callback);
@@ -108,7 +109,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(true);
         });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setInterval(callback, immediateDelay);
@@ -116,7 +117,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(true);
         });
         test.each([1, 20, 100])("ignore future callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
           sut.setInterval(callback, futureDelay * 2);
@@ -124,7 +125,7 @@ export function testSystemRuntime<TDate>(
           expect(callbackCalled).toBe(false);
         });
         test.each([1, 20, 100])("ignore cleared callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime().scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
           let callbackACalled = false;
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
@@ -140,7 +141,7 @@ export function testSystemRuntime<TDate>(
         test.each([3, 30, 300])(
           "runs callbacks multiple times if time advance consequently",
           (expectedRetries: number) => {
-            const sut = plugin.createSystemRuntime();
+            const sut = plugin.createSystemRuntime("Pacific/Kiritimati");
             let retries = 0;
             sut.scheduler.setInterval(() => {
               retries++;

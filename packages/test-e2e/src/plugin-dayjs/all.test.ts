@@ -1,14 +1,17 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createTimeProvider } from "../../../core/dist/index.mjs";
 import { plugin } from "../../../plugin-dayjs/dist/index.mjs";
-
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 describe("e2e plugin-dayjs", () => {
   test("createTimeProvider for plugin returns a value", () => {
     const creator = createTimeProvider.for(plugin);
+
+    creator.withLocalTimezone("Europe/Paris").asFixed().withLocalTimezone("Europe/Brussels");
 
     const system = creator.create();
     const fixed = creator.asFixed().create();

@@ -1,4 +1,4 @@
-import { BaseManualRuntime } from "@time-provider/core";
+import { BaseManualRuntime, type TimezoneDefinition } from "@time-provider/core";
 import { DateTime } from "luxon";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
@@ -28,6 +28,12 @@ export class ManualRuntime extends BaseManualRuntime<DateTime<boolean>> {
     return RuntimeHelper.convertToTimestamp(time);
   }
   protected convertToUtcDateImpl(time: string | number | DateTime<boolean>): DateTime<boolean> {
-    return RuntimeHelper.convertToDate(time);
+    return RuntimeHelper.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | DateTime<boolean>,
+  ): DateTime<boolean> {
+    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }

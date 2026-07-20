@@ -9,6 +9,15 @@ import type { IRuntime } from "./IRuntime.ts";
  * A runtime is an orchestrator (coordinator) between a clock and a scheduler
  */
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
+  #localTimezone: TimezoneDefinition;
+  protected constructor(localTimezone: TimezoneDefinition) {
+    this.#localTimezone = localTimezone;
+  }
+
+  protected get localTimezone(): TimezoneDefinition {
+    return this.#localTimezone;
+  }
+
   get clock(): IClock<TDate> {
     return this;
   }
@@ -28,10 +37,11 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract utcNow(): TDate;
 
   /**
-   * Parses any accepted input (an ISO string, an epoch-milliseconds number,
-   * or a TDate) into a normalized TDate instance.
+   * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
+   * @param expressesAsLocal whether or not to express time as local time instead of UTC.
+   * @returns a TDate expressed as UTC.
    */
-  parse = (time: string | number | TDate) => {
+  parse = (time: string | number | TDate, expressesAsLocal: boolean = false) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -39,10 +49,22 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
      * instance produced the same way regardless of what shape the input was,
      * rather than potentially returning the original object as-is.
      */
-    return this.convertToUtcDateImpl(
-      this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
-    );
+
+    if (!expressesAsLocal) {
+      return this.convertToUtcDateImpl(
+        this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
+      );
+    } else {
+      return this.convertToLocalDateImpl(
+        this.#localTimezone,
+        this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
+      );
+    }
   };
   protected abstract convertToUtcDateImpl(time: string | number | TDate): TDate;
+  protected abstract convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | TDate,
+  ): TDate;
   protected abstract convertToEpochTimestampImpl(time: string | number | TDate): number;
 }

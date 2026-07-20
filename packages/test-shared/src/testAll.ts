@@ -14,14 +14,16 @@ export function testAll<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
       : createTimeProvider.for(plugin);
   }
 
-  const parseTime = (initialValue: number | string | TDate) =>
-    plugin.createSystemRuntime().parse(initialValue);
+  const parseTime = (initialValue: number | string | TDate, expressesAsLocal: boolean = false) =>
+    plugin.supportsLocalTime
+      ? plugin.createSystemRuntime("Pacific/Kiritimati").parse(initialValue, expressesAsLocal)
+      : plugin.createSystemRuntime().parse(initialValue, expressesAsLocal);
 
   describe("Runtimes", () => {
     testSystemRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testFixedRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testManualRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testSequentialRuntime(plugin, (time: number | string | TDate) => parseTime(time));
+    testFixedRuntime(plugin, parseTime);
+    testManualRuntime(plugin, parseTime);
+    testSequentialRuntime(plugin, parseTime);
   });
 
   describe("TimeProviderCreators", () => {

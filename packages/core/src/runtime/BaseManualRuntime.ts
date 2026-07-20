@@ -2,6 +2,7 @@ import type { IManualRuntime } from "./IManualRuntime.ts";
 import { BaseSequentialRuntime } from "./BaseSequentialRuntime.ts";
 import type { IAdvanceableClockConfiguration } from "../clock/IAdvanceableClockConfiguration.ts";
 import type { IManualClock } from "../clock/IManualClock.ts";
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 
 /**
  * Base class for a deterministically manual runtime
@@ -10,8 +11,8 @@ export abstract class BaseManualRuntime<TDate>
   extends BaseSequentialRuntime<TDate>
   implements IManualRuntime<TDate>
 {
-  constructor(fixedTime: string | number | TDate) {
-    super([fixedTime]);
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | TDate) {
+    super(localTimezone, [fixedTime]);
   }
 
   protected setDeterminedTime(time: TDate) {

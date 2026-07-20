@@ -5,6 +5,7 @@ import type {
 import type { IPlugin } from "../api/IPlugin.ts";
 import type { IUtcOnlyPlugin } from "../api/IUtcOnlyPlugin.ts";
 import type { ITimeProvider, IUtcOnlyTimeProvider } from "../api/ITimeProvider.ts";
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 
 interface ICreateTimeProvider<TDate> {
   create(): ITimeProvider<TDate>;
@@ -14,7 +15,23 @@ interface ICreateUtcOnlyTimeProvider<TDate> {
   create(): IUtcOnlyTimeProvider<TDate>;
 }
 
-export interface IFixedTimeProviderCreator<TDate> extends ICreateTimeProvider<TDate> {
+interface IComposeWithLocalTimezone<TDate, TCreator extends ICreateTimeProvider<TDate>> {
+  /**
+   * Define the timezone used to produce local time.
+   * @param timezone the local timezone
+   */
+  withLocalTimezone(timezone: TimezoneDefinition): TCreator;
+
+  /**
+   * Discard any custom local timezone set and restore the default one.
+   */
+  withDefaultLocalTimezone(): TCreator;
+}
+
+export interface IFixedTimeProviderCreator<TDate>
+  extends
+    ICreateTimeProvider<TDate>,
+    IComposeWithLocalTimezone<TDate, IFixedTimeProviderCreator<TDate>> {
   /**
    * Store the fixed time of the fixed time provider
    */
@@ -28,7 +45,10 @@ export interface IUtcOnlyFixedTimeProviderCreator<TDate> extends ICreateUtcOnlyT
   withFixedTime(initialDateTime: string | number | TDate): IUtcOnlyFixedTimeProviderCreator<TDate>;
 }
 
-export interface IManualTimeProviderCreator<TDate> extends ICreateTimeProvider<TDate> {
+export interface IManualTimeProviderCreator<TDate>
+  extends
+    ICreateTimeProvider<TDate>,
+    IComposeWithLocalTimezone<TDate, IManualTimeProviderCreator<TDate>> {
   /**
    * Store the initial time of the manual time provider
    */
@@ -54,7 +74,10 @@ export interface IUtcOnlyManualTimeProviderCreator<
   create(): IUtcOnlyManualTimeProvider<TDate>;
 }
 
-export interface ISequentialTimeProviderCreator<TDate> extends ICreateTimeProvider<TDate> {
+export interface ISequentialTimeProviderCreator<TDate>
+  extends
+    ICreateTimeProvider<TDate>,
+    IComposeWithLocalTimezone<TDate, ISequentialTimeProviderCreator<TDate>> {
   /**
    * Store a new sequential time to be provided when getting time
    */
@@ -74,7 +97,10 @@ export interface IUtcOnlySequentialTimeProviderCreator<
   ): IUtcOnlySequentialTimeProviderCreator<TDate>;
 }
 
-export interface IPluggedTimeProviderCreator<TDate> {
+export interface IPluggedTimeProviderCreator<TDate> extends IComposeWithLocalTimezone<
+  TDate,
+  IPluggedTimeProviderCreator<TDate>
+> {
   /**
    * Create a Time-Provider for the system time.
    */

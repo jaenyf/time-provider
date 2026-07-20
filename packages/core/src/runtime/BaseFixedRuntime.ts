@@ -1,11 +1,12 @@
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import { BaseSequentialRuntime } from "./BaseSequentialRuntime.ts";
 
 /**
  * Base class for a deterministically fixed runtime
  */
 export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDate> {
-  constructor(fixedTime: string | number | TDate) {
-    super([fixedTime]);
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | TDate) {
+    super(localTimezone, [fixedTime]);
   }
 
   protected override mayRunTimeoutCallbacks(_nowTimestamp: number): void {

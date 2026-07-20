@@ -1,3 +1,4 @@
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
 
 /**
@@ -5,8 +6,8 @@ import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
  */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
   protected _sequentialTimestamps: number[];
-  constructor(sequentialTimes: (string | number | TDate)[]) {
-    super();
+  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | TDate)[]) {
+    super(localTimezone);
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
   }
 
@@ -17,7 +18,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    return this.convertToUtcDateImpl(nowTimestamp);
+    return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp);
   }
   utcNowImpl() {
     const nowTimestamp = this.getNextSequentialTimestamp();

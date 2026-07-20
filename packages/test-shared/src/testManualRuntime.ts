@@ -1,13 +1,21 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IClock, IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testManualRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-  parseTime: (initialValue: string | number | TDate) => TDate,
+  parseTime: (initialValue: string | number | TDate, expressesAsLocal?: boolean) => TDate,
 ) {
-  const createSUT = () => plugin.createManualRuntime("2026-01-01T00:00:00.000Z");
+  const createManualRuntime = (
+    timezone: TimezoneDefinition,
+    initialTime: string | number | TDate,
+  ) =>
+    plugin.supportsLocalTime
+      ? plugin.createManualRuntime(timezone, initialTime)
+      : plugin.createManualRuntime(initialTime);
+
+  const createSUT = () => createManualRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
 
   describe("createManualRuntime", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
@@ -19,14 +27,14 @@ export function testManualRuntime<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createManualRuntime(isoTimeText);
+        createManualRuntime("Pacific/Kiritimati", isoTimeText);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createManualRuntime(milliseconds);
+      createManualRuntime("Pacific/Kiritimati", milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createManualRuntime(parseTime("2026-01-01T00:00:00.000Z"));
+      createManualRuntime("Pacific/Kiritimati", parseTime("2026-01-01T00:00:00.000Z"));
     });
   });
 
@@ -43,7 +51,7 @@ export function testManualRuntime<TDate>(
       test("returns a fixed value", () => {
         const sut = createSUT();
         expect((sut.clock as unknown as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T00:00:00.000Z"),
+          parseTime("2026-01-01T14:00+14:00", true),
         );
       });
     });
@@ -357,7 +365,7 @@ export function testManualRuntime<TDate>(
           test.each([3, 30, 300])(
             "runs callbacks multiple times if time advance consequently",
             (expectedRetries: number) => {
-              const sut = plugin.createManualRuntime(0);
+              const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let retries = 0;
               sut.scheduler.setInterval(() => {
                 retries++;

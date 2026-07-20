@@ -1,4 +1,4 @@
-import { BaseManualRuntime } from "@time-provider/core";
+import { BaseManualRuntime, type TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class ManualRuntime extends BaseManualRuntime<Date> {
@@ -34,6 +34,12 @@ export class ManualRuntime extends BaseManualRuntime<Date> {
     return RuntimeHelper.convertToTimestamp(time);
   }
   protected convertToUtcDateImpl(time: string | number | Date): Date {
-    return RuntimeHelper.convertToDate(time);
+    return RuntimeHelper.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | Date,
+  ): Date {
+    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }
