@@ -3,8 +3,8 @@ import { RuntimeHelper } from "./RuntimeHelper.ts";
 import moment from "moment-timezone";
 
 export class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
-  localNow(timezone?: TimezoneDefinition): moment.Moment {
-    return moment.utc().tz(timezone ? timezone : this.localTimezone);
+  localNow(): moment.Moment {
+    return moment.utc().tz(this.localTimezone);
   }
   utcNow(): moment.Moment {
     return moment.utc();

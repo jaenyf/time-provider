@@ -3,8 +3,8 @@ import { RuntimeHelper } from "./RuntimeHelper.ts";
 import { DateTime } from "luxon";
 
 export class SystemRuntime extends BaseSystemRuntime<DateTime<boolean>> {
-  localNow(timezone?: TimezoneDefinition): DateTime<boolean> {
-    return DateTime.utc().setZone(timezone ? timezone : this.localTimezone);
+  localNow(): DateTime<boolean> {
+    return DateTime.utc().setZone(this.localTimezone);
   }
   utcNow(): DateTime<boolean> {
     return DateTime.utc();

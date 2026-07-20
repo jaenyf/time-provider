@@ -3,11 +3,8 @@ import { RuntimeHelper } from "./RuntimeHelper.ts";
 import { Temporal } from "@js-temporal/polyfill";
 
 export class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
-  localNow(timezone?: TimezoneDefinition): Temporal.ZonedDateTime {
-    return RuntimeHelper.convertToLocalDate(
-      timezone ? timezone : this.localTimezone,
-      this.utcNow(),
-    );
+  localNow(): Temporal.ZonedDateTime {
+    return RuntimeHelper.convertToLocalDate(this.localTimezone, this.utcNow());
   }
   utcNow(): Temporal.ZonedDateTime {
     return Temporal.Now.zonedDateTimeISO("UTC");

@@ -5,10 +5,8 @@ import "dayjs/plugin/timezone.js";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class SystemRuntime extends BaseSystemRuntime<Dayjs> {
-  localNow(timezone?: TimezoneDefinition): dayjs.Dayjs {
-    return dayjs()
-      .utc()
-      .tz(timezone ? timezone : this.localTimezone);
+  localNow(): dayjs.Dayjs {
+    return dayjs().utc().tz(this.localTimezone);
   }
   utcNow(): dayjs.Dayjs {
     return dayjs.utc();

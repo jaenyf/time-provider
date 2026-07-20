@@ -83,8 +83,9 @@ interface ITimeProvider<TDate> {
 
 ```typescript
 interface IClock<TDate> {
-  localNow(timezone?: TimezoneDefinition): TDate;
+  localNow(): TDate;
   utcNow(): TDate;
+  withLocalTimezone(localTimezone: TimezoneDefinition): IClock<TDate>;
 }
 ```
 

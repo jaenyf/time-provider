@@ -33,8 +33,12 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   abstract clearInterval(handle: SetTimeoutHandle): void;
 
-  abstract localNow(timezone?: TimezoneDefinition): TDate;
+  abstract localNow(): TDate;
   abstract utcNow(): TDate;
+  withLocalTimezone(localTimezone: TimezoneDefinition): this {
+    this.#localTimezone = localTimezone;
+    return this;
+  }
 
   /**
    * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.

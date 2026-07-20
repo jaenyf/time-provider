@@ -30,6 +30,40 @@ export function testSystemRuntime<TDate>(
       });
     });
 
+    describe.skipIf(!plugin.supportsLocalTime)("withLocalTimezone", () => {
+      test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
+        "doesn't throw",
+        (newLocalTimezone: TimezoneDefinition) => {
+          const sut = createSystemRuntime("Pacific/Kiritimati");
+          expect(() =>
+            (sut.clock as IClock<TDate>).withLocalTimezone(newLocalTimezone),
+          ).not.toThrow();
+        },
+      );
+      test.each([undefined, null])("returns its instance", () => {
+        const sut = createSystemRuntime("Pacific/Kiritimati");
+        const clock = sut.clock as IClock<TDate>;
+        expect(clock.withLocalTimezone("Pacific/Kiritimati")).toBe(clock);
+      });
+      test.each([
+        "Etc/UTC",
+        "Africa/Cairo",
+        "Antarctica/McMurdo",
+        "Asia/Tokyo",
+        "Europe/London",
+        "America/New_York",
+        "America/Sao_Paulo", //no DST
+        "Australia/Sydney",
+      ])("effectively alter the timezone", (newLocalTimezone) => {
+        const sut = createSystemRuntime("Pacific/Kiritimati");
+        const clock = sut.clock as IClock<TDate>;
+        const previousLocalTime = clock.localNow();
+        clock.withLocalTimezone(newLocalTimezone);
+        const newLocalTime = clock.localNow();
+        expect(newLocalTime).not.toEqual(previousLocalTime);
+      });
+    });
+
     describe("utcNow", () => {
       test("doesn't throw", () => {
         const sut = createSystemRuntime("Pacific/Kiritimati");

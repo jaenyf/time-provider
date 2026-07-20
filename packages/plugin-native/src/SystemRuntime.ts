@@ -2,11 +2,8 @@ import { BaseSystemRuntime, type TimezoneDefinition } from "@time-provider/core"
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
 export class SystemRuntime extends BaseSystemRuntime<Date> {
-  localNow(timezone?: TimezoneDefinition): Date {
-    return RuntimeHelper.convertToLocalDate(
-      timezone ? timezone : this.localTimezone,
-      this.utcNow(),
-    );
+  localNow(): Date {
+    return RuntimeHelper.convertToLocalDate(this.localTimezone, this.utcNow());
   }
   utcNow(): Date {
     return new Date();

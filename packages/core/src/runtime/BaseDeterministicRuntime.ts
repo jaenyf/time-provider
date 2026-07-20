@@ -127,12 +127,12 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
   protected abstract timestampImpl(): number;
 
-  override localNow(timezone: TimezoneDefinition): TDate {
-    return this.localNowImpl(timezone, this.timestampImpl());
+  override localNow(): TDate {
+    return this.localNowImpl(this.timestampImpl());
   }
   override utcNow(): TDate {
     return this.utcNowImpl(this.timestampImpl());
   }
-  protected abstract localNowImpl(timezone: TimezoneDefinition, nowTimestamp: number): TDate;
+  protected abstract localNowImpl(nowTimestamp: number): TDate;
   protected abstract utcNowImpl(nowTimestamp: number): TDate;
 }
