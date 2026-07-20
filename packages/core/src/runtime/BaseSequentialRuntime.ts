@@ -1,4 +1,5 @@
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
+import type { ITimeConverter } from "./ITimeConverter.ts";
 import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
 
 /**
@@ -6,8 +7,12 @@ import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
  */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
   protected _sequentialTimestamps: number[];
-  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | TDate)[]) {
-    super(localTimezone);
+  constructor(
+    localTimezone: TimezoneDefinition,
+    sequentialTimes: (string | number | TDate)[],
+    converter: ITimeConverter<TDate>,
+  ) {
+    super(localTimezone, converter);
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
   }
 

@@ -1,7 +1,40 @@
-import { BaseManualRuntime, type TimezoneDefinition } from "@time-provider/core";
+import {
+  BaseFixedRuntime,
+  BaseManualRuntime,
+  BaseSequentialRuntime,
+  BaseSystemRuntime,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
+export class FixedRuntime extends BaseFixedRuntime<Date> {
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | Date) {
+    super(localTimezone, fixedTime, RuntimeHelper);
+  }
+}
+
+export class SequentialRuntime extends BaseSequentialRuntime<Date> {
+  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | Date)[]) {
+    super(localTimezone, sequentialTimes, RuntimeHelper);
+  }
+}
+
+export class SystemRuntime extends BaseSystemRuntime<Date> {
+  constructor(localTimezone: TimezoneDefinition) {
+    super(localTimezone, RuntimeHelper);
+  }
+  localNow(): Date {
+    return RuntimeHelper.convertToLocalDate(this.localTimezone, this.utcNow());
+  }
+  utcNow(): Date {
+    return new Date();
+  }
+}
+
 export class ManualRuntime extends BaseManualRuntime<Date> {
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | Date) {
+    super(localTimezone, fixedTime, RuntimeHelper);
+  }
   protected advanceYears(time: Date, years: number): Date {
     time.setFullYear(time.getFullYear() + years);
     return time;
@@ -29,17 +62,5 @@ export class ManualRuntime extends BaseManualRuntime<Date> {
   protected advanceMilliseconds(time: Date, milliseconds: number): Date {
     time.setMilliseconds(time.getMilliseconds() + milliseconds);
     return time;
-  }
-  protected convertToEpochTimestampImpl(time: string | number | Date): number {
-    return RuntimeHelper.convertToTimestamp(time);
-  }
-  protected convertToUtcDateImpl(time: string | number | Date): Date {
-    return RuntimeHelper.convertToUtcDate(time);
-  }
-  protected convertToLocalDateImpl(
-    timezone: TimezoneDefinition,
-    time: string | number | Date,
-  ): Date {
-    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }

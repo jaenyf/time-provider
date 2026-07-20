@@ -1,72 +1,30 @@
-import { expect, test, describe } from "vite-plus/test";
-import { TimeProviderCreator, type IPlugin, type IUtcOnlyPlugin } from "@time-provider/core";
-
-function getBuilderFor<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
-  return plugin.supportsLocalTime
-    ? new TimeProviderCreator().for(plugin)
-    : new TimeProviderCreator().for(plugin);
-}
+import { describe } from "vite-plus/test";
+import type { IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
+import { getBuilderFor, testCreatedValue, testDefaultEpochTime } from "./helpers/testHelpers.ts";
 
 export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
   describe("system", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = getBuilderFor(plugin).create();
-      expect(sut).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      const sut = getBuilderFor(plugin).create();
-      expect(typeof sut).toBe("object");
-    });
+    testCreatedValue(() => getBuilderFor(plugin).create());
   });
 
   describe("fixed", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
-      expect(sut).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      const sut = getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
-      expect(typeof sut).toBe("object");
-    });
-    test("uses default epoch time", () => {
-      const sut = getBuilderFor(plugin).asFixed().create();
-      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
-    });
+    testCreatedValue(() =>
+      getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create(),
+    );
+    testDefaultEpochTime(() => getBuilderFor(plugin).asFixed().create());
   });
 
   describe("manual", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
-      expect(sut).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      const sut = getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
-      expect(typeof sut).toBe("object");
-    });
-    test("uses default epoch time", () => {
-      const sut = getBuilderFor(plugin).asManual().create();
-      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
-    });
+    testCreatedValue(() =>
+      getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create(),
+    );
+    testDefaultEpochTime(() => getBuilderFor(plugin).asManual().create());
   });
 
   describe("sequential", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue: unknown) => {
-      const sut = getBuilderFor(plugin)
-        .asSequential()
-        .withSequentialTime("2026-01-01T00:00Z")
-        .create();
-      expect(sut).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      const sut = getBuilderFor(plugin)
-        .asSequential()
-        .withSequentialTime("2026-01-01T00:00Z")
-        .create();
-      expect(typeof sut).toBe("object");
-    });
-    test("uses default epoch time", () => {
-      const sut = getBuilderFor(plugin).asSequential().create();
-      expect(sut.clock.utcNow()).toEqual(sut.parser.parse(0));
-    });
+    testCreatedValue(() =>
+      getBuilderFor(plugin).asSequential().withSequentialTime("2026-01-01T00:00Z").create(),
+    );
+    testDefaultEpochTime(() => getBuilderFor(plugin).asSequential().create());
   });
 }

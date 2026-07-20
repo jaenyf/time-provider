@@ -16,25 +16,29 @@ describe("e2e luxon", () => {
     expect(system.clock.localNow().toString()).toBeDefined();
     expect(system.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(system.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
-    expect(system.parser.parse(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(system.parser.parseToUtc(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(system.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     expect(fixed.clock.localNow().toString()).toBeDefined();
     expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
-    expect(fixed.parser.parse(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(fixed.parser.parseToUtc(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(fixed.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     expect(manual.clock.localNow().toString()).toBeDefined();
     expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
-    expect(manual.parser.parse(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(manual.parser.parseToUtc(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(manual.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     expect(sequential.clock.localNow().toString()).toBeDefined();
     expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
-    expect(sequential.parser.parse(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(sequential.parser.parseToUtc(DateTime.utc().toString()).toMillis()).toBeDefined();
+    expect(sequential.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

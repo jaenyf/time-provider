@@ -7,13 +7,24 @@ import { DateTime } from "luxon";
 describe("plugin-luxon", () => {
   testAll<DateTime>(plugin);
   describe("additionals", () => {
-    describe("parse", () => {
+    describe("parseToLocal", () => {
       test.each([null, undefined, {}, true, false])(
         "throws when forcing illegal objects",
         (illegal) => {
           const sut = createTimeProvider.for(plugin).create();
           expect(() => {
-            sut.parser.parse(illegal as string | number | DateTime<boolean>);
+            sut.parser.parseToLocal(illegal as string | number | DateTime<boolean>);
+          }).toThrow(`Invalid time value (value was '${illegal as string}')`);
+        },
+      );
+    });
+    describe("parseToUtc", () => {
+      test.each([null, undefined, {}, true, false])(
+        "throws when forcing illegal objects",
+        (illegal) => {
+          const sut = createTimeProvider.for(plugin).create();
+          expect(() => {
+            sut.parser.parseToUtc(illegal as string | number | DateTime<boolean>);
           }).toThrow(`Invalid time value (value was '${illegal as string}')`);
         },
       );

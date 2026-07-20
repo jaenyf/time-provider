@@ -2,6 +2,7 @@ import type { IClock } from "../clock/IClock.ts";
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { IParser } from "../parser/IParser.ts";
 import type { IScheduler, SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
+import type { ITimeConverter } from "./ITimeConverter.ts";
 import type { IRuntime } from "./IRuntime.ts";
 
 /**
@@ -10,8 +11,10 @@ import type { IRuntime } from "./IRuntime.ts";
  */
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #localTimezone: TimezoneDefinition;
-  protected constructor(localTimezone: TimezoneDefinition) {
+  #converter: ITimeConverter<TDate>;
+  protected constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     this.#localTimezone = localTimezone;
+    this.#converter = converter;
   }
 
   protected get localTimezone(): TimezoneDefinition {
@@ -42,10 +45,9 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
 
   /**
    * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
-   * @param expressesAsLocal whether or not to express time as local time instead of UTC.
-   * @returns a TDate expressed as UTC.
+   * @returns a TDate expressed as UTC time.
    */
-  parse = (time: string | number | TDate, expressesAsLocal: boolean = false) => {
+  parseToUtc = (time: string | number | TDate) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -54,21 +56,38 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
      * rather than potentially returning the original object as-is.
      */
 
-    if (!expressesAsLocal) {
-      return this.convertToUtcDateImpl(
-        this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
-      );
-    } else {
-      return this.convertToLocalDateImpl(
-        this.#localTimezone,
-        this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
-      );
-    }
+    return this.convertToUtcDateImpl(
+      this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
+    );
   };
-  protected abstract convertToUtcDateImpl(time: string | number | TDate): TDate;
-  protected abstract convertToLocalDateImpl(
+  /**
+   * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
+   * @returns a TDate expressed as local time.
+   */
+  parseToLocal = (time: string | number | TDate) => {
+    /*
+     * The input is first converted to a TDate (accepting any of the three
+     * input shapes), then round-tripped through a timestamp and back to a
+     * TDate again. This ensures the result is always a fresh, canonical
+     * instance produced the same way regardless of what shape the input was,
+     * rather than potentially returning the original object as-is.
+     */
+
+    return this.convertToLocalDateImpl(
+      this.#localTimezone,
+      this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
+    );
+  };
+  protected convertToUtcDateImpl(time: string | number | TDate): TDate {
+    return this.#converter.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
     timezone: TimezoneDefinition,
     time: string | number | TDate,
-  ): TDate;
-  protected abstract convertToEpochTimestampImpl(time: string | number | TDate): number;
+  ): TDate {
+    return this.#converter.convertToLocalDate(timezone, time);
+  }
+  protected convertToEpochTimestampImpl(time: string | number | TDate): number {
+    return this.#converter.convertToTimestamp(time);
+  }
 }

@@ -1,5 +1,5 @@
-import type { IPlugin } from "@time-provider/core";
+import type { IUtcOnlyPlugin } from "@time-provider/core";
 import { Plugin } from "./Plugin.ts";
 import moment from "moment";
 
-export const plugin: IPlugin<moment.Moment> = new Plugin();
+export const plugin: IUtcOnlyPlugin<moment.Moment> = new Plugin();

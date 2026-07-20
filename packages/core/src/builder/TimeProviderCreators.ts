@@ -34,6 +34,16 @@ abstract class BaseTimeProviderCreator<TDate> {
   protected set localTimezone(value: TimezoneDefinition) {
     this.#localTimezone = value;
   }
+
+  withLocalTimezone(timezone: TimezoneDefinition): this {
+    this.localTimezone = timezone;
+    return this;
+  }
+
+  withDefaultLocalTimezone(): this {
+    this.localTimezone = BaseTimeProviderCreator.defaultTimezone;
+    return this;
+  }
 }
 
 class FixedTimeProviderCreator<TDate>
@@ -46,16 +56,6 @@ class FixedTimeProviderCreator<TDate>
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
   }
-  withLocalTimezone(timezone: TimezoneDefinition): IFixedTimeProviderCreator<TDate> {
-    this.localTimezone = timezone;
-    return this;
-  }
-
-  withDefaultLocalTimezone(): IFixedTimeProviderCreator<TDate> {
-    this.localTimezone = FixedTimeProviderCreator.defaultTimezone;
-    return this;
-  }
-
   withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate> {
     this.#fixedDateTime = initialDateTime;
     return this;
@@ -79,16 +79,6 @@ class ManualTimeProviderCreator<TDate>
     this.#initialDateTime = undefined;
   }
 
-  withLocalTimezone(timezone: TimezoneDefinition): IManualTimeProviderCreator<TDate> {
-    this.localTimezone = timezone;
-    return this;
-  }
-
-  withDefaultLocalTimezone(): IManualTimeProviderCreator<TDate> {
-    this.localTimezone = ManualTimeProviderCreator.defaultTimezone;
-    return this;
-  }
-
   withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate> {
     this.#initialDateTime = initialDateTime;
     return this;
@@ -109,16 +99,6 @@ class SequentialTimeProviderCreator<TDate>
 
   constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
-  }
-
-  withLocalTimezone(timezone: TimezoneDefinition): ISequentialTimeProviderCreator<TDate> {
-    this.localTimezone = timezone;
-    return this;
-  }
-
-  withDefaultLocalTimezone(): ISequentialTimeProviderCreator<TDate> {
-    this.localTimezone = SequentialTimeProviderCreator.defaultTimezone;
-    return this;
   }
 
   withSequentialTime(
@@ -156,16 +136,6 @@ export class PluggedTimeProviderCreator<TDate>
 {
   constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
-  }
-
-  withLocalTimezone(timezone: TimezoneDefinition): IPluggedTimeProviderCreator<TDate> {
-    this.localTimezone = timezone;
-    return this;
-  }
-
-  withDefaultLocalTimezone(): IPluggedTimeProviderCreator<TDate> {
-    this.localTimezone = PluggedTimeProviderCreator.defaultTimezone;
-    return this;
   }
 
   create(): ITimeProvider<TDate> {

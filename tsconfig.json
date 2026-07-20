@@ -12,6 +12,7 @@
       "@time-provider/plugin-dayjs": ["./packages/plugin-dayjs/src"],
       "@time-provider/plugin-luxon": ["./packages/plugin-luxon/src"],
       "@time-provider/plugin-moment": ["./packages/plugin-moment/src"],
+      "@time-provider/plugin-moment-timezone": ["./packages/plugin-moment-timezone/src"],
       "@time-provider/plugin-native": ["./packages/plugin-native/src"],
       "@time-provider/plugin-temporal": ["./packages/plugin-temporal/src"]
     }

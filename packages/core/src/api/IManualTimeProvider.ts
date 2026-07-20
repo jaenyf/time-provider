@@ -1,13 +1,19 @@
-import type { IParserOnlyProvider } from "../parser/IParserOnlyProvider.ts";
-import type { ISchedulerOnlyProvider } from "../scheduler/ISchedulerOnlyProvider.ts";
-import type { IManualClockOnlyProvider } from "../clock/IManualClockOnlyProvider.ts";
-import type { IUtcOnlyManualClockOnlyProvider } from "../clock/IUtcOnlyManualClockOnlyProvider.ts";
+import type { IParserProvider } from "../parser/IParserProvider.ts";
+import type { ISchedulerProvider } from "../scheduler/ISchedulerProvider.ts";
+import type { IClockProvider } from "../clock/IClockProvider.ts";
+import type { IManualClock } from "../clock/IManualClock.ts";
+import type { IUtcOnlyManualClock } from "../clock/IUtcOnlyManualClock.ts";
+import type { IParser } from "../parser/IParser.ts";
+import type { IUtcOnlyParser } from "../parser/IUtcOnlyParser.ts";
 
 export interface IManualTimeProvider<TDate>
-  extends IManualClockOnlyProvider<TDate>, ISchedulerOnlyProvider, IParserOnlyProvider<TDate> {}
+  extends
+    IClockProvider<IManualClock<TDate>>,
+    ISchedulerProvider,
+    IParserProvider<IParser<TDate>> {}
 
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
-    IUtcOnlyManualClockOnlyProvider<TDate>,
-    ISchedulerOnlyProvider,
-    IParserOnlyProvider<TDate> {}
+    IClockProvider<IUtcOnlyManualClock<TDate>>,
+    ISchedulerProvider,
+    IParserProvider<IUtcOnlyParser<TDate>> {}

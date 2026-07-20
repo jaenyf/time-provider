@@ -1,82 +1,31 @@
 import { expect, test, describe, beforeEach, afterEach, vi } from "vite-plus/test";
-import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
-import { testParser } from "./testParser.ts";
+import type { IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
+import { testParser } from "./helpers/testParser.ts";
+import {
+  testConstructorArgs,
+  testWithLocalTimezone,
+  testLocalNow,
+  testUtcNow,
+} from "./helpers/testHelpers.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-  parseTime: (initialValue: string | number | TDate) => TDate,
+  parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
+  parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSystemRuntime = (timezone: TimezoneDefinition) =>
     plugin.supportsLocalTime ? plugin.createSystemRuntime(timezone) : plugin.createSystemRuntime();
+  const createSUT = () => createSystemRuntime("Pacific/Kiritimati");
 
-  describe("createSystemRuntime", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue) => {
-      expect(createSystemRuntime("Pacific/Kiritimati")).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      expect(typeof createSystemRuntime("Pacific/Kiritimati")).toBe("object");
-    });
-  });
+  testConstructorArgs("createSystemRuntime", createSUT);
 
   describe("system", () => {
-    describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
-      test("doesn't throw", () => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        expect(() => (sut.clock as IClock<TDate>).localNow()).not.toThrow();
-      });
-      test.each([undefined, null])("returns a value", (undefinedValue) => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        expect((sut.clock as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
-      });
-    });
-
-    describe.skipIf(!plugin.supportsLocalTime)("withLocalTimezone", () => {
-      test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
-        "doesn't throw",
-        (newLocalTimezone: TimezoneDefinition) => {
-          const sut = createSystemRuntime("Pacific/Kiritimati");
-          expect(() =>
-            (sut.clock as IClock<TDate>).withLocalTimezone(newLocalTimezone),
-          ).not.toThrow();
-        },
-      );
-      test.each([undefined, null])("returns its instance", () => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        const clock = sut.clock as IClock<TDate>;
-        expect(clock.withLocalTimezone("Pacific/Kiritimati")).toBe(clock);
-      });
-      test.each([
-        "Etc/UTC",
-        "Africa/Cairo",
-        "Antarctica/McMurdo",
-        "Asia/Tokyo",
-        "Europe/London",
-        "America/New_York",
-        "America/Sao_Paulo", //no DST
-        "Australia/Sydney",
-      ])("effectively alter the timezone", (newLocalTimezone) => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        const clock = sut.clock as IClock<TDate>;
-        const previousLocalTime = clock.localNow();
-        clock.withLocalTimezone(newLocalTimezone);
-        const newLocalTime = clock.localNow();
-        expect(newLocalTime).not.toEqual(previousLocalTime);
-      });
-    });
-
-    describe("utcNow", () => {
-      test("doesn't throw", () => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        expect(() => sut.clock.utcNow()).not.toThrow();
-      });
-      test.each([undefined, null])("returns a value", (undefinedValue) => {
-        const sut = createSystemRuntime("Pacific/Kiritimati");
-        expect(sut.clock.utcNow()).not.toEqual(undefinedValue);
-      });
-    });
+    testLocalNow(plugin.supportsLocalTime, createSUT);
+    testWithLocalTimezone<TDate>(plugin.supportsLocalTime, createSUT);
+    testUtcNow(createSUT);
 
     describe("parser", () => {
-      testParser(() => plugin.createSystemRuntime("Pacific/Kiritimati").parser, parseTime);
+      testParser(plugin, parseTimeToUtc, parseTimeToLocal);
     });
 
     describe("scheduler", () => {
