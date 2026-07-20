@@ -1,13 +1,21 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IPlugin } from "@time-provider/core";
+import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./testScheduler.ts";
 import { testParser } from "./testParser.ts";
 
 export function testManualRuntime<TDate>(
-  plugin: IPlugin<TDate>,
-  parseTime: (initialValue: string | number | TDate) => TDate,
+  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
+  parseTime: (initialValue: string | number | TDate, expressesAsLocal?: boolean) => TDate,
 ) {
-  const createSUT = () => plugin.createManualRuntime("2026-01-01T00:00:00.000Z");
+  const createManualRuntime = (
+    timezone: TimezoneDefinition,
+    initialTime: string | number | TDate,
+  ) =>
+    plugin.supportsLocalTime
+      ? plugin.createManualRuntime(timezone, initialTime)
+      : plugin.createManualRuntime(initialTime);
+
+  const createSUT = () => createManualRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
 
   describe("createManualRuntime", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
@@ -19,30 +27,66 @@ export function testManualRuntime<TDate>(
     test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
       "can construct an object with a string",
       (isoTimeText: string) => {
-        plugin.createManualRuntime(isoTimeText);
+        createManualRuntime("Pacific/Kiritimati", isoTimeText);
       },
     );
     test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      plugin.createManualRuntime(milliseconds);
+      createManualRuntime("Pacific/Kiritimati", milliseconds);
     });
     test("can construct an object with a TDate", () => {
-      plugin.createManualRuntime(parseTime("2026-01-01T00:00:00.000Z"));
+      createManualRuntime("Pacific/Kiritimati", parseTime("2026-01-01T00:00:00.000Z"));
     });
   });
 
   describe("manual", () => {
-    describe("localNow", () => {
+    describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
-        expect(() => sut.clock.localNow()).not.toThrow();
+        expect(() => (sut.clock as unknown as IClock<TDate>).localNow()).not.toThrow();
       });
       test.each([undefined, null])("returns a value", (undefinedValue) => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).not.toEqual(undefinedValue);
+        expect((sut.clock as unknown as IClock<TDate>).localNow()).not.toEqual(undefinedValue);
       });
       test("returns a fixed value", () => {
         const sut = createSUT();
-        expect(sut.clock.localNow()).toEqual(parseTime("2026-01-01T00:00:00.000Z"));
+        expect((sut.clock as unknown as IClock<TDate>).localNow()).toEqual(
+          parseTime("2026-01-01T14:00+14:00", true),
+        );
+      });
+    });
+
+    describe.skipIf(!plugin.supportsLocalTime)("withLocalTimezone", () => {
+      test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
+        "doesn't throw",
+        (newLocalTimezone: TimezoneDefinition) => {
+          const sut = createSUT();
+          expect(() =>
+            (sut.clock as unknown as IClock<TDate>).withLocalTimezone(newLocalTimezone),
+          ).not.toThrow();
+        },
+      );
+      test.each([undefined, null])("returns its instance", () => {
+        const sut = createSUT();
+        const clock = sut.clock as unknown as IClock<TDate>;
+        expect(clock.withLocalTimezone("Pacific/Kiritimati")).toBe(clock);
+      });
+      test.each([
+        "Etc/UTC",
+        "Africa/Cairo",
+        "Antarctica/McMurdo",
+        "Asia/Tokyo",
+        "Europe/London",
+        "America/New_York",
+        "America/Sao_Paulo", //no DST
+        "Australia/Sydney",
+      ])("effectively alter the timezone", (newLocalTimezone) => {
+        const sut = createSUT();
+        const clock = sut.clock as unknown as IClock<TDate>;
+        const previousLocalTime = clock.localNow();
+        clock.withLocalTimezone(newLocalTimezone);
+        const newLocalTime = clock.localNow();
+        expect(newLocalTime).not.toEqual(previousLocalTime);
       });
     });
 
@@ -209,7 +253,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setTimeout(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(
@@ -266,7 +310,7 @@ export function testManualRuntime<TDate>(
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
             sut.setInterval(callback);
-            sut.clock.localNow();
+            sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
           test.each([1, 20, 100])(
@@ -355,7 +399,7 @@ export function testManualRuntime<TDate>(
           test.each([3, 30, 300])(
             "runs callbacks multiple times if time advance consequently",
             (expectedRetries: number) => {
-              const sut = plugin.createManualRuntime(0);
+              const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let retries = 0;
               sut.scheduler.setInterval(() => {
                 retries++;

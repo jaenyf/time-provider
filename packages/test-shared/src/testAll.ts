@@ -3,19 +3,27 @@ import { testSystemRuntime } from "./testSystemRuntime.ts";
 import { testFixedRuntime } from "./testFixedRuntime.ts";
 import { testManualRuntime } from "./testManualRuntime.ts";
 import { testSequentialRuntime } from "./testSequentialRuntime.ts";
-import { createTimeProvider, type IPlugin } from "@time-provider/core";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
+import { createTimeProvider, type IPlugin, type IUtcOnlyPlugin } from "@time-provider/core";
 
-export function testAll<TDate>(plugin: IPlugin<TDate>) {
-  const parseTime = (initialValue: number | string | TDate) =>
-    plugin.createSystemRuntime().parse(initialValue);
+export function testAll<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
+  function getBuilderFor<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
+    return plugin.supportsLocalTime
+      ? createTimeProvider.for(plugin)
+      : createTimeProvider.for(plugin);
+  }
+
+  const parseTime = (initialValue: number | string | TDate, expressesAsLocal: boolean = false) =>
+    plugin.supportsLocalTime
+      ? plugin.createSystemRuntime("Pacific/Kiritimati").parse(initialValue, expressesAsLocal)
+      : plugin.createSystemRuntime().parse(initialValue, expressesAsLocal);
 
   describe("Runtimes", () => {
     testSystemRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testFixedRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testManualRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testSequentialRuntime(plugin, (time: number | string | TDate) => parseTime(time));
+    testFixedRuntime(plugin, parseTime);
+    testManualRuntime(plugin, parseTime);
+    testSequentialRuntime(plugin, parseTime);
   });
 
   describe("TimeProviderCreators", () => {
@@ -24,29 +32,24 @@ export function testAll<TDate>(plugin: IPlugin<TDate>) {
 
   describe("TimeProviders", () => {
     describe("system", () => {
-      testTimeProvider(() => createTimeProvider.for(plugin).create());
+      testTimeProvider(() => getBuilderFor(plugin).create());
     });
 
     describe("fixed", () => {
       testTimeProvider(() =>
-        createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00:00.000Z").create(),
+        getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00:00.000Z").create(),
       );
     });
 
     describe("manual", () => {
       testTimeProvider(() =>
-        createTimeProvider
-          .for(plugin)
-          .asManual()
-          .withInitialTime("2026-01-01T00:00:00.000Z")
-          .create(),
+        getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00:00.000Z").create(),
       );
     });
 
     describe("sequential", () => {
       testTimeProvider(() =>
-        createTimeProvider
-          .for(plugin)
+        getBuilderFor(plugin)
           .asSequential()
           .withSequentialTime("2026-01-01T00:00:00.000Z")
           .create(),

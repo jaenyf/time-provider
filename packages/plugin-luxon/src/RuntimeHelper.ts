@@ -1,13 +1,13 @@
-import { TimeInputValidator } from "@time-provider/core";
+import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
 import { DateTime } from "luxon";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp(time: string | number | DateTime<boolean>): number {
-    return RuntimeHelper.convertToDate(time).toMillis();
+    return RuntimeHelper.convertToUtcDate(time).toMillis();
   }
   /* @__INLINE__ */
-  static convertToDate(time: string | number | DateTime<boolean>): DateTime<boolean> {
+  static convertToUtcDate(time: string | number | DateTime<boolean>): DateTime<boolean> {
     TimeInputValidator.assertValid(time);
     let returnTime: DateTime<boolean> | undefined = undefined;
     switch (typeof time) {
@@ -15,7 +15,7 @@ export class RuntimeHelper {
         returnTime = DateTime.fromMillis(time);
         break;
       case "string":
-        returnTime = DateTime.fromISO(time);
+        returnTime = DateTime.fromISO(time, { zone: "UTC" });
         break;
       case "object":
         if (time instanceof DateTime) {
@@ -24,8 +24,19 @@ export class RuntimeHelper {
         break;
     }
     if (undefined === returnTime || !returnTime.isValid) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
+      TimeInputValidator.throwInvalidTimeValue(time);
     }
     return returnTime;
+  }
+  /* @__INLINE__ */
+  static convertToLocalDate(
+    timezone: TimezoneDefinition,
+    time: string | number | DateTime<boolean>,
+  ): DateTime<boolean> {
+    const result = this.convertToUtcDate(time).setZone(timezone);
+    if (!result.isValid) {
+      TimeInputValidator.throwInvalidTimeValue(time);
+    }
+    return result;
   }
 }

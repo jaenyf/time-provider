@@ -1,3 +1,4 @@
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
 import { BaseRuntime } from "./BaseRuntime.ts";
 
@@ -21,8 +22,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   #intervalCallbacksMap: Map<SetIntervalHandle, IntervalEntry>;
   #nextIntervalHandleValue: number;
 
-  constructor() {
-    super();
+  constructor(localTimezone: TimezoneDefinition) {
+    super(localTimezone);
     this.#nextTimeoutHandleValue = 1;
     this.#timeoutCallbacksMap = new Map<SetTimeoutHandle, TimeoutEntry>();
     this.#nextIntervalHandleValue = 1;
@@ -126,13 +127,11 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
   protected abstract timestampImpl(): number;
 
-  localNow(): TDate {
-    const timestampValue = this.timestampImpl();
-    return this.localNowImpl(timestampValue);
+  override localNow(): TDate {
+    return this.localNowImpl(this.timestampImpl());
   }
-  utcNow(): TDate {
-    const timestampValue = this.timestampImpl();
-    return this.utcNowImpl(timestampValue);
+  override utcNow(): TDate {
+    return this.utcNowImpl(this.timestampImpl());
   }
   protected abstract localNowImpl(nowTimestamp: number): TDate;
   protected abstract utcNowImpl(nowTimestamp: number): TDate;

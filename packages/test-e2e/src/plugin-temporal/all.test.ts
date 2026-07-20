@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createTimeProvider } from "../../../core/dist/index.mjs";
 import { plugin } from "../../../plugin-temporal/dist/index.mjs";
-
 import { Temporal } from "@js-temporal/polyfill";
 
 describe("e2e temporal", () => {
@@ -15,18 +14,26 @@ describe("e2e temporal", () => {
 
     expect(system.clock.utcNow().toString()).toBeDefined();
     expect(system.clock.localNow().toString()).toBeDefined();
+    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(system.parser.parse(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     expect(fixed.clock.localNow().toString()).toBeDefined();
+    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(fixed.parser.parse(Temporal.Now.instant().toString()).epochMilliseconds).toBeDefined();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     expect(manual.clock.localNow().toString()).toBeDefined();
+    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(manual.parser.parse(Temporal.Now.instant().toString()).epochMilliseconds).toBeDefined();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     expect(sequential.clock.localNow().toString()).toBeDefined();
+    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(
       sequential.parser.parse(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();

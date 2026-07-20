@@ -1,7 +1,9 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { ITimeProvider } from "@time-provider/core";
+import type { ITimeProvider, IUtcOnlyTimeProvider } from "@time-provider/core";
 
-export function testTimeProvider<TDate>(getTimeProvider: () => ITimeProvider<TDate>) {
+export function testTimeProvider<TDate>(
+  getTimeProvider: () => ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
+) {
   describe("createTimeProvider", () => {
     test.each([null, undefined])("returns a value", (undefinedValue) => {
       expect(getTimeProvider()).not.toBe(undefinedValue);

@@ -1,4 +1,4 @@
-import { BaseManualRuntime } from "@time-provider/core";
+import { BaseManualRuntime, type TimezoneDefinition } from "@time-provider/core";
 import dayjs from "dayjs";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 
@@ -24,10 +24,16 @@ export class ManualRuntime extends BaseManualRuntime<dayjs.Dayjs> {
   protected advanceMilliseconds(time: dayjs.Dayjs, milliseconds: number): dayjs.Dayjs {
     return time.add(milliseconds, "millisecond");
   }
-  protected convertToTimestampImpl(time: string | number | dayjs.Dayjs): number {
+  protected convertToEpochTimestampImpl(time: string | number | dayjs.Dayjs): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
-    return RuntimeHelper.convertToDate(time);
+  protected convertToUtcDateImpl(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+    return RuntimeHelper.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | dayjs.Dayjs,
+  ): dayjs.Dayjs {
+    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }

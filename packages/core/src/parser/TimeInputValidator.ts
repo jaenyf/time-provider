@@ -12,7 +12,14 @@ export class TimeInputValidator {
       (typeof time === "number" && Number.isNaN(time)) ||
       (typeof time === "string" && time.trim() === "")
     ) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
+      this.throwInvalidTimeValue(time);
     }
+  }
+  /**
+   * Centralized error throwing.
+   */
+  /* @__INLINE__ */
+  static throwInvalidTimeValue<TDate>(time: string | number | TDate): never {
+    throw new Error(`Invalid time value (value was '${String(time)}')`);
   }
 }

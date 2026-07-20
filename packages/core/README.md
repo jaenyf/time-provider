@@ -85,6 +85,7 @@ interface ITimeProvider<TDate> {
 interface IClock<TDate> {
   localNow(): TDate;
   utcNow(): TDate;
+  withLocalTimezone(localTimezone: TimezoneDefinition): IClock<TDate>;
 }
 ```
 
@@ -249,7 +250,7 @@ import type { ITimeProvider } from "@time-provider/core";
 import { Temporal } from "@js-temporal/polyfill";
 
 class UserService {
-  constructor(private readonly timeProvider: ITimeProvider<Temporal.Instant>) {}
+  constructor(private readonly timeProvider: ITimeProvider<Temporal.ZonedDateTime>) {}
 
   createUser() {
     return {
@@ -326,9 +327,18 @@ This synchronous execution is what makes the manual and sequential clocks determ
 
 ---
 
-# Clock strategies
+# Clock
 
-## System clock
+The clock is controlling the behavior of the scheduler as well as providing time through `utcNow` and `localNow` (if plugin supports localized time)
+
+### ⚠️ Note on the native Date object and the `plugin-native` adapter
+
+The native Date object has no real support for timezones and therefor has no abilities to provide a true localized time (that's why so much time libraries exist).  
+So the `plugin-native` adapter **only exposes utcNow()** in its facade.
+
+## Clock strategies
+
+### System clock
 
 The default production strategy.
 
@@ -343,7 +353,7 @@ const timeProvider = createTimeProvider.for(plugin).create();
 
 ---
 
-## Fixed clock
+### Fixed clock
 
 Always returns the same instant.
 
@@ -359,7 +369,7 @@ const timeProvider = createTimeProvider
 
 ---
 
-## Manual clock
+### Manual clock
 
 Time progresses only when explicitly advanced.
 
@@ -377,7 +387,7 @@ time.advance({
 
 ---
 
-## Sequential clock
+### Sequential clock
 
 Returns a predefined sequence of instants.
 

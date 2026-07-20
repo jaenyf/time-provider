@@ -4,5 +4,5 @@ import { plugin } from "@time-provider/plugin-temporal";
 import { Temporal } from "@js-temporal/polyfill";
 
 describe("plugin-temporal", () => {
-  testAll<Temporal.Instant>(plugin);
+  testAll<Temporal.ZonedDateTime>(plugin);
 });

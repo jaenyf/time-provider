@@ -1,12 +1,20 @@
-import { BaseFixedRuntime } from "@time-provider/core";
+import { BaseFixedRuntime, type TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 import type { Temporal } from "@js-temporal/polyfill";
 
-export class FixedRuntime extends BaseFixedRuntime<Temporal.Instant> {
-  protected convertToTimestampImpl(time: string | number | Temporal.Instant): number {
+export class FixedRuntime extends BaseFixedRuntime<Temporal.ZonedDateTime> {
+  protected convertToEpochTimestampImpl(time: string | number | Temporal.ZonedDateTime): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
-    return RuntimeHelper.convertToDate(time);
+  protected convertToUtcDateImpl(
+    time: string | number | Temporal.ZonedDateTime,
+  ): Temporal.ZonedDateTime {
+    return RuntimeHelper.convertToUtcDate(time);
+  }
+  protected convertToLocalDateImpl(
+    timezone: TimezoneDefinition,
+    time: string | number | Temporal.ZonedDateTime,
+  ): Temporal.ZonedDateTime {
+    return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }

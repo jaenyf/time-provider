@@ -1,17 +1,28 @@
-import { TimeInputValidator } from "@time-provider/core";
+import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
 import dayjs from "dayjs";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp(time: string | number | dayjs.Dayjs): number {
-    return RuntimeHelper.convertToDate(time).valueOf();
+    return RuntimeHelper.convertToUtcDate(time).valueOf();
   }
   /* @__INLINE__ */
-  static convertToDate(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+  static convertToUtcDate(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
     TimeInputValidator.assertValid(time);
     const result = dayjs(time);
     if (!result.isValid()) {
-      throw new Error(`Invalid time value (value was '${String(time)}')`);
+      TimeInputValidator.throwInvalidTimeValue(time);
+    }
+    return result;
+  }
+  /* @__INLINE__ */
+  static convertToLocalDate(
+    timezone: TimezoneDefinition,
+    time: string | number | dayjs.Dayjs,
+  ): dayjs.Dayjs {
+    const result = this.convertToUtcDate(time).tz(timezone);
+    if (!result.isValid()) {
+      TimeInputValidator.throwInvalidTimeValue(time);
     }
     return result;
   }
