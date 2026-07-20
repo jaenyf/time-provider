@@ -188,7 +188,7 @@ TimeProvider
 
 ---
 
-## 🧩 Features
+## ✨ Features
 
 - ✅ Dependency-injectable clocks and timers
 - ✅ Deterministic timers without replacing global APIs
@@ -333,8 +333,19 @@ The clock is controlling the behavior of the scheduler as well as providing time
 
 ### ⚠️ Note on the native Date object and the `plugin-native` adapter
 
-The native Date object has no real support for timezones and therefor has no abilities to provide a true localized time (that's why so much time libraries exist).  
-So the `plugin-native` adapter **only exposes utcNow()** in its facade.
+The native Date object has no real support for timezones and therefore has no abilities to provide a true localized time (that's why so many time libraries exist).  
+So the `plugin-native` adapter **only exposes utcNow()** in its clock facade.
+
+### ⚠️ Note on Moment.js and the `plugin-moment` vs. `plugin-moment-timezone` adapters
+
+By default Moment.js does not have support for timezones. This support is made available by adding the additional `moment-timezone` extension.  
+Because we don't want to tie our users to the use of moment-timezone when it's not necessary, we have chosen to also split our adapters in two:
+
+- 🧩 plugin-moment: only supporting UTC time, with support for neither time zones nor local time.
+- 🧩 plugin-moment-timezone: supporting timezones and local time.
+
+So the `plugin-moment` adapter **only exposes utcNow()** in its clock facade.  
+And the `plugin-moment-timezone` adapter **exposes utcNow(), localNow(), and withLocalTimezone()** in its clock facade.
 
 ## Clock strategies
 

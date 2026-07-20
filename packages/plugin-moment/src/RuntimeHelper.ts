@@ -1,5 +1,5 @@
 import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
-import moment from "moment-timezone";
+import moment from "moment";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
@@ -17,13 +17,9 @@ export class RuntimeHelper {
   }
   /* @__INLINE__ */
   static convertToLocalDate(
-    timezone: TimezoneDefinition,
-    time: string | number | moment.Moment,
+    _timezone: TimezoneDefinition,
+    _time: string | number | moment.Moment,
   ): moment.Moment {
-    const result = this.convertToUtcDate(time).tz(timezone);
-    if (!result.isValid) {
-      TimeInputValidator.throwInvalidTimeValue(time);
-    }
-    return result;
+    throw new Error("Operation not supported");
   }
 }

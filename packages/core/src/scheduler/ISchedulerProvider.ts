@@ -1,6 +1,6 @@
 import type { IScheduler } from "./IScheduler.ts";
 
-export interface ISchedulerOnlyProvider {
+export interface ISchedulerProvider {
   /**
    * Get the current configured scheduler
    */

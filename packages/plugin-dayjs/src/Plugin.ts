@@ -1,8 +1,5 @@
 import { BasePlugin } from "@time-provider/core";
-import { SystemRuntime } from "./SystemRuntime.ts";
-import { ManualRuntime } from "./ManualRuntime.ts";
-import { SequentialRuntime } from "./SequentialRuntime.ts";
-import { FixedRuntime } from "./FixedRuntime.ts";
+import { SystemRuntime, ManualRuntime, FixedRuntime, SequentialRuntime } from "./Runtimes.ts";
 import { Dayjs } from "dayjs";
 
 export class Plugin extends BasePlugin<Dayjs> {

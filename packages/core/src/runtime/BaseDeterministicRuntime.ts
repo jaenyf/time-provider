@@ -1,5 +1,6 @@
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
+import type { ITimeConverter } from "./ITimeConverter.ts";
 import { BaseRuntime } from "./BaseRuntime.ts";
 
 type TimeoutEntry = {
@@ -22,8 +23,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   #intervalCallbacksMap: Map<SetIntervalHandle, IntervalEntry>;
   #nextIntervalHandleValue: number;
 
-  constructor(localTimezone: TimezoneDefinition) {
-    super(localTimezone);
+  constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
+    super(localTimezone, converter);
     this.#nextTimeoutHandleValue = 1;
     this.#timeoutCallbacksMap = new Map<SetTimeoutHandle, TimeoutEntry>();
     this.#nextIntervalHandleValue = 1;

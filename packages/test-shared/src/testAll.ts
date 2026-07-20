@@ -5,25 +5,28 @@ import { testManualRuntime } from "./testManualRuntime.ts";
 import { testSequentialRuntime } from "./testSequentialRuntime.ts";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
-import { createTimeProvider, type IPlugin, type IUtcOnlyPlugin } from "@time-provider/core";
+import { getBuilderFor } from "./helpers/testHelpers.ts";
+import type { IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
 
 export function testAll<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
-  function getBuilderFor<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
-    return plugin.supportsLocalTime
-      ? createTimeProvider.for(plugin)
-      : createTimeProvider.for(plugin);
-  }
+  const throwInvalidOperation = function () {
+    throw new Error("Invalid operation");
+  };
 
-  const parseTime = (initialValue: number | string | TDate, expressesAsLocal: boolean = false) =>
+  const parseTimeToUtc = (initialValue: number | string | TDate) =>
     plugin.supportsLocalTime
-      ? plugin.createSystemRuntime("Pacific/Kiritimati").parse(initialValue, expressesAsLocal)
-      : plugin.createSystemRuntime().parse(initialValue, expressesAsLocal);
+      ? plugin.createSystemRuntime("Pacific/Kiritimati").parseToUtc(initialValue)
+      : plugin.createSystemRuntime().parseToUtc(initialValue);
+  const parseTimeToLocal = (initialValue: number | string | TDate) =>
+    plugin.supportsLocalTime
+      ? plugin.createSystemRuntime("Pacific/Kiritimati").parseToLocal(initialValue)
+      : throwInvalidOperation();
 
   describe("Runtimes", () => {
-    testSystemRuntime(plugin, (time: number | string | TDate) => parseTime(time));
-    testFixedRuntime(plugin, parseTime);
-    testManualRuntime(plugin, parseTime);
-    testSequentialRuntime(plugin, parseTime);
+    testSystemRuntime(plugin, parseTimeToUtc, parseTimeToLocal);
+    testFixedRuntime(plugin, parseTimeToUtc, parseTimeToLocal);
+    testManualRuntime(plugin, parseTimeToUtc, parseTimeToLocal);
+    testSequentialRuntime(plugin, parseTimeToUtc, parseTimeToLocal);
   });
 
   describe("TimeProviderCreators", () => {

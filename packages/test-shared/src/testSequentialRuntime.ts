@@ -1,11 +1,13 @@
 import { expect, test, describe } from "vite-plus/test";
 import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
-import { testScheduler } from "./testScheduler.ts";
-import { testParser } from "./testParser.ts";
+import { testScheduler } from "./helpers/testScheduler.ts";
+import { testParser } from "./helpers/testParser.ts";
+import { testConstructorArgs, testWithLocalTimezone } from "./helpers/testHelpers.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-  parseTime: (initialValue: string | number | TDate, expressesAsLocal?: boolean) => TDate,
+  parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
+  parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
   const createSequentialRuntime = (
     timezone: TimezoneDefinition,
@@ -22,26 +24,12 @@ export function testSequentialRuntime<TDate>(
       "2026-01-01T00:00:03.000Z",
     ]);
 
-  describe("createSequentialRuntime", () => {
-    test.each([null, undefined])("returns a value", (undefinedValue) => {
-      expect(createSUT()).not.toBe(undefinedValue);
-    });
-    test("creates an object", () => {
-      expect(typeof createSUT()).toBe("object");
-    });
-    test.each(["2026-01-01T00:00:00.000Z", "2026-12-31T23:59:59.999Z"])(
-      "can construct an object with a string",
-      (isoTimeText: string) => {
-        createSequentialRuntime("Pacific/Kiritimati", [isoTimeText]);
-      },
-    );
-    test.each([0, 100])("can construct an object with a number", (milliseconds: number) => {
-      createSequentialRuntime("Pacific/Kiritimati", [milliseconds]);
-    });
-    test("can construct an object with a TDate", () => {
-      createSequentialRuntime("Pacific/Kiritimati", [parseTime("2026-01-01T00:00:00.000Z")]);
-    });
-  });
+  testConstructorArgs(
+    "createSequentialRuntime",
+    createSUT,
+    (initialTime) => createSequentialRuntime("Pacific/Kiritimati", [initialTime]),
+    parseTimeToUtc,
+  );
 
   describe("sequential", () => {
     describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
@@ -56,74 +44,42 @@ export function testSequentialRuntime<TDate>(
       test("returns first added value", () => {
         const sut = createSUT();
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00:01+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00:01+14:00"),
         );
       });
       test("returns epoch time when no added value", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", []);
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("1970-01-01T14:00+14:00", true),
+          parseTimeToLocal("1970-01-01T14:00+14:00"),
         );
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00:01+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00:01+14:00"),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00:02+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00:02+14:00"),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00:03+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00:03+14:00"),
         );
       });
       test("overflowing calls returns last defined time", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", ["2026-01-01T00:00Z"]);
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00+14:00"),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00+14:00"),
         );
         expect((sut.clock as IClock<TDate>).localNow()).toEqual(
-          parseTime("2026-01-01T14:00+14:00", true),
+          parseTimeToLocal("2026-01-01T14:00+14:00"),
         );
       });
     });
 
-    describe.skipIf(!plugin.supportsLocalTime)("withLocalTimezone", () => {
-      test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
-        "doesn't throw",
-        (newLocalTimezone: TimezoneDefinition) => {
-          const sut = createSUT();
-          expect(() =>
-            (sut.clock as IClock<TDate>).withLocalTimezone(newLocalTimezone),
-          ).not.toThrow();
-        },
-      );
-      test.each([undefined, null])("returns its instance", () => {
-        const sut = createSUT();
-        const clock = sut.clock as IClock<TDate>;
-        expect(clock.withLocalTimezone("Pacific/Kiritimati")).toBe(clock);
-      });
-      test.each([
-        "Etc/UTC",
-        "Africa/Cairo",
-        "Antarctica/McMurdo",
-        "Asia/Tokyo",
-        "Europe/London",
-        "America/New_York",
-        "America/Sao_Paulo", //no DST
-        "Australia/Sydney",
-      ])("effectively alter the timezone", (newLocalTimezone) => {
-        const sut = createSUT();
-        const clock = sut.clock as IClock<TDate>;
-        const previousLocalTime = clock.localNow();
-        clock.withLocalTimezone(newLocalTimezone);
-        const newLocalTime = clock.localNow();
-        expect(newLocalTime).not.toEqual(previousLocalTime);
-      });
-    });
+    testWithLocalTimezone<TDate>(plugin.supportsLocalTime, createSUT);
 
     describe("utcNow", () => {
       test("doesn't throw", () => {
@@ -136,28 +92,28 @@ export function testSequentialRuntime<TDate>(
       });
       test("returns first added value", () => {
         const sut = createSUT();
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:01.000Z"));
       });
       test("returns epoch time when no added value", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", []);
-        expect(sut.clock.utcNow()).toEqual(parseTime("1970-01-01T00:00:00.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("1970-01-01T00:00:00.000Z"));
       });
       test("multiple calls returns sequentially defined times", () => {
         const sut = createSUT();
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:01.000Z"));
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:02.000Z"));
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00:03.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:01.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:02.000Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:03.000Z"));
       });
       test("overflowing calls returns last defined time", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", ["2026-01-01T00:00Z"]);
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
-        expect(sut.clock.utcNow()).toEqual(parseTime("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00Z"));
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00Z"));
       });
     });
 
     describe("parser", () => {
-      testParser(() => createSUT().parser, parseTime);
+      testParser(plugin, parseTimeToUtc, parseTimeToLocal);
     });
 
     describe("scheduler", () => {

@@ -1,8 +1,9 @@
 import type { IManualRuntime } from "./IManualRuntime.ts";
 import { BaseSequentialRuntime } from "./BaseSequentialRuntime.ts";
-import type { IAdvanceableClockConfiguration } from "../clock/IAdvanceableClockConfiguration.ts";
+import type { IAdvanceOptions } from "../clock/IAdvanceable.ts";
 import type { IManualClock } from "../clock/IManualClock.ts";
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
+import type { ITimeConverter } from "./ITimeConverter.ts";
 
 /**
  * Base class for a deterministically manual runtime
@@ -11,8 +12,12 @@ export abstract class BaseManualRuntime<TDate>
   extends BaseSequentialRuntime<TDate>
   implements IManualRuntime<TDate>
 {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | TDate) {
-    super(localTimezone, [fixedTime]);
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | number | TDate,
+    converter: ITimeConverter<TDate>,
+  ) {
+    super(localTimezone, [fixedTime], converter);
   }
 
   protected setDeterminedTime(time: TDate) {
@@ -23,7 +28,7 @@ export abstract class BaseManualRuntime<TDate>
     return this;
   }
 
-  advance(advanceConfiguration: IAdvanceableClockConfiguration): IManualRuntime<TDate> {
+  advance(advanceConfiguration: IAdvanceOptions): IManualRuntime<TDate> {
     let time = this.utcNow();
 
     if (advanceConfiguration.years) {
