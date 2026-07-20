@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createTimeProvider } from "../../../core/dist/index.mjs";
 import { plugin } from "../../../plugin-luxon/dist/index.mjs";
-
 import { DateTime } from "luxon";
 
 describe("e2e luxon", () => {

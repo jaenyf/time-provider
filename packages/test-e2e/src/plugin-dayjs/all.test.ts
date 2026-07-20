@@ -11,8 +11,6 @@ describe("e2e plugin-dayjs", () => {
   test("createTimeProvider for plugin returns a value", () => {
     const creator = createTimeProvider.for(plugin);
 
-    creator.withLocalTimezone("Europe/Paris").asFixed().withLocalTimezone("Europe/Brussels");
-
     const system = creator.create();
     const fixed = creator.asFixed().create();
     const manual = creator.asManual().create();

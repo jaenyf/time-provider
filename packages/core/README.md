@@ -249,7 +249,7 @@ import type { ITimeProvider } from "@time-provider/core";
 import { Temporal } from "@js-temporal/polyfill";
 
 class UserService {
-  constructor(private readonly timeProvider: ITimeProvider<Temporal.Instant>) {}
+  constructor(private readonly timeProvider: ITimeProvider<Temporal.ZonedDateTime>) {}
 
   createUser() {
     return {

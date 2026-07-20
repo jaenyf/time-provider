@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createTimeProvider } from "../../../core/dist/index.mjs";
 import { plugin } from "../../../plugin-moment/dist/index.mjs";
-
 import moment from "moment-timezone";
 
 describe("e2e moment", () => {

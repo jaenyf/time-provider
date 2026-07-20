@@ -2,26 +2,28 @@ import { BaseSystemRuntime, type TimezoneDefinition } from "@time-provider/core"
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 import { Temporal } from "@js-temporal/polyfill";
 
-export class SystemRuntime extends BaseSystemRuntime<Temporal.Instant> {
-  localNow(timezone?: TimezoneDefinition): Temporal.Instant {
+export class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
+  localNow(timezone?: TimezoneDefinition): Temporal.ZonedDateTime {
     return RuntimeHelper.convertToLocalDate(
       timezone ? timezone : this.localTimezone,
       this.utcNow(),
     );
   }
-  utcNow(): Temporal.Instant {
-    return Temporal.Now.zonedDateTimeISO("UTC").toInstant();
+  utcNow(): Temporal.ZonedDateTime {
+    return Temporal.Now.zonedDateTimeISO("UTC");
   }
-  protected convertToEpochTimestampImpl(time: string | number | Temporal.Instant): number {
+  protected convertToEpochTimestampImpl(time: string | number | Temporal.ZonedDateTime): number {
     return RuntimeHelper.convertToTimestamp(time);
   }
-  protected convertToUtcDateImpl(time: string | number | Temporal.Instant): Temporal.Instant {
+  protected convertToUtcDateImpl(
+    time: string | number | Temporal.ZonedDateTime,
+  ): Temporal.ZonedDateTime {
     return RuntimeHelper.convertToUtcDate(time);
   }
   protected convertToLocalDateImpl(
     timezone: TimezoneDefinition,
-    time: string | number | Temporal.Instant,
-  ): Temporal.Instant {
+    time: string | number | Temporal.ZonedDateTime,
+  ): Temporal.ZonedDateTime {
     return RuntimeHelper.convertToLocalDate(timezone, time);
   }
 }
