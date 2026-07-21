@@ -163,6 +163,7 @@ But applications usually depend on more than reading time.
 
 They also need:
 
+- defining local or remote users time zones to generate accurate local time for them
 - scheduling future actions
 - deterministic timer execution
 - controlled time progression in tests
@@ -175,9 +176,11 @@ TimeProvider
 ├── Clock
 │   ├── localNow()
 │   └── utcNow()
+│   └── withLocalTimezone()
 │
 ├── Parser
-│   └── parse()
+│   └── parseToLocal()
+│   └── parseToUtc()
 │
 └── Scheduler
     ├── setTimeout()
@@ -194,6 +197,7 @@ TimeProvider
 - ✅ Deterministic timers without replacing global APIs
 - ✅ Multiple clock strategies
 - ✅ Multiple isolated time contexts in the same application
+- ✅ Time zones support
 - ✅ Support for multiple date libraries
 - ✅ Native date types preserved
 - ✅ Type-safe return values
@@ -277,6 +281,7 @@ It only depends on the time capability it receives.
 const timeProvider = createTimeProvider
   .for(plugin)
   .asFixed()
+  .withLocalTimezone("Etc/UTC")
   .withFixedTime("2026-01-01T00:00Z")
   .create();
 
@@ -330,6 +335,19 @@ This synchronous execution is what makes the manual and sequential clocks determ
 # Clock
 
 The clock is controlling the behavior of the scheduler as well as providing time through `utcNow` and `localNow` (if plugin supports localized time)
+
+### UTC time
+
+UTC time should be the default time to use. It's backed by all supported adapters.
+
+### Local time
+
+What does mean 'local' ? For some time libraries 'local' is considered to be the 'host' (or process time) time. `time-provider` considers it to be a notion the user should define.
+That's why you can define it with your own time zone by calling `withLocalTimezone(...)` either on the runtime builder or on the clock interface. Further calls to `localNow()` will give time accordingly.
+
+What if the underlying library does not support time zones ?
+
+In this case, the `time-provider` facade is restricted to exposes "utc-friendly" methods only. You are safe at runtime because any attempts to use unavailable "local time methods" is detected at compile time.
 
 ### ⚠️ Note on the native Date object and the `plugin-native` adapter
 
@@ -408,6 +426,7 @@ Useful when testing code that depends on changing timestamps.
 const timeProvider = createTimeProvider
   .for(plugin)
   .asSequential()
+  .withLocalTimezone("Europe/London")
   .withSequentialTime("2026-01-01T00:01Z")
   .withSequentialTime("2026-01-01T00:02Z")
   .create();
