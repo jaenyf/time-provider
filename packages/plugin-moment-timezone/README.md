@@ -6,10 +6,10 @@
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/plugin-moment-timezone)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
 [![license](https://img.shields.io/npm/l/@time-provider/plugin-moment-timezone)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
-# [Time-Provider ~ Moment.js plugin](https://github.com/jaenyf/time-provider)
+# [Time-Provider ~ Moment.js (moment-timezone) plugin](https://github.com/jaenyf/time-provider)
 
 TypeScript library for injecting time and timers with adapters for multiple date libraries.
 
 ## Description
 
-This is the Moment.js plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
+This is the Moment.js (moment-timezone) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
