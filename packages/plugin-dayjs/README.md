@@ -7,7 +7,7 @@
 
 # [Time-Provider ~ Day.js plugin](https://github.com/jaenyf/time-provider)
 
-A tiny TypeScript library for injectable, deterministic time that works with your favorite date library.
+TypeScript library for injecting time and timers with adapters for multiple date libraries.
 
 ## Description
 
