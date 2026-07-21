@@ -1,5 +1,6 @@
 [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-dayjs)](https://www.npmjs.com/package/@time-provider/plugin-dayjs?activeTab=code)
+[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/plugin-dayjs)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)
