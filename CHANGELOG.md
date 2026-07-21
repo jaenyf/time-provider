@@ -1,6 +1,6 @@
 # Changelog
 
-> Aggregated view of every published package's changelog, generated automatically from `packages/*/CHANGELOG.md` after each release. Only the section between the markers below is auto-managed - edit the relevant package's own changelog instead of editing it directly.
+> This is an automatically generated aggregated view of every published package's changelog from `packages/*/CHANGELOG.md` after each release.
 
 <!-- aggregate-changelog:start -->
 
