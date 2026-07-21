@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest an idea, API addition, or a new date-library adapter
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Related package
+      options:
+        - "@time-provider/core"
+        - An existing plugin
+        - A new plugin/adapter
+        - Not sure / repo-wide
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that isn't possible (or is awkward) today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or approach
+      description: Optional - a sketch of the interface/usage you have in mind.
+      render: typescript
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to open a PR for this
