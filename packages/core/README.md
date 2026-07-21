@@ -4,6 +4,7 @@
 [![types](https://img.shields.io/npm/types/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core?activeTab=code)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
+[![npm downloads](https://img.shields.io/npm/dm/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
 [![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
