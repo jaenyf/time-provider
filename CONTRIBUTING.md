@@ -6,7 +6,7 @@ setup, workflow, and quality expectations.
 ## Setup
 
 Requires [Vite+](https://viteplus.dev/) (`vp`) installed globally — see
-the [installation guide](https://vite.plus). Vite+ will automatically
+the [installation guide](https://viteplus.dev/guide/). Vite+ will automatically
 download the pinned package manager version (currently [Bun](https://bun.com/)) and a compatible [Node.js](https://nodejs.org/)
 runtime if they aren't already available on your system.
 
