@@ -7,6 +7,7 @@
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone?activeTab=dependencies)
 [![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/plugin-moment-timezone)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/plugin-moment-timezone)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
+[![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/plugin-moment-timezone)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
 # [Time-Provider ~ Moment.js (moment-timezone) plugin](https://github.com/jaenyf/time-provider)
