@@ -1,7 +1,29 @@
 # Contributing to Time-Provider
 
-Thanks for your interest in contributing. This guide covers the development
-setup, workflow, and quality expectations.
+Thanks for your interest in contributing. This guide covers reporting bugs
+and requesting features, the development setup, workflow, and quality
+expectations.
+
+## Reporting Bugs and Requesting Features
+
+**Found a security vulnerability?** Don't open a public issue - see
+[SECURITY.md](./SECURITY.md) for private reporting instead.
+
+For anything else, check [open issues](https://github.com/jaenyf/time-provider/issues)
+first to avoid filing a duplicate, then:
+
+- **Bug report:** open a [Bug report](https://github.com/jaenyf/time-provider/issues/new?template=bug_report.yml).
+  It asks for the affected package(s) and version, a minimal reproduction,
+  expected vs. actual behavior, and your runtime (Node/Bun version or
+  browser) - the more of that you can fill in, the faster it's actionable.
+- **Feature request or new adapter idea:** open a
+  [Feature request](https://github.com/jaenyf/time-provider/issues/new?template=feature_request.yml).
+  Describe the problem you're trying to solve rather than just the API you
+  have in mind - it's easier to evaluate and may already be solvable another
+  way. Requesting a new date-library adapter fits here too; see
+  [ARCHITECTURE.md](./ARCHITECTURE.md) for what a plugin needs to implement
+  if you want to gauge the shape of the work yourself.
+- **Something else, or neither template fits:** open a blank issue.
 
 ## Setup
 
