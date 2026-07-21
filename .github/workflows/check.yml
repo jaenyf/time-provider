@@ -20,6 +20,8 @@ permissions:
 jobs:
   branchlint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: voidzero-dev/setup-vp@v1
@@ -77,6 +79,8 @@ jobs:
     # A pure PR title edit doesn't change any code - no need to rebuild/retest
     if: github.event_name != 'pull_request' || github.event.action != 'edited'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v7
