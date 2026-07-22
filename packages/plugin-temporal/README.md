@@ -18,6 +18,21 @@ TypeScript library for injecting time and timers with adapters for multiple date
 
 This is the [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
 
+## Notes
+
+This plugin assumes a global `Temporal` namespace is already available.
+
+As of now, [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal) is a [TC39 proposal](https://tc39.es/proposal-temporal/docs/) expected to eventually become a native JavaScript global. Until every environment you target ships it, load a `Temporal` implementation yourself before using this plugin.
+
+For example, with [`@js-temporal/polyfill`](https://www.npmjs.com/package/@js-temporal/polyfill):
+
+```typescript
+import { Temporal } from "@js-temporal/polyfill";
+if (!("Temporal" in globalThis)) {
+  (globalThis as { Temporal?: unknown }).Temporal = Temporal;
+}
+```
+
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-temporal/CHANGELOG.md)

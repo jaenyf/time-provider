@@ -6,7 +6,6 @@ import {
   type TimezoneDefinition,
 } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
-import { Temporal } from "@js-temporal/polyfill";
 
 export class FixedRuntime extends BaseFixedRuntime<Temporal.ZonedDateTime> {
   constructor(

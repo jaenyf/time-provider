@@ -3,6 +3,14 @@ import { createTimeProvider } from "../../../core/dist/index.mjs";
 import { plugin } from "../../../plugin-temporal/dist/index.mjs";
 import { Temporal } from "@js-temporal/polyfill";
 
+/*
+ * plugin-temporal assumes a global `Temporal` is already available.
+ * Node/Bun don't ship Temporal natively yet, so this seeds it for the monorepo's own test run only
+ */
+if (!("Temporal" in globalThis)) {
+  (globalThis as { Temporal?: unknown }).Temporal = Temporal;
+}
+
 describe("e2e temporal", () => {
   test("createTimeProvider for plugin returns a value", () => {
     const creator = createTimeProvider.for(plugin);
