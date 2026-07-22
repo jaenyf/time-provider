@@ -1,0 +1,79 @@
+<svg width="540" height="620" viewBox="-20 0 540 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="smokeFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#E8935B" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#E8935B" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#E8935B" stop-opacity="0" />
+    </linearGradient>
+    <style>
+      .teepee { fill: #2B3440; }
+      .smoke { fill: url(#smokeFade); }
+      .smoke-wisp { fill: none; stroke: #E8935B; stroke-width: 3; stroke-linecap: round; }
+      .side-wisp { fill: none; stroke: #E8935B; stroke-width: 2; stroke-linecap: round; opacity: 0.18; }
+      .clock-face { fill: none; stroke: #2B3440; stroke-width: 1.5; opacity: 0.18; }
+      .clock-tick { stroke: #2B3440; stroke-width: 2; opacity: 0.25; }
+      .hand-minute { stroke: #2B3440; stroke-width: 4; stroke-linecap: round; }
+      .hand-second { stroke: #E8935B; stroke-width: 2.5; stroke-linecap: round; }
+      .wordmark { font-family: 'Helvetica Neue', Arial, sans-serif; fill: #2B3440; }
+    </style>
+  </defs>
+
+  <!-- Ground line -->
+  <line x1="90" y1="430" x2="410" y2="430" stroke="#2B3440" stroke-width="4"/>
+
+  <!-- BOTTOM BULB = teepee -->
+  <path class="teepee" d="M 170 430
+                          Q 225 345 250 260
+                          Q 275 345 330 430
+                          Z" />
+  <!-- door notch cut at the base -->
+  <path d="M 232 430 L 250 385 L 268 430 Z" fill="#F4F1EC" />
+
+  <!-- TOP BULB = smoke -->
+  <path class="smoke" d="M 178 104
+                          C 197 148 200 178 214 196
+                          C 226 213 236 231 250 260
+                          C 264 231 274 213 286 196
+                          C 300 178 303 148 322 104
+                          Q 308 92 296 114
+                          Q 282 128 258 128
+                          Q 232 128 214 136
+                          Q 196 122 178 104
+                          Z" />
+
+  <!-- a handful of side wisps for texture, kept light -->
+  <path class="side-wisp" d="M 200 157 C 196 147, 200 142, 195 132" />
+  <path class="side-wisp" d="M 232 215 C 224 206, 230 199, 222 190" />
+  <path class="side-wisp" d="M 267 214 C 274 205, 269 198, 277 189" />
+  <path class="side-wisp" d="M 296 152 C 304 143, 299 136, 307 126" />
+
+  <!-- a few escaping wisps and motes, the essential "evaporating" cue -->
+  <path class="smoke-wisp" d="M 300 100 C 314 84, 308 62, 326 46" opacity="0.25" />
+  <path class="smoke-wisp" d="M 190 108 C 176 96, 182 78, 168 66" opacity="0.2" />
+  <path class="smoke-wisp" d="M 254 112 C 248 94, 260 80, 250 62" opacity="0.15" />
+  <circle cx="334" cy="42" r="3.5" fill="#E8935B" opacity="0.3" />
+  <circle cx="163" cy="60" r="2.5" fill="#E8935B" opacity="0.22" />
+
+  <!-- Simplified clock face at the waist: circle + 4 cardinal ticks only -->
+  <circle class="clock-face" cx="250" cy="260" r="34" />
+  <line class="clock-tick" x1="250" y1="226" x2="250" y2="232" />
+  <line class="clock-tick" x1="284" y1="260" x2="278" y2="260" />
+  <line class="clock-tick" x1="250" y1="294" x2="250" y2="288" />
+  <line class="clock-tick" x1="216" y1="260" x2="222" y2="260" />
+
+  <!-- Hands forming the X: minute hand (dark, longer) and second hand (accent, thinner) -->
+  <line class="hand-minute" x1="235" y1="269" x2="250" y2="260" />
+  <line class="hand-minute" x1="250" y1="260" x2="285" y2="224" />
+  <line class="hand-second" x1="263" y1="268" x2="250" y2="260" />
+  <line class="hand-second" x1="250" y1="260" x2="210" y2="217" />
+  <circle cx="263" cy="268" r="2.5" fill="#E8935B" opacity="0.7" />
+  <circle cx="250" cy="260" r="3" fill="#2B3440" />
+
+  <!-- Wordmark -->
+  <text x="250" y="490" text-anchor="middle" class="wordmark" font-size="38" font-weight="600" letter-spacing="2">
+    TIME<tspan fill="#E8935B">-</tspan>PROVIDER
+  </text>
+  <text x="250" y="518" text-anchor="middle" class="wordmark" font-size="14" letter-spacing="4" opacity="0.6">
+    DEPENDENCY-INJECTABLE TIME FOR TYPESCRIPT
+  </text>
+</svg>
