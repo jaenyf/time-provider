@@ -3,7 +3,7 @@ import type { IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider
 import { testParser } from "./helpers/testParser.ts";
 import {
   testConstructorArgs,
-  testWithLocalTimezone,
+  testWithTimezone,
   testLocalNow,
   testUtcNow,
 } from "./helpers/testHelpers.ts";
@@ -21,7 +21,7 @@ export function testSystemRuntime<TDate>(
 
   describe("system", () => {
     testLocalNow(plugin.supportsLocalTime, createSUT);
-    testWithLocalTimezone<TDate>(plugin.supportsLocalTime, createSUT);
+    testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT);
 
     describe("parser", () => {

@@ -20,10 +20,9 @@ export class RuntimeHelper {
     timezone: TimezoneDefinition,
     time: string | number | moment.Moment,
   ): moment.Moment {
-    const result = this.convertToUtcDate(time).tz(timezone);
-    if (!result.isValid) {
-      TimeInputValidator.throwInvalidTimeValue(time);
+    if (!moment.tz.zone(timezone)) {
+      TimeInputValidator.throwInvalidTimezone(timezone);
     }
-    return result;
+    return this.convertToUtcDate(time).tz(timezone);
   }
 }

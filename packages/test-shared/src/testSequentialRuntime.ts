@@ -2,7 +2,7 @@ import { expect, test, describe } from "vite-plus/test";
 import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
-import { testConstructorArgs, testWithLocalTimezone } from "./helpers/testHelpers.ts";
+import { testConstructorArgs, testWithTimezone } from "./helpers/testHelpers.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
@@ -79,7 +79,7 @@ export function testSequentialRuntime<TDate>(
       });
     });
 
-    testWithLocalTimezone<TDate>(plugin.supportsLocalTime, createSUT);
+    testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
 
     describe("utcNow", () => {
       test("doesn't throw", () => {

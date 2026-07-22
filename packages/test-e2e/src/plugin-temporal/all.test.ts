@@ -22,15 +22,15 @@ describe("e2e temporal", () => {
 
     expect(system.clock.utcNow().toString()).toBeDefined();
     expect(system.clock.localNow().toString()).toBeDefined();
-    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(system.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(system.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(system.parser.parseToUtc(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
     expect(system.parser.parseToLocal(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     expect(fixed.clock.localNow().toString()).toBeDefined();
-    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(fixed.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(fixed.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(
       fixed.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
@@ -40,8 +40,8 @@ describe("e2e temporal", () => {
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     expect(manual.clock.localNow().toString()).toBeDefined();
-    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(manual.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(manual.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(
       manual.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
@@ -51,8 +51,8 @@ describe("e2e temporal", () => {
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     expect(sequential.clock.localNow().toString()).toBeDefined();
-    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(sequential.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(sequential.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(
       sequential.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();

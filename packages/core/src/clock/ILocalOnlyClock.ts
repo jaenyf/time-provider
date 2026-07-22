@@ -12,5 +12,16 @@ export interface ILocalOnlyClock<TDate> {
    *
    * @param timezone the new local `timezone` to be used by the runtime.
    */
-  withLocalTimezone(timezone: TimezoneDefinition): this;
+  withTimezone(timezone: TimezoneDefinition): this;
+  /**
+   * Retrieves the host timezone.
+   * @returns a `TimezoneDefinition` describing the host timezone.
+   */
+  hostTimezone(): TimezoneDefinition;
+
+  /**
+   * Get the current defined local timezone.
+   * @returns the current defined local timezone as a `TimezoneDefinition`.
+   */
+  get timezone(): TimezoneDefinition;
 }

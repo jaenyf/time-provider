@@ -4,7 +4,7 @@ import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import {
   testConstructorArgs,
-  testWithLocalTimezone,
+  testWithTimezone,
   testLocalNow,
   testUtcNow,
 } from "./helpers/testHelpers.ts";
@@ -32,7 +32,7 @@ export function testFixedRuntime<TDate>(
     testLocalNow(plugin.supportsLocalTime, createSUT, () =>
       parseTimeToLocal("2026-01-01T14:00+14:00"),
     );
-    testWithLocalTimezone<TDate>(plugin.supportsLocalTime, createSUT);
+    testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
 
     describe("parser", () => {
