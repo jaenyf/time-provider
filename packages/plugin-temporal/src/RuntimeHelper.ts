@@ -1,5 +1,4 @@
 import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
-import { Temporal } from "@js-temporal/polyfill";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
