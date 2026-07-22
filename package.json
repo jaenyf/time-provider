@@ -21,18 +21,25 @@
     "@js-temporal/polyfill": "~0.5.1",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@types/node": "catalog:",
+    "@typescript/native-preview": "catalog:",
     "@vitest/coverage-v8": "4.1.10",
     "rimraf": "^6.1.3",
+    "typescript": "catalog:",
     "validate-branch-name": "^1.3.2",
     "vite-plus": "catalog:",
-    "vitest": "latest"
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "packageManager": "bun@1.3.14",
   "catalog": {
-    "vite-plus": "latest"
+    "vite-plus": "latest",
+    "vitest": "latest",
+    "typescript": "^6.0.3",
+    "@types/node": "25.6.2",
+    "@typescript/native-preview": "7.0.0-dev.20260509.2"
   },
   "validate-branch-name": {
     "pattern": "^(main)$|^(ai|bugfix|chore|ci|docs|feat|feature|fix|hotfix|perf|release|refactor)/.+$",

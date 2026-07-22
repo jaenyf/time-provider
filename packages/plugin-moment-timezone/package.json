@@ -49,18 +49,14 @@
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
-    "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
     "release": "npm stage publish --provenance"
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*",
-    "@types/node": "^25.6.2",
     "moment": "~2.30.1",
-    "moment-timezone": "~0.6.3",
-    "typescript": "^6.0.3",
-    "vite-plus": "catalog:"
+    "moment-timezone": "~0.6.3"
   },
   "peerDependencies": {
     "@time-provider/core": "^0.0.4",
