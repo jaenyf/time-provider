@@ -20,10 +20,6 @@ export class RuntimeHelper {
     timezone: TimezoneDefinition,
     time: string | number | dayjs.Dayjs,
   ): dayjs.Dayjs {
-    const result = this.convertToUtcDate(time).tz(timezone);
-    if (!result.isValid()) {
-      TimeInputValidator.throwInvalidTimeValue(time);
-    }
-    return result;
+    return this.convertToUtcDate(time).tz(timezone);
   }
 }
