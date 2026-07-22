@@ -71,9 +71,7 @@ function upsertEntry(existingContent: string | undefined, newEntry: string): str
   const intro = [
     "# Benchmark History",
     "",
-    "Auto-generated and triggered by [last release](https://github.com/jaenyf/time-provider/actions/workflows/release-please.yml)  ",
-    "Each benchmark entry is the median across [tools/benchmark/bench/run-multi.ts](several independent process passes).",
-    "",
+    "Auto-generated and triggered by [last release](https://github.com/jaenyf/time-provider/actions/workflows/release-please.yml).  ",
   ].join("\n");
   return `${intro}\n${START_MARKER}\n\n${newEntry}\n${END_MARKER}\n`;
 }
