@@ -12,14 +12,18 @@
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/core)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
-TypeScript library for injecting time and timers with adapters for multiple date libraries.
+<div align="center">
+  <img src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo.svg"  alt="Logo" width="400">
+</div>
 
-- 📦 Zero runtime dependencies
-- 🧪 No global monkey-patching
-- ⏱️ Deterministic timers
-- 🕓 Four clock strategies
-- 🌍 Real timezone support (where applicable)
-- 🔌 Bring your own date library
+<div align="center">
+ 📦 Zero runtime dependencies |  
+ 🧪 No global monkey-patching |  
+ ⏱️ Deterministic timers |  
+ 🕓 Four clock strategies |  
+ 🌍 Real timezone support (where applicable) |  
+ 🔌 Bring your own date library  
+</div>
 
 ## Time is a dependency
 

@@ -12,7 +12,9 @@
 
 # [Time-Provider ~ Temporal plugin](https://github.com/jaenyf/time-provider)
 
-TypeScript library for injecting time and timers with adapters for multiple date libraries.
+<div align="center">
+  <img src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo.svg"  alt="Logo" width="400">
+</div>
 
 ## Description
 
