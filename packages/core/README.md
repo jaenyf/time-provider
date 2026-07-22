@@ -14,6 +14,13 @@
 
 TypeScript library for injecting time and timers with adapters for multiple date libraries.
 
+- 📦 Zero runtime dependencies
+- 🧪 No global monkey-patching
+- ⏱️ Deterministic timers
+- 🕓 Four clock strategies
+- 🌍 Real timezone support (where applicable)
+- 🔌 Bring your own date library
+
 ## Time is a dependency
 
 Code coupled to the native `Date` object, `Temporal` objects, any specific date library, or the
