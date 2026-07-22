@@ -14,11 +14,13 @@
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports bun.lock",
     "test": "vp test",
     "check": "vp run -r check",
-    "stryker": "vpx -p @stryker-mutator/core -p @stryker-mutator/vitest-runner stryker run"
+    "stryker": "stryker run"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.0",
     "@js-temporal/polyfill": "~0.5.1",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "4.1.10",
     "rimraf": "^6.1.3",
     "validate-branch-name": "^1.3.2",
