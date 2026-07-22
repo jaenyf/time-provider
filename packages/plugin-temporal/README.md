@@ -16,4 +16,8 @@ TypeScript library for injecting time and timers with adapters for multiple date
 
 ## Description
 
-This is the Temporal plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
+This is the [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-temporal/CHANGELOG.md)

@@ -16,4 +16,19 @@ TypeScript library for injecting time and timers with adapters for multiple date
 
 ## Description
 
-This is the native Date plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
+This is the native [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
+
+## Notes
+
+JavaScript's native [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) object lacks a time zone-aware object type that stores and performs arithmetic in a specific time zone.
+
+As a result, [Time-Provider](https://www.npmjs.com/package/@time-provider/core) intentionally does not expose time zone or local-time APIs for `Date`.  
+**This plugin provides a UTC-only facade.**
+
+If you need first-class time zone support, consider using [Temporal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal) together with the [Time-Provider Temporal plugin](https://www.npmjs.com/package/@time-provider/plugin-temporal).
+
+If you need to keep using the native `Date` object, you can extend it by adding time zone support with the [date-fns](https://www.npmjs.com/package/date-fns) and [date-fns-tz](https://www.npmjs.com/package/date-fns-tz), outside the scope of [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-native/CHANGELOG.md)

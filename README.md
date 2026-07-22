@@ -1,6 +1,6 @@
-# 🕰️ Time-Provider
+# Time-Provider
 
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
 [![types](https://img.shields.io/npm/types/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core?activeTab=code)
 [![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
@@ -12,480 +12,111 @@
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/core)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
-> _"Fake timers that change unrelated behavior are not substitutes for a clock; they are substitutes for the world."_
->
-> — Barbara Liskov _(who could have said this)_
+TypeScript library for injecting time and timers with adapters for multiple date libraries.
 
-**Time is an application dependency, not a runtime detail.**
+## Time is a dependency
 
-`time-provider` makes time explicit, testable, and independent from global state.
+Code coupled to the native `Date` object, `Temporal` objects, any specific date library, or the
+environment's scheduler (`setTimeout`, `setInterval`) has an implicit
+dependency on the system clock. That's what pushes teams toward global
+fake-timer libraries for testing - patching `Date`/timers process-wide,
+which affects unrelated code and makes tests harder to reason about.
 
----
+vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
 
-## Time should be SOLID! (that's ~~DEEP~~ _DIP_) 🌱
+`time-provider` makes time an explicit, injectable dependency instead: a
+single object exposing a clock, a parser, and a scheduler, swappable per
+call site.
 
-Stop accessing time through global APIs:
+## Features
 
-- `Date`
-- `Temporal.Now`
-- `setTimeout`
-- `setInterval`
+- **Four clock strategies**: system (real time), fixed, manual (advance time explicitly), sequential (predefined instants) - same API for production and tests.
+- **Deterministic timers**: `setTimeout`/`setInterval` driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
+- **Bring your own date library**: adapters for [Temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal), [Day.js](https://www.npmjs.com/package/@time-provider/plugin-dayjs), [Luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon), [Moment.js](https://www.npmjs.com/package/@time-provider/plugin-moment), [Moment.js + moment-timezone](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone), and [native `Date`](https://www.npmjs.com/package/@time-provider/plugin-native). Your code keeps working with the date type it already uses.
+- **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withLocalTimezone(...)` plus `localNow()`/`utcNow()`.
+- **Zero runtime dependencies** in `@time-provider/core`.
 
-This makes time an implicit dependency. And that's why you might have started using _**global fake timers**_.
-
-This creates problems:
-
-- ❌ business logic becomes coupled to the system clock
-- ❌ tests depend on real time passing
-- ❌ timers are difficult to control deterministically
-- ❌ different application boundaries cannot easily define their own notion of time
-
-✅ `time-provider` applies dependency inversion to time.
-
-Time becomes an explicit dependency that can be replaced depending on the context.
-
-### What if I already have a Clock abstraction? 🦆
-
-You might already have a Clock abstraction and replace its implementation in tests with a fake timer-based solution.
-
-If so, you may want to consider these points :
-
-- ❌ [A clock interface may be insufficient](#why-not-just-create-a-clock-interface).
-- ✅ `time-provider` provides a **lightweight alternative** to traditional fake timer libraries, as demonstrated by our [benchmark](BENCHMARK.md).
-- ✅ `time-provider` has a neat and concise builder interface to create your runtime ([see below](#usage)).
-- ✅ You are not bound to the Date object or a single date library. Use the date library you already have and keep type-safe access through the adapter.
-
-|                                         | Jest/Sinon | time-provider |
-| --------------------------------------- | ---------- | ------------- |
-| Leaves globals untouched                | ❌         | ✅            |
-| Allows multiple time contexts           | ❌         | ✅            |
-| Works with domain injection             | ❌         | ✅            |
-| Provides a runtime abstraction boundary | ❌         | ✅            |
-| Controls scheduling                     | ✅         | ✅            |
-| Preserves date abstraction boundary     | ❌         | ✅            |
-
-You may want to give it a try!
-
----
-
-## What is it?
-
-`time-provider` is a TypeScript library for injecting **time and timers** into applications with the date library of your choice.
-
-It provides a single boundary for:
-
-- reading the current time
-- parsing timestamps
-- scheduling future actions
-- controlling time progression during tests
-
-... with the date library of your choice.
-
-```typescript
-interface ITimeProvider<TDate> {
-  clock: IClock<TDate>;
-  parser: IParser<TDate>;
-  scheduler: IScheduler;
-}
-```
-
-```typescript
-interface IClock<TDate> {
-  localNow(): TDate;
-  utcNow(): TDate;
-  withLocalTimezone(localTimezone: TimezoneDefinition): IClock<TDate>;
-}
-```
-
-```typescript
-interface IParser<TDate> {
-  parse(input: string | number | TDate): TDate;
-}
-```
-
-```typescript
-interface IScheduler {
-  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
-  clearTimeout(handle: SetTimeoutHandle): void;
-  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
-  clearInterval(handle: SetIntervalHandle): void;
-}
-```
-
-A time provider exposes:
-
-- **time access**
-- **timestamp parsing**
-- **scheduling capabilities**
-
-Together they cover the main ways applications interact with time.
-
----
-
-## Application boundaries can define their own time
-
-"Now" can vary depending on your app domain or your business logic.
-
-Different parts of an application may require different notions of time:
-
-- domain logic may depend on a business-defined clock
-- background jobs may depend on processing time
-- simulations may use virtual time
-- tests may use deterministic time
-
-Global APIs force all these cases into the same hidden dependency.
-
-With dependency injection, each boundary receives the time provider it needs.
-
----
-
-## 💫 Keep your date library
-
-`time-provider` neither introduces a new date model nor forces you into one.
-
-Your application keeps using the date library it already uses.
-
-Supported adapters include:
-
-- `Temporal`
-- Native `Date`
-- `Day.js`
-- `Luxon`
-- `Moment.js`
-
-The adapter preserves the native date type with type-safe signatures.
-
-`time-provider` provides the dependency boundary around time while keeping your existing date stack.
-
----
-
-## Why not just create a Clock interface? 🧭
-
-**A clock tells you what time it is. A time provider defines how your application interacts with time.**
-
-A clock abstraction solves one problem:
-
-> What time is it?
-
-But applications usually depend on more than reading time.
-
-They also need:
-
-- defining local or remote users time zones to generate accurate local time for them
-- scheduling future actions
-- deterministic timer execution
-- controlled time progression in tests
-- timestamp parsing
-
-`time-provider` keeps these concerns together:
-
-```
-TimeProvider
-├── Clock
-│   ├── localNow()
-│   └── utcNow()
-│   └── withLocalTimezone()
-│
-├── Parser
-│   └── parseToLocal()
-│   └── parseToUtc()
-│
-└── Scheduler
-    ├── setTimeout()
-    ├── clearTimeout()
-    ├── setInterval()
-    └── clearInterval()
-```
-
----
-
-## ✨ Features
-
-- ✅ Dependency-injectable clocks and timers
-- ✅ Deterministic timers without replacing global APIs
-- ✅ Multiple clock strategies
-- ✅ Multiple isolated time contexts in the same application
-- ✅ Time zones support
-- ✅ Support for multiple date libraries
-- ✅ Native date types preserved
-- ✅ Type-safe return values
-
----
-
-# 🚀 Quick start
-
-Install the core package and an adapter:
+## Install
 
 ```bash
 npm install @time-provider/core @time-provider/plugin-native
 ```
 
-Production:
+Swap `plugin-native` for `plugin-dayjs`, `plugin-luxon`, `plugin-moment`, `plugin-moment-timezone`, or `plugin-temporal` depending on the date library you use.
+
+## Usage
 
 ```typescript
 import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-native";
 
+// production
 const timeProvider = createTimeProvider.for(plugin).create();
-```
-
-Testing:
-
-```typescript
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .asManual()
-  .withInitialTime("2026-01-01T00:00Z")
-  .create();
-
-let retries = 0;
-
-timeProvider.scheduler.setInterval(() => {
-  retries++;
-}, 1000);
-
-timeProvider.clock.advance({
-  seconds: 3,
-});
-
-expect(retries).toBe(3);
-```
-
----
-
-# Usage
-
-## Dependency injection
-
-```typescript
-import type { ITimeProvider } from "@time-provider/core";
-import { Temporal } from "@js-temporal/polyfill";
 
 class UserService {
-  constructor(private readonly timeProvider: ITimeProvider<Temporal.ZonedDateTime>) {}
+  constructor(private readonly timeProvider: ITimeProvider<Date>) {}
 
   createUser() {
-    return {
-      createdAt: this.timeProvider.clock.utcNow(),
-    };
+    return { createdAt: this.timeProvider.clock.utcNow() };
   }
 }
 ```
 
-The service does not know whether time comes from:
-
-- the system clock
-- a fixed clock
-- a simulation
-- a test clock
-
-It only depends on the time capability it receives.
-
----
-
-## Testing deterministic time
-
 ```typescript
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .asFixed()
-  .withLocalTimezone("Etc/UTC")
-  .withFixedTime("2026-01-01T00:00Z")
-  .create();
-
-const sut = new UserService(timeProvider);
-
-expect(sut.createUser().createdAt).toEqual(timeProvider.clock.utcNow());
-```
-
----
-
-## Timers
-
-The scheduler follows the selected clock strategy.
-
-With a [manual clock](#manual-clock), callbacks execute when time advances.
-
-```typescript
+// tests: swap .create() → .asManual()...create(); UserService itself never changes
 const timeProvider = createTimeProvider
   .for(plugin)
   .asManual()
-  .withInitialTime("2026-01-01T00:00Z")
+  .withInitialTime("2026-01-01T00:00:00.000Z")
   .create();
 
-let count = 0;
+let retries = 0;
+timeProvider.scheduler.setInterval(() => retries++, 1000);
+timeProvider.clock.advance({ seconds: 3 });
 
-timeProvider.scheduler.setInterval(() => {
-  count++;
-}, 1000);
-
-timeProvider.clock.advance({
-  seconds: 3,
-});
-
-expect(count).toBe(3);
+expect(retries).toBe(3);
 ```
 
-### Execution model: synchronous vs. asynchronous
+Every time provider exposes the same three-part surface:
 
-This is a deliberate difference from native timers, and it's important to keep in mind:
-
-> ⚠️ Deterministic clocks intentionally do not emulate the JavaScript event loop. They are synchronous.
-
-- **System clock**: `setTimeout`/`setInterval` delegate to the real, native timers. Callbacks run **asynchronously**, on the real event loop, exactly like in production code.
-- **Manual and Sequential clocks**: callbacks run **synchronously, in-line**, at the moment they become due. A due callback can run as a direct side effect of `setTimeout`/`setInterval` itself (e.g. a delay of `0` or a negative value is already due when scheduled), or of `advance()`, `clock.localNow()`, or `clock.utcNow()` (whichever call causes the clock to reach or pass the callback's due time). There is no event loop tick involved: the callback has already run by the time the triggering call returns.
-- **Fixed clock**: time never advances, so no scheduled `setTimeout`/`setInterval` callback is ever due — it never runs, regardless of the delay it was registered with.
-
-This synchronous execution is what makes the manual and sequential clocks deterministic: there is no need to `await` anything, or to yield to the event loop, for a due callback to have run. The trade-off is that call ordering can differ subtly from a real asynchronous run — for instance, code that assumes a `setTimeout(fn, 0)` always defers `fn` past the current synchronous block will observe it running immediately instead when using a manual or sequential clock.
-
----
-
-# Clock
-
-The clock is controlling the behavior of the scheduler as well as providing time through `utcNow` and `localNow` (if plugin supports localized time)
-
-### UTC time
-
-UTC time should be the default time to use. It's backed by all supported adapters.
-
-### Local time
-
-What does mean 'local' ? For some time libraries 'local' is considered to be the 'host' (or process time) time. `time-provider` considers it to be a notion the user should define.
-That's why you can define it with your own time zone by calling `withLocalTimezone(...)` either on the runtime builder or on the clock interface. Further calls to `localNow()` will give time accordingly.
-
-What if the underlying library does not support time zones ?
-
-In this case, the `time-provider` facade is restricted to exposes "utc-friendly" methods only. You are safe at runtime because any attempts to use unavailable "local time methods" is detected at compile time.
-
-### ⚠️ Note on the native Date object and the `plugin-native` adapter
-
-The native Date object has no real support for timezones and therefore has no abilities to provide a true localized time (that's why so many time libraries exist).  
-So the `plugin-native` adapter **only exposes utcNow()** in its clock facade.
-
-### ⚠️ Note on Moment.js and the `plugin-moment` vs. `plugin-moment-timezone` adapters
-
-By default Moment.js does not have support for timezones. This support is made available by adding the additional `moment-timezone` extension.  
-Because we don't want to tie our users to the use of moment-timezone when it's not necessary, we have chosen to also split our adapters in two:
-
-- 🧩 plugin-moment: only supporting UTC time, with support for neither time zones nor local time.
-- 🧩 plugin-moment-timezone: supporting timezones and local time.
-
-So the `plugin-moment` adapter **only exposes utcNow()** in its clock facade.  
-And the `plugin-moment-timezone` adapter **exposes utcNow(), localNow(), and withLocalTimezone()** in its clock facade.
+```typescript
+interface ITimeProvider<TDate> {
+  clock: IClock<TDate>; // localNow(), utcNow(), withLocalTimezone()
+  parser: IParser<TDate>; // parseToUtc(), parseToLocal()
+  scheduler: IScheduler; // setTimeout/clearTimeout/setInterval/clearInterval
+}
+```
 
 ## Clock strategies
 
-### System clock
-
-The default production strategy.
-
-Uses:
-
-- current system time
-- native runtime timers
+| Strategy   | Behavior                              | Typical use                            |
+| ---------- | ------------------------------------- | -------------------------------------- |
+| System     | Real time, real timers                | Production                             |
+| Fixed      | Always the same instant               | Deterministic single-instant tests     |
+| Manual     | Advances only when told to            | Simulations, timer/retry logic tests   |
+| Sequential | Returns a predefined instant sequence | Tests asserting on changing timestamps |
 
 ```typescript
-const timeProvider = createTimeProvider.for(plugin).create();
-```
-
----
-
-### Fixed clock
-
-Always returns the same instant.
-
-Useful for deterministic tests.
-
-```typescript
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .asFixed()
-  .withFixedTime("2026-01-01T00:00Z")
-  .create();
-```
-
----
-
-### Manual clock
-
-Time progresses only when explicitly advanced.
-
-Useful for:
-
-- simulations
-- integration tests
-- workflows depending on elapsed time
-
-```typescript
-time.advance({
-  seconds: 5,
-});
-```
-
----
-
-### Sequential clock
-
-Returns a predefined sequence of instants.
-
-Useful when testing code that depends on changing timestamps.
-
-```typescript
-const timeProvider = createTimeProvider
+createTimeProvider.for(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create();
+createTimeProvider.for(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create();
+createTimeProvider
   .for(plugin)
   .asSequential()
-  .withLocalTimezone("Europe/London")
   .withSequentialTime("2026-01-01T00:01Z")
   .withSequentialTime("2026-01-01T00:02Z")
   .create();
 ```
 
----
+> **Manual and sequential clocks run synchronously.** A due `setTimeout`/`setInterval` callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
 
-# 🛠️ Installation
+## Learn more
 
-```bash
-npm install @time-provider/core @time-provider/plugin-temporal
-```
+- [ARCHITECTURE.md](https://github.com/jaenyf/time-provider/blob/main/ARCHITECTURE.md) - how the packages fit together, the plugin/adapter model, why native `Date` and plain Moment.js are UTC-only.
+- [CONTRIBUTING.md](https://github.com/jaenyf/time-provider/blob/main/CONTRIBUTING.md) - development setup, workflow, reporting bugs/features.
+- [BENCHMARK.md](https://github.com/jaenyf/time-provider/blob/main/BENCHMARK.md) - faster than jest/sinon fake timers.
+- Per-package README (`packages/<name>/README.md`) for adapter-specific notes.
+- [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/CHANGELOG.md) - changes log from the core library and all plugins.
 
-Adapters:
+## License
 
-```bash
-npm install @time-provider/plugin-native
-npm install @time-provider/plugin-dayjs
-npm install @time-provider/plugin-luxon
-npm install @time-provider/plugin-moment
-```
-
----
-
-# Architecture
-
-The library is split into:
-
-- `@time-provider/core`
-  - common abstractions
-  - provider creation
-  - clock strategies
-  - scheduler behavior
-
-- adapters
-  - map the generic API to a date library
-  - preserve native date types
-
----
-
-# Use cases
-
-- Testing expiration logic
-- Testing retry policies
-- Simulating workflows
-- Running deterministic integration tests
-- Keeping domain logic independent from system time
-- Supporting multiple isolated time contexts
-
----
-
-# License 📜
-
-MIT
+[MIT](./LICENSE)

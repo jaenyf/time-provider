@@ -16,4 +16,17 @@ TypeScript library for injecting time and timers with adapters for multiple date
 
 ## Description
 
-This is the Moment.js plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
+This is the [Moment.js](https://momentjs.com/) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
+
+## Notes
+
+When used **without** the [Moment-Timezone](https://momentjs.com/timezone/) extension, [Moment.js](https://momentjs.com/) does not provide support for IANA time zones or daylight saving time (DST)-aware time zone conversions.
+
+As a result, [Time-Provider](https://www.npmjs.com/package/@time-provider/core) intentionally does not expose time zone or local-time APIs for `Moment`.  
+**This plugin provides a UTC-only facade.**
+
+If you need true local time or first-class time zone support, consider extending [Moment.js](https://momentjs.com/) with [Moment-Timezone](https://momentjs.com/timezone/) and using the [Time-Provider Moment-Timezone plugin](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone).
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-moment/CHANGELOG.md)

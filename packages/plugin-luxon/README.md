@@ -16,4 +16,8 @@ TypeScript library for injecting time and timers with adapters for multiple date
 
 ## Description
 
-This is the Luxon plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core)
+This is the [Luxon](https://moment.github.io/luxon/) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-luxon/CHANGELOG.md)
