@@ -36,6 +36,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   abstract clearInterval(handle: SetTimeoutHandle): void;
 
+  hostTimezone(): TimezoneDefinition {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
   withLocalTimezone(localTimezone: TimezoneDefinition): this {

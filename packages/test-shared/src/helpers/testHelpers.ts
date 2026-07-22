@@ -63,6 +63,17 @@ export function testWithLocalTimezone<TDate>(
   supportsLocalTime: boolean,
   getSut: () => { clock: unknown },
 ) {
+  describe.skipIf(!supportsLocalTime)("hostTimezone", () => {
+    test("doesn't throw", () => {
+      const clock = getSut().clock as unknown as IClock<TDate>;
+      expect(() => clock.hostTimezone()).not.toThrow();
+    });
+    test("returns system timezone", () => {
+      const clock = getSut().clock as unknown as IClock<TDate>;
+      const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      expect(clock.hostTimezone()).toEqual(systemTimezone);
+    });
+  });
   describe.skipIf(!supportsLocalTime)("withLocalTimezone", () => {
     test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
       "doesn't throw",
