@@ -3,6 +3,7 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
   BaseSystemRuntime,
+  TimeInputValidator,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
@@ -28,6 +29,9 @@ export class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
     super(localTimezone, RuntimeHelper);
   }
   localNow(): moment.Moment {
+    if (!moment.tz.zone(this.localTimezone)) {
+      TimeInputValidator.throwInvalidTimezone(this.localTimezone);
+    }
     return moment.utc().tz(this.localTimezone);
   }
   utcNow(): moment.Moment {

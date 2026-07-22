@@ -18,29 +18,29 @@ describe("e2e plugin-dayjs", () => {
 
     expect(system.clock.utcNow().toISOString()).toBeDefined();
     expect(system.clock.localNow().toISOString()).toBeDefined();
-    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(system.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(system.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(system.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(system.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(system.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
 
     expect(fixed.clock.utcNow().toISOString()).toBeDefined();
     expect(fixed.clock.localNow().toISOString()).toBeDefined();
-    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(fixed.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(fixed.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(fixed.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(fixed.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(fixed.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
 
     expect(manual.clock.utcNow().toISOString()).toBeDefined();
     expect(manual.clock.localNow().toISOString()).toBeDefined();
-    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(manual.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(manual.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(manual.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(manual.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(manual.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
 
     expect(sequential.clock.utcNow().toISOString()).toBeDefined();
     expect(sequential.clock.localNow().toISOString()).toBeDefined();
-    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
-    expect(sequential.clock.withLocalTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(sequential.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
+    expect(sequential.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(sequential.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(sequential.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
 

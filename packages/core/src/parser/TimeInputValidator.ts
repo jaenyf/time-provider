@@ -1,3 +1,5 @@
+import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
+
 export class TimeInputValidator {
   /**
    * Guards against invalid values.
@@ -15,11 +17,14 @@ export class TimeInputValidator {
       this.throwInvalidTimeValue(time);
     }
   }
-  /**
-   * Centralized error throwing.
-   */
+
   /* @__INLINE__ */
   static throwInvalidTimeValue<TDate>(time: string | number | TDate): never {
     throw new Error(`Invalid time value (value was '${String(time)}')`);
+  }
+
+  /* @__INLINE__ */
+  static throwInvalidTimezone(timezone: TimezoneDefinition): never {
+    throw new Error(`Invalid timezone value (value was '${String(timezone)}')`);
   }
 }

@@ -20,9 +20,6 @@ export class RuntimeHelper {
     time: string | number | Temporal.ZonedDateTime,
   ): Temporal.ZonedDateTime {
     const result = this.convertToUtcDate(time).withTimeZone(timezone);
-    if (result === undefined) {
-      TimeInputValidator.throwInvalidTimeValue(time);
-    }
     return result;
   }
 }

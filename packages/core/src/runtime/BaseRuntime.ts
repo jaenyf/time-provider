@@ -4,6 +4,7 @@ import type { IParser } from "../parser/IParser.ts";
 import type { IScheduler, SetIntervalHandle, SetTimeoutHandle } from "../scheduler/IScheduler.ts";
 import type { ITimeConverter } from "./ITimeConverter.ts";
 import type { IRuntime } from "./IRuntime.ts";
+import { SystemHelper } from "../helpers/SystemHelper.ts";
 
 /**
  * Base class for all runtime classes
@@ -37,12 +38,16 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract clearInterval(handle: SetTimeoutHandle): void;
 
   hostTimezone(): TimezoneDefinition {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return SystemHelper.getRealHostTimezone();
+  }
+
+  get timezone(): string {
+    return this.#localTimezone;
   }
 
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
-  withLocalTimezone(localTimezone: TimezoneDefinition): this {
+  withTimezone(localTimezone: TimezoneDefinition): this {
     this.#localTimezone = localTimezone;
     return this;
   }

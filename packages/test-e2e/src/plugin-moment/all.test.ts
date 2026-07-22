@@ -18,8 +18,8 @@ describe("e2e moment", () => {
     expect(system.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = system.clock.localNow;
-    //@ts-expect-error: withLocalTimezone does not exist
-    untracked = system.clock.withLocalTimezone;
+    //@ts-expect-error: withTimezone does not exist
+    untracked = system.clock.withTimezone;
     expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = system.parser.parseToLocal;
@@ -27,8 +27,8 @@ describe("e2e moment", () => {
     expect(fixed.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = fixed.clock.localNow;
-    //@ts-expect-error: withLocalTimezone does not exist
-    untracked = fixed.clock.withLocalTimezone;
+    //@ts-expect-error: withTimezone does not exist
+    untracked = fixed.clock.withTimezone;
     expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = system.parser.parseToLocal;
@@ -36,8 +36,8 @@ describe("e2e moment", () => {
     expect(manual.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = manual.clock.localNow;
-    //@ts-expect-error: withLocalTimezone does not exist
-    untracked = manual.clock.withLocalTimezone;
+    //@ts-expect-error: withTimezone does not exist
+    untracked = manual.clock.withTimezone;
     expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = manual.parser.parseToLocal;
@@ -45,8 +45,8 @@ describe("e2e moment", () => {
     expect(sequential.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = sequential.clock.localNow;
-    //@ts-expect-error: withLocalTimezone does not exist
-    untracked = sequential.clock.withLocalTimezone;
+    //@ts-expect-error: withTimezone does not exist
+    untracked = sequential.clock.withTimezone;
     expect(sequential.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = sequential.parser.parseToLocal;

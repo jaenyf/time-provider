@@ -28,6 +28,35 @@ export function testCreatedValue<T>(getSut: () => T) {
   });
 }
 
+export function testCreator<TDate>(
+  supportsLocalTime: boolean,
+  getSut: () => PluggedTimeProviderCreator<TDate>,
+) {
+  describe.skipIf(!supportsLocalTime)("withTimezone", () => {
+    test.each(["Pacific/Kiritimati", "Asia/Tokyo", "Europe/London"])(
+      "withTimezone defines the runtime local timezone",
+      (timezone) => {
+        let sut = getSut().withTimezone(timezone).create();
+        expect(sut.clock.timezone).toEqual(timezone);
+      },
+    );
+    test.each(["Pacific/Kiritimati", "Asia/Tokyo", "Europe/London"])(
+      "withHostTimezone defines the runtime local timezone",
+      () => {
+        let sut = getSut().withHostTimezone().create();
+        expect(sut.clock.timezone).toEqual(sut.clock.hostTimezone());
+      },
+    );
+    test.each(["Pacific/Kiritimati", "Asia/Tokyo", "Europe/London"])(
+      "withDefaultTimezone defines the runtime local timezone",
+      () => {
+        let sut = getSut().withDefaultTimezone().create();
+        expect(sut.clock.timezone).toEqual("Etc/UTC");
+      },
+    );
+  });
+}
+
 export function testDefaultEpochTime<TDate>(
   getSut: () => { clock: { utcNow(): TDate }; parser: { parseToUtc(value: number): TDate } },
 ) {
@@ -59,7 +88,7 @@ export function testConstructorArgs<TDate>(
   });
 }
 
-export function testWithLocalTimezone<TDate>(
+export function testWithTimezone<TDate>(
   supportsLocalTime: boolean,
   getSut: () => { clock: unknown },
 ) {
@@ -74,17 +103,17 @@ export function testWithLocalTimezone<TDate>(
       expect(clock.hostTimezone()).toEqual(systemTimezone);
     });
   });
-  describe.skipIf(!supportsLocalTime)("withLocalTimezone", () => {
+  describe.skipIf(!supportsLocalTime)("withTimezone", () => {
     test.each(["", "Etc/UTC", "Pacific/Kiritimati", "invalid timezone"])(
       "doesn't throw",
       (newLocalTimezone) => {
         const clock = getSut().clock as unknown as IClock<TDate>;
-        expect(() => clock.withLocalTimezone(newLocalTimezone)).not.toThrow();
+        expect(() => clock.withTimezone(newLocalTimezone)).not.toThrow();
       },
     );
     test.each([undefined, null])("returns its instance", () => {
       const clock = getSut().clock as unknown as IClock<TDate>;
-      expect(clock.withLocalTimezone("Pacific/Kiritimati")).toBe(clock);
+      expect(clock.withTimezone("Pacific/Kiritimati")).toBe(clock);
     });
     test.each([
       "Etc/UTC",
@@ -98,7 +127,7 @@ export function testWithLocalTimezone<TDate>(
     ])("effectively alter the timezone", (newLocalTimezone) => {
       const clock = getSut().clock as unknown as IClock<TDate>;
       const previousLocalTime = clock.localNow();
-      clock.withLocalTimezone(newLocalTimezone);
+      clock.withTimezone(newLocalTimezone);
       const newLocalTime = clock.localNow();
       expect(newLocalTime).not.toEqual(previousLocalTime);
     });
@@ -114,6 +143,11 @@ export function testLocalNow<TDate>(
     test("doesn't throw", () => {
       const clock = getSut().clock as unknown as IClock<TDate>;
       expect(() => clock.localNow()).not.toThrow();
+    });
+    test("throw with invalid timezone", () => {
+      const clock = getSut().clock as unknown as IClock<TDate>;
+      clock.withTimezone("invalid");
+      expect(() => clock.localNow()).toThrow();
     });
     test.each([undefined, null])("returns a value", (undefinedValue) => {
       const clock = getSut().clock as unknown as IClock<TDate>;

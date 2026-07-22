@@ -11,16 +11,19 @@ import type {
   IUtcOnlyPluggedTimeProviderCreator,
 } from "./ITimeProviderCreators.ts";
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
+import { SystemHelper } from "../helpers/SystemHelper.ts";
 
 abstract class BaseTimeProviderCreator<TDate> {
   #plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>;
   #localTimezone: TimezoneDefinition;
+  #shouldUseHostLocalTimezone: boolean;
 
   static defaultTimezone: TimezoneDefinition = "Etc/UTC";
 
   constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
     this.#plugin = plugin;
     this.#localTimezone = localTimezone;
+    this.#shouldUseHostLocalTimezone = false;
   }
 
   protected get plugin() {
@@ -28,20 +31,29 @@ abstract class BaseTimeProviderCreator<TDate> {
   }
 
   protected get localTimezone() {
-    return this.#localTimezone;
+    return this.#shouldUseHostLocalTimezone
+      ? SystemHelper.getRealHostTimezone()
+      : this.#localTimezone;
   }
 
   protected set localTimezone(value: TimezoneDefinition) {
     this.#localTimezone = value;
   }
 
-  withLocalTimezone(timezone: TimezoneDefinition): this {
+  withTimezone(timezone: TimezoneDefinition): this {
     this.localTimezone = timezone;
+    this.#shouldUseHostLocalTimezone = false;
     return this;
   }
 
-  withDefaultLocalTimezone(): this {
+  withDefaultTimezone(): this {
     this.localTimezone = BaseTimeProviderCreator.defaultTimezone;
+    this.#shouldUseHostLocalTimezone = false;
+    return this;
+  }
+
+  withHostTimezone(): this {
+    this.#shouldUseHostLocalTimezone = true;
     return this;
   }
 }
