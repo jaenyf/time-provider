@@ -2,8 +2,10 @@ import type {
   IManualTimeProvider,
   IUtcOnlyManualTimeProvider,
 } from "../api/IManualTimeProvider.ts";
-import type { IPlugin } from "../api/IPlugin.ts";
-import type { IUtcOnlyPlugin } from "../api/IUtcOnlyPlugin.ts";
+import type { ISystemPlugin } from "../api/ISystemPlugin.ts";
+import type { IUtcOnlySystemPlugin } from "../api/IUtcOnlySystemPlugin.ts";
+import type { IDeterministicPlugin } from "../api/IDeterministicPlugin.ts";
+import type { IUtcOnlyDeterministicPlugin } from "../api/IUtcOnlyDeterministicPlugin.ts";
 import type { ITimeProvider, IUtcOnlyTimeProvider } from "../api/ITimeProvider.ts";
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 
@@ -114,37 +116,75 @@ export interface IUtcOnlySequentialTimeProviderCreator<TDate> extends ICreateTim
   ): IUtcOnlySequentialTimeProviderCreator<TDate>;
 }
 
-export interface IPluggedTimeProviderCreator<TDate>
+/**
+ * The plugged creator returned by `createTimeProvider.for()` - the
+ * production entry point. Deliberately exposes only `create()`: adding
+ * `asManual()`/`asFixed()`/`asSequential()` here, even unused, would keep a
+ * static reference from this type's implementation to the deterministic
+ * runtime classes, defeating tree-shaking for consumers who never call them.
+ * Use `createDeterministicTimeProvider.for()` for those.
+ */
+export interface ISystemPluggedTimeProviderCreator<TDate>
   extends
     ICreateTimeProvider<ITimeProvider<TDate>>,
-    IComposeWithTimezone<IPluggedTimeProviderCreator<TDate>>,
+    IComposeWithTimezone<ISystemPluggedTimeProviderCreator<TDate>> {}
+
+export interface IUtcOnlySystemPluggedTimeProviderCreator<TDate> extends ICreateTimeProvider<
+  IUtcOnlyTimeProvider<TDate>
+> {}
+
+/**
+ * The plugged creator returned by `createDeterministicTimeProvider.for()` -
+ * the fixed/manual/sequential (test) entry point.
+ */
+export interface IDeterministicPluggedTimeProviderCreator<TDate>
+  extends
+    IComposeWithTimezone<IDeterministicPluggedTimeProviderCreator<TDate>>,
     IAsRuntimeCreators<
       IFixedTimeProviderCreator<TDate>,
       IManualTimeProviderCreator<TDate>,
       ISequentialTimeProviderCreator<TDate>
     > {}
 
-export interface IUtcOnlyPluggedTimeProviderCreator<TDate>
-  extends
-    ICreateTimeProvider<IUtcOnlyTimeProvider<TDate>>,
-    IAsRuntimeCreators<
-      IUtcOnlyFixedTimeProviderCreator<TDate>,
-      IUtcOnlyManualTimeProviderCreator<TDate>,
-      IUtcOnlySequentialTimeProviderCreator<TDate>
-    > {}
+export interface IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate> extends IAsRuntimeCreators<
+  IUtcOnlyFixedTimeProviderCreator<TDate>,
+  IUtcOnlyManualTimeProviderCreator<TDate>,
+  IUtcOnlySequentialTimeProviderCreator<TDate>
+> {}
 
 /**
- * Factory to create a runtime builder.
+ * Factory to create a system-only runtime builder - the production entry
+ * point. See ARCHITECTURE.md's tree-shaking notes for why this is separate
+ * from `IDeterministicTimeProviderCreator`.
  */
 export interface ITimeProviderCreator {
   /**
    * Setup a Time-Provider for a given plugin (adapter)
    * @param adapter The instance of the plugin (adapter) to use.
    */
-  for<TDate>(adapter: IUtcOnlyPlugin<TDate>): IUtcOnlyPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IUtcOnlySystemPlugin<TDate>): IUtcOnlySystemPluggedTimeProviderCreator<TDate>;
   /**
    * Setup a Time-Provider for a given plugin (adapter)
    * @param adapter The instance of the plugin (adapter) to use.
    */
-  for<TDate>(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: ISystemPlugin<TDate>): ISystemPluggedTimeProviderCreator<TDate>;
+}
+
+/**
+ * Factory to create a fixed/manual/sequential (deterministic) runtime
+ * builder - the test entry point.
+ */
+export interface IDeterministicTimeProviderCreator {
+  /**
+   * Setup a deterministic Time-Provider for a given plugin (adapter)
+   * @param adapter The instance of the plugin (adapter) to use.
+   */
+  for<TDate>(
+    adapter: IUtcOnlyDeterministicPlugin<TDate>,
+  ): IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate>;
+  /**
+   * Setup a deterministic Time-Provider for a given plugin (adapter)
+   * @param adapter The instance of the plugin (adapter) to use.
+   */
+  for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedTimeProviderCreator<TDate>;
 }

@@ -1,15 +1,15 @@
-import { expect, test, describe, beforeEach, afterEach, vi } from "vite-plus/test";
-import type { IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
-import { testParser } from "./helpers/testParser.ts";
+import type { ISystemPlugin, IUtcOnlySystemPlugin, TimezoneDefinition } from "@time-provider/core";
+import { describe, beforeEach, vi, afterEach, test, expect } from "vite-plus/test";
 import {
   testConstructorArgs,
-  testWithTimezone,
   testLocalNow,
+  testWithTimezone,
   testUtcNow,
 } from "./helpers/testHelpers.ts";
-
+import { testParser } from "./helpers/testParser.ts";
+// ...
 export function testSystemRuntime<TDate>(
-  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
+  plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
@@ -25,7 +25,12 @@ export function testSystemRuntime<TDate>(
     testUtcNow(createSUT);
 
     describe("parser", () => {
-      testParser(plugin, parseTimeToUtc, parseTimeToLocal);
+      testParser(
+        plugin.supportsLocalTime,
+        () => createSUT().parser,
+        parseTimeToUtc,
+        parseTimeToLocal,
+      );
     });
 
     describe("scheduler", () => {

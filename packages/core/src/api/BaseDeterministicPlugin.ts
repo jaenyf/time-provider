@@ -1,17 +1,14 @@
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { IManualRuntime } from "../runtime/IManualRuntime.ts";
 import type { IRuntime } from "../runtime/IRuntime.ts";
-import type { IPlugin } from "./IPlugin.ts";
+import type { IDeterministicPlugin } from "./IDeterministicPlugin.ts";
 
 /**
- * Base class for plugin implementation
+ * Base class for the fixed/manual/sequential half of a plugin implementation.
  */
-export abstract class BasePlugin<TDate> implements IPlugin<TDate> {
+export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPlugin<TDate> {
   readonly supportsLocalTime = true as const;
 
-  protected abstract readonly SystemRuntimeCtor: new (
-    localTimezone: TimezoneDefinition,
-  ) => IRuntime<TDate>;
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
@@ -25,9 +22,6 @@ export abstract class BasePlugin<TDate> implements IPlugin<TDate> {
     sequentialTimes: (string | number | TDate)[],
   ) => IRuntime<TDate>;
 
-  createSystemRuntime(localTimezone: TimezoneDefinition): IRuntime<TDate> {
-    return new this.SystemRuntimeCtor(localTimezone);
-  }
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,

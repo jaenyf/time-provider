@@ -1,6 +1,6 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider } from "@time-provider/core";
-import { plugin } from "@time-provider/plugin-native";
+import { createTimeProvider } from "@time-provider/core/deterministic";
+import { plugin } from "@time-provider/plugin-native/deterministic";
 
 export class TimeProviderManualAdapter implements ITimerAdapter {
   readonly name = "time-provider (manual)";

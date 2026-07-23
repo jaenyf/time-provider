@@ -1,39 +1,64 @@
 import { describe } from "vite-plus/test";
-import type { IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
+import type { ISystemPlugin, IUtcOnlySystemPlugin } from "@time-provider/core";
+import type {
+  IDeterministicPlugin,
+  IUtcOnlyDeterministicPlugin,
+} from "@time-provider/core/deterministic";
 import {
   getBuilderFor,
+  getDeterministicBuilderFor,
   testCreatedValue,
-  testBuilder,
+  testCreator,
   testDefaultEpochTime,
 } from "./helpers/testHelpers.ts";
 
-export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
+export function testTimeProviderCreator<TDate>(
+  systemPlugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
+  deterministicPlugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
+) {
   describe("system", () => {
-    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
-    testCreatedValue(() => getBuilderFor(plugin).create());
+    testCreator(systemPlugin.supportsLocalTime, () => getBuilderFor(systemPlugin));
+    testCreatedValue(() => getBuilderFor(systemPlugin).create());
   });
 
   describe("fixed", () => {
-    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
-    testCreatedValue(() =>
-      getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create(),
+    testCreator(deterministicPlugin.supportsLocalTime, () =>
+      getDeterministicBuilderFor(deterministicPlugin).asFixed(),
     );
-    testDefaultEpochTime(() => getBuilderFor(plugin).asFixed().create());
+    testCreatedValue(() =>
+      getDeterministicBuilderFor(deterministicPlugin)
+        .asFixed()
+        .withFixedTime("2026-01-01T00:00Z")
+        .create(),
+    );
+    testDefaultEpochTime(() => getDeterministicBuilderFor(deterministicPlugin).asFixed().create());
   });
 
   describe("manual", () => {
-    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
-    testCreatedValue(() =>
-      getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create(),
+    testCreator(deterministicPlugin.supportsLocalTime, () =>
+      getDeterministicBuilderFor(deterministicPlugin).asManual(),
     );
-    testDefaultEpochTime(() => getBuilderFor(plugin).asManual().create());
+    testCreatedValue(() =>
+      getDeterministicBuilderFor(deterministicPlugin)
+        .asManual()
+        .withInitialTime("2026-01-01T00:00Z")
+        .create(),
+    );
+    testDefaultEpochTime(() => getDeterministicBuilderFor(deterministicPlugin).asManual().create());
   });
 
   describe("sequential", () => {
-    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
-    testCreatedValue(() =>
-      getBuilderFor(plugin).asSequential().withSequentialTime("2026-01-01T00:00Z").create(),
+    testCreator(deterministicPlugin.supportsLocalTime, () =>
+      getDeterministicBuilderFor(deterministicPlugin).asSequential(),
     );
-    testDefaultEpochTime(() => getBuilderFor(plugin).asSequential().create());
+    testCreatedValue(() =>
+      getDeterministicBuilderFor(deterministicPlugin)
+        .asSequential()
+        .withSequentialTime("2026-01-01T00:00Z")
+        .create(),
+    );
+    testDefaultEpochTime(() =>
+      getDeterministicBuilderFor(deterministicPlugin).asSequential().create(),
+    );
   });
 }

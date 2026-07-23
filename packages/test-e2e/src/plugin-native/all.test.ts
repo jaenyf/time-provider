@@ -1,15 +1,18 @@
 import { describe, expect, test } from "vite-plus/test";
-import { createTimeProvider } from "../../../core/dist/index.mjs";
-import { plugin } from "../../../plugin-native/dist/index.mjs";
+import { createTimeProvider as createSystemTimeProvider } from "../../../core/dist/index.mjs";
+import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
+import { plugin as systemPlugin } from "../../../plugin-native/dist/index.mjs";
+import { plugin as deterministicPlugin } from "../../../plugin-native/dist/deterministic.mjs";
 
 describe("e2e native", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const creator = createTimeProvider.for(plugin);
+    const systemCreator = createSystemTimeProvider.for(systemPlugin);
+    const deterministicCreator = createDeterministicTimeProvider.for(deterministicPlugin);
 
-    const system = creator.create();
-    const fixed = creator.asFixed().create();
-    const manual = creator.asManual().create();
-    const sequential = creator.asSequential().create();
+    const system = systemCreator.create();
+    const fixed = deterministicCreator.asFixed().create();
+    const manual = deterministicCreator.asManual().create();
+    const sequential = deterministicCreator.asSequential().create();
 
     //this variable in just here to satisfy the linter as we ensure expected errors from hidden runtime methods
     let untracked: unknown;

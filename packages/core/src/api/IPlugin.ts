@@ -1,39 +1,16 @@
-import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
-import type { IManualRuntime } from "../runtime/IManualRuntime.ts";
-import type { IRuntime } from "../runtime/IRuntime.ts";
+import type { ISystemPlugin } from "./ISystemPlugin.ts";
+import type { IDeterministicPlugin } from "./IDeterministicPlugin.ts";
 
 /**
- * A plugin whose underlying date library has timezone-aware date type, so it can expose both local and UTC time.
+ * A plugin whose underlying date library has a timezone-aware date type, so
+ * it can expose both local and UTC time, across every runtime kind (system,
+ * fixed, manual, sequential).
+ *
+ * Composed from `ISystemPlugin` and `IDeterministicPlugin` rather than
+ * declared as one interface, so a plugin package can implement - and export -
+ * the two capabilities as two separate objects. `createTimeProvider`/
+ * `createDeterministicTimeProvider` each only accept the narrower interface
+ * they need; this combined type exists for callers (tests, plugin authors)
+ * that want to describe "a plugin implementing everything" in one place.
  */
-export interface IPlugin<TDate> {
-  /**
-   * Whether or not this plugin supports timezones and local time.
-   * Also serves as discriminant by `createTimeProvider.for()`.
-   */
-  readonly supportsLocalTime: true;
-  /**
-   * Create a runtime for system time and scheduler
-   */
-  createSystemRuntime(localTimezone: TimezoneDefinition): IRuntime<TDate>;
-  /**
-   * Create a runtime for manual time and scheduler
-   */
-  createManualRuntime(
-    localTimezone: TimezoneDefinition,
-    initialTime: string | number | TDate,
-  ): IManualRuntime<TDate>;
-  /**
-   * Create a runtime for fixed time and scheduler
-   */
-  createFixedRuntime(
-    localTimezone: TimezoneDefinition,
-    initialTime: string | number | TDate,
-  ): IRuntime<TDate>;
-  /**
-   * Create a runtime for sequential time and scheduler
-   */
-  createSequentialRuntime(
-    localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | TDate)[],
-  ): IRuntime<TDate>;
-}
+export type IPlugin<TDate> = ISystemPlugin<TDate> & IDeterministicPlugin<TDate>;

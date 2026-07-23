@@ -2,11 +2,10 @@ import {
   BaseFixedRuntime,
   BaseManualRuntime,
   BaseSequentialRuntime,
-  BaseSystemRuntime,
-  type TimezoneDefinition,
-} from "@time-provider/core";
+} from "@time-provider/core/deterministic";
+import type { TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
-import moment from "moment";
+import moment from "moment-timezone";
 
 export class FixedRuntime extends BaseFixedRuntime<moment.Moment> {
   constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | moment.Moment) {
@@ -20,18 +19,6 @@ export class SequentialRuntime extends BaseSequentialRuntime<moment.Moment> {
     sequentialTimes: (string | number | moment.Moment)[],
   ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
-  }
-}
-
-export class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
-  constructor(localTimezone: TimezoneDefinition) {
-    super(localTimezone, RuntimeHelper);
-  }
-  localNow(): moment.Moment {
-    return RuntimeHelper.convertToLocalDate(this.localTimezone, this.utcNow());
-  }
-  utcNow(): moment.Moment {
-    return moment.utc();
   }
 }
 

@@ -1,17 +1,17 @@
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
 import type { IUtcOnlyManualRuntime } from "../runtime/IUtcOnlyManualRuntime.ts";
 import type { IUtcOnlyRuntime } from "../runtime/IUtcOnlyRuntime.ts";
-import type { IUtcOnlyPlugin } from "./IUtcOnlyPlugin.ts";
+import type { IUtcOnlyDeterministicPlugin } from "./IUtcOnlyDeterministicPlugin.ts";
 
 /**
- * Base class for plugin implementation backed by a timezone-naive date library (no `localNow`).
+ * Base class for the fixed/manual/sequential half of a plugin implementation
+ * backed by a timezone-naive date library (no `localNow`).
  */
-export abstract class BaseUtcOnlyPlugin<TDate> implements IUtcOnlyPlugin<TDate> {
+export abstract class BaseUtcOnlyDeterministicPlugin<
+  TDate,
+> implements IUtcOnlyDeterministicPlugin<TDate> {
   readonly supportsLocalTime = false as const;
 
-  protected abstract readonly SystemRuntimeCtor: new (
-    localTimezone: TimezoneDefinition,
-  ) => IUtcOnlyRuntime<TDate>;
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
@@ -26,9 +26,7 @@ export abstract class BaseUtcOnlyPlugin<TDate> implements IUtcOnlyPlugin<TDate> 
   ) => IUtcOnlyRuntime<TDate>;
 
   #utcTimezone: TimezoneDefinition = "Etc/UTC";
-  createSystemRuntime(): IUtcOnlyRuntime<TDate> {
-    return new this.SystemRuntimeCtor(this.#utcTimezone);
-  }
+
   createManualRuntime(initialTime: string | number | TDate): IUtcOnlyManualRuntime<TDate> {
     return new this.ManualRuntimeCtor(this.#utcTimezone, initialTime);
   }

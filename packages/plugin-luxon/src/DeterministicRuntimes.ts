@@ -2,46 +2,25 @@ import {
   BaseFixedRuntime,
   BaseManualRuntime,
   BaseSequentialRuntime,
-  BaseSystemRuntime,
-  TimeInputValidator,
-  type TimezoneDefinition,
-} from "@time-provider/core";
+} from "@time-provider/core/deterministic";
+import type { TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
 import { DateTime } from "luxon";
 
-export class FixedRuntime extends BaseFixedRuntime<DateTime<boolean>> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime<boolean>) {
+export class FixedRuntime extends BaseFixedRuntime<DateTime> {
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
 }
 
-export class SequentialRuntime extends BaseSequentialRuntime<DateTime<boolean>> {
-  constructor(
-    localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | DateTime<boolean>)[],
-  ) {
+export class SequentialRuntime extends BaseSequentialRuntime<DateTime> {
+  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | DateTime)[]) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
   }
 }
 
-export class SystemRuntime extends BaseSystemRuntime<DateTime<boolean>> {
-  constructor(localTimezone: TimezoneDefinition) {
-    super(localTimezone, RuntimeHelper);
-  }
-  localNow(): DateTime<boolean> {
-    const now = DateTime.utc().setZone(this.localTimezone);
-    if (!now.isValid) {
-      TimeInputValidator.throwInvalidTimezone(this.localTimezone);
-    }
-    return now;
-  }
-  utcNow(): DateTime<boolean> {
-    return DateTime.utc();
-  }
-}
-
-export class ManualRuntime extends BaseManualRuntime<DateTime<boolean>> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime<boolean>) {
+export class ManualRuntime extends BaseManualRuntime<DateTime> {
+  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: DateTime<boolean>, years: number): DateTime<boolean> {

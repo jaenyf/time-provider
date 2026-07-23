@@ -1,16 +1,19 @@
 import { describe, expect, test } from "vite-plus/test";
-import { createTimeProvider } from "../../../core/dist/index.mjs";
-import { plugin } from "../../../plugin-luxon/dist/index.mjs";
+import { createTimeProvider as createSystemTimeProvider } from "../../../core/dist/index.mjs";
+import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
+import { plugin as systemPlugin } from "../../../plugin-luxon/dist/index.mjs";
+import { plugin as deterministicPlugin } from "../../../plugin-luxon/dist/deterministic.mjs";
 import { DateTime } from "luxon";
 
 describe("e2e luxon", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const creator = createTimeProvider.for(plugin);
+    const systemCreator = createSystemTimeProvider.for(systemPlugin);
+    const deterministicCreator = createDeterministicTimeProvider.for(deterministicPlugin);
 
-    const system = creator.create();
-    const fixed = creator.asFixed().create();
-    const manual = creator.asManual().create();
-    const sequential = creator.asSequential().create();
+    const system = systemCreator.create();
+    const fixed = deterministicCreator.asFixed().create();
+    const manual = deterministicCreator.asManual().create();
+    const sequential = deterministicCreator.asSequential().create();
 
     expect(system.clock.utcNow().toString()).toBeDefined();
     expect(system.clock.localNow().toString()).toBeDefined();

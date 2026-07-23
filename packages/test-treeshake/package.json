@@ -1,0 +1,16 @@
+{
+  "name": "@time-provider/test-treeshake",
+  "description": "Library treeshake tests",
+  "type": "module",
+  "scripts": {
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@time-provider/core": "workspace:*",
+    "@time-provider/plugin-native": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^7.2.0"
+  }
+}

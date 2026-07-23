@@ -2,11 +2,10 @@ import {
   BaseFixedRuntime,
   BaseManualRuntime,
   BaseSequentialRuntime,
-  BaseSystemRuntime,
-  type TimezoneDefinition,
-} from "@time-provider/core";
+} from "@time-provider/core/deterministic";
+import type { TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./RuntimeHelper.ts";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
 export class FixedRuntime extends BaseFixedRuntime<dayjs.Dayjs> {
   constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | dayjs.Dayjs) {
@@ -14,21 +13,12 @@ export class FixedRuntime extends BaseFixedRuntime<dayjs.Dayjs> {
   }
 }
 
-export class SequentialRuntime extends BaseSequentialRuntime<Dayjs> {
-  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | Dayjs)[]) {
+export class SequentialRuntime extends BaseSequentialRuntime<dayjs.Dayjs> {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    sequentialTimes: (string | number | dayjs.Dayjs)[],
+  ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
-  }
-}
-
-export class SystemRuntime extends BaseSystemRuntime<Dayjs> {
-  constructor(localTimezone: TimezoneDefinition) {
-    super(localTimezone, RuntimeHelper);
-  }
-  localNow(): dayjs.Dayjs {
-    return dayjs().utc().tz(this.localTimezone);
-  }
-  utcNow(): dayjs.Dayjs {
-    return dayjs.utc();
   }
 }
 

@@ -1,70 +1,29 @@
 import type { IManualTimeProvider } from "../api/IManualTimeProvider.ts";
-import type { IPlugin } from "../api/IPlugin.ts";
-import type { IUtcOnlyPlugin } from "../api/IUtcOnlyPlugin.ts";
+import type { IDeterministicPlugin } from "../api/IDeterministicPlugin.ts";
+import type { IUtcOnlyDeterministicPlugin } from "../api/IUtcOnlyDeterministicPlugin.ts";
 import type { ITimeProvider } from "../api/ITimeProvider.ts";
 import type {
+  IDeterministicPluggedTimeProviderCreator,
+  IDeterministicTimeProviderCreator,
   IFixedTimeProviderCreator,
   IManualTimeProviderCreator,
-  IPluggedTimeProviderCreator,
   ISequentialTimeProviderCreator,
-  ITimeProviderCreator,
-  IUtcOnlyPluggedTimeProviderCreator,
+  IUtcOnlyDeterministicPluggedTimeProviderCreator,
 } from "./ITimeProviderCreators.ts";
 import type { TimezoneDefinition } from "../clock/TimezoneDefinition.ts";
-import { SystemHelper } from "../helpers/SystemHelper.ts";
+import { BaseTimeProviderCreator } from "./BaseTimeProviderCreator.ts";
 
-abstract class BaseTimeProviderCreator<TDate> {
-  #plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>;
-  #localTimezone: TimezoneDefinition;
-  #shouldUseHostLocalTimezone: boolean;
-
-  static defaultTimezone: TimezoneDefinition = "Etc/UTC";
-
-  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
-    this.#plugin = plugin;
-    this.#localTimezone = localTimezone;
-    this.#shouldUseHostLocalTimezone = false;
-  }
-
-  protected get plugin() {
-    return this.#plugin;
-  }
-
-  protected get localTimezone() {
-    return this.#shouldUseHostLocalTimezone
-      ? SystemHelper.getRealHostTimezone()
-      : this.#localTimezone;
-  }
-
-  protected set localTimezone(value: TimezoneDefinition) {
-    this.#localTimezone = value;
-  }
-
-  withTimezone(timezone: TimezoneDefinition): this {
-    this.localTimezone = timezone;
-    this.#shouldUseHostLocalTimezone = false;
-    return this;
-  }
-
-  withDefaultTimezone(): this {
-    this.localTimezone = BaseTimeProviderCreator.defaultTimezone;
-    this.#shouldUseHostLocalTimezone = false;
-    return this;
-  }
-
-  withHostTimezone(): this {
-    this.#shouldUseHostLocalTimezone = true;
-    return this;
-  }
-}
+type AnyDeterministicPlugin<TDate> =
+  | IDeterministicPlugin<TDate>
+  | IUtcOnlyDeterministicPlugin<TDate>;
 
 class FixedTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<TDate>
+  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
   implements IFixedTimeProviderCreator<TDate>
 {
   #fixedDateTime?: string | number | TDate;
 
-  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
   }
@@ -83,12 +42,12 @@ class FixedTimeProviderCreator<TDate>
 }
 
 class ManualTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<TDate>
+  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
   implements IManualTimeProviderCreator<TDate>
 {
   #initialDateTime?: string | number | TDate;
 
-  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
   }
@@ -108,12 +67,12 @@ class ManualTimeProviderCreator<TDate>
 }
 
 class SequentialTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<TDate>
+  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
   implements ISequentialTimeProviderCreator<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
 
-  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
@@ -134,35 +93,14 @@ class SequentialTimeProviderCreator<TDate>
   }
 }
 
-export class TimeProviderCreator implements ITimeProviderCreator {
-  /*
-    The underlying runtime objects always have the full capability regardless of which overload matched.
-    Only the declared type at this boundary is restricted for IUtcOnlyPlugin adapters, so this widening is safe.
-  */
-  for<TDate>(adapter: IUtcOnlyPlugin<TDate>): IUtcOnlyPluggedTimeProviderCreator<TDate>;
-  for<TDate>(adapter: IPlugin<TDate>): IPluggedTimeProviderCreator<TDate>;
-  for<TDate>(
-    adapter: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-  ): IPluggedTimeProviderCreator<TDate> | IUtcOnlyPluggedTimeProviderCreator<TDate> {
-    return new PluggedTimeProviderCreator(adapter, "Etc/UTC");
-  }
-}
-
-export class PluggedTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<TDate>
-  implements IPluggedTimeProviderCreator<TDate>
+class DeterministicPluggedTimeProviderCreator<TDate>
+  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
+  implements IDeterministicPluggedTimeProviderCreator<TDate>
 {
-  constructor(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
-  create(): ITimeProvider<TDate> {
-    return Object.freeze(
-      this.plugin.supportsLocalTime
-        ? this.plugin.createSystemRuntime(this.localTimezone)
-        : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>),
-    );
-  }
   asManual(): IManualTimeProviderCreator<TDate> {
     return Object.freeze(new ManualTimeProviderCreator(this.plugin, this.localTimezone));
   }
@@ -171,5 +109,23 @@ export class PluggedTimeProviderCreator<TDate>
   }
   asSequential(): ISequentialTimeProviderCreator<TDate> {
     return Object.freeze(new SequentialTimeProviderCreator(this.plugin, this.localTimezone));
+  }
+}
+
+export class DeterministicTimeProviderCreator implements IDeterministicTimeProviderCreator {
+  /*
+    The underlying runtime objects always have the full capability regardless of which overload matched.
+    Only the declared type at this boundary is restricted for IUtcOnlyDeterministicPlugin adapters, so this widening is safe.
+  */
+  for<TDate>(
+    adapter: IUtcOnlyDeterministicPlugin<TDate>,
+  ): IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedTimeProviderCreator<TDate>;
+  for<TDate>(
+    adapter: AnyDeterministicPlugin<TDate>,
+  ):
+    | IDeterministicPluggedTimeProviderCreator<TDate>
+    | IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate> {
+    return new DeterministicPluggedTimeProviderCreator(adapter, "Etc/UTC");
   }
 }
