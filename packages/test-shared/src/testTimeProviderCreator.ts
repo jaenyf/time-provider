@@ -3,18 +3,18 @@ import type { IPlugin, IUtcOnlyPlugin } from "@time-provider/core";
 import {
   getBuilderFor,
   testCreatedValue,
-  testCreator,
+  testBuilder,
   testDefaultEpochTime,
 } from "./helpers/testHelpers.ts";
 
 export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>) {
   describe("system", () => {
-    testCreator(plugin.supportsLocalTime, () => getBuilderFor(plugin));
+    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
     testCreatedValue(() => getBuilderFor(plugin).create());
   });
 
   describe("fixed", () => {
-    testCreator(plugin.supportsLocalTime, () => getBuilderFor(plugin));
+    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
     testCreatedValue(() =>
       getBuilderFor(plugin).asFixed().withFixedTime("2026-01-01T00:00Z").create(),
     );
@@ -22,7 +22,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnly
   });
 
   describe("manual", () => {
-    testCreator(plugin.supportsLocalTime, () => getBuilderFor(plugin));
+    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
     testCreatedValue(() =>
       getBuilderFor(plugin).asManual().withInitialTime("2026-01-01T00:00Z").create(),
     );
@@ -30,7 +30,7 @@ export function testTimeProviderCreator<TDate>(plugin: IPlugin<TDate> | IUtcOnly
   });
 
   describe("sequential", () => {
-    testCreator(plugin.supportsLocalTime, () => getBuilderFor(plugin));
+    testBuilder(plugin.supportsLocalTime, () => getBuilderFor(plugin));
     testCreatedValue(() =>
       getBuilderFor(plugin).asSequential().withSequentialTime("2026-01-01T00:00Z").create(),
     );
