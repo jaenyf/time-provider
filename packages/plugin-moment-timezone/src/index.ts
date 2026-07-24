@@ -1,5 +1,5 @@
-import type { IPlugin } from "@time-provider/core";
-import { Plugin } from "./Plugin.ts";
+import type { ISystemPlugin } from "@time-provider/core";
+import { SystemPlugin } from "./plugin/system.ts";
 import moment from "moment-timezone";
 
-export const plugin: IPlugin<moment.Moment> = new Plugin();
+export const plugin: ISystemPlugin<moment.Moment> = new SystemPlugin();

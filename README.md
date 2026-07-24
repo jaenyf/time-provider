@@ -17,6 +17,7 @@
 </div>
 
 <div align="center">
+ 🌳 Tree-shakable |  
  📦 Zero runtime dependencies |  
  🧪 No global monkey-patching |  
  🛡️ Type-safe
@@ -46,6 +47,7 @@ call site.
 - **Deterministic timers**: `setTimeout`/`setInterval` driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
 - **Bring your own date library**: adapters for [Temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal), [Day.js](https://www.npmjs.com/package/@time-provider/plugin-dayjs), [Luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon), [Moment.js](https://www.npmjs.com/package/@time-provider/plugin-moment), [Moment.js + moment-timezone](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone), and [native `Date`](https://www.npmjs.com/package/@time-provider/plugin-native). Your code keeps working with the date type it already uses.
 - **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withLocalTimezone(...)` plus `localNow()`/`utcNow()`.
+- **Tree-shakable**: no deterministic runtimes bundled when not imported.
 - **Zero runtime dependencies** in `@time-provider/core`.
 
 ## Install
@@ -59,10 +61,11 @@ Swap `plugin-native` for `plugin-dayjs`, `plugin-luxon`, `plugin-moment`, `plugi
 ## Usage
 
 ```typescript
+// production: import the default production runtime
 import { createTimeProvider } from "@time-provider/core";
 import { plugin } from "@time-provider/plugin-native";
 
-// production
+// create a production runtime
 const timeProvider = createTimeProvider.for(plugin).create();
 
 class UserService {
@@ -75,7 +78,11 @@ class UserService {
 ```
 
 ```typescript
-// tests: swap .create() → .asManual()...create(); UserService itself never changes
+// test: import the deterministic runtime
+import { createTimeProvider } from "@time-provider/core/deterministic";
+import { plugin } from "@time-provider/plugin-native/deterministic";
+
+// create a deterministic runtime
 const timeProvider = createTimeProvider
   .for(plugin)
   .asManual()

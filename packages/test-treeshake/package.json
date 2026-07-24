@@ -1,0 +1,19 @@
+{
+  "name": "@time-provider/test-treeshake",
+  "description": "Library treeshake tests",
+  "type": "module",
+  "scripts": {
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "@time-provider/core": "workspace:*",
+    "@time-provider/plugin-dayjs": "workspace:*",
+    "@time-provider/plugin-luxon": "workspace:*",
+    "@time-provider/plugin-moment": "workspace:*",
+    "@time-provider/plugin-moment-timezone": "workspace:*",
+    "@time-provider/plugin-native": "workspace:*",
+    "@time-provider/plugin-temporal": "workspace:*",
+    "vite-plus": "catalog:"
+  }
+}

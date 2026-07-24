@@ -21,19 +21,52 @@ packages/
   test-shared/             behavior specs shared by every plugin's test suite
   test/                    per-plugin test entry points, each running the shared specs
   test-e2e/                one smoke test per plugin against its built dist output
+  test-treeshake/          per-plugin bundle assertions - see "Tree-shaking" below
 ```
 
 `core` has no runtime dependencies. Each plugin depends only on `core` and
 its own date library.
 
+## File layout
+
+Both `core` and every plugin package split their `src/` into exactly two
+kinds of file, and no more than that:
+
+- **`index.ts` / `deterministic.ts`** - the two public entry points (see
+  "Tree-shaking" below). Thin: a handful of re-exports plus, for a plugin,
+  the date-library setup (e.g. `dayjs.extend(...)`) and the exported
+  `plugin` const.
+- Everything else is grouped by what it actually _is_, not by how many
+  interfaces or classes happen to be in it:
+  - `types.ts` (core) holds every pure `interface`/`type` declaration -
+    `IClock`, `IRuntime`, `IPlugin`, the builder contracts, all of it. A
+    TypeScript type is erased entirely at compile time, so which file it's
+    declared in has zero effect on a bundle: one interface per file adds
+    navigation overhead without buying anything, so core keeps them in one
+    place instead. `creators.ts` holds the builder/fluent-API contracts
+    specifically (`ITimeProviderCreator` and friends) - kept apart from
+    `types.ts` only because it was already a single cohesive file before
+    this reorganization and splitting it further wouldn't help readability.
+  - Runtime code (classes) is split by which entry point actually needs it,
+    because _that_ split is the one that matters for tree-shaking:
+    `runtime-base.ts` / `builder-base.ts` hold what both entry points share;
+    `system-*.ts` files hold what only `index.ts` reaches; `deterministic-*.ts`
+    files hold what only `deterministic.ts` reaches. A plugin follows the
+    same split: `runtime-helper.ts` (the shared `RuntimeHelper`), `system.ts`
+    (`SystemPlugin` + `SystemRuntime`), `deterministic-runtimes.ts`
+    (`DeterministicPlugin` + `Fixed`/`Manual`/`SequentialRuntime`).
+
 ## Pipeline
 
 ```
 Plugin (adapter)
-  -> TimeProviderCreator.for(plugin)   (core/src/builder)   -> a PluggedTimeProviderCreator
+  -> TimeProviderCreator.for(plugin)   (core/src/builders/system-builder.ts,
+                                         core/src/builders/deterministic-builder.ts)
+  -> a PluggedTimeProviderCreator
   -> .create() / .asFixed() / .asManual() / .asSequential()
-  -> a Runtime (plugin's Runtimes.ts, extending a core/src/runtime Base* class)
-  -> ITimeProvider { clock, parser, scheduler }             (core/src/runtime/BaseRuntime)
+  -> a Runtime (plugin's system.ts/deterministic-runtimes.ts, extending a
+     core Base* class from system-runtime.ts/deterministic-runtime.ts)
+  -> ITimeProvider { clock, parser, scheduler }  (core/src/runtimes/runtime-base.ts)
 ```
 
 A `Runtime` is a single object that implements `IClock`, `IParser`, and
@@ -49,7 +82,7 @@ Every plugin needs the same three conversions between its date library's
 value and time-provider's internal representation: to a timestamp, to a UTC
 value, to a local value for a given timezone.
 
-In order to share this behavior, `core/src/runtime/ITimeConverter.ts` declares that shape once:
+In order to share this behavior, `core/src/types/types.ts` declares that shape once, as `ITimeConverter`:
 
 ```typescript
 interface ITimeConverter<TDate> {
@@ -61,12 +94,14 @@ interface ITimeConverter<TDate> {
 
 `BaseRuntime` takes an `ITimeConverter<TDate>` in its constructor and
 implements the three conversion hooks by delegating to it. Each plugin
-writes the conversions exactly once, as a `RuntimeHelper` class whose static
-methods happen to match `ITimeConverter`'s shape - a class value structurally
-satisfies the interface via its static side, so no wrapping is needed. Each
-of the plugin's four `Runtimes.ts` classes then does nothing but forward its
-own constructor arguments plus `RuntimeHelper` into the matching `Base*Runtime`
-constructor:
+writes the conversions exactly once, as a `RuntimeHelper` class (in its own
+`runtime-helper.ts`) whose static methods happen to match `ITimeConverter`'s
+shape - a class value structurally satisfies the interface via its static
+side, so no wrapping is needed. Each of the plugin's four runtime classes
+(`SystemRuntime` in `system.ts`; `FixedRuntime`/`ManualRuntime`/
+`SequentialRuntime` in `deterministic-runtimes.ts`) then does nothing but
+forward its own constructor arguments plus `RuntimeHelper` into the matching
+`Base*Runtime` constructor:
 
 ```typescript
 export class FixedRuntime extends BaseFixedRuntime<Date> {
@@ -116,9 +151,27 @@ also means that method is intentionally never exercised by the test suite.
 If you're looking at coverage and wondering why `plugin-native` and
 `plugin-moment` aren't at 100%, this is why.
 
+## Tree-shaking
+
+`index.ts` (the production, system (real-time) entry) and
+`deterministic.ts` (the deterministic entry, intended to be used in deterministic environments (tests))
+are the _only_ boundary that matter for bundle size.
+
+Every package is tested to be tree-shakable by `packages/test-treeshake` which checks against each of them, for every runtime, and asserts two things per plugin:
+
+- A system-only consumer's bundle (`fixtures/system-only/<plugin>.ts`,
+  built against `index.ts`) contains none of deterministic code markers.
+- A deterministic consumer's bundle (`fixtures/deterministic/<plugin>.ts`, built against `deterministic.ts`,
+  using `.asFixed()`/`.asManual()`/`.asSequential()`) contains every one of
+  those same markers.
+
+Those checks also ensure the core package itself is correctly tree-shaked.
+
 ## Scheduling
 
-`BaseDeterministicRuntime` (`core/src/runtime/BaseDeterministicRuntime.ts`)
+`BaseDeterministicRuntime` (`core/src/runtimes/deterministic-runtime.ts`, not
+re-exported - only `BaseFixedRuntime`/`BaseManualRuntime`/
+`BaseSequentialRuntime` are part of the public `deterministic.ts` surface)
 backs the fixed, manual, and sequential runtimes. `setTimeout`/`setInterval`
 insert into a `Map` and then check only the just-inserted handle for
 firing immediately (a zero or negative delay fires synchronously on

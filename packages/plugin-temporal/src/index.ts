@@ -1,4 +1,4 @@
-import type { IPlugin } from "@time-provider/core";
-import { Plugin } from "./Plugin.ts";
+import type { ISystemPlugin } from "@time-provider/core";
+import { SystemPlugin } from "./plugin/system.ts";
 
-export const plugin: IPlugin<Temporal.ZonedDateTime> = new Plugin();
+export const plugin: ISystemPlugin<Temporal.ZonedDateTime> = new SystemPlugin();

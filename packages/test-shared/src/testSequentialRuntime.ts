@@ -1,11 +1,15 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IClock, IPlugin, IUtcOnlyPlugin, TimezoneDefinition } from "@time-provider/core";
+import type { IClock, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testConstructorArgs, testWithTimezone } from "./helpers/testHelpers.ts";
+import type {
+  IDeterministicPlugin,
+  IUtcOnlyDeterministicPlugin,
+} from "@time-provider/core/deterministic";
 
 export function testSequentialRuntime<TDate>(
-  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
+  plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
@@ -113,7 +117,12 @@ export function testSequentialRuntime<TDate>(
     });
 
     describe("parser", () => {
-      testParser(plugin, parseTimeToUtc, parseTimeToLocal);
+      testParser(
+        plugin.supportsLocalTime,
+        () => createSUT().parser,
+        parseTimeToUtc,
+        parseTimeToLocal,
+      );
     });
 
     describe("scheduler", () => {

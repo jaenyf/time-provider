@@ -1,2 +1,2 @@
-import packageConfig from "../../vite.packages.config.ts";
+import packageConfig from "../../vite.packages.treeshake.config.ts";
 export default packageConfig;

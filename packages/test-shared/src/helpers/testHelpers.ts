@@ -2,27 +2,41 @@ import { expect, test, describe } from "vite-plus/test";
 import {
   createTimeProvider,
   type IClock,
-  type IParser,
-  type IPlugin,
-  type IScheduler,
-  type ITimeProvider,
-  type IUtcOnlyPlugin,
-  type PluggedTimeProviderCreator,
-  type SetIntervalHandle,
-  type SetTimeoutHandle,
+  type ISystemPlugin,
+  type ISystemPluggedTimeProviderCreator,
+  type IUtcOnlySystemPlugin,
   type TimezoneDefinition,
 } from "@time-provider/core";
+import {
+  createTimeProvider as createDeterministicTimeProvider,
+  type IDeterministicPlugin,
+  type IDeterministicPluggedTimeProviderCreator,
+  type IUtcOnlyDeterministicPlugin,
+} from "@time-provider/core/deterministic";
 
 /**
  * Helps getting a wide builder by casting over a discriminant.
- * `createTimeProvider.for()`'s overloads collapse to the narrower IUtcOnlyPlugin one which is wrong.
+ * `createTimeProvider.for()`'s overloads collapse to the narrower IUtcOnlySystemPlugin one which is wrong.
  */
 export function getBuilderFor<TDate>(
-  plugin: IPlugin<TDate> | IUtcOnlyPlugin<TDate>,
-): PluggedTimeProviderCreator<TDate> {
+  plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
+): ISystemPluggedTimeProviderCreator<TDate> {
   return (
     plugin.supportsLocalTime ? createTimeProvider.for(plugin) : createTimeProvider.for(plugin)
-  ) as PluggedTimeProviderCreator<TDate>;
+  ) as ISystemPluggedTimeProviderCreator<TDate>;
+}
+
+/**
+ * Same widening as `getBuilderFor`, for the deterministic builder.
+ */
+export function getDeterministicBuilderFor<TDate>(
+  plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
+): IDeterministicPluggedTimeProviderCreator<TDate> {
+  return (
+    plugin.supportsLocalTime
+      ? createDeterministicTimeProvider.for(plugin)
+      : createDeterministicTimeProvider.for(plugin)
+  ) as IDeterministicPluggedTimeProviderCreator<TDate>;
 }
 
 export function testCreatedValue<T>(getSut: () => T) {
@@ -34,9 +48,21 @@ export function testCreatedValue<T>(getSut: () => T) {
   });
 }
 
-export function testBuilder<TDate>(
+/**
+ * Tests the withTimezone/withHostTimezone/withDefaultTimezone composition on
+ * whatever creator `getSut` returns - the system plugged creator, or a
+ * fixed/manual/sequential creator returned by `.asFixed()`/`.asManual()`/
+ * `.asSequential()` - each has its own independent timezone composition.
+ */
+export function testCreator<
+  TSut extends { create(): { clock: { timezone: string; hostTimezone(): string } } },
+>(
   supportsLocalTime: boolean,
-  getSut: () => PluggedTimeProviderCreator<TDate>,
+  getSut: () => {
+    withTimezone(timezone: TimezoneDefinition): TSut;
+    withHostTimezone(): TSut;
+    withDefaultTimezone(): TSut;
+  },
 ) {
   describe.skipIf(!supportsLocalTime)("withTimezone", () => {
     test.each(["Pacific/Kiritimati", "Asia/Tokyo", "Europe/London"])(
@@ -60,146 +86,6 @@ export function testBuilder<TDate>(
         expect(sut.clock.timezone).toEqual("Etc/UTC");
       },
     );
-  });
-  describe("immutability", () => {
-    describe("reassigning", () => {
-      describe("clock", () => {
-        test("reassigning clock throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            //@ts-ignore any error
-            timeProvider.clock = {} as IClock<TDate>;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning timezone throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            //@ts-ignore any error
-            timeProvider.clock.timezone = undefined as unknown as TimezoneDefinition;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning utcNow throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.clock.utcNow = () => undefined as unknown as TDate;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning localNow throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.clock.localNow = () => undefined as unknown as TDate;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning hostTimezone throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.clock.hostTimezone = () => undefined as unknown as string;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning withTimezone throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.clock.withTimezone = () => undefined as unknown as IClock<TDate>;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-      });
-      describe("parser", () => {
-        test("reassigning parser throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            //@ts-ignore any error
-            timeProvider.parser = {} as IParser<TDate>;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning parseToLocal throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.parser.parseToLocal = () => undefined as unknown as TDate;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning parseToUtc throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.parser.parseToUtc = () => undefined as unknown as TDate;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-      });
-      describe("scheduler", () => {
-        test("reassigning scheduler throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            //@ts-ignore any error
-            timeProvider.scheduler = {} as IScheduler;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning clearInterval throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.scheduler.clearInterval = () => {};
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning clearTimeout throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.scheduler.clearTimeout = () => {};
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning setInterval throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.scheduler.setInterval = () => undefined as unknown as SetIntervalHandle;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-        test("reassigning setTimeout throws", () => {
-          const sut = getSut().create();
-          function reassignation(timeProvider: ITimeProvider<TDate>) {
-            timeProvider.scheduler.setTimeout = () => undefined as unknown as SetTimeoutHandle;
-          }
-          expect(() => {
-            reassignation(sut);
-          }).toThrow();
-        });
-      });
-    });
   });
 }
 

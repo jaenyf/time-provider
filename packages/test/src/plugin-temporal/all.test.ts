@@ -1,6 +1,7 @@
 import { describe } from "vite-plus/test";
 import { testAll } from "@time-provider/test-shared";
-import { plugin } from "@time-provider/plugin-temporal";
+import { plugin as systemPlugin } from "@time-provider/plugin-temporal";
+import { plugin as deterministicPlugin } from "@time-provider/plugin-temporal/deterministic";
 import { Temporal } from "@js-temporal/polyfill";
 
 /*
@@ -12,5 +13,5 @@ if (!("Temporal" in globalThis)) {
 }
 
 describe("plugin-temporal", () => {
-  testAll<Temporal.ZonedDateTime>(plugin);
+  testAll<Temporal.ZonedDateTime>(systemPlugin, deterministicPlugin);
 });

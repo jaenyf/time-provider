@@ -39,8 +39,10 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
+    "./deterministic": "./dist/deterministic.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
