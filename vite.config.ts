@@ -23,6 +23,7 @@ export default defineConfig({
     reporters: ["default", "junit"],
     outputFile: "test-report.junit.xml",
     include: ["packages/**/*.test.ts"],
+    passWithNoTests: false,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
