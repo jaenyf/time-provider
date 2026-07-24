@@ -2,6 +2,20 @@ import { describe, expect, test } from "vite-plus/test";
 import { build } from "vite-plus";
 import { fileURLToPath } from "node:url";
 
+/**
+ * Every plugin package, by its directory name under packages/. Each one gets
+ * the same two checks below - see fixtures/system-only/<name>.ts and
+ * fixtures/deterministic/<name>.ts.
+ */
+const PLUGIN_PACKAGES = [
+  "plugin-dayjs",
+  "plugin-luxon",
+  "plugin-moment",
+  "plugin-moment-timezone",
+  "plugin-native",
+  "plugin-temporal",
+] as const;
+
 /*
  * Names that only exist on the deterministic runtime hierarchy
  * (BaseFixedRuntime/BaseManualRuntime/BaseSequentialRuntime all extend
@@ -45,23 +59,18 @@ async function bundle(entry: string): Promise<string> {
 }
 
 describe("tree-shaking", () => {
-  test("a system-only consumer's bundle excludes deterministic runtime code", async () => {
-    const code = await bundle("./fixtures/system-only.ts");
-    for (const marker of DETERMINISTIC_MARKERS) {
-      expect(code).not.toContain(marker);
-    }
-  });
-
-  /*
-   * Without this, a typo'd or renamed marker string would make the check
-   * above pass forever by matching nothing - this proves the markers are
-   * actually detectable in a bundle that does use deterministic code.
-   */
-  test("sanity check: markers are detectable when deterministic code is used", async () => {
-    const code = await bundle("./fixtures/deterministic.ts");
-
-    for (const marker of DETERMINISTIC_MARKERS) {
-      expect(code).toContain(marker);
-    }
+  describe.each(PLUGIN_PACKAGES)("%s", (pluginPackage) => {
+    test("system-only bundle excludes deterministic runtime code", async () => {
+      const code = await bundle(`./fixtures/system-only/${pluginPackage}.ts`);
+      for (const marker of DETERMINISTIC_MARKERS) {
+        expect(code).not.toContain(marker);
+      }
+    });
+    test("deterministic runtimes are all included when used", async () => {
+      const code = await bundle(`./fixtures/deterministic/${pluginPackage}.ts`);
+      for (const marker of DETERMINISTIC_MARKERS) {
+        expect(code).toContain(marker);
+      }
+    });
   });
 });

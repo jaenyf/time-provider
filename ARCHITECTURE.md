@@ -21,6 +21,7 @@ packages/
   test-shared/             behavior specs shared by every plugin's test suite
   test/                    per-plugin test entry points, each running the shared specs
   test-e2e/                one smoke test per plugin against its built dist output
+  test-treeshake/          per-plugin bundle assertions - see "Tree-shaking" below
 ```
 
 `core` has no runtime dependencies. Each plugin depends only on `core` and
@@ -152,20 +153,19 @@ If you're looking at coverage and wondering why `plugin-native` and
 
 ## Tree-shaking
 
-`index.ts` (the production, system-only entry) and `deterministic.ts` (the
-fixed/manual/sequential entry, intended to be used in deterministic environments (tests)) are the _only_ boundary that
-matters for bundle size: `packages/test-treeshake` builds a fixture against
-each and asserts that a system-only consumer's bundle contains none of
-`BaseDeterministicRuntime`/`BaseFixedRuntime`/`BaseManualRuntime`/
-`BaseSequentialRuntime`. Everything upstream of that boundary - how many
-source files the code is organized into, which of those files a class or
-interface happens to live in - has no bearing on it: a bundler tree-shakes
-by tracing which named exports are actually reachable from an entry point,
-not by counting files, and an `interface`/`type` is erased before a bundler
-ever sees it. Consolidating files (see "File layout" above) is therefore
-safe by construction, and `test-treeshake` is what actually proves it holds
-for both entry points, on every change, rather than leaving it as an
-assertion in this document.
+`index.ts` (the production, system (real-time) entry) and
+`deterministic.ts` (the deterministic entry, intended to be used in deterministic environments (tests))
+are the _only_ boundary that matter for bundle size.
+
+Every package is tested to be tree-shakable by `packages/test-treeshake` which checks against each of them, for every runtime, and asserts two things per plugin:
+
+- A system-only consumer's bundle (`fixtures/system-only/<plugin>.ts`,
+  built against `index.ts`) contains none of deterministic code markers.
+- A deterministic consumer's bundle (`fixtures/deterministic/<plugin>.ts`, built against `deterministic.ts`,
+  using `.asFixed()`/`.asManual()`/`.asSequential()`) contains every one of
+  those same markers.
+
+Those checks also ensure the core package itself is correctly tree-shaked.
 
 ## Scheduling
 

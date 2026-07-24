@@ -8,7 +8,12 @@
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*",
+    "@time-provider/plugin-dayjs": "workspace:*",
+    "@time-provider/plugin-luxon": "workspace:*",
+    "@time-provider/plugin-moment": "workspace:*",
+    "@time-provider/plugin-moment-timezone": "workspace:*",
     "@time-provider/plugin-native": "workspace:*",
+    "@time-provider/plugin-temporal": "workspace:*",
     "vite-plus": "catalog:"
   }
 }
