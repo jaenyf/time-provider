@@ -12,9 +12,12 @@
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/core)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo.svg"  alt="Logo" width="400">
-</div>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-dark.svg">
+    <img alt="Time-Provider" src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-light.svg" width="325">
+  </picture>
+</p>
 
 <div align="center">
  🌳 Tree-shakable |  
