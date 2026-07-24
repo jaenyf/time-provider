@@ -21,7 +21,7 @@
  🧪 No global monkey-patching |  
  ⏱️ Deterministic timers |  
  🕓 Four clock strategies |  
- 🌍 Real timezone support (where applicable) |  
+ 🌍 Real timezone support (when applicable) |  
  🔌 Bring your own date library  
 </div>
 
