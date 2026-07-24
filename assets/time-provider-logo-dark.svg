@@ -6,16 +6,19 @@
       <stop offset="100%" stop-color="#93D1F8" stop-opacity="0" />
     </linearGradient>
     <style>
-      .teepee { fill: #2B3440; }
+      .teepee { fill: #EDF1F5; }
       .smoke { fill: url(#smokeFade); }
       .smoke-wisp { fill: none; stroke: #E8935B; stroke-width: 3; stroke-linecap: round; }
       .side-wisp { fill: none; stroke: #E8935B; stroke-width: 2; stroke-linecap: round; opacity: 0.18; }
-      .clock-face { fill: none; stroke: #2B3440; stroke-width: 1.5; opacity: 0.18; }
-      .hourglass-outline { fill: none; stroke: #2B3440; stroke-width: 1.5; opacity: 0.055; }
-      .clock-tick { stroke: #2B3440; stroke-width: 2; opacity: 0.25; }
-      .hand-minute { stroke: #2B3440; stroke-width: 4; stroke-linecap: round; }
+      .clock-face { fill: none; stroke: #EDF1F5; stroke-width: 1.5; opacity: 0.18; }
+      .hourglass-outline { fill: none; stroke: #EDF1F5; stroke-width: 1.5; opacity: 0.055; }
+      .clock-tick { stroke: #EDF1F5; stroke-width: 2; opacity: 0.25; }
+      .hand-minute { stroke: #EDF1F5; stroke-width: 4; stroke-linecap: round; }
       .hand-second { stroke: #E8935B; stroke-width: 2.5; stroke-linecap: round; }
-      .wordmark { font-family: 'Helvetica Neue', Arial, sans-serif; fill: #2B3440; }
+      .wordmark { font-family: 'Helvetica Neue', Arial, sans-serif; fill: #EDF1F5; }
+      .ground-line { stroke: #EDF1F5; stroke-width: 4; }
+      .backing { fill: #1B2029; }
+      .center-dot { fill: #EDF1F5; }
     </style>
   </defs>
 
@@ -38,7 +41,7 @@
                                        Z" />
 
   <!-- Ground line -->
-  <line x1="90" y1="430" x2="410" y2="430" stroke="#2B3440" stroke-width="4"/>
+  <line class="ground-line" x1="90" y1="430" x2="410" y2="430" />
 
   <!-- BOTTOM BULB = teepee, with door notch cut as a true hole (evenodd) so it's transparent -->
   <path class="teepee" fill-rule="evenodd" d="M 170 430
@@ -48,7 +51,7 @@
                           M 232 430 L 250 385 L 268 430 Z" />
 
   <!-- Opaque backing so the smoke's fade-to-transparent top hides the hourglass behind it, rather than revealing it -->
-  <path d="M 250.0 260.0 Q 242.4 256.7 244.9 253.3 A 13.0 13.0 0 0 1 224.8 238.6 A 19.0 19.0 0 0 1 212.6 212.9 A 25.0 25.0 0 0 1 198.2 178.0 A 29.0 29.0 0 0 1 208.9 122.0 Q 248.5 82.1 288.1 100.1 A 34.0 34.0 0 0 1 302.7 164.9 A 29.0 29.0 0 0 1 288.8 206.3 A 22.0 22.0 0 0 1 276.7 237.0 A 15.0 15.0 0 0 1 253.9 254.9 Q 256.9 257.5 250.0 260.0 Z" fill="#FFFFFF" />
+  <path class="backing" d="M 250.0 260.0 Q 242.4 256.7 244.9 253.3 A 13.0 13.0 0 0 1 224.8 238.6 A 19.0 19.0 0 0 1 212.6 212.9 A 25.0 25.0 0 0 1 198.2 178.0 A 29.0 29.0 0 0 1 208.9 122.0 Q 248.5 82.1 288.1 100.1 A 34.0 34.0 0 0 1 302.7 164.9 A 29.0 29.0 0 0 1 288.8 206.3 A 22.0 22.0 0 0 1 276.7 237.0 A 15.0 15.0 0 0 1 253.9 254.9 Q 256.9 257.5 250.0 260.0 Z" />
 
   <!-- TOP BULB = smoke: puffs laid on straight tip-to-shoulder lines for a more triangular taper -->
   <path class="smoke" d="M 250.0 260.0 Q 242.4 256.7 244.9 253.3 A 13.0 13.0 0 0 1 224.8 238.6 A 19.0 19.0 0 0 1 212.6 212.9 A 25.0 25.0 0 0 1 198.2 178.0 A 29.0 29.0 0 0 1 208.9 122.0 Q 248.5 82.1 288.1 100.1 A 34.0 34.0 0 0 1 302.7 164.9 A 29.0 29.0 0 0 1 288.8 206.3 A 22.0 22.0 0 0 1 276.7 237.0 A 15.0 15.0 0 0 1 253.9 254.9 Q 256.9 257.5 250.0 260.0 Z" />
@@ -67,7 +70,7 @@
   <line class="hand-second" x1="263" y1="268" x2="250" y2="260" />
   <line class="hand-second" x1="250" y1="260" x2="210" y2="217" />
   <circle cx="263" cy="268" r="2.5" fill="#E8935B" opacity="0.7" />
-  <circle cx="250" cy="260" r="3" fill="#2B3440" />
+  <circle class="center-dot" cx="250" cy="260" r="3" />
 
   <!-- Wordmark -->
   <text x="250" y="490" text-anchor="middle" class="wordmark" font-size="38" font-weight="600" letter-spacing="2">
