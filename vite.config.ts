@@ -29,6 +29,12 @@ export default defineConfig({
       clean: true,
       reportsDirectory: "coverage",
       exclude: ["index.ts", "**/test-shared/**", "**/dist/**"],
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
     },
   },
 });
