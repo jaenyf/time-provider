@@ -1,5 +1,5 @@
 import type { ISystemPlugin } from "@time-provider/core";
-import { SystemPlugin } from "./SystemPlugin.ts";
+import { SystemPlugin } from "./plugin/system.ts";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
