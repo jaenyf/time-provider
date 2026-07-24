@@ -1,6 +1,6 @@
 import { defineConfig } from "vite-plus";
 
-const packageConfig: ReturnType<typeof defineConfig> = defineConfig({
+export default defineConfig({
   pack: {
     dts: { tsgo: true },
     exports: true,
@@ -17,5 +17,3 @@ const packageConfig: ReturnType<typeof defineConfig> = defineConfig({
     tsconfigPaths: true,
   },
 });
-
-export default packageConfig;
