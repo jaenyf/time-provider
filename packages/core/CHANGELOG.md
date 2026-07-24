@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.2.0](https://github.com/jaenyf/time-provider/compare/core-v1.1.0...core-v1.2.0) (2026-07-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103))
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88))
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81))
+
+### Features
+
+* expose host and local timezone ([#99](https://github.com/jaenyf/time-provider/issues/99)) ([743d237](https://github.com/jaenyf/time-provider/commit/743d2376591ca5835932f6b7786c49db9abed467))
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88)) ([77437dc](https://github.com/jaenyf/time-provider/commit/77437dc306047df71c1b7e9aa6961ef9753a1a28))
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103)) ([5e6ca60](https://github.com/jaenyf/time-provider/commit/5e6ca60c36663ea30fcdea07b9eb3c02e7cdb9f4))
+
+
+### Bug Fixes
+
+* **core:** prevent runtime mutability when created ([#102](https://github.com/jaenyf/time-provider/issues/102)) ([e1678e7](https://github.com/jaenyf/time-provider/commit/e1678e7be4bcd7d48900e7669c5fd084bfaff547))
+
+
+### Performance Improvements
+
+* reduce time complexity for deterministic setTimeout and setInterval ([#84](https://github.com/jaenyf/time-provider/issues/84)) ([a3b601b](https://github.com/jaenyf/time-provider/commit/a3b601b25311393daa12fc5bd34b9d0eea7c1f18))
+
+
+### Code Refactoring
+
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81)) ([fb969bd](https://github.com/jaenyf/time-provider/commit/fb969bd1a87a87a8f2ca01f84adfe265ef2c2ccd))
+
 ## [1.1.0](https://github.com/jaenyf/time-provider/compare/core-v1.0.1...core-v1.1.0) (2026-07-18)
 
 

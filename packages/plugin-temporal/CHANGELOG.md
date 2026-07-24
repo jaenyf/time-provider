@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.3.0](https://github.com/jaenyf/time-provider/compare/plugin-temporal-v0.2.0...plugin-temporal-v0.3.0) (2026-07-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103))
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88))
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81))
+
+### Features
+
+* expose host and local timezone ([#99](https://github.com/jaenyf/time-provider/issues/99)) ([743d237](https://github.com/jaenyf/time-provider/commit/743d2376591ca5835932f6b7786c49db9abed467))
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88)) ([77437dc](https://github.com/jaenyf/time-provider/commit/77437dc306047df71c1b7e9aa6961ef9753a1a28))
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103)) ([5e6ca60](https://github.com/jaenyf/time-provider/commit/5e6ca60c36663ea30fcdea07b9eb3c02e7cdb9f4))
+
+
+### Bug Fixes
+
+* assume Temporal namespace is already available ([#97](https://github.com/jaenyf/time-provider/issues/97)) ([a9837a6](https://github.com/jaenyf/time-provider/commit/a9837a6553a812e8c4e7cc0a86192edaeb9d9eb1)), closes [#96](https://github.com/jaenyf/time-provider/issues/96)
+
+
+### Code Refactoring
+
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81)) ([fb969bd](https://github.com/jaenyf/time-provider/commit/fb969bd1a87a87a8f2ca01f84adfe265ef2c2ccd))
+
 ## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-temporal-0.1.1...plugin-temporal-v0.2.0) (2026-07-18)
 
 

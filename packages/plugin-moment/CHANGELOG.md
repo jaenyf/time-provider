@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-v0.2.0...plugin-moment-v0.3.0) (2026-07-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103))
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88))
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81))
+
+### Features
+
+* introduce timezone and true local time support ([#88](https://github.com/jaenyf/time-provider/issues/88)) ([77437dc](https://github.com/jaenyf/time-provider/commit/77437dc306047df71c1b7e9aa6961ef9753a1a28))
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103)) ([5e6ca60](https://github.com/jaenyf/time-provider/commit/5e6ca60c36663ea30fcdea07b9eb3c02e7cdb9f4))
+
+
+### Code Refactoring
+
+* code quality ([#81](https://github.com/jaenyf/time-provider/issues/81)) ([fb969bd](https://github.com/jaenyf/time-provider/commit/fb969bd1a87a87a8f2ca01f84adfe265ef2c2ccd))
+
 ## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-0.1.1...plugin-moment-v0.2.0) (2026-07-18)
 
 
