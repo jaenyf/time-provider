@@ -19,6 +19,7 @@
 <div align="center">
  📦 Zero runtime dependencies |  
  🧪 No global monkey-patching |  
+ 🛡️ Type-safe
  ⏱️ Deterministic timers |  
  🕓 Four clock strategies |  
  🌍 Real timezone support (when applicable) |  
