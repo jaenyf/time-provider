@@ -1,5 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IClock, TimezoneDefinition } from "@time-provider/core";
+import type {
+  IClock,
+  SetIntervalHandle,
+  SetTimeoutHandle,
+  TimezoneDefinition,
+} from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testConstructorArgs, testWithTimezone } from "./helpers/testHelpers.ts";
@@ -578,8 +583,6 @@ export function testSequentialRuntime<TDate>(
             sut.utcNow();
             expect(callbackCalled).toBe(true);
           });
-
-          //#region NEW
           test("does not corrupt heap ordering when a short-delay interval is registered while another is pending (utcNow)", () => {
             const sut = createSUT();
             const order: string[] = [];
@@ -692,7 +695,47 @@ export function testSequentialRuntime<TDate>(
               expect(callCount).toBe(2);
             },
           );
-          //#endregion
+        });
+        describe("runtime heap", () => {
+          const compactionThreshold = 1000;
+          test("compaction discards timeout entries once it is triggered (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+            let fireCount = 0;
+            const handles: SetTimeoutHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearTimeout(handles[i]);
+            }
+            // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
+            sut.setTimeout(() => fireCount++, compactionThreshold * 2 - 2);
+            //advance time
+            sut.utcNow();
+            sut.utcNow();
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
+          test("compaction discards interval entries once it is triggered (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+            let fireCount = 0;
+            const handles: SetIntervalHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearInterval(handles[i]);
+            }
+            // the following setInterval call triggers compaction
+            sut.setInterval(() => fireCount++, compactionThreshold * 2 - 2);
+            //advance time
+            sut.utcNow();
+            sut.utcNow();
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
         });
       });
     });

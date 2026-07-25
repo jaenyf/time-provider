@@ -11,7 +11,7 @@ import {
   testLocalNow,
   testUtcNow,
 } from "./helpers/testHelpers.ts";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { SetIntervalHandle, SetTimeoutHandle, TimezoneDefinition } from "@time-provider/core";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -446,6 +446,43 @@ export function testManualRuntime<TDate>(
             otherRuntime.clearInterval(handle);
             sut.advance({ milliseconds: 25 });
             expect(callCount).toBe(2);
+          });
+        });
+        describe("runtime heap", () => {
+          const compactionThreshold = 1000;
+          test("compaction discards timeout entries once it is triggered", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            const handles: SetTimeoutHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearTimeout(handles[i]);
+            }
+            // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
+            sut.setTimeout(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
+          test("compaction discards interval entries once it is triggered", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            const handles: SetIntervalHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearInterval(handles[i]);
+            }
+            // the following setInterval call triggers compaction
+            sut.setInterval(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
+            expect(fireCount).toBe(compactionThreshold / 2);
           });
         });
       });
