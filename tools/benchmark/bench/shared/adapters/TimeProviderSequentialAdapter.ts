@@ -26,7 +26,6 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#delays = new AdvanceDelayQueue(delaysMs);
     let target = 0;
     this.#plannedTimestamps = delaysMs.map((delta) => (target += delta));
-    this.#plannedTimestamps.slice;
   }
 
   setup(): void {
