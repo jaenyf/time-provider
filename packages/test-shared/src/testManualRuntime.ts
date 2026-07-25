@@ -11,7 +11,7 @@ import {
   testLocalNow,
   testUtcNow,
 } from "./helpers/testHelpers.ts";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { SetIntervalHandle, SetTimeoutHandle, TimezoneDefinition } from "@time-provider/core";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -245,6 +245,27 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          describe("issue#105", () => {
+            test("does not invoke callback B if callback A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCalled = false;
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleB = sut.setTimeout(callbackB, 20);
+              const callbackA = () => sut.clearTimeout(timeoutHandleB);
+              sut.setTimeout(callbackA, 10);
+              sut.advance({ milliseconds: 30 });
+              expect(callbackBCalled).toBe(false);
+            });
+          });
+          test("passing another runtime's handle does not cancel this runtime's timeout", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callbackCalled = false;
+            const handle = sut.setTimeout(() => (callbackCalled = true), 10);
+            otherRuntime.clearTimeout(handle);
+            sut.advance({ milliseconds: 10 });
+            expect(callbackCalled).toBe(true);
+          });
         });
         describe("setInterval", () => {
           test("can be called without specified delay", () => {
@@ -352,6 +373,117 @@ export function testManualRuntime<TDate>(
               expect(retries).toBe(expectedRetries);
             },
           );
+          describe("issue#104", () => {
+            test("scatter callbacks run in a timely fashion instead of running them multiple time individually", () => {
+              const sut = createManualRuntime("Pacific/Kiritimati", 0);
+              let buffer: string = "";
+              sut.scheduler.setInterval(() => {
+                buffer += "A";
+              }, 10);
+              sut.scheduler.setInterval(() => {
+                buffer += "B";
+              }, 15);
+              sut.advance({
+                milliseconds: 15 * 5,
+              });
+              expect(buffer).toBe("ABABAABABAAB");
+            });
+          });
+          describe("issue#105", () => {
+            test("does not invoke interval B if interval A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCallCount = 0;
+              const callbackB = () => callbackBCallCount++;
+              const intervalHandleB = sut.setInterval(callbackB, 20);
+              const callbackA = () => sut.clearInterval(intervalHandleB);
+              sut.setInterval(callbackA, 10);
+              sut.advance({ milliseconds: 30 });
+              expect(callbackBCallCount).toBe(0);
+            });
+          });
+          test("does not corrupt heap ordering when a zero-delay interval is registered while another is pending", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            sut.setInterval(() => order.push("A"), 3);
+            sut.setInterval(() => order.push("B"), 0);
+            sut.advance({ milliseconds: 5 });
+            expect(order.join(",")).toBe("B,B,B,A,B,B,B");
+          });
+          test("does not double-fire when the callback reentrantly advances time itself", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            let reentered = false;
+            sut.setInterval(() => {
+              fireCount++;
+              if (!reentered) {
+                reentered = true;
+                sut.advance({ milliseconds: 1 });
+              }
+            }, 100);
+            sut.advance({ milliseconds: 100 });
+            expect(fireCount).toBe(1);
+          });
+          test("keeps correct tie-break order across a reentrant time advance from within a callback", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            let reentered = false;
+            sut.setInterval(() => {
+              order.push("A");
+              if (!reentered) {
+                reentered = true;
+                sut.advance({ milliseconds: 1 });
+              }
+            }, 10);
+            sut.setInterval(() => order.push("B"), 10);
+            sut.advance({ milliseconds: 41 });
+            expect(order.join(",")).toBe("A,B,A,B,A,B,A,B");
+          });
+          test("passing another runtime's handle does not cancel this runtime's interval", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callCount = 0;
+            const handle = sut.setInterval(() => callCount++, 10);
+            otherRuntime.clearInterval(handle);
+            sut.advance({ milliseconds: 25 });
+            expect(callCount).toBe(2);
+          });
+        });
+        describe("runtime heap", () => {
+          const compactionThreshold = 1000;
+          test("compaction discards timeout entries once it is triggered", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            const handles: SetTimeoutHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearTimeout(handles[i]);
+            }
+            // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
+            sut.setTimeout(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
+          test("compaction discards interval entries once it is triggered", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            const handles: SetIntervalHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearInterval(handles[i]);
+            }
+            // the following setInterval call triggers compaction
+            sut.setInterval(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
         });
       });
     });

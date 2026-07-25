@@ -1,5 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IClock, TimezoneDefinition } from "@time-provider/core";
+import type {
+  IClock,
+  SetIntervalHandle,
+  SetTimeoutHandle,
+  TimezoneDefinition,
+} from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testConstructorArgs, testWithTimezone } from "./helpers/testHelpers.ts";
@@ -247,6 +252,19 @@ export function testSequentialRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          describe("issue#105", () => {
+            test("does not invoke callback B if callback A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCalled = false;
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleB = sut.setTimeout(callbackB, 20);
+              const callbackA = () => sut.clearTimeout(timeoutHandleB);
+              sut.setTimeout(callbackA, 10);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(callbackBCalled).toBe(false);
+            });
+          });
         });
 
         describe("setInterval", () => {
@@ -452,8 +470,24 @@ export function testSequentialRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          test.skipIf(!plugin.supportsLocalTime).each([3, 30, 300])(
+            "runs callbacks multiple times if time advance consequently with localNow",
+            (expectedRetries: number) => {
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                0,
+                expectedRetries * 1000,
+              ]);
+              let retries = 0;
+              sut.scheduler.setInterval(() => {
+                retries++;
+              }, 1000);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(retries).toBe(expectedRetries);
+            },
+          );
           test.each([3, 30, 300])(
-            "runs callbacks multiple times if time advance consequently",
+            "runs callbacks multiple times if time advance consequently with utcNow",
             (expectedRetries: number) => {
               const sut = createSequentialRuntime("Pacific/Kiritimati", [
                 0,
@@ -468,6 +502,240 @@ export function testSequentialRuntime<TDate>(
               expect(retries).toBe(expectedRetries);
             },
           );
+          describe("issue#104", () => {
+            test.skipIf(!plugin.supportsLocalTime)(
+              "scatter callbacks run in a timely fashion instead of running them multiple time individually (localNow)",
+              () => {
+                const sut = createSUT();
+                let buffer: string = "";
+                sut.scheduler.setInterval(() => {
+                  buffer += "A";
+                }, 100);
+                sut.scheduler.setInterval(() => {
+                  buffer += "B";
+                }, 150);
+                (sut.clock as IClock<TDate>).localNow();
+                (sut.clock as IClock<TDate>).localNow();
+                expect(buffer).toBe("ABABAABABAABABAA");
+              },
+            );
+            test("scatter callbacks run in a timely fashion instead of running them multiple time individually (utcNow)", () => {
+              const sut = createSUT();
+              let buffer: string = "";
+              sut.scheduler.setInterval(() => {
+                buffer += "A";
+              }, 100);
+              sut.scheduler.setInterval(() => {
+                buffer += "B";
+              }, 150);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(buffer).toBe("ABABAABABAABABAA");
+            });
+          });
+          describe("issue#105", () => {
+            test.skipIf(!plugin.supportsLocalTime)(
+              "does not invoke interval B if interval A cancels it during the same time advance (localNow)",
+              () => {
+                const sut = createSUT();
+                let callbackBCallCount = 0;
+                const callbackB = () => callbackBCallCount++;
+                const intervalHandleB = sut.setInterval(callbackB, 20);
+                const callbackA = () => sut.clearInterval(intervalHandleB);
+                sut.setInterval(callbackA, 10);
+                (sut.clock as IClock<TDate>).localNow();
+                (sut.clock as IClock<TDate>).localNow();
+                expect(callbackBCallCount).toBe(0);
+              },
+            );
+            test("does not invoke interval B if interval A cancels it during the same time advance (utcNow)", () => {
+              const sut = createSUT();
+              let callbackBCallCount = 0;
+              const callbackB = () => callbackBCallCount++;
+              const intervalHandleB = sut.setInterval(callbackB, 20);
+              const callbackA = () => sut.clearInterval(intervalHandleB);
+              sut.setInterval(callbackA, 10);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(callbackBCallCount).toBe(0);
+            });
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "passing another runtime's handle does not cancel this runtime's timeout (localNow)",
+            () => {
+              const sut = createSUT();
+              const otherRuntime = createSUT();
+              let callbackCalled = false;
+              const handle = sut.setTimeout(() => (callbackCalled = true), 10);
+              otherRuntime.clearTimeout(handle);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(callbackCalled).toBe(true);
+            },
+          );
+          test("passing another runtime's handle does not cancel this runtime's timeout (utcNow)", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callbackCalled = false;
+            const handle = sut.setTimeout(() => (callbackCalled = true), 10);
+            otherRuntime.clearTimeout(handle);
+            sut.utcNow();
+            sut.utcNow();
+            expect(callbackCalled).toBe(true);
+          });
+          test("does not corrupt heap ordering when a short-delay interval is registered while another is pending (utcNow)", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            sut.setInterval(() => order.push("A"), 500);
+            sut.setInterval(() => order.push("B"), 300);
+            sut.utcNow();
+            sut.utcNow();
+            expect(order.join(",")).toBe("B,A,B,B,A");
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "does not corrupt heap ordering when a short-delay interval is registered while another is pending (localNow)",
+            () => {
+              const sut = createSUT();
+              const order: string[] = [];
+              sut.setInterval(() => order.push("A"), 500);
+              sut.setInterval(() => order.push("B"), 300);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(order.join(",")).toBe("B,A,B,B,A");
+            },
+          );
+          test("does not double-fire when the callback reentrantly advances time itself (utcNow)", () => {
+            const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 100, 199]);
+            let fireCount = 0;
+            let reentered = false;
+            sut.setInterval(() => {
+              fireCount++;
+              if (!reentered) {
+                reentered = true;
+                sut.utcNow();
+              }
+            }, 100);
+            sut.utcNow();
+            sut.utcNow();
+            expect(fireCount).toBe(1);
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "does not double-fire when the callback reentrantly advances time itself (localNow)",
+            () => {
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 100, 199]);
+              let fireCount = 0;
+              let reentered = false;
+              sut.setInterval(() => {
+                fireCount++;
+                if (!reentered) {
+                  reentered = true;
+                  (sut.clock as IClock<TDate>).localNow();
+                }
+              }, 100);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(fireCount).toBe(1);
+            },
+          );
+          test("keeps correct tie-break order across a reentrant time advance from within a callback (utcNow)", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            let reentered = false;
+            sut.setInterval(() => {
+              order.push("A");
+              if (!reentered) {
+                reentered = true;
+                sut.utcNow();
+              }
+            }, 300);
+            sut.setInterval(() => order.push("B"), 300);
+            sut.utcNow();
+            sut.utcNow();
+            expect(order.join(",")).toBe("A,B,A,B,A,B,A,B,A,B,A,B");
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "keeps correct tie-break order across a reentrant time advance from within a callback (localNow)",
+            () => {
+              const sut = createSUT();
+              const order: string[] = [];
+              let reentered = false;
+              sut.setInterval(() => {
+                order.push("A");
+                if (!reentered) {
+                  reentered = true;
+                  (sut.clock as IClock<TDate>).localNow();
+                }
+              }, 300);
+              sut.setInterval(() => order.push("B"), 300);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(order.join(",")).toBe("A,B,A,B,A,B,A,B,A,B,A,B");
+            },
+          );
+          test("passing another runtime's handle does not cancel this runtime's interval (utcNow)", () => {
+            const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
+            const otherRuntime = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
+            let callCount = 0;
+            const handle = sut.setInterval(() => callCount++, 10);
+            otherRuntime.clearInterval(handle);
+            sut.utcNow();
+            sut.utcNow();
+            expect(callCount).toBe(2);
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "passing another runtime's handle does not cancel this runtime's interval (localNow)",
+            () => {
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
+              const otherRuntime = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
+              let callCount = 0;
+              const handle = sut.setInterval(() => callCount++, 10);
+              otherRuntime.clearInterval(handle);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(callCount).toBe(2);
+            },
+          );
+        });
+        describe("runtime heap", () => {
+          const compactionThreshold = 1000;
+          test("compaction discards timeout entries once it is triggered (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+            let fireCount = 0;
+            const handles: SetTimeoutHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearTimeout(handles[i]);
+            }
+            // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
+            sut.setTimeout(() => fireCount++, compactionThreshold * 2 - 2);
+            //advance time
+            sut.utcNow();
+            sut.utcNow();
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
+          test("compaction discards interval entries once it is triggered (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+            let fireCount = 0;
+            const handles: SetIntervalHandle[] = [];
+            const thresholdBeforeCompaction = compactionThreshold - 1;
+            for (let i = 0; i < thresholdBeforeCompaction; i++) {
+              handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));
+            }
+            //clear the half of registered callbacks
+            for (let i = 0; i < handles.length; i += 2) {
+              sut.clearInterval(handles[i]);
+            }
+            // the following setInterval call triggers compaction
+            sut.setInterval(() => fireCount++, compactionThreshold * 2 - 2);
+            //advance time
+            sut.utcNow();
+            sut.utcNow();
+            expect(fireCount).toBe(compactionThreshold / 2);
+          });
         });
       });
     });

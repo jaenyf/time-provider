@@ -9,32 +9,143 @@ import type {
 } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 
-type TimeoutEntry = {
+interface DueEntry {
+  /**
+   * Timestamp of when to run the callback
+   */
   runAt: number;
+  /**
+   * Ordering for callbacks having the same runAt value
+   */
+  seq: number;
+  /**
+   * The entry has been discared, callback should not/no more execute
+   */
+  discarded: boolean;
+  /**
+   * The callback to run
+   */
   callback: () => void;
+  /**
+   * The queue instance owning this entry
+   */
+  readonly owner: DueHeap<DueEntry>;
+}
+
+type TimeoutEntry = DueEntry;
+
+type IntervalEntry = DueEntry & {
+  delay: number;
 };
 
-type IntervalEntry = {
-  runAt: number;
-  delay: number;
-  callback: () => void;
-};
+/** Total order used by every DueEntry container: `runAt` first, `seq` only breaks ties. */
+function isBefore<T extends DueEntry>(a: T, b: T): boolean {
+  return a.runAt !== b.runAt ? a.runAt < b.runAt : a.seq < b.seq;
+}
+
+/**
+ * Minimal binary min-heap keyed by `(runAt, seq)`
+ */
+class DueHeap<T extends DueEntry> {
+  private _entries: T[] = [];
+
+  peek(): T | undefined {
+    return this._entries[0];
+  }
+
+  push(entry: T): void {
+    const entries = this._entries;
+    entries.push(entry);
+    this._siftUp(entries.length - 1);
+  }
+
+  pop(): T | undefined {
+    const entries = this._entries;
+    const top = entries[0];
+    const last = entries.pop();
+    if (entries.length > 0 && last !== undefined) {
+      entries[0] = last;
+      this._siftDown(0);
+    }
+    return top;
+  }
+
+  /**
+   * Re-heapifies from the root after the caller has increased the current root's own sort key in place (e.g. rearming an interval that just fired).
+   * Equivalent to `pop()` followed by `push()` of the same entry, but without the redundant remove/reinsert.
+   */
+  fixRootAfterIncrease(): void {
+    this._siftDown(0);
+  }
+
+  /** Rebuilds the heap keeping only still-live entries - an O(N) heapify, not N individual pushes. */
+  compact(): void {
+    this._entries = this._entries.filter((entry) => !entry.discarded);
+    for (let index = (this._entries.length >> 1) - 1; index >= 0; index--) {
+      this._siftDown(index);
+    }
+  }
+
+  private _siftUp(index: number): void {
+    const entries = this._entries;
+    while (index > 0) {
+      const parentIndex = (index - 1) >> 1;
+      if (!isBefore(entries[index], entries[parentIndex])) break;
+      // Explicit temp-variable swap, not array-destructuring - measured faster here since
+      // sift operations run on every push/pop and this is by far the hottest line in the heap.
+      const parent = entries[parentIndex];
+      entries[parentIndex] = entries[index];
+      entries[index] = parent;
+      index = parentIndex;
+    }
+  }
+
+  private _siftDown(index: number): void {
+    const entries = this._entries;
+    for (;;) {
+      const left = index * 2 + 1;
+      const right = index * 2 + 2;
+      let smallest = index;
+      if (left < entries.length && isBefore(entries[left], entries[smallest])) {
+        smallest = left;
+      }
+      if (right < entries.length && isBefore(entries[right], entries[smallest])) {
+        smallest = right;
+      }
+      if (smallest === index) break;
+      const swapped = entries[smallest];
+      entries[smallest] = entries[index];
+      entries[index] = swapped;
+      index = smallest;
+    }
+  }
+}
 
 /**
  * Base class for all deterministic runtime classes.
  */
 abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
-  #timeoutCallbacksMap: Map<SetTimeoutHandle, TimeoutEntry>;
-  #nextTimeoutHandleValue: number;
-  #intervalCallbacksMap: Map<SetIntervalHandle, IntervalEntry>;
-  #nextIntervalHandleValue: number;
+  /**
+   * Heap compaction runs synchronously as an ordinary step of a call already in progress
+   */
+  private static readonly COMPACTION_INTERVAL = 1000;
+
+  #timeoutQueue: DueHeap<TimeoutEntry>;
+  #timeoutCallCount: number;
+  #nextTimeoutSeq: number;
+
+  #intervalQueue: DueHeap<IntervalEntry>;
+  #intervalCallCount: number;
+  #nextIntervalSeq: number;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     super(localTimezone, converter);
-    this.#nextTimeoutHandleValue = 1;
-    this.#timeoutCallbacksMap = new Map<SetTimeoutHandle, TimeoutEntry>();
-    this.#nextIntervalHandleValue = 1;
-    this.#intervalCallbacksMap = new Map<SetIntervalHandle, IntervalEntry>();
+    this.#timeoutQueue = new DueHeap<TimeoutEntry>();
+    this.#timeoutCallCount = 0;
+    this.#nextTimeoutSeq = 1;
+    this.#intervalQueue = new DueHeap<IntervalEntry>();
+    this.#intervalCallCount = 0;
+    this.#nextIntervalSeq = 1;
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
@@ -42,40 +153,47 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
 
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
-    const handle = this.#nextTimeoutHandleValue as unknown as SetTimeoutHandle;
-    this.#timeoutCallbacksMap.set(handle, { runAt, callback });
-    this.#nextTimeoutHandleValue += 1;
-    // `now` can't have moved since any earlier call, so nothing already in the map can have newly become due
-    this.mayRunTimeoutCallbacks(now, handle);
-    return handle;
+    const entry: TimeoutEntry = {
+      runAt,
+      seq: this.#nextTimeoutSeq++,
+      discarded: false,
+      callback,
+      owner: this.#timeoutQueue,
+    };
+    this.#timeoutQueue.push(entry);
+    // `now` can't have moved since any earlier call, so nothing already in the map can have newly
+    // become due except (possibly) this brand-new entry - the scan below handles that correctly,
+    // and cheaply (a single peek()) when, as usual, nothing is actually due yet.
+    this.mayRunTimeoutCallbacks(now);
+    // The entry doubles as its own opaque handle - see the `owner` field's doc comment on
+    // DueEntry for why that's safe.
+    return entry as unknown as SetTimeoutHandle;
   }
   clearTimeout(handle: SetTimeoutHandle) {
-    this.#timeoutCallbacksMap.delete(handle);
+    const entry = handle as unknown as TimeoutEntry;
+    if (entry.owner === this.#timeoutQueue) {
+      entry.discarded = true;
+    }
   }
-  protected mayRunTimeoutCallbacks(nowTimestamp: number, onlyHandle?: SetTimeoutHandle): void {
-    const handlesToClear: SetTimeoutHandle[] = [];
-    const callbacksToRun: (() => void)[] = [];
-
-    if (onlyHandle !== undefined) {
-      const entry = this.#timeoutCallbacksMap.get(onlyHandle);
-      if (entry !== undefined && entry.runAt <= nowTimestamp) {
-        handlesToClear.push(onlyHandle);
-        callbacksToRun.push(entry.callback);
-      }
-    } else {
-      for (const [handle, entry] of this.#timeoutCallbacksMap) {
-        if (entry.runAt <= nowTimestamp) {
-          handlesToClear.push(handle);
-          callbacksToRun.push(entry.callback);
-        }
-      }
+  protected mayRunTimeoutCallbacks(nowTimestamp: number): void {
+    if (++this.#timeoutCallCount >= BaseDeterministicRuntime.COMPACTION_INTERVAL) {
+      this.#timeoutQueue.compact();
+      this.#timeoutCallCount = 0;
     }
 
-    for (const handle of handlesToClear) {
-      this.clearTimeout(handle);
-    }
-    for (const callback of callbacksToRun) {
-      callback();
+    /*
+      Peeking the heap's root instead of scanning the whole map means a `now()` call where
+      nothing is due - the common case - costs O(1), not O(N). Entries are popped in true
+      chronological order (see DueHeap), so simultaneously-due timeouts fire in the same
+      order a real timer queue would, not in Map insertion order.
+    */
+    let due: TimeoutEntry | undefined;
+    const queue = this.#timeoutQueue;
+    while ((due = queue.peek()) !== undefined && due.runAt <= nowTimestamp) {
+      queue.pop();
+      if (due.discarded) continue;
+      due.discarded = true;
+      due.callback();
     }
   }
 
@@ -83,48 +201,49 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
     const now = this.timestamp();
     const runAt = now + millisecondsDelay;
-    const handle = this.#nextIntervalHandleValue as unknown as SetIntervalHandle;
-    this.#intervalCallbacksMap.set(handle, {
-      runAt: runAt,
+    const entry: IntervalEntry = {
+      runAt,
       delay: millisecondsDelay,
-      callback: callback,
-    });
-    this.#nextIntervalHandleValue += 1;
-    // `now` can't have moved since any earlier call, so nothing already in the map can have newly become due
-    this.mayRunIntervalCallbacks(now, handle);
-    return handle;
+      seq: this.#nextIntervalSeq++,
+      discarded: false,
+      callback,
+      owner: this.#intervalQueue,
+    };
+    this.#intervalQueue.push(entry);
+    // `now` can't have moved since any earlier call, so nothing already in the map can have newly become due except (possibly) this brand-new entry
+    this.mayRunIntervalCallbacks(now);
+    return entry as unknown as SetIntervalHandle;
   }
   clearInterval(handle: SetIntervalHandle) {
-    this.#intervalCallbacksMap.delete(handle);
-  }
-  protected mayRunIntervalCallbacks(nowTimestamp: number, onlyHandle?: SetIntervalHandle): void {
-    if (onlyHandle !== undefined) {
-      /*
-       * `onlyHandle` is only ever passed here by setInterval(), synchronously right after that same handle was inserted.
-       * Nothing can have removed it yet, so we can safely assume it's always present.
-       */
-      const entry = this.#intervalCallbacksMap.get(onlyHandle)!;
-      this.#fireDueIntervalEntry(entry, nowTimestamp);
-
-      return;
-    }
-    for (const entry of this.#intervalCallbacksMap.values()) {
-      this.#fireDueIntervalEntry(entry, nowTimestamp);
+    const entry = handle as unknown as IntervalEntry;
+    if (entry.owner === this.#intervalQueue) {
+      entry.discarded = true;
     }
   }
+  protected mayRunIntervalCallbacks(nowTimestamp: number): void {
+    if (++this.#intervalCallCount >= BaseDeterministicRuntime.COMPACTION_INTERVAL) {
+      this.#intervalQueue.compact();
+      this.#intervalCallCount = 0;
+    }
 
-  #fireDueIntervalEntry(entry: IntervalEntry, nowTimestamp: number): void {
-    while (entry.runAt <= nowTimestamp) {
-      entry.callback();
+    /*
+      Several intervals can each be due multiple times within the same time advance, popping/re-pushing in true chronological order matters here.
+    */
+    let due: IntervalEntry | undefined;
+    const queue = this.#intervalQueue;
+    while ((due = queue.peek()) !== undefined && due.runAt <= nowTimestamp) {
+      if (due.discarded) {
+        queue.pop();
+        continue;
+      }
       /*
-        Real environments (node, browsers) clamp an interval delay below 1ms
-        up to 1ms - a 0ms interval still fires roughly once per millisecond,
-        not "as fast as infinitely possible". Falling back to 1 here mirrors
-        that: a live interval genuinely re-fires proportionally to elapsed
-        time when advance()-d far into the future, matching what it would
-        do in a real environment.
+        Rearm and re-sift BEFORE invoking the callback. It matters to ensure there's nothing stale for a reentrant call to observe.
       */
-      entry.runAt += entry.delay ? entry.delay : 1;
+      const callback = due.callback;
+      due.runAt += due.delay ? due.delay : 1;
+      due.seq = this.#nextIntervalSeq++;
+      queue.fixRootAfterIncrease();
+      callback();
     }
   }
 
@@ -149,6 +268,7 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
  */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
   protected _sequentialTimestamps: number[];
+  #sequentialIndex = 0;
   constructor(
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | number | TDate)[],
@@ -175,15 +295,16 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   }
 
   private peekTimestamp(): number {
-    return this._sequentialTimestamps.length > 0 ? this._sequentialTimestamps[0] : 0;
+    return this._sequentialTimestamps.length > 0
+      ? this._sequentialTimestamps[this.#sequentialIndex]
+      : 0;
   }
 
   private getNextSequentialTimestamp(): number {
-    return this._sequentialTimestamps.length > 1
-      ? (this._sequentialTimestamps.shift() as number)
-      : this._sequentialTimestamps.length > 0
-        ? this._sequentialTimestamps[0]
-        : 0;
+    if (this.#sequentialIndex < this._sequentialTimestamps.length - 1) {
+      return this._sequentialTimestamps[this.#sequentialIndex++];
+    }
+    return this._sequentialTimestamps[this.#sequentialIndex] ?? 0;
   }
 }
 
@@ -253,8 +374,9 @@ export abstract class BaseManualRuntime<TDate>
     }
 
     this.setDeterminedTime(time);
-    this.mayRunTimeoutCallbacks(this.timestamp());
-    this.mayRunIntervalCallbacks(this.timestamp());
+    const now = this.timestamp();
+    this.mayRunTimeoutCallbacks(now);
+    this.mayRunIntervalCallbacks(now);
     return this;
   }
 
