@@ -25,6 +25,11 @@
       "component": "plugin-moment",
       "versioning": "always-bump-patch"
     },
+    "packages/plugin-moment-timezone": {
+      "release-type": "node",
+      "component": "plugin-moment-timezone",
+      "versioning": "always-bump-patch"
+    },
     "packages/plugin-native": {
       "release-type": "node",
       "component": "plugin-native",
