@@ -247,6 +247,19 @@ export function testSequentialRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          describe("issue#105", () => {
+            test("does not invoke callback B if callback A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCalled = false;
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleB = sut.setTimeout(callbackB, 20);
+              const callbackA = () => sut.clearTimeout(timeoutHandleB);
+              sut.setTimeout(callbackA, 10);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(callbackBCalled).toBe(false);
+            });
+          });
         });
 
         describe("setInterval", () => {
@@ -452,8 +465,24 @@ export function testSequentialRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          test.skipIf(!plugin.supportsLocalTime).each([3, 30, 300])(
+            "runs callbacks multiple times if time advance consequently with localNow",
+            (expectedRetries: number) => {
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [
+                0,
+                expectedRetries * 1000,
+              ]);
+              let retries = 0;
+              sut.scheduler.setInterval(() => {
+                retries++;
+              }, 1000);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(retries).toBe(expectedRetries);
+            },
+          );
           test.each([3, 30, 300])(
-            "runs callbacks multiple times if time advance consequently",
+            "runs callbacks multiple times if time advance consequently with utcNow",
             (expectedRetries: number) => {
               const sut = createSequentialRuntime("Pacific/Kiritimati", [
                 0,
@@ -468,6 +497,64 @@ export function testSequentialRuntime<TDate>(
               expect(retries).toBe(expectedRetries);
             },
           );
+          describe("issue#104", () => {
+            test.skipIf(!plugin.supportsLocalTime)(
+              "scatter callbacks run in a timely fashion instead of running them multiple time individually (localNow)",
+              () => {
+                const sut = createSUT();
+                let buffer: string = "";
+                sut.scheduler.setInterval(() => {
+                  buffer += "A";
+                }, 100);
+                sut.scheduler.setInterval(() => {
+                  buffer += "B";
+                }, 150);
+                (sut.clock as IClock<TDate>).localNow();
+                (sut.clock as IClock<TDate>).localNow();
+                expect(buffer).toBe("ABABAABABAABABAA");
+              },
+            );
+            test("scatter callbacks run in a timely fashion instead of running them multiple time individually (utcNow)", () => {
+              const sut = createSUT();
+              let buffer: string = "";
+              sut.scheduler.setInterval(() => {
+                buffer += "A";
+              }, 100);
+              sut.scheduler.setInterval(() => {
+                buffer += "B";
+              }, 150);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(buffer).toBe("ABABAABABAABABAA");
+            });
+          });
+          describe("issue#105", () => {
+            test.skipIf(!plugin.supportsLocalTime)(
+              "does not invoke interval B if interval A cancels it during the same time advance (localNow)",
+              () => {
+                const sut = createSUT();
+                let callbackBCallCount = 0;
+                const callbackB = () => callbackBCallCount++;
+                const intervalHandleB = sut.setInterval(callbackB, 20);
+                const callbackA = () => sut.clearInterval(intervalHandleB);
+                sut.setInterval(callbackA, 10);
+                (sut.clock as IClock<TDate>).localNow();
+                (sut.clock as IClock<TDate>).localNow();
+                expect(callbackBCallCount).toBe(0);
+              },
+            );
+            test("does not invoke interval B if interval A cancels it during the same time advance (utcNow)", () => {
+              const sut = createSUT();
+              let callbackBCallCount = 0;
+              const callbackB = () => callbackBCallCount++;
+              const intervalHandleB = sut.setInterval(callbackB, 20);
+              const callbackA = () => sut.clearInterval(intervalHandleB);
+              sut.setInterval(callbackA, 10);
+              sut.clock.utcNow();
+              sut.clock.utcNow();
+              expect(callbackBCallCount).toBe(0);
+            });
+          });
         });
       });
     });

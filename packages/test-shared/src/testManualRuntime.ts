@@ -245,6 +245,18 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          describe("issue#105", () => {
+            test("does not invoke callback B if callback A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCalled = false;
+              const callbackB = () => (callbackBCalled = true);
+              const timeoutHandleB = sut.setTimeout(callbackB, 20);
+              const callbackA = () => sut.clearTimeout(timeoutHandleB);
+              sut.setTimeout(callbackA, 10);
+              sut.advance({ milliseconds: 30 });
+              expect(callbackBCalled).toBe(false);
+            });
+          });
         });
         describe("setInterval", () => {
           test("can be called without specified delay", () => {
@@ -352,6 +364,34 @@ export function testManualRuntime<TDate>(
               expect(retries).toBe(expectedRetries);
             },
           );
+          describe("issue#104", () => {
+            test("scatter callbacks run in a timely fashion instead of running them multiple time individually", () => {
+              const sut = createManualRuntime("Pacific/Kiritimati", 0);
+              let buffer: string = "";
+              sut.scheduler.setInterval(() => {
+                buffer += "A";
+              }, 10);
+              sut.scheduler.setInterval(() => {
+                buffer += "B";
+              }, 15);
+              sut.advance({
+                milliseconds: 15 * 5,
+              });
+              expect(buffer).toBe("ABABAABABAAB");
+            });
+          });
+          describe("issue#105", () => {
+            test("does not invoke interval B if interval A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCallCount = 0;
+              const callbackB = () => callbackBCallCount++;
+              const intervalHandleB = sut.setInterval(callbackB, 20);
+              const callbackA = () => sut.clearInterval(intervalHandleB);
+              sut.setInterval(callbackA, 10);
+              sut.advance({ milliseconds: 30 });
+              expect(callbackBCallCount).toBe(0);
+            });
+          });
         });
       });
     });
