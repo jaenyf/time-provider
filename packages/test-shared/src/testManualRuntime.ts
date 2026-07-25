@@ -257,6 +257,15 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             });
           });
+          test("passing another runtime's handle does not cancel this runtime's timeout", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callbackCalled = false;
+            const handle = sut.setTimeout(() => (callbackCalled = true), 10);
+            otherRuntime.clearTimeout(handle);
+            sut.advance({ milliseconds: 10 });
+            expect(callbackCalled).toBe(true);
+          });
         });
         describe("setInterval", () => {
           test("can be called without specified delay", () => {
@@ -391,6 +400,52 @@ export function testManualRuntime<TDate>(
               sut.advance({ milliseconds: 30 });
               expect(callbackBCallCount).toBe(0);
             });
+          });
+          test("does not corrupt heap ordering when a zero-delay interval is registered while another is pending", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            sut.setInterval(() => order.push("A"), 3);
+            sut.setInterval(() => order.push("B"), 0);
+            sut.advance({ milliseconds: 5 });
+            expect(order.join(",")).toBe("B,B,B,A,B,B,B");
+          });
+          test("does not double-fire when the callback reentrantly advances time itself", () => {
+            const sut = createSUT();
+            let fireCount = 0;
+            let reentered = false;
+            sut.setInterval(() => {
+              fireCount++;
+              if (!reentered) {
+                reentered = true;
+                sut.advance({ milliseconds: 1 });
+              }
+            }, 100);
+            sut.advance({ milliseconds: 100 });
+            expect(fireCount).toBe(1);
+          });
+          test("keeps correct tie-break order across a reentrant time advance from within a callback", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            let reentered = false;
+            sut.setInterval(() => {
+              order.push("A");
+              if (!reentered) {
+                reentered = true;
+                sut.advance({ milliseconds: 1 });
+              }
+            }, 10);
+            sut.setInterval(() => order.push("B"), 10);
+            sut.advance({ milliseconds: 41 });
+            expect(order.join(",")).toBe("A,B,A,B,A,B,A,B");
+          });
+          test("passing another runtime's handle does not cancel this runtime's interval", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callCount = 0;
+            const handle = sut.setInterval(() => callCount++, 10);
+            otherRuntime.clearInterval(handle);
+            sut.advance({ milliseconds: 25 });
+            expect(callCount).toBe(2);
           });
         });
       });
