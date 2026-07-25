@@ -8,14 +8,14 @@ import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.t
 import { realNow } from "./shared/realNow.ts";
 
 const guard = new GlobalGuard();
-const adapters = [
-  new TimeProviderManualAdapter(),
-  new SinonFakeTimersAdapter(),
-  new JestFakeTimersAdapter(),
-];
 
 for (const scenario of schedulingScenarios) {
   describe(scenario.name, () => {
+    const adapters = [
+      new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? []),
+      new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
+      new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
+    ];
     for (const adapter of adapters) {
       bench(adapter.name, () => {
         adapter.setup();

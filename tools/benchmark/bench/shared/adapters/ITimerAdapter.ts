@@ -15,6 +15,9 @@ export interface ITimerAdapter {
   now(): unknown;
   setTimeout(callback: () => void, delayMs: number): void;
   setInterval(callback: () => void, delayMs: number): void;
-  /** Advances the fake clock by `ms`, synchronously firing whatever becomes due. */
-  advance(ms: number): void;
+  /**
+   * Advances the fake clock by the next delay from this adapter's pre-planned delay list
+   * (see its constructor), synchronously firing whatever becomes due.
+   */
+  advance(): void;
 }

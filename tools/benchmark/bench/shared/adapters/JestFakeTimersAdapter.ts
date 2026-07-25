@@ -1,15 +1,22 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { ModernFakeTimers } from "@jest/fake-timers";
+import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
 export class JestFakeTimersAdapter implements ITimerAdapter {
   readonly name = "jest fake-timers (modern)";
+  readonly #delays: AdvanceDelayQueue;
   #timers = new ModernFakeTimers({
     global: globalThis,
     //@ts-expect-error : Type '{}' is missing the following properties from type 'ProjectConfig': [...]
     config: {},
   });
 
+  constructor(delaysMs: readonly number[] = []) {
+    this.#delays = new AdvanceDelayQueue(delaysMs);
+  }
+
   setup(): void {
+    this.#delays.reset();
     this.#timers.useFakeTimers();
   }
   teardown(): void {
@@ -26,7 +33,7 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   setInterval(callback: () => void, delayMs: number): void {
     globalThis.setInterval(callback, delayMs);
   }
-  advance(ms: number): void {
-    this.#timers.advanceTimersByTime(ms);
+  advance(): void {
+    this.#timers.advanceTimersByTime(this.#delays.next());
   }
 }

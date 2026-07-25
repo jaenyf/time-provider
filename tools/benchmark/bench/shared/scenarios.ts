@@ -4,6 +4,13 @@ import type { ITimerAdapter } from "./adapters/ITimerAdapter.ts";
  */
 export type Scenario = {
   name: string;
+  /**
+   * The exact, in-order `advance()` deltas this scenario drives every adapter with, if any.
+   * Every adapter is constructed with this same list (see e.g. TimeProviderManualAdapter's
+   * constructor) and pulls the next value on each `advance()` call - keep its length in sync
+   * with the number of `advance()` calls made in `run` below.
+   */
+  advanceDelaysMs?: number[];
   run: (adapter: ITimerAdapter) => void;
 };
 
@@ -20,6 +27,9 @@ export const clockReadScenarios: Scenario[] = [
   },
 ];
 
+const timeoutsAdvanceMs = 1000;
+const intervalsAdvanceMs = samplesCount * 10 + 1;
+
 export const schedulingScenarios: Scenario[] = [
   {
     name: `schedule ${samplesCount} timeouts, without time advance`,
@@ -31,11 +41,12 @@ export const schedulingScenarios: Scenario[] = [
   },
   {
     name: `schedule ${samplesCount} timeouts, with time advance`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
         adapter.setTimeout(() => {}, i);
       }
-      adapter.advance(1000);
+      adapter.advance();
     },
   },
   {
@@ -48,11 +59,12 @@ export const schedulingScenarios: Scenario[] = [
   },
   {
     name: `schedule ${samplesCount} intervals, with time advance`,
+    advanceDelaysMs: [intervalsAdvanceMs],
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
         adapter.setInterval(() => {}, (i + 1) * 10);
       }
-      adapter.advance(samplesCount * 10 + 1);
+      adapter.advance();
     },
   },
 ];
