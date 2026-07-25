@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.0.1...plugin-moment-timezone-v0.1.0) (2026-07-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103))
+
+### Features
+
+* expose host and local timezone ([#99](https://github.com/jaenyf/time-provider/issues/99)) ([743d237](https://github.com/jaenyf/time-provider/commit/743d2376591ca5835932f6b7786c49db9abed467))
+* make packages tree-shakable ([#103](https://github.com/jaenyf/time-provider/issues/103)) ([5e6ca60](https://github.com/jaenyf/time-provider/commit/5e6ca60c36663ea30fcdea07b9eb3c02e7cdb9f4))
+
 ## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-0.1.1...plugin-moment-v0.2.0) (2026-07-18)
 
 

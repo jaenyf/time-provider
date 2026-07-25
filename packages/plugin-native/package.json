@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-native",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "description": "Time-Provider : Native Date plugin ~ TypeScript library for injecting time and timers with adapters for multiple date libraries.",
   "keywords": [
