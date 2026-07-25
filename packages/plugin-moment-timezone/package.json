@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-moment-timezone",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": false,
   "description": "Time-Provider : Moment.js plugin ~ TypeScript library for injecting time and timers with adapters for multiple date libraries.",
   "keywords": [

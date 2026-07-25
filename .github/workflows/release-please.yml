@@ -5,6 +5,16 @@ on:
     branches:
       - main
       - "hotfix/**"
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: >-
+          JSON array of package paths to run post-release-updates/publish for, e.g.
+          ["packages/core","packages/plugin-dayjs"]. Use this to rescue an already-tagged
+          release whose automation failed partway (release-please won't re-flag a release
+          it already created, so a plain push won't retrigger these jobs on its own).
+        required: true
+        type: string
 
 concurrency:
   group: release-please
@@ -33,7 +43,7 @@ jobs:
 
   post-release-updates:
     needs: release
-    if: needs.release.outputs.releases_created == 'true'
+    if: needs.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -54,7 +64,7 @@ jobs:
 
       - name: Run benchmark suite and update BENCHMARK.md
         working-directory: tools/benchmark
-        run: bun run bench:changelog
+        run: vp run bench:changelog
 
       - name: Commit changelog and benchmark history
         run: |
@@ -66,7 +76,7 @@ jobs:
 
   publish:
     needs: post-release-updates
-    if: needs.release.outputs.releases_created == 'true'
+    if: needs.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       id-token: write
@@ -74,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path: ${{ fromJson(needs.release.outputs.paths_released) }}
+        path: ${{ github.event_name == 'workflow_dispatch' && fromJson(inputs.paths) || fromJson(needs.release.outputs.paths_released) }}
 
     steps:
       - uses: actions/checkout@v7
