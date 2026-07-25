@@ -49,10 +49,6 @@ function isBefore<T extends DueEntry>(a: T, b: T): boolean {
 class DueHeap<T extends DueEntry> {
   private _entries: T[] = [];
 
-  get size(): number {
-    return this._entries.length;
-  }
-
   peek(): T | undefined {
     return this._entries[0];
   }
