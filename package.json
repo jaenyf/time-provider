@@ -42,7 +42,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260509.2"
   },
   "validate-branch-name": {
-    "pattern": "^(main)$|^(ai|bugfix|chore|ci|docs|feat|feature|fix|hotfix|perf|release|refactor)/.+$",
-    "errorMsg": "Branch name must be main, or <type>/<description> (ai, bugfix, chore, ci, docs, feat, feature, fix, hotfix, perf, release, refactor) - see conventionalbranch.org"
+    "pattern": "^(main)$|^(ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor)/.+$",
+    "errorMsg": "Branch name must be main, or <type>/<description> (ai, bugfix, chore, ci, dependabot, docs, feat, feature, fix, hotfix, perf, release, refactor) - see conventionalbranch.org"
   }
 }
