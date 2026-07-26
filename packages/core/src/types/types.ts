@@ -299,6 +299,7 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 
 export type SetTimeoutHandle = ReturnType<typeof setTimeout>;
 export type SetIntervalHandle = ReturnType<typeof setInterval>;
+export type AnimationFrameHandle = ReturnType<typeof requestAnimationFrame>;
 
 /**
  * Schedules and cancels timeouts/intervals.
@@ -347,6 +348,31 @@ interface ISchedulerProvider {
    * Get the current configured scheduler
    */
   get scheduler(): IScheduler;
+}
+//#endregion
+
+//#region Animation API
+// ---------------------------------------------------------------------------
+// Animation API
+// ---------------------------------------------------------------------------
+
+export interface IAnimationFrameProvider {
+  /**
+   * Exposes the animation API
+   */
+  get animation(): IAnimationFrameScheduler;
+}
+
+export interface IAnimationFrameScheduler {
+  /**
+   * Schedules `callback` to run before the next host frame update.
+   * This depends on the host display refresh rate (common values are 60hz, 75hz, 90hz, 120hz, 144hz and 240hz).
+   */
+  requestAnimationFrame(callback: () => void): AnimationFrameHandle;
+  /**
+   * Cancels an animation frame request previously scheduled via {@link IScheduler.requestAnimationFrame}.
+   */
+  cancelAnimationFrame(handle: AnimationFrameHandle): void;
 }
 //#endregion
 
@@ -407,6 +433,7 @@ export interface ITimeProvider<TDate>
   extends
     IClockProvider<IClock<TDate>>,
     ISchedulerProvider,
+    IAnimationFrameProvider,
     IParserProvider<IParser<TDate>>,
     IPerformanceProvider {}
 
@@ -414,6 +441,7 @@ export interface IUtcOnlyTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyClock<TDate>>,
     ISchedulerProvider,
+    IAnimationFrameProvider,
     IParserProvider<IUtcOnlyParser<TDate>>,
     IPerformanceProvider {}
 
@@ -421,6 +449,7 @@ export interface IManualTimeProvider<TDate>
   extends
     IClockProvider<IManualClock<TDate>>,
     ISchedulerProvider,
+    IAnimationFrameProvider,
     IParserProvider<IParser<TDate>>,
     IPerformanceProvider {}
 
@@ -428,6 +457,7 @@ export interface IUtcOnlyManualTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyManualClock<TDate>>,
     ISchedulerProvider,
+    IAnimationFrameProvider,
     IParserProvider<IUtcOnlyParser<TDate>>,
     IPerformanceProvider {}
 //#endregion

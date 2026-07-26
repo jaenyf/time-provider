@@ -16,23 +16,24 @@ export class SystemPerformance implements IPerformance {
   get timeOrigin(): number {
     return performance.timeOrigin;
   }
-  getEntries = () => performance.getEntries();
+  getEntries = () => performance.getEntries() as IPerformanceEntry[];
   getEntriesByName = (
     name: string,
     entryType?: PerformanceEntryType,
-  ): readonly IPerformanceEntry[] => performance.getEntriesByName(name, entryType);
+  ): readonly IPerformanceEntry[] =>
+    performance.getEntriesByName(name, entryType) as IPerformanceEntry[];
   getEntriesByType = (entryType: PerformanceEntryType): readonly IPerformanceEntry[] =>
-    performance.getEntriesByType(entryType);
+    performance.getEntriesByType(entryType) as IPerformanceEntry[];
   mark = (name: string, options?: IPerformanceMarkOptions): IPerformanceMark =>
-    performance.mark(name, options);
+    performance.mark(name, options) as IPerformanceMark;
   measure = (
     name: string,
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
   ): IPerformanceMeasure => {
-    if (startMarkOrOptions === undefined) return performance.measure(name);
+    if (startMarkOrOptions === undefined) return performance.measure(name) as IPerformanceMeasure;
     if (typeof startMarkOrOptions === "string")
-      return performance.measure(name, startMarkOrOptions);
-    return performance.measure(name, startMarkOrOptions);
+      return performance.measure(name, startMarkOrOptions) as IPerformanceMeasure;
+    return performance.measure(name, startMarkOrOptions) as IPerformanceMeasure;
   };
   clearMarks = (name?: string): void => performance.clearMarks(name);
   clearMeasures = (name?: string): void => performance.clearMeasures(name);

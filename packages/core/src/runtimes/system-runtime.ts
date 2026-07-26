@@ -1,5 +1,6 @@
 import { SystemPerformance } from "../performance/system-performance.ts";
 import type {
+  AnimationFrameHandle,
   ITimeConverter,
   SetIntervalHandle,
   SetTimeoutHandle,
@@ -32,5 +33,21 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   }
   clearInterval(handle: SetIntervalHandle): void {
     return clearInterval(handle);
+  }
+  private throwAnimationFrameApiNotSupported(): AnimationFrameHandle {
+    throw new Error("Environment does not support Animation frame API (are you in a browser?)");
+  }
+  requestAnimationFrame(callback: () => void): AnimationFrameHandle {
+    if (typeof requestAnimationFrame === "function") {
+      return requestAnimationFrame(callback);
+    }
+    return this.throwAnimationFrameApiNotSupported();
+  }
+  cancelAnimationFrame(handle: AnimationFrameHandle): void {
+    if (typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(handle);
+      return;
+    }
+    this.throwAnimationFrameApiNotSupported();
   }
 }
