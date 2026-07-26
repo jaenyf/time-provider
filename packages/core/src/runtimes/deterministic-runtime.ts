@@ -1,3 +1,4 @@
+import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
   IAdvanceOptions,
   IManualClock,
@@ -124,7 +125,7 @@ class DueHeap<T extends DueEntry> {
 /**
  * Base class for all deterministic runtime classes.
  */
-abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
+export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
   /**
    * Heap compaction runs synchronously as an ordinary step of a call already in progress
    */
@@ -139,19 +140,21 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
   #nextIntervalSeq: number;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
-    super(localTimezone, converter);
+    const performance = new DeterministicPerformance<TDate>();
+    super(localTimezone, converter, performance);
     this.#timeoutQueue = new DueHeap<TimeoutEntry>();
     this.#timeoutCallCount = 0;
     this.#nextTimeoutSeq = 1;
     this.#intervalQueue = new DueHeap<IntervalEntry>();
     this.#intervalCallCount = 0;
     this.#nextIntervalSeq = 1;
+    performance.initialize(this);
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
 
-    const now = this.timestamp();
+    const now = this.peekTimestamp();
     const runAt = now + millisecondsDelay;
     const entry: TimeoutEntry = {
       runAt,
@@ -199,7 +202,7 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
 
   setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
-    const now = this.timestamp();
+    const now = this.peekTimestamp();
     const runAt = now + millisecondsDelay;
     const entry: IntervalEntry = {
       runAt,
@@ -247,20 +250,20 @@ abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
     }
   }
 
-  protected timestamp(): number {
-    return this.timestampImpl();
+  timestampNow(): number {
+    return this.timestampNowImpl();
+  }
+  localNow(): TDate {
+    return this.localNowImpl();
+  }
+  utcNow(): TDate {
+    return this.utcNowImpl();
   }
 
-  protected abstract timestampImpl(): number;
-
-  override localNow(): TDate {
-    return this.localNowImpl(this.timestampImpl());
-  }
-  override utcNow(): TDate {
-    return this.utcNowImpl(this.timestampImpl());
-  }
-  protected abstract localNowImpl(nowTimestamp: number): TDate;
-  protected abstract utcNowImpl(nowTimestamp: number): TDate;
+  abstract peekTimestamp(): number;
+  protected abstract localNowImpl(): TDate;
+  protected abstract utcNowImpl(): TDate;
+  protected abstract timestampNowImpl(): number;
 }
 
 /**
@@ -278,23 +281,26 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
   }
 
-  timestampImpl() {
-    return this.peekTimestamp();
-  }
-  localNowImpl() {
+  localNowImpl(): TDate {
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
     return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp);
   }
-  utcNowImpl() {
+  utcNowImpl(): TDate {
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
     return this.convertToUtcDateImpl(nowTimestamp);
   }
+  timestampNowImpl(): number {
+    const nowTimestamp = this.getNextSequentialTimestamp();
+    this.mayRunTimeoutCallbacks(nowTimestamp);
+    this.mayRunIntervalCallbacks(nowTimestamp);
+    return nowTimestamp;
+  }
 
-  private peekTimestamp(): number {
+  peekTimestamp(): number {
     return this._sequentialTimestamps.length > 0
       ? this._sequentialTimestamps[this.#sequentialIndex]
       : 0;
@@ -374,7 +380,7 @@ export abstract class BaseManualRuntime<TDate>
     }
 
     this.setDeterminedTime(time);
-    const now = this.timestamp();
+    const now = this.peekTimestamp();
     this.mayRunTimeoutCallbacks(now);
     this.mayRunIntervalCallbacks(now);
     return this;

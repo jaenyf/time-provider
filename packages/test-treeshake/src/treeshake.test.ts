@@ -27,6 +27,7 @@ const DETERMINISTIC_MARKERS = [
   "BaseFixedRuntime",
   "BaseManualRuntime",
   "BaseSequentialRuntime",
+  "DeterministicPerformance",
 ];
 
 async function bundle(entry: string): Promise<string> {

@@ -15,6 +15,9 @@ class SystemRuntime extends BaseSystemRuntime<Date> {
   utcNow(): Date {
     return new Date();
   }
+  timestampNow(): number {
+    return Date.now();
+  }
 }
 
 export class SystemPlugin extends BaseUtcOnlySystemPlugin<Date> {

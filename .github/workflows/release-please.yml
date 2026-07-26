@@ -100,7 +100,9 @@ jobs:
       - run: vp install --frozen-lockfile
 
       - name: Publish ${{ matrix.path }}
-        run: npm run -w ${{ matrix.path }} release
+        env:
+          PACKAGE_PATH: ${{ matrix.path }}
+        run: npm run -w "$PACKAGE_PATH" release
 
   close-released-issues:
     needs: publish

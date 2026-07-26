@@ -11,6 +11,9 @@ class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
   utcNow(): Temporal.ZonedDateTime {
     return Temporal.Now.zonedDateTimeISO("UTC");
   }
+  timestampNow(): number {
+    return Temporal.Now.zonedDateTimeISO("UTC").epochMilliseconds;
+  }
 }
 
 export class SystemPlugin extends BaseSystemPlugin<Temporal.ZonedDateTime> {

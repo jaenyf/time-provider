@@ -1,6 +1,7 @@
 import type {
   IClock,
   IParser,
+  IPerformance,
   IRuntime,
   IScheduler,
   ITimeConverter,
@@ -51,9 +52,15 @@ export class TimeInputValidator {
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #localTimezone: TimezoneDefinition;
   #converter: ITimeConverter<TDate>;
-  protected constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
+  #performance: IPerformance;
+  protected constructor(
+    localTimezone: TimezoneDefinition,
+    converter: ITimeConverter<TDate>,
+    performance: IPerformance,
+  ) {
     this.#localTimezone = localTimezone;
     this.#converter = converter;
+    this.#performance = performance;
   }
 
   protected get localTimezone(): TimezoneDefinition {
@@ -69,6 +76,9 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get parser(): IParser<TDate> {
     return this;
   }
+  get performance(): IPerformance {
+    return this.#performance;
+  }
 
   abstract setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
   abstract clearTimeout(handle: SetTimeoutHandle): void;
@@ -83,6 +93,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#localTimezone;
   }
 
+  abstract timestampNow(): number;
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
   withTimezone(localTimezone: TimezoneDefinition): this {

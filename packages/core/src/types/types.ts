@@ -3,6 +3,145 @@
  * None of them cause JavaScript to be emited, so it has no effect on bundle size or tree-shaking.
  */
 
+//#region Performance
+// ---------------------------------------------------------------------------
+// Performance
+// ---------------------------------------------------------------------------
+
+interface IPerformanceProvider {
+  /**
+   * Get the current configured clock
+   */
+  get performance(): IPerformance;
+}
+
+export type PerformanceEntryType =
+  | "dns" // Node.js only
+  | "function" // Node.js only
+  | "gc" // Node.js only
+  | "http2" // Node.js only
+  | "http" // Node.js only
+  | "mark" // available on the Web
+  | "measure" // available on the Web
+  | "net" // Node.js only
+  | "node" // Node.js only
+  | "resource"; // available on the Web
+
+export interface IPerformanceEntry {
+  readonly name: string;
+  readonly entryType: PerformanceEntryType;
+  readonly startTime: number;
+  readonly duration: number;
+}
+
+export interface IPerformanceMark extends IPerformanceEntry {
+  readonly entryType: "mark";
+}
+
+export interface IPerformanceMeasure extends IPerformanceEntry {
+  readonly entryType: "measure";
+}
+
+export interface IPerformanceMarkOptions {
+  /**
+   * Optional start time for the mark.
+   *
+   * If omitted, the current performance timestamp is used.
+   */
+  startTime?: number;
+
+  /**
+   * Arbitrary metadata associated with the mark.
+   */
+  detail?: unknown;
+}
+
+export interface IPerformanceMeasureOptions {
+  /**
+   * The start point of the measurement.
+   *
+   * Can be:
+   * - a mark name
+   * - an explicit performance timestamp
+   */
+  start?: string | number;
+
+  /**
+   * The end point of the measurement.
+   *
+   * Can be:
+   * - a mark name
+   * - an explicit performance timestamp
+   */
+  end?: string | number;
+
+  /**
+   * Duration to use instead of calculating from start/end.
+   */
+  duration?: number;
+
+  /**
+   * Arbitrary metadata associated with the measure.
+   */
+  detail?: unknown;
+}
+
+/**
+ * The performance API
+ */
+export interface IPerformance {
+  /**
+   * Returns the current high-resolution timestamp in milliseconds
+   * relative to timeOrigin.
+   */
+  now(): number;
+
+  /**
+   * The Unix timestamp at which this performance timeline started.
+   */
+  readonly timeOrigin: number;
+
+  /**
+   * Returns all performance entries.
+   */
+  getEntries(): readonly IPerformanceEntry[];
+
+  /**
+   * Returns performance entries with a specific name.
+   */
+  getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];
+
+  /**
+   * Returns performance entries of a specific type.
+   */
+  getEntriesByType(entryType: PerformanceEntryType): readonly IPerformanceEntry[];
+
+  /**
+   * Creates a timestamp marker.
+   */
+  mark(name: string, options?: IPerformanceMarkOptions): IPerformanceMark;
+
+  /**
+   * Creates a measured duration between marks or timestamps.
+   */
+  measure(
+    name: string,
+    startMarkOrOptions?: string | IPerformanceMeasureOptions,
+  ): IPerformanceMeasure;
+
+  /**
+   * Removes marks.
+   */
+  clearMarks(name?: string): void;
+
+  /**
+   * Removes measures.
+   */
+  clearMeasures(name?: string): void;
+}
+
+//#endregion
+
 //#region Clock
 // ---------------------------------------------------------------------------
 // Clock
@@ -52,16 +191,26 @@ interface IClockProvider<TClock> {
 }
 
 /**
+ * A clock that exposes timestamps/ticks.
+ */
+interface ITimestampClock {
+  /**
+   * Returns the current time stamp.
+   */
+  timestampNow(): number;
+}
+
+/**
  * A clock that only exposes UTC time.
  */
-interface IUtcOnlyClock<TDate> {
+interface IUtcOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now in UTC.
    */
   utcNow(): TDate;
 }
 
-interface ILocalOnlyClock<TDate> {
+interface ILocalOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now for the local timezone of the runtime.
    * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwhich timezone).
@@ -255,25 +404,32 @@ export interface IUtcOnlyManualRuntime<TDate>
 // ---------------------------------------------------------------------------
 
 export interface ITimeProvider<TDate>
-  extends IClockProvider<IClock<TDate>>, ISchedulerProvider, IParserProvider<IParser<TDate>> {}
+  extends
+    IClockProvider<IClock<TDate>>,
+    ISchedulerProvider,
+    IParserProvider<IParser<TDate>>,
+    IPerformanceProvider {}
 
 export interface IUtcOnlyTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyClock<TDate>>,
     ISchedulerProvider,
-    IParserProvider<IUtcOnlyParser<TDate>> {}
+    IParserProvider<IUtcOnlyParser<TDate>>,
+    IPerformanceProvider {}
 
 export interface IManualTimeProvider<TDate>
   extends
     IClockProvider<IManualClock<TDate>>,
     ISchedulerProvider,
-    IParserProvider<IParser<TDate>> {}
+    IParserProvider<IParser<TDate>>,
+    IPerformanceProvider {}
 
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyManualClock<TDate>>,
     ISchedulerProvider,
-    IParserProvider<IUtcOnlyParser<TDate>> {}
+    IParserProvider<IUtcOnlyParser<TDate>>,
+    IPerformanceProvider {}
 //#endregion
 
 //#region Plugins

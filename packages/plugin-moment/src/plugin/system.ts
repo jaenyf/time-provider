@@ -16,6 +16,9 @@ class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
   utcNow(): moment.Moment {
     return moment.utc();
   }
+  timestampNow(): number {
+    return moment().valueOf();
+  }
 }
 
 export class SystemPlugin extends BaseUtcOnlySystemPlugin<moment.Moment> {

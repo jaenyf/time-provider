@@ -7,7 +7,8 @@ import type {
 } from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
-import { testConstructorArgs, testWithTimezone } from "./helpers/testHelpers.ts";
+import { testPerformance } from "./helpers/testPerformance.ts";
+import { testConstructorArgs, testTimestampNow, testWithTimezone } from "./helpers/testHelpers.ts";
 import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
@@ -41,6 +42,7 @@ export function testSequentialRuntime<TDate>(
   );
 
   describe("sequential", () => {
+    testTimestampNow(createSUT);
     describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();
@@ -737,6 +739,25 @@ export function testSequentialRuntime<TDate>(
             expect(fireCount).toBe(compactionThreshold / 2);
           });
         });
+      });
+    });
+
+    describe("performance", () => {
+      testPerformance(createSUT);
+
+      test("reads do not consume the sequential timestamps", () => {
+        const sut = createSUT();
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:01.000Z"));
+        sut.performance.now();
+        sut.performance.mark("m");
+        sut.performance.measure("measure", "m");
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:02.000Z"));
+        sut.performance.now();
+        expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:03.000Z"));
+      });
+      test("now() falls back to 0 when no sequential time is configured", () => {
+        const sut = createSequentialRuntime("Pacific/Kiritimati", []);
+        expect(sut.performance.now()).toBe(0);
       });
     });
   });
