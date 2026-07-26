@@ -194,6 +194,19 @@ export function testLocalNow<TDate>(
   });
 }
 
+export function testTimestampNow<TDate>(getSut: () => { clock: unknown }) {
+  describe("timestampNow", () => {
+    test("doesn't throw", () => {
+      const clock = getSut().clock as unknown as IClock<TDate>;
+      expect(() => clock.timestampNow()).not.toThrow();
+    });
+    test.each([undefined, null])("returns a value", (undefinedValue) => {
+      const clock = getSut().clock as IClock<TDate>;
+      expect(clock.timestampNow()).not.toEqual(undefinedValue);
+    });
+  });
+}
+
 export function testUtcNow<TDate>(
   getSut: () => { clock: { utcNow(): TDate } },
   getExpectedFixedValue?: () => TDate,

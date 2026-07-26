@@ -5,9 +5,11 @@ import {
   testLocalNow,
   testWithTimezone,
   testUtcNow,
+  testTimestampNow,
 } from "./helpers/testHelpers.ts";
 import { testParser } from "./helpers/testParser.ts";
-// ...
+import { testPerformance } from "./helpers/testPerformance.ts";
+
 export function testSystemRuntime<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
@@ -23,6 +25,7 @@ export function testSystemRuntime<TDate>(
     testLocalNow(plugin.supportsLocalTime, createSUT);
     testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT);
+    testTimestampNow(createSUT);
 
     describe("parser", () => {
       testParser(
@@ -139,6 +142,10 @@ export function testSystemRuntime<TDate>(
           },
         );
       });
+    });
+
+    describe("performance", () => {
+      testPerformance(createSUT, true);
     });
   });
 }

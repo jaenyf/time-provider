@@ -9,11 +9,12 @@ import {
   testLocalNow,
   testWithTimezone,
   testUtcNow,
+  testTimestampNow,
 } from "./helpers/testHelpers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testScheduler } from "./helpers/testScheduler.ts";
-// (testSequentialRuntime.ts also keeps: import type { IClock } from "@time-provider/core";)
-// ...
+import { testPerformance } from "./helpers/testPerformance.ts";
+
 export function testFixedRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
@@ -42,6 +43,7 @@ export function testFixedRuntime<TDate>(
     );
     testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
+    testTimestampNow(createSUT);
 
     describe("parser", () => {
       testParser(
@@ -95,6 +97,10 @@ export function testFixedRuntime<TDate>(
           expect(intervalCalled).toBe(false);
         });
       });
+    });
+
+    describe("performance", () => {
+      testPerformance(createSUT);
     });
   });
 }

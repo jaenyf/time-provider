@@ -5,11 +5,13 @@ import type {
 } from "@time-provider/core/deterministic";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
+import { testPerformance } from "./helpers/testPerformance.ts";
 import {
   testConstructorArgs,
   testWithTimezone,
   testLocalNow,
   testUtcNow,
+  testTimestampNow,
 } from "./helpers/testHelpers.ts";
 import type { SetIntervalHandle, SetTimeoutHandle, TimezoneDefinition } from "@time-provider/core";
 
@@ -41,6 +43,7 @@ export function testManualRuntime<TDate>(
     );
     testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
+    testTimestampNow(createSUT);
 
     describe("parser", () => {
       testParser(
@@ -486,6 +489,10 @@ export function testManualRuntime<TDate>(
           });
         });
       });
+    });
+
+    describe("performance", () => {
+      testPerformance(createSUT);
     });
   });
 }
