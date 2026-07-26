@@ -1,3 +1,4 @@
+import { SystemPerformance } from "../performance/system-performance.ts";
 import type {
   ITimeConverter,
   SetIntervalHandle,
@@ -11,7 +12,7 @@ import { BaseRuntime } from "./runtime-base.ts";
  */
 export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
-    super(localTimezone, converter);
+    super(localTimezone, converter, new SystemPerformance());
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {

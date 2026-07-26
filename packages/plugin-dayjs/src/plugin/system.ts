@@ -12,6 +12,9 @@ class SystemRuntime extends BaseSystemRuntime<dayjs.Dayjs> {
   utcNow(): dayjs.Dayjs {
     return dayjs.utc();
   }
+  timestampNow(): number {
+    return dayjs().valueOf();
+  }
 }
 
 export class SystemPlugin extends BaseSystemPlugin<dayjs.Dayjs> {

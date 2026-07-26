@@ -21,6 +21,9 @@ class SystemRuntime extends BaseSystemRuntime<DateTime> {
   utcNow(): DateTime<boolean> {
     return DateTime.utc();
   }
+  timestampNow(): number {
+    return DateTime.utc().toMillis();
+  }
 }
 
 export class SystemPlugin extends BaseSystemPlugin<DateTime> {
