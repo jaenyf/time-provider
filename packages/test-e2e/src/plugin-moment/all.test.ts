@@ -26,24 +26,30 @@ describe("e2e moment", () => {
     expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = system.parser.parseToLocal;
+    expect(system.performance.now()).toBeDefined();
+    expect(system.performance.timeOrigin).toBeDefined();
 
     expect(fixed.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = fixed.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = fixed.clock.withTimezone;
-    expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
+    expect(fixed.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
-    untracked = system.parser.parseToLocal;
+    untracked = fixed.parser.parseToLocal;
+    expect(fixed.performance.now()).toBeDefined();
+    expect(fixed.performance.timeOrigin).toBeDefined();
 
     expect(manual.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
     untracked = manual.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = manual.clock.withTimezone;
-    expect(system.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
+    expect(manual.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = manual.parser.parseToLocal;
+    expect(manual.performance.now()).toBeDefined();
+    expect(manual.performance.timeOrigin).toBeDefined();
 
     expect(sequential.clock.utcNow().toISOString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -53,6 +59,8 @@ describe("e2e moment", () => {
     expect(sequential.parser.parseToUtc(moment.utc().milliseconds())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = sequential.parser.parseToLocal;
+    expect(sequential.performance.now()).toBeDefined();
+    expect(sequential.performance.timeOrigin).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

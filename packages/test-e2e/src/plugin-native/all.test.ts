@@ -25,6 +25,8 @@ describe("e2e native", () => {
     expect(system.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = system.parser.parseToLocal;
+    expect(system.performance.now()).toBeDefined();
+    expect(system.performance.timeOrigin).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -34,6 +36,8 @@ describe("e2e native", () => {
     expect(fixed.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = fixed.parser.parseToLocal;
+    expect(fixed.performance.now()).toBeDefined();
+    expect(fixed.performance.timeOrigin).toBeDefined();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -43,6 +47,8 @@ describe("e2e native", () => {
     expect(manual.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = manual.parser.parseToLocal;
+    expect(manual.performance.now()).toBeDefined();
+    expect(manual.performance.timeOrigin).toBeDefined();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -52,6 +58,8 @@ describe("e2e native", () => {
     expect(sequential.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = sequential.parser.parseToLocal;
+    expect(sequential.performance.now()).toBeDefined();
+    expect(sequential.performance.timeOrigin).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

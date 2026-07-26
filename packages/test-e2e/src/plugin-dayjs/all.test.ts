@@ -25,6 +25,8 @@ describe("e2e plugin-dayjs", () => {
     expect(system.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(system.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(system.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
+    expect(system.performance.now()).toBeDefined();
+    expect(system.performance.timeOrigin).toBeDefined();
 
     expect(fixed.clock.utcNow().toISOString()).toBeDefined();
     expect(fixed.clock.localNow().toISOString()).toBeDefined();
@@ -32,6 +34,8 @@ describe("e2e plugin-dayjs", () => {
     expect(fixed.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(fixed.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(fixed.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
+    expect(fixed.performance.now()).toBeDefined();
+    expect(fixed.performance.timeOrigin).toBeDefined();
 
     expect(manual.clock.utcNow().toISOString()).toBeDefined();
     expect(manual.clock.localNow().toISOString()).toBeDefined();
@@ -39,6 +43,8 @@ describe("e2e plugin-dayjs", () => {
     expect(manual.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(manual.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(manual.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
+    expect(manual.performance.now()).toBeDefined();
+    expect(manual.performance.timeOrigin).toBeDefined();
 
     expect(sequential.clock.utcNow().toISOString()).toBeDefined();
     expect(sequential.clock.localNow().toISOString()).toBeDefined();
@@ -46,6 +52,8 @@ describe("e2e plugin-dayjs", () => {
     expect(sequential.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(sequential.parser.parseToUtc(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(sequential.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
+    expect(sequential.performance.now()).toBeDefined();
+    expect(sequential.performance.timeOrigin).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

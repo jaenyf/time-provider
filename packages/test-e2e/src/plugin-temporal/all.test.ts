@@ -29,6 +29,8 @@ describe("e2e temporal", () => {
     expect(system.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
     expect(system.parser.parseToUtc(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
     expect(system.parser.parseToLocal(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
+    expect(system.performance.now()).toBeDefined();
+    expect(system.performance.timeOrigin).toBeDefined();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     expect(fixed.clock.localNow().toString()).toBeDefined();
@@ -40,6 +42,8 @@ describe("e2e temporal", () => {
     expect(
       fixed.parser.parseToLocal(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
+    expect(fixed.performance.now()).toBeDefined();
+    expect(fixed.performance.timeOrigin).toBeDefined();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     expect(manual.clock.localNow().toString()).toBeDefined();
@@ -51,6 +55,8 @@ describe("e2e temporal", () => {
     expect(
       manual.parser.parseToLocal(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
+    expect(manual.performance.now()).toBeDefined();
+    expect(manual.performance.timeOrigin).toBeDefined();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     expect(sequential.clock.localNow().toString()).toBeDefined();
@@ -62,6 +68,8 @@ describe("e2e temporal", () => {
     expect(
       sequential.parser.parseToLocal(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
+    expect(sequential.performance.now()).toBeDefined();
+    expect(sequential.performance.timeOrigin).toBeDefined();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));
