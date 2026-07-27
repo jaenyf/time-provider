@@ -14,6 +14,7 @@ import {
   testTimestampNow,
 } from "./helpers/testHelpers.ts";
 import type { SetIntervalHandle, SetTimeoutHandle, TimezoneDefinition } from "@time-provider/core";
+import { testAnimationFrame } from "./helpers/testAnimationFrame.ts";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -493,6 +494,74 @@ export function testManualRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT);
+    });
+
+    describe("animation", () => {
+      testAnimationFrame(createSUT);
+      describe("additionnal", () => {
+        test("fires once a frame duration has elapsed", () => {
+          const sut = createSUT();
+          let callCount = 0;
+          sut.animation.requestAnimationFrame(() => callCount++);
+          sut.advance({ seconds: 1 });
+          expect(callCount).toBe(1);
+        });
+        test("does not fire again on a subsequent advance - matches the native one-shot contract, unlike setInterval", () => {
+          const sut = createSUT();
+          let callCount = 0;
+          sut.animation.requestAnimationFrame(() => callCount++);
+          sut.advance({ seconds: 1 });
+          sut.advance({ seconds: 1 });
+          sut.advance({ seconds: 1 });
+          expect(callCount).toBe(1);
+        });
+        test("ignores a cancelled callback", () => {
+          const sut = createSUT();
+          let called = false;
+          const handle = sut.animation.requestAnimationFrame(() => (called = true));
+          sut.animation.cancelAnimationFrame(handle);
+          sut.advance({ milliseconds: 20 });
+          expect(called).toBe(false);
+        });
+        test("passing another runtime's handle does not cancel this runtime's animation frame", () => {
+          const sut = createSUT();
+          const otherRuntime = createSUT();
+          let called = false;
+          const handle = sut.animation.requestAnimationFrame(() => (called = true));
+          otherRuntime.animation.cancelAnimationFrame(handle);
+          sut.advance({ milliseconds: 20 });
+          expect(called).toBe(true);
+        });
+        describe("hostFramesRate", () => {
+          /*
+           * hostFramesRate isn't part of any public interface yet, so these reach into the concrete deterministic runtime directly
+           */
+          const asConfigurable = (sut: ReturnType<typeof createSUT>) =>
+            sut as unknown as ReturnType<typeof createSUT> & { hostFramesRate: number };
+
+          test("defaults to 60", () => {
+            const sut = asConfigurable(createSUT());
+            expect(sut.hostFramesRate).toBe(60);
+          });
+          test("can be read back after being set", () => {
+            const sut = asConfigurable(createSUT());
+            sut.hostFramesRate = 30;
+            expect(sut.hostFramesRate).toBe(30);
+          });
+          test.each([0, -1, -100, NaN])("throws for a non-positive value (%d)", (value) => {
+            const sut = asConfigurable(createSUT());
+            expect(() => (sut.hostFramesRate = value)).toThrow();
+          });
+          test("a shorter frame duration fires sooner than the default", () => {
+            const sut = asConfigurable(createSUT());
+            sut.hostFramesRate = 100; // 10ms/frame, shorter than the default ~16.67ms
+            let callCount = 0;
+            sut.animation.requestAnimationFrame(() => callCount++);
+            sut.advance({ milliseconds: 15 }); // past the 10ms frame duration
+            expect(callCount).toBe(1);
+          });
+        });
+      });
     });
   });
 }

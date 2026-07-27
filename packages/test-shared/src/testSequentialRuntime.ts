@@ -13,6 +13,7 @@ import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
+import { testAnimationFrame } from "./helpers/testAnimationFrame.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -758,6 +759,49 @@ export function testSequentialRuntime<TDate>(
       test("now() falls back to 0 when no sequential time is configured", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", []);
         expect(sut.performance.now()).toBe(0);
+      });
+    });
+
+    describe("animation", () => {
+      testAnimationFrame(createSUT);
+      describe("additionnal", () => {
+        test("fires once a frame duration has elapsed", () => {
+          const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
+          let callCount = 0;
+          sut.animation.requestAnimationFrame(() => callCount++);
+          sut.clock.utcNow(); // returns 0 - not yet due
+          sut.clock.utcNow(); // returns 20 - now due, fires
+          expect(callCount).toBe(1);
+        });
+        test("does not fire again on a subsequent time advance - matches the native one-shot contract, unlike setInterval", () => {
+          const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000, 1000, 3000]);
+          let callCount = 0;
+          sut.animation.requestAnimationFrame(() => callCount++);
+          sut.clock.utcNow();
+          sut.clock.utcNow();
+          sut.clock.utcNow();
+          sut.clock.utcNow();
+          expect(callCount).toBe(1);
+        });
+        test("ignores a cancelled callback", () => {
+          const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
+          let called = false;
+          const handle = sut.animation.requestAnimationFrame(() => (called = true));
+          sut.animation.cancelAnimationFrame(handle);
+          sut.clock.utcNow();
+          sut.clock.utcNow();
+          expect(called).toBe(false);
+        });
+        test("passing another runtime's handle does not cancel this runtime's animation frame", () => {
+          const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
+          const otherRuntime = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
+          let called = false;
+          const handle = sut.animation.requestAnimationFrame(() => (called = true));
+          otherRuntime.animation.cancelAnimationFrame(handle);
+          sut.clock.utcNow();
+          sut.clock.utcNow();
+          expect(called).toBe(true);
+        });
       });
     });
   });
