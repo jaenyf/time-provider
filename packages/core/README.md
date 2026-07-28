@@ -7,8 +7,8 @@
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
-[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
-[![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
+[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core)](https://bundlephobia.com/package/%40time-provider%2Fcore)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core)](https://bundlephobia.com/package/%40time-provider%2Fcore)
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/core)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
