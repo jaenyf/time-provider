@@ -12,9 +12,12 @@
 
 # [Time-Provider ~ Moment.js plugin](https://github.com/jaenyf/time-provider)
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo.svg"  alt="Logo" width="400">
-</div>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-dark.svg">
+    <img alt="Time-Provider" src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-light.svg" width="325">
+  </picture>
+</p>
 
 ## Description
 
