@@ -12,6 +12,9 @@ export abstract class BaseTimeProviderCreator<TPlugin> {
   static defaultTimezone: TimezoneDefinition = "Etc/UTC";
 
   constructor(plugin: TPlugin, localTimezone: TimezoneDefinition) {
+    if (!plugin) {
+      throw new Error("The given plugin is not defined");
+    }
     this.#plugin = plugin;
     this.#localTimezone = localTimezone;
     this.#shouldUseHostLocalTimezone = false;

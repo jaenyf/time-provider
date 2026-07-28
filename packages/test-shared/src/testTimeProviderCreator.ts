@@ -1,5 +1,6 @@
-import { describe } from "vite-plus/test";
+import { describe, expect, test } from "vite-plus/test";
 import type { ISystemPlugin, IUtcOnlySystemPlugin } from "@time-provider/core";
+import { createTimeProvider } from "@time-provider/core";
 import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
@@ -16,6 +17,17 @@ export function testTimeProviderCreator<TDate>(
   systemPlugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   deterministicPlugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
 ) {
+  describe("for", () => {
+    test.each([undefined, null])(
+      "throws when forcing an undefined plugin",
+      (undefinedValue: unknown) => {
+        expect(() => {
+          createTimeProvider.for(undefinedValue as IUtcOnlySystemPlugin<Date>);
+        }).toThrow();
+      },
+    );
+  });
+
   describe("system", () => {
     testCreator(systemPlugin.supportsLocalTime, () => getBuilderFor(systemPlugin));
     testCreatedValue(() => getBuilderFor(systemPlugin).create());
