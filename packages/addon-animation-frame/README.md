@@ -12,28 +12,30 @@
 
 # [Time-Provider ~ Animation Frame API Addon](https://github.com/jaenyf/time-provider)
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-dark.svg">
+    <img alt="Time-Provider" src="https://raw.githubusercontent.com/jaenyf/time-provider/refs/heads/main/assets/time-provider-logo-light.svg" width="325">
+  </picture>
+</p>
+
 ## Description
 
-Extends the library by exposing a `requestAnimationFrame`/`cancelAnimationFrame` through a new (`.animation`) facade.
+This is the [Animation Frame API](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
+Extends the library by exposing the animation frame API (`requestAnimationFrame`/`cancelAnimationFrame`) through a dedicated (`.animation`) facade.
 
-Just like the plugin packages, this addon is split into a system entry point and a
-deterministic entry point, so each import pulls in only the code it needs:
+Just like the plugin packages, this addon is tree-shakable.  
+It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
 
 - `@time-provider/addon-animation-frame` - for a **system** (real time) Time-Provider
   created via `@time-provider/core`. `.animation` passes through to the real
-  `requestAnimationFrame`/`cancelAnimationFrame` when available (e.g. a
-  browser), and throws a clear error otherwise (e.g. plain Node.js, which has
-  no native equivalent).
+  `requestAnimationFrame`/`cancelAnimationFrame` or throws a clear error otherwise (e.g. plain Node.js, which has no native equivalent).
 - `@time-provider/addon-animation-frame/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
   `@time-provider/core/deterministic`. `.animation` is simulated against that
-  runtime's own clock: a registered callback fires once this runtime's own
-  "now" has moved forward by at least one simulated frame duration (defaults
-  to 60hz, i.e. ~16.67ms) - matching the native contract of firing exactly
-  once per call, not repeatedly like `setInterval`.
-
-A bundle that only composes the system addon never pulls in the deterministic
-scheduler (or vice versa) - each entry point only references its own code.
+  runtime's own clock.  
+  Registered callbacks fires once this runtime's own
+  "now" has moved forward by at least one simulated frame duration.
 
 ## Usage
 
@@ -47,7 +49,7 @@ import { addon as deterministicAddon } from "@time-provider/addon-animation-fram
 
 // System: real requestAnimationFrame (or a clear error outside a browser)
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-timeProvider.animation.requestAnimationFrame(() => console.log("frame"));
+timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
 
 // Deterministic: simulated against the runtime's own clock
 const manual = createDeterministicTimeProvider
@@ -56,16 +58,22 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-manual.animation.requestAnimationFrame(() => console.log("frame"));
+manual.animation.requestAnimationFrame(() => console.log("Frame!"));
 manual.clock.advance({ milliseconds: 20 });
 ```
 
-Configure the simulated frame rate with
-`createAnimationFrameAddon({ hostFramesRate: 90 })` (from
-`@time-provider/addon-animation-frame/deterministic`) instead of the default
-`animationFrameAddon` export - the system entry point's
-`createAnimationFrameAddon()` takes no options, since the real
-`requestAnimationFrame` rate is up to the host display.
+You can configure the simulated frame rate by chaining `.withHostFramesRate(...)` on
+the builder right after `.use(...)`:
+
+```ts
+const manual = createDeterministicTimeProvider
+  .for(deterministicPlugin)
+  .use(deterministicAddon)
+  .withHostFramesRate(90) //now simulating an amination frame API with 90 FPS
+  .asManual()
+  .withInitialTime(0)
+  .create();
+```
 
 ## License
 
