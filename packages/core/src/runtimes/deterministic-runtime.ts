@@ -1,6 +1,5 @@
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
-  AnimationFrameHandle,
   IAdvanceOptions,
   IManualClock,
   IManualRuntime,
@@ -140,12 +139,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   #intervalCallCount: number;
   #nextIntervalSeq: number;
 
-  #hostFramesRate!: number;
-  #hostFrameDurationMs!: number;
-  #animationFrameQueue: DueHeap<TimeoutEntry>;
-  #animationFrameCallCount: number;
-  #nextAnimationFrameSeq: number;
-
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     const performance = new DeterministicPerformance<TDate>();
     super(localTimezone, converter, performance);
@@ -155,10 +148,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     this.#intervalQueue = new DueHeap<IntervalEntry>();
     this.#intervalCallCount = 0;
     this.#nextIntervalSeq = 1;
-    this.hostFramesRate = 60;
-    this.#animationFrameQueue = new DueHeap<TimeoutEntry>();
-    this.#animationFrameCallCount = 0;
-    this.#nextAnimationFrameSeq = 1;
     performance.initialize(this);
   }
 
@@ -175,18 +164,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
   utcNow(): TDate {
     return this.utcNowImpl();
-  }
-
-  get hostFramesRate() {
-    return this.#hostFramesRate;
-  }
-
-  set hostFramesRate(value: number) {
-    if (!value || value < 0) {
-      throw new Error(`Invalid host frame rate (value was "${String(value)}")`);
-    }
-    this.#hostFramesRate = value;
-    this.#hostFrameDurationMs = 1000 / value;
   }
 
   //#region heap management
@@ -286,29 +263,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
   //#endregion setTimeout
 
-  //#region animation api
-  requestAnimationFrame(callback: () => void): AnimationFrameHandle {
-    return BaseDeterministicRuntime.queuePunctualCallback(
-      this.peekTimestamp(),
-      this.#hostFrameDurationMs,
-      callback,
-      this.#animationFrameQueue,
-      () => this.#nextAnimationFrameSeq++,
-      undefined,
-    );
-  }
-  cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    BaseDeterministicRuntime.clearDueHandle(handle, this.#animationFrameQueue);
-  }
-  protected mayRunAnimationFrameCallbacks(nowTimestamp: number): void {
-    this.#animationFrameCallCount = BaseDeterministicRuntime.mayRunPunctualCallbacks(
-      nowTimestamp,
-      this.#animationFrameQueue,
-      this.#animationFrameCallCount,
-    );
-  }
-  //#endregion animation api
-
   //#region setInterval
   setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
@@ -378,21 +332,18 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    this.mayRunAnimationFrameCallbacks(nowTimestamp);
     return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp);
   }
   utcNowImpl(): TDate {
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    this.mayRunAnimationFrameCallbacks(nowTimestamp);
     return this.convertToUtcDateImpl(nowTimestamp);
   }
   timestampNowImpl(): number {
     const nowTimestamp = this.getNextSequentialTimestamp();
     this.mayRunTimeoutCallbacks(nowTimestamp);
     this.mayRunIntervalCallbacks(nowTimestamp);
-    this.mayRunAnimationFrameCallbacks(nowTimestamp);
     return nowTimestamp;
   }
 
@@ -426,9 +377,6 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
     /* time is frozen */
   }
   protected override mayRunIntervalCallbacks(_nowTimestamp: number): void {
-    /* time is frozen */
-  }
-  protected override mayRunAnimationFrameCallbacks(_nowTimestamp: number): void {
     /* time is frozen */
   }
 }
@@ -485,7 +433,6 @@ export abstract class BaseManualRuntime<TDate>
     const now = this.peekTimestamp();
     this.mayRunTimeoutCallbacks(now);
     this.mayRunIntervalCallbacks(now);
-    this.mayRunAnimationFrameCallbacks(now);
     return this;
   }
 

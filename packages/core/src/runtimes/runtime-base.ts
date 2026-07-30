@@ -1,6 +1,4 @@
 import type {
-  AnimationFrameHandle,
-  IAnimationFrameScheduler,
   IClock,
   IParser,
   IPerformance,
@@ -81,16 +79,11 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get performance(): IPerformance {
     return this.#performance;
   }
-  get animation(): IAnimationFrameScheduler {
-    return this;
-  }
 
   abstract setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
   abstract clearTimeout(handle: SetTimeoutHandle): void;
   abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
   abstract clearInterval(handle: SetTimeoutHandle): void;
-  abstract requestAnimationFrame(callback: () => void): AnimationFrameHandle;
-  abstract cancelAnimationFrame(handle: AnimationFrameHandle): void;
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();

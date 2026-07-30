@@ -14,7 +14,6 @@ import {
 import { testParser } from "./helpers/testParser.ts";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
-import { testAnimationFrame } from "./helpers/testAnimationFrame.ts";
 
 export function testFixedRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -102,21 +101,6 @@ export function testFixedRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT);
-    });
-
-    describe("animation", () => {
-      testAnimationFrame(createSUT);
-      describe("issue#57", () => {
-        //related to: https://github.com/jaenyf/time-provider/issues/57
-        test("never fires since the fixed runtime's time never advances", () => {
-          const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
-          let called = false;
-          sut.animation.requestAnimationFrame(() => (called = true));
-          sut.clock.utcNow();
-          sut.clock.utcNow();
-          expect(called).toBe(false);
-        });
-      });
     });
   });
 }

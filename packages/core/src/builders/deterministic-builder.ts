@@ -10,6 +10,7 @@ import type {
   IDeterministicTimeProviderCreator,
   IFixedTimeProviderCreator,
   IManualTimeProviderCreator,
+  IDeterministicTimeProviderAddon,
   ISequentialTimeProviderCreator,
   IUtcOnlyDeterministicPluggedTimeProviderCreator,
 } from "./builders.ts";
@@ -19,15 +20,30 @@ type AnyDeterministicPlugin<TDate> =
   | IDeterministicPlugin<TDate>
   | IUtcOnlyDeterministicPlugin<TDate>;
 
+function applyAddons<TDate>(
+  addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+  runtime: ITimeProvider<TDate> | IManualTimeProvider<TDate>,
+): void {
+  for (const addon of addons) {
+    addon.applyToDeterministic(runtime);
+  }
+}
+
 class FixedTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
   implements IFixedTimeProviderCreator<TDate>
 {
   #fixedDateTime?: string | number | TDate;
+  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
 
-  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(
+    plugin: AnyDeterministicPlugin<TDate>,
+    localTimezone: TimezoneDefinition,
+    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+  ) {
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
+    this.#addons = addons;
   }
   withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate> {
     this.#fixedDateTime = initialDateTime;
@@ -35,11 +51,11 @@ class FixedTimeProviderCreator<TDate>
   }
   create(): ITimeProvider<TDate> {
     const initialTime = undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0;
-    return Object.freeze(
-      this.plugin.supportsLocalTime
-        ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
-        : (this.plugin.createFixedRuntime(initialTime) as unknown as ITimeProvider<TDate>),
-    );
+    const runtime = this.plugin.supportsLocalTime
+      ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
+      : (this.plugin.createFixedRuntime(initialTime) as unknown as ITimeProvider<TDate>);
+    applyAddons(this.#addons, runtime);
+    return Object.freeze(runtime);
   }
 }
 
@@ -48,10 +64,16 @@ class ManualTimeProviderCreator<TDate>
   implements IManualTimeProviderCreator<TDate>
 {
   #initialDateTime?: string | number | TDate;
+  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
 
-  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(
+    plugin: AnyDeterministicPlugin<TDate>,
+    localTimezone: TimezoneDefinition,
+    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+  ) {
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
+    this.#addons = addons;
   }
 
   withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate> {
@@ -60,11 +82,11 @@ class ManualTimeProviderCreator<TDate>
   }
   create(): IManualTimeProvider<TDate> {
     const initialTime = undefined !== this.#initialDateTime ? this.#initialDateTime : 0;
-    return Object.freeze(
-      this.plugin.supportsLocalTime
-        ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
-        : (this.plugin.createManualRuntime(initialTime) as unknown as IManualTimeProvider<TDate>),
-    );
+    const runtime = this.plugin.supportsLocalTime
+      ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
+      : (this.plugin.createManualRuntime(initialTime) as unknown as IManualTimeProvider<TDate>);
+    applyAddons(this.#addons, runtime);
+    return Object.freeze(runtime);
   }
 }
 
@@ -73,9 +95,15 @@ class SequentialTimeProviderCreator<TDate>
   implements ISequentialTimeProviderCreator<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
+  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
 
-  constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
+  constructor(
+    plugin: AnyDeterministicPlugin<TDate>,
+    localTimezone: TimezoneDefinition,
+    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+  ) {
     super(plugin, localTimezone);
+    this.#addons = addons;
   }
 
   withSequentialTime(
@@ -87,11 +115,11 @@ class SequentialTimeProviderCreator<TDate>
 
   create(): ITimeProvider<TDate> {
     const sequentialTimes = this.#sequentialTimes.length ? this.#sequentialTimes : [0];
-    return Object.freeze(
-      this.plugin.supportsLocalTime
-        ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
-        : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as ITimeProvider<TDate>),
-    );
+    const runtime = this.plugin.supportsLocalTime
+      ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
+      : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as ITimeProvider<TDate>);
+    applyAddons(this.#addons, runtime);
+    return Object.freeze(runtime);
   }
 }
 
@@ -99,18 +127,33 @@ class DeterministicPluggedTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
   implements IDeterministicPluggedTimeProviderCreator<TDate>
 {
+  #addons: IDeterministicTimeProviderAddon<TDate, unknown>[] = [];
+
   constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
+  use<TAddonExtra>(
+    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra>,
+  ): IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra> {
+    this.#addons.push(addon as IDeterministicTimeProviderAddon<TDate, unknown>);
+    return this as unknown as IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra>;
+  }
+
   asManual(): IManualTimeProviderCreator<TDate> {
-    return Object.freeze(new ManualTimeProviderCreator(this.plugin, this.localTimezone));
+    return Object.freeze(
+      new ManualTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
+    );
   }
   asFixed(): IFixedTimeProviderCreator<TDate> {
-    return Object.freeze(new FixedTimeProviderCreator(this.plugin, this.localTimezone));
+    return Object.freeze(
+      new FixedTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
+    );
   }
   asSequential(): ISequentialTimeProviderCreator<TDate> {
-    return Object.freeze(new SequentialTimeProviderCreator(this.plugin, this.localTimezone));
+    return Object.freeze(
+      new SequentialTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
+    );
   }
 }
 

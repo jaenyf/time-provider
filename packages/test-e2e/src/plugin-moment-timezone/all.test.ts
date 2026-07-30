@@ -3,12 +3,16 @@ import { createTimeProvider as createSystemTimeProvider } from "../../../core/di
 import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
 import { plugin as systemPlugin } from "../../../plugin-moment-timezone/dist/index.mjs";
 import { plugin as deterministicPlugin } from "../../../plugin-moment-timezone/dist/deterministic.mjs";
+import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.mjs";
+import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
 import moment from "moment-timezone";
 
 describe("e2e moment", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const systemCreator = createSystemTimeProvider.for(systemPlugin);
-    const deterministicCreator = createDeterministicTimeProvider.for(deterministicPlugin);
+    const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
+    const deterministicCreator = createDeterministicTimeProvider
+      .for(deterministicPlugin)
+      .use(deterministicAfapi);
 
     const system = systemCreator.create();
     const fixed = deterministicCreator.asFixed().create();

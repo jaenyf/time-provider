@@ -9,7 +9,6 @@ import {
 } from "./helpers/testHelpers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
-import { testAnimationFrame } from "./helpers/testAnimationFrame.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
@@ -147,30 +146,6 @@ export function testSystemRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT, true);
-    });
-
-    describe("animation", () => {
-      describe("node env", () => {
-        beforeEach(() => {});
-        afterEach(() => {});
-        testAnimationFrame(createSUT, false);
-      });
-      describe("browser env", () => {
-        beforeEach(() => {
-          (globalThis as unknown as { requestAnimationFrame: unknown }).requestAnimationFrame = (
-            _callback: () => void,
-          ) => {};
-          (globalThis as unknown as { cancelAnimationFrame: unknown }).cancelAnimationFrame = (
-            _handle: () => void,
-          ) => {};
-        });
-        afterEach(() => {
-          delete (globalThis as unknown as { requestAnimationFrame: unknown })
-            .requestAnimationFrame;
-          delete (globalThis as unknown as { cancelAnimationFrame: unknown }).cancelAnimationFrame;
-        });
-        testAnimationFrame(createSUT, true);
-      });
     });
   });
 }

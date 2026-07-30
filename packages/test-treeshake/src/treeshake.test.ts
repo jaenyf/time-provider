@@ -30,6 +30,24 @@ const DETERMINISTIC_MARKERS = [
   "DeterministicPerformance",
 ];
 
+/*
+ * The animation addon (@time-provider/addon-animation-frame) is never imported by
+ * core or by any plugin - a bundle that never imports and `.use()`s it should
+ * contain none of its code.
+ */
+const ANIMATION_ADDON_MARKERS = [
+  "DeterministicAnimationFrameScheduler",
+  "SystemAnimationFrameScheduler",
+];
+
+/*
+ * Like the plugin packages, @time-provider/addon-animation-frame is itself split
+ * into a system entry point and a deterministic entry point - each should
+ * only ever pull in its own scheduler class, never the other's.
+ */
+const SYSTEM_ANIMATION_MARKER = "SystemAnimationFrameScheduler";
+const DETERMINISTIC_ANIMATION_MARKER = "DeterministicAnimationFrameScheduler";
+
 async function bundle(entry: string): Promise<string> {
   const result = await build({
     // prevent vite-plus from trying to load this package's own vite.config.ts
@@ -72,6 +90,35 @@ describe("tree-shaking", () => {
       for (const marker of DETERMINISTIC_MARKERS) {
         expect(code).toContain(marker);
       }
+    });
+    test("neither fixture pulls in the animation addon - it's never imported", async () => {
+      for (const fixture of ["system-only", "deterministic"]) {
+        const code = await bundle(`./fixtures/${fixture}/${pluginPackage}.ts`);
+        for (const marker of ANIMATION_ADDON_MARKERS) {
+          expect(code).not.toContain(marker);
+        }
+      }
+    });
+  });
+
+  describe("animation addon", () => {
+    test("is entirely absent from a bundle that never imports it", async () => {
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      for (const marker of ANIMATION_ADDON_MARKERS) {
+        expect(code).not.toContain(marker);
+      }
+    });
+
+    test("system entry point includes only the system scheduler, never the deterministic one", async () => {
+      const code = await bundle("./fixtures/with-animation-addon/system.ts");
+      expect(code).toContain(SYSTEM_ANIMATION_MARKER);
+      expect(code).not.toContain(DETERMINISTIC_ANIMATION_MARKER);
+    });
+
+    test("deterministic entry point includes only the deterministic scheduler, never the system one", async () => {
+      const code = await bundle("./fixtures/with-animation-addon/deterministic.ts");
+      expect(code).toContain(DETERMINISTIC_ANIMATION_MARKER);
+      expect(code).not.toContain(SYSTEM_ANIMATION_MARKER);
     });
   });
 });

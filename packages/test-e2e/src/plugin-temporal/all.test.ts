@@ -3,6 +3,8 @@ import { createTimeProvider as createSystemTimeProvider } from "../../../core/di
 import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
 import { plugin as systemPlugin } from "../../../plugin-temporal/dist/index.mjs";
 import { plugin as deterministicPlugin } from "../../../plugin-temporal/dist/deterministic.mjs";
+import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.mjs";
+import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
 import { Temporal } from "@js-temporal/polyfill";
 
 /*
@@ -15,8 +17,10 @@ if (!("Temporal" in globalThis)) {
 
 describe("e2e temporal", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const systemCreator = createSystemTimeProvider.for(systemPlugin);
-    const deterministicCreator = createDeterministicTimeProvider.for(deterministicPlugin);
+    const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
+    const deterministicCreator = createDeterministicTimeProvider
+      .for(deterministicPlugin)
+      .use(deterministicAfapi);
 
     const system = systemCreator.create();
     const fixed = deterministicCreator.asFixed().create();

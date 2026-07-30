@@ -9,8 +9,6 @@ export type {
   IPerformanceMark,
   IPerformanceEntry,
   PerformanceEntryType,
-  IAnimationFrameProvider,
-  IAnimationFrameScheduler,
   IUtcOnlyParser,
   ISystemPlugin,
   IUtcOnlySystemPlugin,
@@ -22,7 +20,6 @@ export type {
   IScheduler,
   SetTimeoutHandle,
   SetIntervalHandle,
-  AnimationFrameHandle,
 } from "./types/types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";
@@ -32,4 +29,5 @@ export type {
   ISystemPluggedTimeProviderCreator,
   IUtcOnlySystemPluggedTimeProviderCreator,
   ITimeProviderCreator,
+  ISystemTimeProviderAddon,
 } from "./builders/builders.ts";
