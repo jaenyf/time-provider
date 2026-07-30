@@ -41,8 +41,9 @@ which affects unrelated code and makes tests harder to reason about.
 vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
-single object exposing a clock, a parser, and a scheduler, swappable per
-call site.
+single object exposing a clock, a parser, a scheduler, and a performance API swappable per
+call site.  
+_\***animation-frame API** available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
 
 ## Features
 
