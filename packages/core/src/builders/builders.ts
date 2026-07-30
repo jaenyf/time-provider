@@ -40,11 +40,15 @@ export interface ISystemTimeProviderAddon<TDate, TExtra> {
   applyToSystem<TRuntime extends ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>>(
     runtime: TRuntime,
   ): TRuntime & TExtra;
+  /**
+   * Clone an addon instance in order to prevent shared/singleton setup leaking in other instances.
+   */
+  clone(): ISystemTimeProviderAddon<TDate, TExtra>;
 }
 
 export interface IDeterministicTimeProviderAddon<TDate, TExtra> {
   /** Extends a deterministic runtime. */
-  applyToDeterministic<
+  applyToRuntime<
     TRuntime extends
       | ITimeProvider<TDate>
       | IUtcOnlyTimeProvider<TDate>
@@ -53,6 +57,10 @@ export interface IDeterministicTimeProviderAddon<TDate, TExtra> {
   >(
     runtime: TRuntime,
   ): TRuntime & TExtra;
+  /**
+   * Clone an addon instance in order to prevent shared/singleton setup leaking in other instances.
+   */
+  clone(): IDeterministicTimeProviderAddon<TDate, TExtra>;
 }
 
 /**
@@ -150,9 +158,9 @@ export interface ISystemPluggedTimeProviderCreator<TDate, TExtra = unknown>
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra>(
-    addon: ISystemTimeProviderAddon<TDate, TAddonExtra>,
-  ): ISystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra>;
+  use<TAddonExtra, TBuilderExtra = unknown>(
+    addon: ISystemTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): ISystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
 export interface IUtcOnlySystemPluggedTimeProviderCreator<
@@ -163,9 +171,9 @@ export interface IUtcOnlySystemPluggedTimeProviderCreator<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra>(
-    addon: ISystemTimeProviderAddon<TDate, TAddonExtra>,
-  ): IUtcOnlySystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra>;
+  use<TAddonExtra, TBuilderExtra = unknown>(
+    addon: ISystemTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): IUtcOnlySystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
 export interface IDeterministicPluggedTimeProviderCreator<TDate, TExtra = unknown>
@@ -180,9 +188,9 @@ export interface IDeterministicPluggedTimeProviderCreator<TDate, TExtra = unknow
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra>(
-    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra>,
-  ): IDeterministicPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra>;
+  use<TAddonExtra, TBuilderExtra = unknown>(
+    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): IDeterministicPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
 export interface IUtcOnlyDeterministicPluggedTimeProviderCreator<
@@ -197,9 +205,9 @@ export interface IUtcOnlyDeterministicPluggedTimeProviderCreator<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra>(
-    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra>,
-  ): IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra>;
+  use<TAddonExtra, TBuilderExtra = unknown>(
+    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
 /**

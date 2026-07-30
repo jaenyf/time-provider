@@ -5,28 +5,35 @@ import { defineAnimationProperty, type WithAnimation } from "./define-animation-
 export type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame.ts";
 
-/**
- * Creates a `.use(...)`-composable addon that adds `.animation` -
- * requestAnimationFrame/cancelAnimationFrame - to a deterministic
- * Time-Provider, simulated against that runtime's own clock.
- * `options.hostFramesRate` sets the simulated frame rate driving it
- * (defaults to 60hz). See `@time-provider/addon-animation-frame` for the
- * system-runtime counterpart.
- */
-function createAnimationFrameAddon<TDate>(options?: {
-  hostFramesRate?: number;
-}): IDeterministicTimeProviderAddon<TDate, WithAnimation> {
+export interface IAnimationFrameBuilderExtra {
+  withHostFramesRate<TBuilder>(this: TBuilder, rate: number): TBuilder;
+}
+
+export function createAddon<TDate>(): IDeterministicTimeProviderAddon<TDate, WithAnimation> &
+  IAnimationFrameBuilderExtra {
+  let hostFramesRate: number | undefined;
   return {
-    applyToDeterministic(runtime) {
+    applyToRuntime(runtime) {
       const scheduler = new DeterministicAnimationFrameScheduler(runtime.scheduler);
-      if (options?.hostFramesRate !== undefined) {
-        scheduler.hostFramesRate = options.hostFramesRate;
+      if (hostFramesRate !== undefined) {
+        scheduler.hostFramesRate = hostFramesRate;
       }
       return defineAnimationProperty(runtime, scheduler);
+    },
+    withHostFramesRate<TBuilder>(this: TBuilder, rate: number): TBuilder {
+      hostFramesRate = rate;
+      return this;
+    },
+    clone(): IDeterministicTimeProviderAddon<TDate, WithAnimation> {
+      const cloned = createAddon<TDate>();
+      if (hostFramesRate !== undefined) {
+        cloned.withHostFramesRate(hostFramesRate);
+      }
+      return cloned;
     },
   };
 }
 
-/** The animation-frame addon for a deterministic Time-Provider, using the default 60hz simulated frame rate. */
-export const addon: IDeterministicTimeProviderAddon<unknown, WithAnimation> =
-  createAnimationFrameAddon();
+export const addon: IDeterministicTimeProviderAddon<unknown, WithAnimation> &
+  IAnimationFrameBuilderExtra = createAddon();
+export default addon;
