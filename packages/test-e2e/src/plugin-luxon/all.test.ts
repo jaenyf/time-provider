@@ -5,6 +5,7 @@ import { plugin as systemPlugin } from "../../../plugin-luxon/dist/index.mjs";
 import { plugin as deterministicPlugin } from "../../../plugin-luxon/dist/deterministic.mjs";
 import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.mjs";
 import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
+import "../polyfills.ts";
 import { DateTime } from "luxon";
 
 describe("e2e luxon", () => {
@@ -27,6 +28,9 @@ describe("e2e luxon", () => {
     expect(system.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
     expect(system.performance.now()).toBeDefined();
     expect(system.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      system.animation.cancelAnimationFrame(system.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     expect(fixed.clock.localNow().toString()).toBeDefined();
@@ -36,6 +40,9 @@ describe("e2e luxon", () => {
     expect(fixed.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
     expect(fixed.performance.now()).toBeDefined();
     expect(fixed.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      fixed.animation.cancelAnimationFrame(fixed.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     expect(manual.clock.localNow().toString()).toBeDefined();
@@ -45,6 +52,9 @@ describe("e2e luxon", () => {
     expect(manual.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
     expect(manual.performance.now()).toBeDefined();
     expect(manual.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      manual.animation.cancelAnimationFrame(manual.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     expect(sequential.clock.localNow().toString()).toBeDefined();
@@ -54,6 +64,11 @@ describe("e2e luxon", () => {
     expect(sequential.parser.parseToLocal(DateTime.utc().toString()).toMillis()).toBeDefined();
     expect(sequential.performance.now()).toBeDefined();
     expect(sequential.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      sequential.animation.cancelAnimationFrame(
+        sequential.animation.requestAnimationFrame(() => {}),
+      ),
+    ).not.toThrow();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));
