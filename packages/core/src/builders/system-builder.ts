@@ -27,7 +27,7 @@ class SystemPluggedTimeProviderCreator<TDate>
   use<TAddonExtra, TBuilderExtra = unknown>(
     addon: ISystemTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
   ): ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra {
-    const instance = addon.clone ? addon.clone() : addon;
+    const instance = addon.clone();
     this.#addons.push(instance as ISystemTimeProviderAddon<TDate, unknown>);
     Object.assign(this, instance);
     return this as unknown as ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra;

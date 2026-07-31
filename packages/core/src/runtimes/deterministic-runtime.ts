@@ -221,7 +221,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     callback: () => void,
     queue: DueHeap<TimeoutEntry>,
     getAndIncrSeq: () => number,
-    duesCheck: (() => void) | undefined,
+    duesCheck: () => void,
   ): THandle {
     const dueTime = nowTimestamp + delayMs;
     const entry: TimeoutEntry = {
@@ -232,9 +232,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       owner: queue,
     };
     queue.push(entry);
-    if (undefined !== duesCheck) {
-      duesCheck();
-    }
+    duesCheck();
     return entry as unknown as THandle;
   }
   //#endregion heap management

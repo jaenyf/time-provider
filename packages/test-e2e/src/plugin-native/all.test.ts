@@ -12,7 +12,8 @@ describe("e2e native", () => {
     const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
     const deterministicCreator = createDeterministicTimeProvider
       .for(deterministicPlugin)
-      .use(deterministicAfapi);
+      .use(deterministicAfapi)
+      .withHostFramesRate(50);
 
     const system = systemCreator.create();
     const fixed = deterministicCreator.asFixed().create();

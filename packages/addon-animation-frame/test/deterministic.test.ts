@@ -1,8 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { ITimeProvider, IScheduler, SetTimeoutHandle } from "@time-provider/core";
 import type { IDeterministicTimeProviderAddon } from "@time-provider/core/deterministic";
-import { addon, createAddon } from "../src/deterministic.ts";
+import { addon, createAddon, type IAnimationFrameBuilderExtra } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame.ts";
+import type { WithAnimationFrameApi } from "../src/types.ts";
 
 type FakeRuntime = ITimeProvider<unknown> & { animation?: unknown };
 
@@ -68,45 +69,67 @@ describe("animationFrameAddon (deterministic)", () => {
     expect(instance.withHostFramesRate(100)).toBe(instance);
   });
 
-  test("createAnimationFrameAddon() returns an independent instance each call - configuring one never affects another", () => {
-    const configured = createAddon().withHostFramesRate(100);
-    const untouched = createAddon();
+  test.each([90, 120])(
+    "createAnimationFrameAddon() returns an independent instance each call - configuring one never affects another",
+    (fps: number) => {
+      const defaultFps = 60;
+      const configured = createAddon().withHostFramesRate(fps);
+      const untouched = createAddon();
 
-    const configuredRuntime = fakeDeterministicRuntime().runtime;
-    configured.applyToRuntime(configuredRuntime);
-    const untouchedRuntime = fakeDeterministicRuntime().runtime;
-    untouched.applyToRuntime(untouchedRuntime);
+      const configuredRuntime = fakeDeterministicRuntime().runtime;
+      configured.applyToRuntime(configuredRuntime);
+      const untouchedRuntime = fakeDeterministicRuntime().runtime;
+      untouched.applyToRuntime(untouchedRuntime);
 
-    expect(
-      (configuredRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
-    ).toBe(100);
-    expect(
-      (untouchedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
-    ).toBe(60);
-  });
+      expect(
+        (configuredRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+      ).toBe(fps);
+      expect(
+        (untouchedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+      ).toBe(defaultFps);
+    },
+  );
 
   describe("clone", () => {
     test("returns a distinct instance", () => {
       expect(addon.clone()).not.toBe(addon);
     });
 
-    test("configuring a clone via withHostFramesRate never affects the shared addon it was cloned from", () => {
-      const clone = addon.clone() as IDeterministicTimeProviderAddon<unknown, unknown> & {
-        withHostFramesRate(rate: number): unknown;
-      };
-      clone.withHostFramesRate(100);
-
-      const clonedRuntime = fakeDeterministicRuntime().runtime;
-      clone.applyToRuntime(clonedRuntime);
-      const sharedRuntime = fakeDeterministicRuntime().runtime;
-      addon.applyToRuntime(sharedRuntime);
-
-      expect((clonedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate).toBe(
-        100,
-      );
-      expect((sharedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate).toBe(
-        60,
+    test.each([90, 120])("copy an existing host frames rate", (fps: number) => {
+      const original = addon.clone() as IDeterministicTimeProviderAddon<
+        unknown,
+        WithAnimationFrameApi
+      > &
+        IAnimationFrameBuilderExtra;
+      original.withHostFramesRate(fps);
+      const runtime = fakeDeterministicRuntime().runtime;
+      original.clone().applyToRuntime(runtime);
+      expect((runtime.animation as DeterministicAnimationFrameScheduler).hostFramesRate).toEqual(
+        fps,
       );
     });
+
+    test.each([90, 120])(
+      "configuring a clone via withHostFramesRate never affects the shared addon it was cloned from",
+      (fps: number) => {
+        const defaultFps = 60;
+        const clone = addon.clone() as IDeterministicTimeProviderAddon<unknown, unknown> & {
+          withHostFramesRate(rate: number): unknown;
+        };
+        clone.withHostFramesRate(fps);
+
+        const clonedRuntime = fakeDeterministicRuntime().runtime;
+        clone.applyToRuntime(clonedRuntime);
+        const sharedRuntime = fakeDeterministicRuntime().runtime;
+        addon.applyToRuntime(sharedRuntime);
+
+        expect(
+          (clonedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+        ).toBe(fps);
+        expect(
+          (sharedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+        ).toBe(defaultFps);
+      },
+    );
   });
 });

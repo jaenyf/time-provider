@@ -2,11 +2,49 @@ import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame.ts";
 
 describe("SystemAnimationFrameScheduler", () => {
-  describe("without a native requestAnimationFrame (e.g. plain Node.js)", () => {
-    test("constructor throws a clear error when missing API", () => {
-      expect(() => new SystemAnimationFrameScheduler()).toThrow(
-        "Environment does not support Animation frame API (are you in a browser?)",
-      );
+  function removeAnimationFrameAPI() {
+    delete (globalThis as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame;
+    delete (globalThis as unknown as { cancelAnimationFrame?: unknown }).cancelAnimationFrame;
+  }
+
+  describe("without a native animation-frame API (e.g. plain Node.js)", () => {
+    describe("missing all methods", () => {
+      beforeEach(() => {
+        removeAnimationFrameAPI();
+      });
+      test("constructor throws a clear error when missing API", () => {
+        expect(() => new SystemAnimationFrameScheduler()).toThrow(
+          "Environment does not support Animation frame API (are you in a browser?)",
+        );
+      });
+      describe("missing requestAnimationFrame method", () => {
+        beforeEach(() => {
+          removeAnimationFrameAPI();
+          globalThis.cancelAnimationFrame = () => {};
+        });
+        afterEach(() => {
+          removeAnimationFrameAPI();
+        });
+        test("constructor throws a clear error when missing API", () => {
+          expect(() => new SystemAnimationFrameScheduler()).toThrow(
+            "Environment does not support Animation frame API (are you in a browser?)",
+          );
+        });
+      });
+      describe("missing cancelAnimationFrame method", () => {
+        beforeEach(() => {
+          removeAnimationFrameAPI();
+          globalThis.requestAnimationFrame = (_callback: FrameRequestCallback): number => 0;
+        });
+        afterEach(() => {
+          removeAnimationFrameAPI();
+        });
+        test("constructor throws a clear error when missing API", () => {
+          expect(() => new SystemAnimationFrameScheduler()).toThrow(
+            "Environment does not support Animation frame API (are you in a browser?)",
+          );
+        });
+      });
     });
   });
 
@@ -30,8 +68,7 @@ describe("SystemAnimationFrameScheduler", () => {
       };
     });
     afterEach(() => {
-      delete (globalThis as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame;
-      delete (globalThis as unknown as { cancelAnimationFrame?: unknown }).cancelAnimationFrame;
+      removeAnimationFrameAPI();
     });
 
     test("delegates requestAnimationFrame to the native function", () => {

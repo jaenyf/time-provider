@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
+import "../polyfills.ts";
 import { createTimeProvider as createSystemTimeProvider } from "../../../core/dist/index.mjs";
 import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
 import { plugin as systemPlugin } from "../../../plugin-dayjs/dist/index.mjs";
 import { plugin as deterministicPlugin } from "../../../plugin-dayjs/dist/deterministic.mjs";
 import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.mjs";
 import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
-import "../polyfills.ts";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
@@ -17,7 +17,8 @@ describe("e2e plugin-dayjs", () => {
     const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
     const deterministicCreator = createDeterministicTimeProvider
       .for(deterministicPlugin)
-      .use(deterministicAfapi);
+      .use(deterministicAfapi)
+      .withHostFramesRate(50);
 
     const system = systemCreator.create();
     const fixed = deterministicCreator.asFixed().create();
