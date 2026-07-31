@@ -1,15 +1,7 @@
 <svg width="530.5" height="476" viewBox="-15.23 55 530.45 476" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="smokeFade" gradientUnits="userSpaceOnUse" x1="250" y1="262" x2="260" y2="90">
-      <stop offset="0%" stop-color="#93D1F8" stop-opacity="0.9" />
-      <stop offset="60%" stop-color="#93D1F8" stop-opacity="0.55" />
-      <stop offset="100%" stop-color="#93D1F8" stop-opacity="0" />
-    </linearGradient>
     <style>
       .teepee { fill: #EDF1F5; }
-      .smoke { fill: url(#smokeFade); }
-      .smoke-wisp { fill: none; stroke: #E8935B; stroke-width: 3; stroke-linecap: round; }
-      .side-wisp { fill: none; stroke: #E8935B; stroke-width: 2; stroke-linecap: round; opacity: 0.18; }
       .clock-face { fill: none; stroke: #EDF1F5; stroke-width: 1.5; opacity: 0.32; }
       .hourglass-outline { fill: none; stroke: #EDF1F5; stroke-width: 1.5; opacity: 0.14; }
       .clock-tick { stroke: #EDF1F5; stroke-width: 2; opacity: 0.4; }
@@ -17,12 +9,11 @@
       .hand-second { stroke: #E8935B; stroke-width: 2.5; stroke-linecap: round; }
       .wordmark { font-family: 'Helvetica Neue', Arial, sans-serif; fill: #EDF1F5; }
       .ground-line { stroke: #EDF1F5; stroke-width: 4; }
-      .backing { fill: #1B2029; }
       .center-dot { fill: #EDF1F5; }
     </style>
   </defs>
 
-  <!-- Thin hourglass outline behind everything, slightly larger than the teepee+smoke, echoing the clock circle's discretion -->
+  <!-- Thin hourglass outline behind everything, slightly larger than the teepee+teepee-top, echoing the clock circle's discretion -->
   <path class="hourglass-outline" d="M 155.0 65.0
                                        Q 148.8 141.5 211.0 260.0
                                        Q 146.0 374.0 152.0 448.0
@@ -50,12 +41,8 @@
                           Z
                           M 232 430 L 250 385 L 268 430 Z" />
 
-  <!-- Opaque backing so the smoke's fade-to-transparent top hides the hourglass behind it, rather than revealing it -->
-  <path class="backing" d="M 250.0 260.0 Q 242.4 256.7 244.9 253.3 A 13.0 13.0 0 0 1 224.8 238.6 A 19.0 19.0 0 0 1 212.6 212.9 A 25.0 25.0 0 0 1 198.2 178.0 A 29.0 29.0 0 0 1 208.9 122.0 Q 248.5 82.1 288.1 100.1 A 34.0 34.0 0 0 1 302.7 164.9 A 29.0 29.0 0 0 1 288.8 206.3 A 22.0 22.0 0 0 1 276.7 237.0 A 15.0 15.0 0 0 1 253.9 254.9 Q 256.9 257.5 250.0 260.0 Z" />
-
-  <!-- TOP BULB = smoke: puffs laid on straight tip-to-shoulder lines for a more triangular taper -->
-  <path class="smoke" d="M 250.0 260.0 Q 242.4 256.7 244.9 253.3 A 13.0 13.0 0 0 1 224.8 238.6 A 19.0 19.0 0 0 1 212.6 212.9 A 25.0 25.0 0 0 1 198.2 178.0 A 29.0 29.0 0 0 1 208.9 122.0 Q 248.5 82.1 288.1 100.1 A 34.0 34.0 0 0 1 302.7 164.9 A 29.0 29.0 0 0 1 288.8 206.3 A 22.0 22.0 0 0 1 276.7 237.0 A 15.0 15.0 0 0 1 253.9 254.9 Q 256.9 257.5 250.0 260.0 Z" />
-
+  <!-- TOP BULB = fully transparent (mirrored teepee body removed); only its entrance triangle remains, in the bottom teepee's color -->
+  <path class="teepee" d="M 232 90 L 250 135 L 268 90 Z" />
 
   <!-- Simplified clock face at the waist: circle + 4 cardinal ticks only -->
   <circle class="clock-face" cx="250" cy="260" r="34" />
