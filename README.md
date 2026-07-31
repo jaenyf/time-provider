@@ -23,11 +23,12 @@
  🌳 Tree-shakable |  
  📦 Zero runtime dependencies |  
  🧪 No global monkey-patching |  
- 🛡️ Type-safe
+ 🛡️ Type-safe |  
  ⏱️ Deterministic timers |  
  🕓 Four clock strategies |  
  🌍 Real timezone support (when applicable) |  
- 🔌 Bring your own date library  
+ 🔌 Bring your own date library |  
+ 🧩 Modular & Extensible
 </div>
 
 ## Time is a dependency
@@ -43,7 +44,7 @@ vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no g
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object exposing a clock, a parser, a scheduler, and a performance API swappable per
 call site.  
-_\***animation-frame API** available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
+Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
 
 ## Features
 
