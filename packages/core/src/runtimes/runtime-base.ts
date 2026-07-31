@@ -16,9 +16,14 @@ export class SystemHelper {
   }
 }
 
+/**
+ * Guards for validating time and timezone inputs. Intended for plugin authors implementing
+ * {@link ITimeConverter} or a runtime's clock methods.
+ */
 export class TimeInputValidator {
   /**
    * Guards against invalid values.
+   * @throws if `time` is `undefined`, `null`, `NaN`, or an empty/whitespace-only string.
    */
   /* @__INLINE__ */
   static assertValid<TDate>(
@@ -34,11 +39,17 @@ export class TimeInputValidator {
     }
   }
 
+  /**
+   * Throws an error describing `time` as an invalid time value.
+   */
   /* @__INLINE__ */
   static throwInvalidTimeValue<TDate>(time: string | number | TDate): never {
     throw new Error(`Invalid time value (value was '${String(time)}')`);
   }
 
+  /**
+   * Throws an error describing `timezone` as an invalid timezone value.
+   */
   /* @__INLINE__ */
   static throwInvalidTimezone(timezone: TimezoneDefinition): never {
     throw new Error(`Invalid timezone value (value was '${String(timezone)}')`);

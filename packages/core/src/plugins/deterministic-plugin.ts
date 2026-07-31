@@ -14,14 +14,26 @@ import type {
 export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPlugin<TDate> {
   readonly supportsLocalTime = true as const;
 
+  /**
+   * The concrete manual runtime constructor for this plugin's date library. Subclasses provide
+   * this so {@link createManualRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
   ) => IManualRuntime<TDate>;
+  /**
+   * The concrete fixed runtime constructor for this plugin's date library. Subclasses provide
+   * this so {@link createFixedRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly FixedRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
   ) => IRuntime<TDate>;
+  /**
+   * The concrete sequential runtime constructor for this plugin's date library. Subclasses
+   * provide this so {@link createSequentialRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | number | TDate)[],
@@ -55,14 +67,26 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
 > implements IUtcOnlyDeterministicPlugin<TDate> {
   readonly supportsLocalTime = false as const;
 
+  /**
+   * The concrete manual runtime constructor for this plugin's date library. Subclasses provide
+   * this so {@link createManualRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
   ) => IUtcOnlyManualRuntime<TDate>;
+  /**
+   * The concrete fixed runtime constructor for this plugin's date library. Subclasses provide
+   * this so {@link createFixedRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly FixedRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | number | TDate,
   ) => IUtcOnlyRuntime<TDate>;
+  /**
+   * The concrete sequential runtime constructor for this plugin's date library. Subclasses
+   * provide this so {@link createSequentialRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | number | TDate)[],

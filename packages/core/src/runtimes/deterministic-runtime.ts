@@ -179,9 +179,25 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     performance.initialize(this);
   }
 
+  /**
+   * Returns the current timestamp without advancing the deterministic clock or running due
+   * callbacks, unlike {@link timestampNow}.
+   */
   abstract peekTimestamp(): number;
+  /**
+   * Produces the local `TDate` for the clock read this call represents. Called by
+   * {@link localNow}, after which any callbacks that became due are run.
+   */
   protected abstract localNowImpl(): TDate;
+  /**
+   * Produces the UTC `TDate` for the clock read this call represents. Called by {@link utcNow},
+   * after which any callbacks that became due are run.
+   */
   protected abstract utcNowImpl(): TDate;
+  /**
+   * Produces the timestamp for the clock read this call represents. Called by
+   * {@link timestampNow}, after which any callbacks that became due are run.
+   */
   protected abstract timestampNowImpl(): number;
 
   timestampNow(): number {
@@ -263,6 +279,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
 
   //#region setTimeout
+  /**
+   * Schedules `callback` on this runtime's deterministic clock. See {@link IScheduler} for when
+   * it actually runs.
+   */
   setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
@@ -276,12 +296,20 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       callback,
     ) as unknown as SetTimeoutHandle;
   }
+  /**
+   * Cancels a pending timeout scheduled via {@link setTimeout}. A no-op if it already ran or was
+   * already cleared.
+   */
   clearTimeout(handle: SetTimeoutHandle) {
     BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_TIMEOUT);
   }
   //#endregion setTimeout
 
   //#region setInterval
+  /**
+   * Schedules `callback` to repeat on this runtime's deterministic clock. See {@link IScheduler}
+   * for when each run actually happens.
+   */
   setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
@@ -295,6 +323,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       callback,
     ) as unknown as SetIntervalHandle;
   }
+  /**
+   * Cancels a pending interval scheduled via {@link setInterval}. A no-op if it was already
+   * cleared.
+   */
   clearInterval(handle: SetIntervalHandle) {
     BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_INTERVAL);
   }
@@ -305,8 +337,17 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
  * Base class for a deterministically sequential runtime
  */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
+  /**
+   * The epoch-milliseconds timestamps to step through, one per clock read. Once the last one is
+   * reached, the clock keeps returning it.
+   */
   protected _sequentialTimestamps: number[];
   #sequentialIndex = 0;
+  /**
+   * @param localTimezone the local timezone this runtime is configured with.
+   * @param sequentialTimes the sequence of times to step through, one per clock read.
+   * @param converter the time converter for this runtime's date library, provided by the concrete subclass.
+   */
   constructor(
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | number | TDate)[],
@@ -332,6 +373,9 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     return nowTimestamp;
   }
 
+  /**
+   * Returns the timestamp at the current position in the sequence without advancing it.
+   */
   peekTimestamp(): number {
     return this._sequentialTimestamps.length > 0
       ? this._sequentialTimestamps[this.#sequentialIndex]
@@ -350,6 +394,11 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
  * Base class for a deterministically fixed runtime
  */
 export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDate> {
+  /**
+   * @param localTimezone the local timezone this runtime is configured with.
+   * @param fixedTime the time this runtime's clock stays fixed at.
+   * @param converter the time converter for this runtime's date library, provided by the concrete subclass.
+   */
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | number | TDate,
@@ -358,6 +407,10 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
     super(localTimezone, [fixedTime], converter);
   }
 
+  /**
+   * Never runs due callbacks: on a fixed clock, time never advances, so scheduled callbacks are
+   * never due. See {@link IScheduler}.
+   */
   protected override mayRunDueCallbacks(_nowTimestamp: number): void {
     /* time is frozen */
   }
@@ -370,6 +423,11 @@ export abstract class BaseManualRuntime<TDate>
   extends BaseSequentialRuntime<TDate>
   implements IManualRuntime<TDate>
 {
+  /**
+   * @param localTimezone the local timezone this runtime is configured with.
+   * @param fixedTime the initial time of this runtime's clock, before any {@link advance} call.
+   * @param converter the time converter for this runtime's date library, provided by the concrete subclass.
+   */
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | number | TDate,
@@ -378,6 +436,9 @@ export abstract class BaseManualRuntime<TDate>
     super(localTimezone, [fixedTime], converter);
   }
 
+  /**
+   * Overwrites the current time of this runtime's clock with `time`.
+   */
   protected setDeterminedTime(time: TDate) {
     this._sequentialTimestamps[0] = this.convertToEpochTimestampImpl(time);
   }
@@ -386,6 +447,12 @@ export abstract class BaseManualRuntime<TDate>
     return this;
   }
 
+  /**
+   * Moves this clock's time forward (or backward, for negative values) by the given amount,
+   * applying `years`, `months`, `days`, `hours`, `minutes`, `seconds`, then `milliseconds` in
+   * that fixed order - see {@link IAdvanceOptions}. Any due callbacks are run before this
+   * returns, per {@link IScheduler}.
+   */
   advance(advanceConfiguration: IAdvanceOptions): IManualRuntime<TDate> {
     let time = this.utcNow();
 
@@ -417,11 +484,18 @@ export abstract class BaseManualRuntime<TDate>
     return this;
   }
 
+  /** Returns `time` shifted by `years` years, using the date library's own calendar arithmetic. */
   protected abstract advanceYears(time: TDate, years: number): TDate;
+  /** Returns `time` shifted by `months` months, using the date library's own calendar arithmetic. */
   protected abstract advanceMonths(time: TDate, months: number): TDate;
+  /** Returns `time` shifted by `days` days. */
   protected abstract advanceDays(time: TDate, days: number): TDate;
+  /** Returns `time` shifted by `hours` hours. */
   protected abstract advanceHours(time: TDate, hours: number): TDate;
+  /** Returns `time` shifted by `minutes` minutes. */
   protected abstract advanceMinutes(time: TDate, minutes: number): TDate;
+  /** Returns `time` shifted by `seconds` seconds. */
   protected abstract advanceSeconds(time: TDate, seconds: number): TDate;
+  /** Returns `time` shifted by `milliseconds` milliseconds. */
   protected abstract advanceMilliseconds(time: TDate, milliseconds: number): TDate;
 }

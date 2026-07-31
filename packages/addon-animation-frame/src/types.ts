@@ -1,5 +1,13 @@
+/**
+ * A handle returned by {@link IAnimationFrameApi.requestAnimationFrame}, to be passed to
+ * {@link IAnimationFrameApi.cancelAnimationFrame}.
+ */
 export type AnimationFrameHandle = ReturnType<typeof requestAnimationFrame>;
 
+/**
+ * The shape this addon adds to a composed Time-Provider: an `animation` property exposing
+ * {@link IAnimationFrameApi}.
+ */
 export type WithAnimationFrameApi = { animation: IAnimationFrameApi };
 
 /**

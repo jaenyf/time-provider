@@ -10,11 +10,14 @@
 
 interface IPerformanceProvider {
   /**
-   * Get the current configured clock
+   * Get the current configured performance API.
    */
   get performance(): IPerformance;
 }
 
+/**
+ * The kind of a {@link IPerformanceEntry}.
+ */
 export type PerformanceEntryType =
   | "dns" // Node.js only
   | "function" // Node.js only
@@ -27,17 +30,38 @@ export type PerformanceEntryType =
   | "node" // Node.js only
   | "resource"; // available on the Web
 
+/**
+ * A single entry recorded on a {@link IPerformance} timeline, such as a mark or a measure.
+ */
 export interface IPerformanceEntry {
+  /**
+   * The name given to the entry when it was created.
+   */
   readonly name: string;
+  /**
+   * The kind of entry this is.
+   */
   readonly entryType: PerformanceEntryType;
+  /**
+   * The timestamp, relative to {@link IPerformance.timeOrigin}, at which the entry starts.
+   */
   readonly startTime: number;
+  /**
+   * The duration of the entry, in milliseconds. Always `0` for a mark.
+   */
   readonly duration: number;
 }
 
+/**
+ * A single instant recorded via {@link IPerformance.mark}.
+ */
 export interface IPerformanceMark extends IPerformanceEntry {
   readonly entryType: "mark";
 }
 
+/**
+ * A duration recorded via {@link IPerformance.measure}.
+ */
 export interface IPerformanceMeasure extends IPerformanceEntry {
   readonly entryType: "measure";
 }
@@ -147,6 +171,9 @@ export interface IPerformance {
 // Clock
 // ---------------------------------------------------------------------------
 
+/**
+ * An IANA timezone name (e.g. `"Etc/UTC"`, `"Europe/Paris"`) identifying a local timezone.
+ */
 export type TimezoneDefinition = string;
 
 /**
@@ -158,12 +185,19 @@ export type TimezoneDefinition = string;
  * elements can give a different result than a different application order would.
  */
 export interface IAdvanceOptions {
+  /** Number of years to add (or subtract, if negative). */
   years?: number;
+  /** Number of months to add (or subtract, if negative). */
   months?: number;
+  /** Number of days to add (or subtract, if negative). */
   days?: number;
+  /** Number of hours to add (or subtract, if negative). */
   hours?: number;
+  /** Number of minutes to add (or subtract, if negative). */
   minutes?: number;
+  /** Number of seconds to add (or subtract, if negative). */
   seconds?: number;
+  /** Number of milliseconds to add (or subtract, if negative). */
   milliseconds?: number;
 }
 
@@ -236,8 +270,14 @@ interface ILocalOnlyClock<TDate> extends ITimestampClock {
   get timezone(): TimezoneDefinition;
 }
 
+/**
+ * A clock exposing both UTC and local time, backed by a configurable local timezone.
+ */
 export interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 
+/**
+ * A clock whose time can be moved forward or backward on demand. See {@link IAdvanceable.advance}.
+ */
 export interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManualClock<TDate>> {}
 
 interface IUtcOnlyManualClock<TDate>
@@ -274,7 +314,7 @@ export interface IUtcOnlyParser<TDate> {
 }
 
 /**
- * A parser that only exposes parsing to UTC.
+ * A parser that only exposes parsing to local time.
  */
 interface ILocalOnlyParser<TDate> {
   /**
@@ -289,6 +329,9 @@ interface ILocalOnlyParser<TDate> {
   parseToLocal(time: string | number | TDate): TDate;
 }
 
+/**
+ * Parses raw input into either UTC or local `TDate` instances.
+ */
 export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<TDate> {}
 //#endregion
 
@@ -360,11 +403,23 @@ interface ISchedulerProvider {
  * Handles the time conversions for a Runtime. This is only used for Plugins.
  */
 export interface ITimeConverter<TDate> {
+  /**
+   * Converts `time` to epoch milliseconds.
+   */
   convertToTimestamp(time: string | number | TDate): number;
+  /**
+   * Converts `time` to a `TDate` instance expressed in UTC.
+   */
   convertToUtcDate(time: string | number | TDate): TDate;
+  /**
+   * Converts `time` to a `TDate` instance expressed in the given local `timezone`.
+   */
   convertToLocalDate(timezone: TimezoneDefinition, time: string | number | TDate): TDate;
 }
 
+/**
+ * A runtime backed by a timezone-aware clock.
+ */
 export interface IRuntime<TDate>
   extends IScheduler, IClock<TDate>, IParser<TDate>, ITimeProvider<TDate> {}
 
@@ -404,6 +459,10 @@ export interface IUtcOnlyManualRuntime<TDate>
 // Time provider facades
 // ---------------------------------------------------------------------------
 
+/**
+ * The public facade of a Time-Provider: exposes its `clock`, `scheduler`, `parser`, and
+ * `performance`, backed by a timezone-aware clock.
+ */
 export interface ITimeProvider<TDate>
   extends
     IClockProvider<IClock<TDate>>,
@@ -411,6 +470,9 @@ export interface ITimeProvider<TDate>
     IParserProvider<IParser<TDate>>,
     IPerformanceProvider {}
 
+/**
+ * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
+ */
 export interface IUtcOnlyTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyClock<TDate>>,
@@ -418,6 +480,9 @@ export interface IUtcOnlyTimeProvider<TDate>
     IParserProvider<IUtcOnlyParser<TDate>>,
     IPerformanceProvider {}
 
+/**
+ * The public facade of a Time-Provider backed by a manual (advanceable), timezone-aware clock.
+ */
 export interface IManualTimeProvider<TDate>
   extends
     IClockProvider<IManualClock<TDate>>,
@@ -425,6 +490,10 @@ export interface IManualTimeProvider<TDate>
     IParserProvider<IParser<TDate>>,
     IPerformanceProvider {}
 
+/**
+ * The public facade of a Time-Provider backed by a manual (advanceable), timezone-naive
+ * (UTC only) clock.
+ */
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
     IClockProvider<IUtcOnlyManualClock<TDate>>,

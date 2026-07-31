@@ -44,6 +44,9 @@ class SystemPluggedTimeProviderCreator<TDate>
   }
 }
 
+/**
+ * Default implementation of {@link ITimeProviderCreator}, exposed as the {@link createTimeProvider} singleton.
+ */
 export class TimeProviderCreator implements ITimeProviderCreator {
   /*
     The underlying runtime objects always have the full capability regardless of which overload matched.
@@ -58,4 +61,12 @@ export class TimeProviderCreator implements ITimeProviderCreator {
   }
 }
 
+/**
+ * Entry point for building a system (real time) Time-Provider.
+ *
+ * @example
+ * ```ts
+ * const timeProvider = createTimeProvider.for(dayjsPlugin).create();
+ * ```
+ */
 export const createTimeProvider: ITimeProviderCreator = new TimeProviderCreator();

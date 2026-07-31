@@ -12,6 +12,10 @@ import type {
 export abstract class BaseSystemPlugin<TDate> implements ISystemPlugin<TDate> {
   readonly supportsLocalTime = true as const;
 
+  /**
+   * The concrete runtime constructor for this plugin's date library. Subclasses provide this
+   * so {@link createSystemRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly SystemRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
   ) => IRuntime<TDate>;
@@ -27,6 +31,10 @@ export abstract class BaseSystemPlugin<TDate> implements ISystemPlugin<TDate> {
 export abstract class BaseUtcOnlySystemPlugin<TDate> implements IUtcOnlySystemPlugin<TDate> {
   readonly supportsLocalTime = false as const;
 
+  /**
+   * The concrete runtime constructor for this plugin's date library. Subclasses provide this
+   * so {@link createSystemRuntime} can instantiate the right runtime.
+   */
   protected abstract readonly SystemRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
   ) => IUtcOnlyRuntime<TDate>;
