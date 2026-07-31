@@ -151,39 +151,54 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     performance.initialize(this);
   }
 
-  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
-    millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
+  abstract peekTimestamp(): number;
+  protected abstract localNowImpl(): TDate;
+  protected abstract utcNowImpl(): TDate;
+  protected abstract timestampNowImpl(): number;
 
-    const now = this.peekTimestamp();
-    const runAt = now + millisecondsDelay;
-    const entry: TimeoutEntry = {
-      runAt,
-      seq: this.#nextTimeoutSeq++,
-      discarded: false,
-      callback,
-      owner: this.#timeoutQueue,
-    };
-    this.#timeoutQueue.push(entry);
-    // `now` can't have moved since any earlier call, so nothing already in the map can have newly
-    // become due except (possibly) this brand-new entry - the scan below handles that correctly,
-    // and cheaply (a single peek()) when, as usual, nothing is actually due yet.
-    this.mayRunTimeoutCallbacks(now);
-    // The entry doubles as its own opaque handle - see the `owner` field's doc comment on
-    // DueEntry for why that's safe.
-    return entry as unknown as SetTimeoutHandle;
+  timestampNow(): number {
+    return this.timestampNowImpl();
   }
-  clearTimeout(handle: SetTimeoutHandle) {
-    const entry = handle as unknown as TimeoutEntry;
-    if (entry.owner === this.#timeoutQueue) {
+  localNow(): TDate {
+    return this.localNowImpl();
+  }
+  utcNow(): TDate {
+    return this.utcNowImpl();
+  }
+
+  //#region heap management
+  private static mayCompactQueue<TEntry extends DueEntry>(
+    queue: DueHeap<TEntry>,
+    callCount: number,
+  ): number {
+    if (++callCount >= BaseDeterministicRuntime.COMPACTION_INTERVAL) {
+      queue.compact();
+      callCount = 0;
+    }
+    return callCount;
+  }
+  private static clearDueHandle<THandle, TEntry extends DueEntry>(
+    handle: THandle,
+    queue: DueHeap<TEntry>,
+  ) {
+    const entry = handle as unknown as TEntry;
+    if (entry.owner === queue) {
       entry.discarded = true;
     }
   }
-  protected mayRunTimeoutCallbacks(nowTimestamp: number): void {
-    if (++this.#timeoutCallCount >= BaseDeterministicRuntime.COMPACTION_INTERVAL) {
-      this.#timeoutQueue.compact();
-      this.#timeoutCallCount = 0;
-    }
-
+  /**
+   * Runs any pending punctual callbacks
+   * @param now
+   * @param queue
+   * @param callCount
+   * @returns the updated callCount for compaction to check against
+   */
+  private static mayRunPunctualCallbacks<TEntry extends DueEntry>(
+    now: number,
+    queue: DueHeap<TEntry>,
+    callCount: number,
+  ): number {
+    callCount = BaseDeterministicRuntime.mayCompactQueue(queue, callCount);
     /*
       Peeking the heap's root instead of scanning the whole map means a `now()` call where
       nothing is due - the common case - costs O(1), not O(N). Entries are popped in true
@@ -191,15 +206,62 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       order a real timer queue would, not in Map insertion order.
     */
     let due: TimeoutEntry | undefined;
-    const queue = this.#timeoutQueue;
-    while ((due = queue.peek()) !== undefined && due.runAt <= nowTimestamp) {
+    while ((due = queue.peek()) !== undefined && due.runAt <= now) {
       queue.pop();
       if (due.discarded) continue;
       due.discarded = true;
       due.callback();
     }
-  }
 
+    return callCount;
+  }
+  private static queuePunctualCallback<THandle>(
+    nowTimestamp: number,
+    delayMs: number,
+    callback: () => void,
+    queue: DueHeap<TimeoutEntry>,
+    getAndIncrSeq: () => number,
+    duesCheck: () => void,
+  ): THandle {
+    const dueTime = nowTimestamp + delayMs;
+    const entry: TimeoutEntry = {
+      runAt: dueTime,
+      seq: getAndIncrSeq(),
+      discarded: false,
+      callback,
+      owner: queue,
+    };
+    queue.push(entry);
+    duesCheck();
+    return entry as unknown as THandle;
+  }
+  //#endregion heap management
+
+  //#region setTimeout
+  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
+    const now = this.peekTimestamp();
+    return BaseDeterministicRuntime.queuePunctualCallback(
+      now,
+      Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0),
+      callback,
+      this.#timeoutQueue,
+      () => this.#nextTimeoutSeq++,
+      () => this.mayRunTimeoutCallbacks(now),
+    );
+  }
+  clearTimeout(handle: SetTimeoutHandle) {
+    BaseDeterministicRuntime.clearDueHandle(handle, this.#timeoutQueue);
+  }
+  protected mayRunTimeoutCallbacks(nowTimestamp: number): void {
+    this.#timeoutCallCount = BaseDeterministicRuntime.mayRunPunctualCallbacks(
+      nowTimestamp,
+      this.#timeoutQueue,
+      this.#timeoutCallCount,
+    );
+  }
+  //#endregion setTimeout
+
+  //#region setInterval
   setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
     millisecondsDelay = Math.max(0, millisecondsDelay !== undefined ? millisecondsDelay : 0);
     const now = this.peekTimestamp();
@@ -218,16 +280,13 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     return entry as unknown as SetIntervalHandle;
   }
   clearInterval(handle: SetIntervalHandle) {
-    const entry = handle as unknown as IntervalEntry;
-    if (entry.owner === this.#intervalQueue) {
-      entry.discarded = true;
-    }
+    BaseDeterministicRuntime.clearDueHandle(handle, this.#intervalQueue);
   }
   protected mayRunIntervalCallbacks(nowTimestamp: number): void {
-    if (++this.#intervalCallCount >= BaseDeterministicRuntime.COMPACTION_INTERVAL) {
-      this.#intervalQueue.compact();
-      this.#intervalCallCount = 0;
-    }
+    this.#intervalCallCount = BaseDeterministicRuntime.mayCompactQueue(
+      this.#intervalQueue,
+      this.#intervalCallCount,
+    );
 
     /*
       Several intervals can each be due multiple times within the same time advance, popping/re-pushing in true chronological order matters here.
@@ -249,21 +308,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       callback();
     }
   }
-
-  timestampNow(): number {
-    return this.timestampNowImpl();
-  }
-  localNow(): TDate {
-    return this.localNowImpl();
-  }
-  utcNow(): TDate {
-    return this.utcNowImpl();
-  }
-
-  abstract peekTimestamp(): number;
-  protected abstract localNowImpl(): TDate;
-  protected abstract utcNowImpl(): TDate;
-  protected abstract timestampNowImpl(): number;
+  //#endregion setInterval
 }
 
 /**
@@ -325,10 +370,13 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
   ) {
     super(localTimezone, [fixedTime], converter);
   }
-  /* time is frozen */
-  protected override mayRunTimeoutCallbacks(_nowTimestamp: number): void {}
-  /* time is frozen */
-  protected override mayRunIntervalCallbacks(_nowTimestamp: number): void {}
+
+  protected override mayRunTimeoutCallbacks(_nowTimestamp: number): void {
+    /* time is frozen */
+  }
+  protected override mayRunIntervalCallbacks(_nowTimestamp: number): void {
+    /* time is frozen */
+  }
 }
 
 /**

@@ -1,3 +1,4 @@
+export { AddonHelper } from "./addons/addon-helper.ts";
 export type {
   TimezoneDefinition,
   IClock,
@@ -29,4 +30,5 @@ export type {
   ISystemPluggedTimeProviderCreator,
   IUtcOnlySystemPluggedTimeProviderCreator,
   ITimeProviderCreator,
+  ISystemTimeProviderAddon,
 } from "./builders/builders.ts";

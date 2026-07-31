@@ -5,6 +5,11 @@
   "include-component-in-tag": true,
   "group-pull-request-title-pattern": "chore${scope}: next hotfix release${component} ${version}",
   "packages": {
+    "packages/addon-animation-frame": {
+      "release-type": "node",
+      "component": "addon-animation-frame",
+      "versioning": "always-bump-patch"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core",

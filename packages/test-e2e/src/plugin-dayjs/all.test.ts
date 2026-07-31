@@ -1,8 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
+import "../polyfills.ts";
 import { createTimeProvider as createSystemTimeProvider } from "../../../core/dist/index.mjs";
 import { createTimeProvider as createDeterministicTimeProvider } from "../../../core/dist/deterministic.mjs";
 import { plugin as systemPlugin } from "../../../plugin-dayjs/dist/index.mjs";
 import { plugin as deterministicPlugin } from "../../../plugin-dayjs/dist/deterministic.mjs";
+import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.mjs";
+import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
@@ -11,8 +14,11 @@ dayjs.extend(timezone);
 
 describe("e2e plugin-dayjs", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const systemCreator = createSystemTimeProvider.for(systemPlugin);
-    const deterministicCreator = createDeterministicTimeProvider.for(deterministicPlugin);
+    const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
+    const deterministicCreator = createDeterministicTimeProvider
+      .for(deterministicPlugin)
+      .use(deterministicAfapi)
+      .withHostFramesRate(50);
 
     const system = systemCreator.create();
     const fixed = deterministicCreator.asFixed().create();
@@ -27,6 +33,9 @@ describe("e2e plugin-dayjs", () => {
     expect(system.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(system.performance.now()).toBeDefined();
     expect(system.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      system.animation.cancelAnimationFrame(system.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(fixed.clock.utcNow().toISOString()).toBeDefined();
     expect(fixed.clock.localNow().toISOString()).toBeDefined();
@@ -36,6 +45,9 @@ describe("e2e plugin-dayjs", () => {
     expect(fixed.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(fixed.performance.now()).toBeDefined();
     expect(fixed.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      fixed.animation.cancelAnimationFrame(fixed.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(manual.clock.utcNow().toISOString()).toBeDefined();
     expect(manual.clock.localNow().toISOString()).toBeDefined();
@@ -45,6 +57,9 @@ describe("e2e plugin-dayjs", () => {
     expect(manual.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(manual.performance.now()).toBeDefined();
     expect(manual.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      manual.animation.cancelAnimationFrame(manual.animation.requestAnimationFrame(() => {})),
+    ).not.toThrow();
 
     expect(sequential.clock.utcNow().toISOString()).toBeDefined();
     expect(sequential.clock.localNow().toISOString()).toBeDefined();
@@ -54,6 +69,11 @@ describe("e2e plugin-dayjs", () => {
     expect(sequential.parser.parseToLocal(dayjs.utc().toISOString()).unix()).toBeDefined();
     expect(sequential.performance.now()).toBeDefined();
     expect(sequential.performance.timeOrigin).toBeDefined();
+    expect(() =>
+      sequential.animation.cancelAnimationFrame(
+        sequential.animation.requestAnimationFrame(() => {}),
+      ),
+    ).not.toThrow();
 
     expect(() => {
       system.scheduler.clearInterval(system.scheduler.setInterval(() => {}));

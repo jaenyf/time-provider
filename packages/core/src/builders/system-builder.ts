@@ -6,6 +6,7 @@ import type {
 } from "../types/types.ts";
 import type {
   ISystemPluggedTimeProviderCreator,
+  ISystemTimeProviderAddon,
   ITimeProviderCreator,
   IUtcOnlySystemPluggedTimeProviderCreator,
 } from "./builders.ts";
@@ -17,16 +18,29 @@ class SystemPluggedTimeProviderCreator<TDate>
   extends BaseTimeProviderCreator<AnySystemPlugin<TDate>>
   implements ISystemPluggedTimeProviderCreator<TDate>
 {
+  #addons: ISystemTimeProviderAddon<TDate, unknown>[] = [];
+
   constructor(plugin: AnySystemPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
+  use<TAddonExtra, TBuilderExtra = unknown>(
+    addon: ISystemTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra {
+    const instance = addon.clone();
+    this.#addons.push(instance as ISystemTimeProviderAddon<TDate, unknown>);
+    Object.assign(this, instance);
+    return this as unknown as ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra;
+  }
+
   create(): ITimeProvider<TDate> {
-    return Object.freeze(
-      this.plugin.supportsLocalTime
-        ? this.plugin.createSystemRuntime(this.localTimezone)
-        : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>),
-    );
+    const runtime = this.plugin.supportsLocalTime
+      ? this.plugin.createSystemRuntime(this.localTimezone)
+      : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>);
+    for (const addon of this.#addons) {
+      addon.applyToRuntime(runtime);
+    }
+    return Object.freeze(runtime);
   }
 }
 

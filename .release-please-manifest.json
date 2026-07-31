@@ -1,4 +1,5 @@
 {
+  "packages/addon-animation-frame": "0.0.1",
   "packages/core": "1.2.0",
   "packages/plugin-dayjs": "0.3.0",
   "packages/plugin-luxon": "0.3.0",

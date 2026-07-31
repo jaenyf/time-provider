@@ -1,3 +1,4 @@
+export { AddonHelper } from "./addons/addon-helper.ts";
 export type { IDeterministicPlugin, IUtcOnlyDeterministicPlugin } from "./types/types.ts";
 export {
   BaseDeterministicPlugin,
@@ -9,4 +10,7 @@ export {
   BaseSequentialRuntime,
 } from "./runtimes/deterministic-runtime.ts";
 export { createDeterministicTimeProvider as createTimeProvider } from "./builders/deterministic-builder.ts";
-export type { IDeterministicPluggedTimeProviderCreator } from "./builders/builders.ts";
+export type {
+  IDeterministicPluggedTimeProviderCreator,
+  IDeterministicTimeProviderAddon,
+} from "./builders/builders.ts";

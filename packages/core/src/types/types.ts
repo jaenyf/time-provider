@@ -348,6 +348,7 @@ interface ISchedulerProvider {
    */
   get scheduler(): IScheduler;
 }
+
 //#endregion
 
 //#region Runtime

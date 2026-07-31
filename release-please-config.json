@@ -4,6 +4,11 @@
   "separate-pull-requests": false,
   "include-component-in-tag": true,
   "packages": {
+    "packages/addon-animation-frame": {
+      "release-type": "node",
+      "component": "addon-animation-frame",
+      "versioning": "always-bump-minor"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core",
