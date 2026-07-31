@@ -69,7 +69,7 @@ the builder right after `.use(...)`:
 const manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .use(deterministicAddon)
-  .withHostFramesRate(90) //now simulating an amination frame API with 90 FPS
+  .withHostFramesRate(90) //now simulating an animation frame API with 90 FPS
   .asManual()
   .withInitialTime(0)
   .create();
