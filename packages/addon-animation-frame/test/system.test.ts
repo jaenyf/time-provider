@@ -2,6 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import type { ITimeProvider } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame.ts";
+import "./polyfills.ts";
 
 type FakeRuntime = ITimeProvider<unknown> & { animation?: unknown };
 
