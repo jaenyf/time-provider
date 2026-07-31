@@ -738,6 +738,39 @@ export function testSequentialRuntime<TDate>(
             sut.utcNow();
             expect(fireCount).toBe(compactionThreshold / 2);
           });
+          test("clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher (utcNow)", () => {
+            const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 61]);
+            const order: string[] = [];
+            sut.setTimeout(() => order.push("1"), 1);
+            sut.setTimeout(() => order.push("5"), 5);
+            sut.setTimeout(() => order.push("2"), 2);
+            const toClear = sut.setTimeout(() => order.push("50"), 50);
+            sut.setTimeout(() => order.push("60"), 60);
+            sut.setTimeout(() => order.push("3"), 3);
+            sut.setTimeout(() => order.push("4"), 4);
+            sut.clearTimeout(toClear);
+            sut.utcNow();
+            sut.utcNow();
+            expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);
+          });
+          test.skipIf(!plugin.supportsLocalTime)(
+            "clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher (localNow)",
+            () => {
+              const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 61]);
+              const order: string[] = [];
+              sut.setTimeout(() => order.push("1"), 1);
+              sut.setTimeout(() => order.push("5"), 5);
+              sut.setTimeout(() => order.push("2"), 2);
+              const toClear = sut.setTimeout(() => order.push("50"), 50);
+              sut.setTimeout(() => order.push("60"), 60);
+              sut.setTimeout(() => order.push("3"), 3);
+              sut.setTimeout(() => order.push("4"), 4);
+              sut.clearTimeout(toClear);
+              (sut.clock as IClock<TDate>).localNow();
+              (sut.clock as IClock<TDate>).localNow();
+              expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);
+            },
+          );
         });
       });
     });
