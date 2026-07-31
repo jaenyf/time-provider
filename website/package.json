@@ -1,0 +1,30 @@
+{
+  "name": "website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "~0.5.1",
+    "@time-provider/addon-animation-frame": "workspace:*",
+    "@time-provider/core": "workspace:*",
+    "@time-provider/plugin-dayjs": "workspace:*",
+    "@time-provider/plugin-luxon": "workspace:*",
+    "@time-provider/plugin-moment": "workspace:*",
+    "@time-provider/plugin-moment-timezone": "workspace:*",
+    "@time-provider/plugin-native": "workspace:*",
+    "@time-provider/plugin-temporal": "workspace:*",
+    "dayjs": "~1.8.15",
+    "luxon": "^3.7.2",
+    "moment": "~2.30.1",
+    "moment-timezone": "~0.6.3"
+  },
+  "devDependencies": {
+    "shiki": "2.5.0",
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.13"
+  }
+}
