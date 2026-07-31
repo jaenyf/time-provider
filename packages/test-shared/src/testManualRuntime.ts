@@ -487,6 +487,21 @@ export function testManualRuntime<TDate>(
             sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
             expect(fireCount).toBe(compactionThreshold / 2);
           });
+          test("clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher", () => {
+            const sut = createSUT();
+            const order: string[] = [];
+            sut.setTimeout(() => order.push("1"), 1);
+            sut.setTimeout(() => order.push("5"), 5);
+            sut.setTimeout(() => order.push("2"), 2);
+            const toClear = sut.setTimeout(() => order.push("50"), 50);
+            sut.setTimeout(() => order.push("60"), 60);
+            sut.setTimeout(() => order.push("3"), 3);
+            sut.setTimeout(() => order.push("4"), 4);
+            sut.clearTimeout(toClear);
+            sut.advance({ milliseconds: 61 });
+            sut.utcNow();
+            expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);
+          });
         });
       });
     });
