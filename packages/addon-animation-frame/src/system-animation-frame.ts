@@ -4,7 +4,14 @@ function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
 }
 
+/**
+ * Implements {@link IAnimationFrameApi} on top of the host's native
+ * `requestAnimationFrame`/`cancelAnimationFrame`.
+ */
 export class SystemAnimationFrameScheduler implements IAnimationFrameApi {
+  /**
+   * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
+   */
   constructor() {
     if (typeof requestAnimationFrame !== "function") {
       throwAnimationFrameApiNotSupported();

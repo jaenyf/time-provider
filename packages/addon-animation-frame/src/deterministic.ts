@@ -9,10 +9,26 @@ export type {
 } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame.ts";
 
+/**
+ * Extra builder method contributed by the deterministic animation-frame addon when composed via
+ * `createTimeProvider.for(plugin).use(addon)`.
+ */
 export interface IAnimationFrameBuilderExtra {
+  /**
+   * Sets the simulated host display refresh rate (in Hz) driving `requestAnimationFrame` on the
+   * resulting Time-Provider's `animation` API. Defaults to 60.
+   * @param rate the refresh rate in Hz.
+   * @returns self, for chaining with the rest of the builder.
+   */
   withHostFramesRate<TBuilder>(this: TBuilder, rate: number): TBuilder;
 }
 
+/**
+ * Creates a new instance of the deterministic animation-frame addon. Most consumers should use
+ * the {@link addon} singleton instead; call this directly only when a fresh, independently
+ * configured instance is needed (e.g. to compose it with two different Time-Providers using
+ * different {@link IAnimationFrameBuilderExtra.withHostFramesRate} settings).
+ */
 export function createAddon<TDate>(): IDeterministicTimeProviderAddon<
   TDate,
   WithAnimationFrameApi
@@ -46,6 +62,11 @@ export function createAddon<TDate>(): IDeterministicTimeProviderAddon<
   };
 }
 
+/**
+ * The animation-frame addon for a deterministic Time-Provider. Compose it with
+ * `createTimeProvider.for(plugin).use(addon)` to add an `animation` property backed by the
+ * runtime's own simulated clock instead of the host's real display refresh.
+ */
 export const addon: IDeterministicTimeProviderAddon<unknown, WithAnimationFrameApi> &
   IAnimationFrameBuilderExtra = createAddon();
 export default addon;

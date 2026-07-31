@@ -11,6 +11,9 @@ import type {
 } from "../types/types.ts";
 
 interface ICreateTimeProvider<TProvider> {
+  /**
+   * Builds the Time-Provider from the options accumulated so far.
+   */
   create(): TProvider;
 }
 
@@ -35,6 +38,10 @@ interface IComposeWithTimezone<TCreator> {
   withDefaultTimezone(): TCreator;
 }
 
+/**
+ * An addon that extends a system (real time) Time-Provider with extra, addon-specific
+ * commodities (`TExtra`).
+ */
 export interface ISystemTimeProviderAddon<TDate, TExtra> {
   /**
    * Extends a system runtime.
@@ -48,6 +55,10 @@ export interface ISystemTimeProviderAddon<TDate, TExtra> {
   clone(): ISystemTimeProviderAddon<TDate, TExtra>;
 }
 
+/**
+ * An addon that extends a deterministic (manual/fixed/sequential) Time-Provider with extra,
+ * addon-specific commodities (`TExtra`).
+ */
 export interface IDeterministicTimeProviderAddon<TDate, TExtra> {
   /**
    * Extends a deterministic runtime.
@@ -86,6 +97,9 @@ interface IAsRuntimeCreators<TFixed, TManual, TSequential> {
   asSequential(): TSequential;
 }
 
+/**
+ * Builds a deterministic Time-Provider whose clock stays fixed at a single point in time.
+ */
 export interface IFixedTimeProviderCreator<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
@@ -96,6 +110,9 @@ export interface IFixedTimeProviderCreator<TDate, TExtra = unknown>
   withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a deterministic, UTC only Time-Provider whose clock stays fixed at a single point in time.
+ */
 interface IUtcOnlyFixedTimeProviderCreator<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyTimeProvider<TDate> & TExtra
 > {
@@ -107,6 +124,10 @@ interface IUtcOnlyFixedTimeProviderCreator<TDate, TExtra = unknown> extends ICre
   ): IUtcOnlyFixedTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a deterministic Time-Provider whose clock can be moved forward or backward on demand
+ * via {@link IAdvanceable.advance}.
+ */
 export interface IManualTimeProviderCreator<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IManualTimeProvider<TDate> & TExtra>,
@@ -119,6 +140,10 @@ export interface IManualTimeProviderCreator<TDate, TExtra = unknown>
   ): IManualTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a deterministic, UTC only Time-Provider whose clock can be moved forward or backward
+ * on demand via {@link IAdvanceable.advance}.
+ */
 interface IUtcOnlyManualTimeProviderCreator<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyManualTimeProvider<TDate> & TExtra
 > {
@@ -130,6 +155,10 @@ interface IUtcOnlyManualTimeProviderCreator<TDate, TExtra = unknown> extends ICr
   ): IUtcOnlyManualTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a deterministic Time-Provider that steps through a fixed sequence of times, one per
+ * clock read.
+ */
 export interface ISequentialTimeProviderCreator<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
@@ -142,6 +171,10 @@ export interface ISequentialTimeProviderCreator<TDate, TExtra = unknown>
   ): ISequentialTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a deterministic, UTC only Time-Provider that steps through a fixed sequence of times,
+ * one per clock read.
+ */
 interface IUtcOnlySequentialTimeProviderCreator<
   TDate,
   TExtra = unknown,
@@ -154,6 +187,9 @@ interface IUtcOnlySequentialTimeProviderCreator<
   ): IUtcOnlySequentialTimeProviderCreator<TDate, TExtra>;
 }
 
+/**
+ * Builds a system (real time) Time-Provider for a given plugin, optionally composed with addons.
+ */
 export interface ISystemPluggedTimeProviderCreator<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
@@ -167,6 +203,10 @@ export interface ISystemPluggedTimeProviderCreator<TDate, TExtra = unknown>
   ): ISystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
+/**
+ * Builds a system (real time), UTC only Time-Provider for a given plugin, optionally composed
+ * with addons.
+ */
 export interface IUtcOnlySystemPluggedTimeProviderCreator<
   TDate,
   TExtra = unknown,
@@ -180,6 +220,11 @@ export interface IUtcOnlySystemPluggedTimeProviderCreator<
   ): IUtcOnlySystemPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
+/**
+ * Entry point for building a deterministic Time-Provider for a given plugin: pick a strategy
+ * with {@link IAsRuntimeCreators.asFixed}, {@link IAsRuntimeCreators.asManual}, or
+ * {@link IAsRuntimeCreators.asSequential}, optionally composing addons first with {@link use}.
+ */
 export interface IDeterministicPluggedTimeProviderCreator<TDate, TExtra = unknown>
   extends
     IComposeWithTimezone<IDeterministicPluggedTimeProviderCreator<TDate, TExtra>>,
@@ -197,6 +242,11 @@ export interface IDeterministicPluggedTimeProviderCreator<TDate, TExtra = unknow
   ): IDeterministicPluggedTimeProviderCreator<TDate, TExtra & TAddonExtra> & TBuilderExtra;
 }
 
+/**
+ * Entry point for building a deterministic, UTC only Time-Provider for a given plugin: pick a
+ * strategy with {@link IAsRuntimeCreators.asFixed}, {@link IAsRuntimeCreators.asManual}, or
+ * {@link IAsRuntimeCreators.asSequential}, optionally composing addons first with {@link use}.
+ */
 export interface IUtcOnlyDeterministicPluggedTimeProviderCreator<
   TDate,
   TExtra = unknown,

@@ -1,11 +1,18 @@
 import type { IScheduler, SetTimeoutHandle } from "@time-provider/core";
 import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
+/**
+ * Implements {@link IAnimationFrameApi} on top of a deterministic runtime's {@link IScheduler},
+ * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
+ */
 export class DeterministicAnimationFrameScheduler implements IAnimationFrameApi {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
   #scheduler: IScheduler;
 
+  /**
+   * @param scheduler the deterministic runtime's scheduler used to simulate frame callbacks.
+   */
   constructor(scheduler: IScheduler) {
     this.#scheduler = scheduler;
   }

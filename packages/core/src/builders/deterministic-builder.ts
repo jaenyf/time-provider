@@ -178,5 +178,14 @@ class DeterministicTimeProviderCreator implements IDeterministicTimeProviderCrea
   }
 }
 
+/**
+ * Entry point for building a deterministic (manual/fixed/sequential) Time-Provider. Exposed by
+ * the package as `createTimeProvider` from the `@time-provider/core/deterministic` entry point.
+ *
+ * @example
+ * ```ts
+ * const timeProvider = createTimeProvider.for(dayjsPlugin).asFixed().withFixedTime("2024-01-01").create();
+ * ```
+ */
 export const createDeterministicTimeProvider: IDeterministicTimeProviderCreator =
   new DeterministicTimeProviderCreator();
