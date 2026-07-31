@@ -136,26 +136,8 @@ class DeterministicPluggedTimeProviderCreator<TDate>
   use<TAddonExtra, TBuilderExtra = unknown>(
     addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
   ): IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra {
-    /*
-      If the addon supports cloning, compose the clone instead of the addon
-      argument itself - keeps a shared/singleton addon export (with its own
-      chainable configuration methods) safe to import and compose more than
-      once, since each composition then configures its own independent
-      instance instead of the same shared one - see
-      IDeterministicTimeProviderAddon.clone.
-    */
-    const instance = addon.clone ? addon.clone() : addon;
+    const instance = addon.clone();
     this.#addons.push(instance as IDeterministicTimeProviderAddon<TDate, unknown>);
-    /*
-      Copies any extra own members the addon instance carries beyond
-      applyToRuntime (e.g. a withHostFramesRate(rate) configuration
-      method) onto this builder, so they can be chained right after
-      .use(addon) - see TBuilderExtra on
-      IDeterministicPluggedTimeProviderCreator.use. An addon whose extra
-      member names collide with this builder's own (create, use, asManual,
-      ...) would silently override them - addon authors are expected to
-      avoid that.
-    */
     Object.assign(this, instance);
     return this as unknown as IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra> &
       TBuilderExtra;

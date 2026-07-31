@@ -36,18 +36,22 @@ interface IComposeWithTimezone<TCreator> {
 }
 
 export interface ISystemTimeProviderAddon<TDate, TExtra> {
-  /** Extends a system runtime. */
-  applyToSystem<TRuntime extends ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>>(
+  /**
+   * Extends a system runtime.
+   */
+  applyToRuntime<TRuntime extends ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>>(
     runtime: TRuntime,
   ): TRuntime & TExtra;
   /**
-   * Clone an addon instance in order to prevent shared/singleton setup leaking in other instances.
+   * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
    */
   clone(): ISystemTimeProviderAddon<TDate, TExtra>;
 }
 
 export interface IDeterministicTimeProviderAddon<TDate, TExtra> {
-  /** Extends a deterministic runtime. */
+  /**
+   * Extends a deterministic runtime.
+   */
   applyToRuntime<
     TRuntime extends
       | ITimeProvider<TDate>
@@ -58,7 +62,7 @@ export interface IDeterministicTimeProviderAddon<TDate, TExtra> {
     runtime: TRuntime,
   ): TRuntime & TExtra;
   /**
-   * Clone an addon instance in order to prevent shared/singleton setup leaking in other instances.
+   * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
    */
   clone(): IDeterministicTimeProviderAddon<TDate, TExtra>;
 }

@@ -18,13 +18,13 @@ function fakeSystemRuntime(): FakeRuntime {
 describe("animationFrameAddon (system)", () => {
   test("applyToSystem defines .animation with a SystemAnimationFrameScheduler", () => {
     const runtime = fakeSystemRuntime();
-    addon.applyToSystem(runtime);
+    addon.applyToRuntime(runtime);
     expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
   });
 
   test("applyToSystem's defined property is enumerable but not writable", () => {
     const runtime = fakeSystemRuntime();
-    addon.applyToSystem(runtime);
+    addon.applyToRuntime(runtime);
     const descriptor = Object.getOwnPropertyDescriptor(runtime, "animation");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);

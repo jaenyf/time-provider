@@ -1,32 +1,23 @@
-import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
+import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
 }
 
-export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
-  private readonly _environmentChecked: boolean = false;
+export class SystemAnimationFrameScheduler implements IAnimationFrameApi {
   constructor() {
-    this._environmentChecked = true;
     if (typeof requestAnimationFrame !== "function") {
-      this._environmentChecked = false;
+      throwAnimationFrameApiNotSupported();
     }
     if (typeof cancelAnimationFrame !== "function") {
-      this._environmentChecked = false;
+      throwAnimationFrameApiNotSupported();
     }
   }
 
   requestAnimationFrame(callback: () => void): AnimationFrameHandle {
-    if (this._environmentChecked) {
-      return requestAnimationFrame(callback);
-    }
-    return throwAnimationFrameApiNotSupported();
+    return requestAnimationFrame(callback);
   }
   cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    if (this._environmentChecked) {
-      cancelAnimationFrame(handle);
-      return;
-    }
-    throwAnimationFrameApiNotSupported();
+    cancelAnimationFrame(handle);
   }
 }

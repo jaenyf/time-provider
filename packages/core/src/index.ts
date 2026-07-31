@@ -1,3 +1,4 @@
+export { AddonHelper } from "./addons/addon-helper.ts";
 export type {
   TimezoneDefinition,
   IClock,

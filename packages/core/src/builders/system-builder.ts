@@ -38,7 +38,7 @@ class SystemPluggedTimeProviderCreator<TDate>
       ? this.plugin.createSystemRuntime(this.localTimezone)
       : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>);
     for (const addon of this.#addons) {
-      addon.applyToSystem(runtime);
+      addon.applyToRuntime(runtime);
     }
     return Object.freeze(runtime);
   }

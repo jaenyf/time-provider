@@ -1,11 +1,13 @@
 export type AnimationFrameHandle = ReturnType<typeof requestAnimationFrame>;
 
+export type WithAnimationFrameApi = { animation: IAnimationFrameApi };
+
 /**
- * The animation-frame facade this addon adds to a composed Time-Provider,
+ * The animation-frame API facade this addon adds to a composed Time-Provider,
  * reachable as `timeProvider.animation` once composed via
- * `createTimeProvider.for(plugin).use(animationFrameAddon)`.
+ * `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface IAnimationFrameScheduler {
+export interface IAnimationFrameApi {
   /**
    * Schedules `callback` to run once, before the next host frame update.
    * On a system (real time) runtime this depends on the host display refresh
@@ -20,7 +22,7 @@ export interface IAnimationFrameScheduler {
   requestAnimationFrame(callback: () => void): AnimationFrameHandle;
   /**
    * Cancels an animation frame request previously scheduled via
-   * {@link IAnimationFrameScheduler.requestAnimationFrame}. A no-op if it
+   * {@link IAnimationFrameApi.requestAnimationFrame}. A no-op if it
    * already ran or was already cancelled.
    */
   cancelAnimationFrame(handle: AnimationFrameHandle): void;

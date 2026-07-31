@@ -3,15 +3,8 @@ import { SystemAnimationFrameScheduler } from "../src/system-animation-frame.ts"
 
 describe("SystemAnimationFrameScheduler", () => {
   describe("without a native requestAnimationFrame (e.g. plain Node.js)", () => {
-    test("requestAnimationFrame throws a clear error, not a bare ReferenceError", () => {
-      const sut = new SystemAnimationFrameScheduler();
-      expect(() => sut.requestAnimationFrame(() => {})).toThrow(
-        "Environment does not support Animation frame API (are you in a browser?)",
-      );
-    });
-    test("cancelAnimationFrame throws the same error", () => {
-      const sut = new SystemAnimationFrameScheduler();
-      expect(() => sut.cancelAnimationFrame(0 as never)).toThrow(
+    test("constructor throws a clear error when missing API", () => {
+      expect(() => new SystemAnimationFrameScheduler()).toThrow(
         "Environment does not support Animation frame API (are you in a browser?)",
       );
     });

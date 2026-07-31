@@ -1,7 +1,7 @@
 import type { IScheduler, SetTimeoutHandle } from "@time-provider/core";
-import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
+import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
-export class DeterministicAnimationFrameScheduler implements IAnimationFrameScheduler {
+export class DeterministicAnimationFrameScheduler implements IAnimationFrameApi {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
   #scheduler: IScheduler;
