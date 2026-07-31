@@ -133,6 +133,13 @@ createTimeProvider
 
 > **Manual and sequential clocks run synchronously.** A due `setTimeout`/`setInterval` callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
 
+## Addons vs. Plugins
+
+Within the scope of this library, these two terms refer to different concepts.
+
+- A **plugin**, is essentially an adapter. It allows you to connect your preferred date library (e.g. Luxon, Temporal, etc.) to the Time Provider core library without adding any new functionality. Its sole purpose is to bridge the two libraries (e.g. [the dayjs plugin](https://www.npmjs.com/package/@time-provider/plugin-dayjs)).
+- An **addon**, as the name suggests, extends the library by introducing new functionality or enhancing existing facades (e.g. [the animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame))
+
 ## Learn more
 
 - [ARCHITECTURE.md](https://github.com/jaenyf/time-provider/blob/main/ARCHITECTURE.md) - how the packages fit together, the plugin/adapter model, why native `Date` and plain Moment.js are UTC-only.
