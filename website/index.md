@@ -12,6 +12,9 @@ hero:
     alt: Time-Provider
   actions:
     - theme: brand
+      text: Get in on NPM
+      link: https://www.npmjs.com/package/@time-provider/core
+    - theme: brand
       text: Open Playground
       link: /playground
     - theme: alt
