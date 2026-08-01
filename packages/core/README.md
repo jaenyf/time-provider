@@ -101,13 +101,22 @@ timeProvider.clock.advance({ seconds: 3 });
 expect(retries).toBe(3);
 ```
 
-Every time provider exposes the same three-part surface:
+Every time provider exposes the same four-part surface:
 
 ```typescript
 interface ITimeProvider<TDate> {
-  clock: IClock<TDate>; // localNow(), utcNow(), withLocalTimezone()
-  parser: IParser<TDate>; // parseToUtc(), parseToLocal()
-  scheduler: IScheduler; // setTimeout/clearTimeout/setInterval/clearInterval
+  clock: IClock<TDate>; // localNow, utcNow, withLocalTimezone
+  parser: IParser<TDate>; // parseToUtc, parseToLocal
+  scheduler: IScheduler; // setTimeout, clearTimeout, setInterval, clearInterval
+  performance: IPerformance; //now, getEntries, measure,...
+}
+```
+
+Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) that extends ITimeProvider with:
+
+```typescript
+interface ITimeProvider<TDate> {
+  animation: IAnimationFrameApi; //requestAnimationFrame, cancelAnimationFrame
 }
 ```
 
