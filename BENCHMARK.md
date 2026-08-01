@@ -3,6 +3,81 @@
 Auto-generated and triggered by [last release](https://github.com/jaenyf/time-provider/actions/workflows/release-please.yml).
 <!-- benchmark-history:start -->
 
+## 2026-08-01T10:30:35.885Z - ([83a25f0](83a25f0))
+
+### schedule 5000 timeouts, without time advance _(median across 5 passes)_
+
+| name                       |      hz | mean (ms) | p99 (ms) | samples |
+| -------------------------- | ------: | --------: | -------: | ------: |
+| time-provider (manual)     | 8213.74 |    0.1217 |   0.5054 |   20815 |
+| time-provider (sequential) | 8135.21 |    0.1229 |   0.4279 |   22167 |
+| sinon fake-timers          |  345.69 |    2.8928 |  11.5824 |    2026 |
+| jest fake-timers (modern)  |  330.05 |    3.0298 |  12.1291 |    1928 |
+
+**✅ time-provider (manual)** is fastest:
+
+- 1.01x faster than time-provider (sequential)
+- 23.76x faster than sinon fake-timers
+- 24.89x faster than jest fake-timers (modern)
+
+### schedule 5000 timeouts, with time advance _(median across 5 passes)_
+
+| name                       |      hz | mean (ms) | p99 (ms) | samples |
+| -------------------------- | ------: | --------: | -------: | ------: |
+| time-provider (sequential) | 4350.78 |    0.2298 |   0.6265 |   12127 |
+| time-provider (manual)     | 4349.67 |    0.2299 |   0.6212 |   12141 |
+| sinon fake-timers          |  267.68 |    3.7358 |  12.3532 |    1584 |
+| jest fake-timers (modern)  |  259.22 |    3.8577 |  13.1617 |    1523 |
+
+**✅ time-provider (sequential)** is fastest:
+
+- 1.00x faster than time-provider (manual)
+- 16.25x faster than sinon fake-timers
+- 16.78x faster than jest fake-timers (modern)
+
+### schedule 5000 intervals, without time advance _(median across 5 passes)_
+
+| name                       |      hz | mean (ms) | p99 (ms) | samples |
+| -------------------------- | ------: | --------: | -------: | ------: |
+| time-provider (manual)     | 7304.88 |    0.1369 |   0.4931 |   20452 |
+| time-provider (sequential) | 7131.38 |    0.1402 |   0.5109 |   19912 |
+| sinon fake-timers          |  325.54 |    3.0718 |  12.2792 |    1916 |
+| jest fake-timers (modern)  |  316.48 |    3.1597 |  11.9690 |    1871 |
+
+**✅ time-provider (manual)** is fastest:
+
+- 1.02x faster than time-provider (sequential)
+- 22.44x faster than sinon fake-timers
+- 23.08x faster than jest fake-timers (modern)
+
+### schedule 5000 intervals, with time advance _(median across 5 passes)_
+
+| name                       |     hz | mean (ms) | p99 (ms) | samples |
+| -------------------------- | -----: | --------: | -------: | ------: |
+| time-provider (sequential) | 213.25 |    4.6894 |   7.3699 |     658 |
+| time-provider (manual)     | 212.33 |    4.7097 |   8.5835 |     670 |
+| sinon fake-timers          |  15.45 |   64.7103 |  72.4722 |     170 |
+| jest fake-timers (modern)  |  14.66 |   68.2213 |  79.0409 |     170 |
+
+**✅ time-provider (sequential)** is fastest:
+
+- 1.00x faster than time-provider (manual)
+- 13.80x faster than sinon fake-timers
+- 14.55x faster than jest fake-timers (modern)
+
+### read now 5000 times _(median across 5 passes)_
+
+| name                      |      hz | mean (ms) | p99 (ms) | samples |
+| ------------------------- | ------: | --------: | -------: | ------: |
+| time-provider (manual)    | 4733.34 |    0.2113 |   0.3866 |   13470 |
+| jest fake-timers (modern) |  732.77 |    1.3647 |   1.7539 |    2094 |
+| sinon fake-timers         |  721.46 |    1.3861 |   1.7718 |    2057 |
+
+**✅ time-provider (manual)** is fastest:
+
+- 6.46x faster than jest fake-timers (modern)
+- 6.56x faster than sinon fake-timers
+
 ## 2026-08-01T10:05:36.991Z - ([8b09e42](8b09e42))
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
