@@ -25,10 +25,10 @@ export type {
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";
 export { TimeInputValidator } from "./runtimes/runtime-base.ts";
-export { TimeProviderCreator, createTimeProvider } from "./builders/system-builder.ts";
+export { RuntimeBuilder, createTimeProvider } from "./builders/system-builder.ts";
 export type {
-  ISystemPluggedTimeProviderCreator,
-  IUtcOnlySystemPluggedTimeProviderCreator,
-  ITimeProviderCreator,
-  ISystemTimeProviderAddon,
+  ISystemPluggedRuntimeBuilder,
+  IUtcOnlySystemPluggedRuntimeBuilder,
+  IRuntimeBuilder,
+  ISystemAddon,
 } from "./builders/builders.ts";

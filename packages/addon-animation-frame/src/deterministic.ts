@@ -1,4 +1,4 @@
-import type { IDeterministicTimeProviderAddon } from "@time-provider/core/deterministic";
+import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { AddonHelper } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame.ts";
 import { type WithAnimationFrameApi } from "./types.ts";
@@ -29,10 +29,7 @@ export interface IAnimationFrameBuilderExtra {
  * configured instance is needed (e.g. to compose it with two different Time-Providers using
  * different {@link IAnimationFrameBuilderExtra.withHostFramesRate} settings).
  */
-export function createAddon<TDate>(): IDeterministicTimeProviderAddon<
-  TDate,
-  WithAnimationFrameApi
-> &
+export function createAddon<TDate>(): IDeterministicAddon<TDate, WithAnimationFrameApi> &
   IAnimationFrameBuilderExtra {
   let hostFramesRate: number | undefined;
   return {
@@ -52,7 +49,7 @@ export function createAddon<TDate>(): IDeterministicTimeProviderAddon<
       hostFramesRate = rate;
       return this;
     },
-    clone(): IDeterministicTimeProviderAddon<TDate, WithAnimationFrameApi> {
+    clone(): IDeterministicAddon<TDate, WithAnimationFrameApi> {
       const cloned = createAddon<TDate>();
       if (hostFramesRate !== undefined) {
         cloned.withHostFramesRate(hostFramesRate);
@@ -67,6 +64,6 @@ export function createAddon<TDate>(): IDeterministicTimeProviderAddon<
  * `createTimeProvider.for(plugin).use(addon)` to add an `animation` property backed by the
  * runtime's own simulated clock instead of the host's real display refresh.
  */
-export const addon: IDeterministicTimeProviderAddon<unknown, WithAnimationFrameApi> &
+export const addon: IDeterministicAddon<unknown, WithAnimationFrameApi> &
   IAnimationFrameBuilderExtra = createAddon();
 export default addon;

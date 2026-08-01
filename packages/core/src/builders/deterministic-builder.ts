@@ -6,22 +6,22 @@ import type {
   TimezoneDefinition,
 } from "../types/types.ts";
 import type {
-  IDeterministicPluggedTimeProviderCreator,
-  IDeterministicTimeProviderCreator,
-  IFixedTimeProviderCreator,
-  IManualTimeProviderCreator,
-  IDeterministicTimeProviderAddon,
-  ISequentialTimeProviderCreator,
-  IUtcOnlyDeterministicPluggedTimeProviderCreator,
+  IDeterministicPluggedRuntimeBuilder,
+  IDeterministicRuntimeBuilder,
+  IFixedRuntimeBuilder,
+  IManualRuntimeBuilder,
+  IDeterministicAddon,
+  ISequentialRuntimeBuilder,
+  IUtcOnlyDeterministicPluggedRuntimeBuilder,
 } from "./builders.ts";
-import { BaseTimeProviderCreator } from "./builder-base.ts";
+import { BaseRuntimeBuilder } from "./builder-base.ts";
 
 type AnyDeterministicPlugin<TDate> =
   | IDeterministicPlugin<TDate>
   | IUtcOnlyDeterministicPlugin<TDate>;
 
 function applyAddons<TDate>(
-  addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+  addons: readonly IDeterministicAddon<TDate, unknown>[],
   runtime: ITimeProvider<TDate> | IManualTimeProvider<TDate>,
 ): void {
   for (const addon of addons) {
@@ -29,23 +29,23 @@ function applyAddons<TDate>(
   }
 }
 
-class FixedTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
-  implements IFixedTimeProviderCreator<TDate>
+class FixedRuntimeBuilder<TDate>
+  extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
+  implements IFixedRuntimeBuilder<TDate>
 {
   #fixedDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate, unknown>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate, unknown>[],
   ) {
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
     this.#addons = addons;
   }
-  withFixedTime(initialDateTime: string | number | TDate): IFixedTimeProviderCreator<TDate> {
+  withFixedTime(initialDateTime: string | number | TDate): IFixedRuntimeBuilder<TDate> {
     this.#fixedDateTime = initialDateTime;
     return this;
   }
@@ -59,24 +59,24 @@ class FixedTimeProviderCreator<TDate>
   }
 }
 
-class ManualTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
-  implements IManualTimeProviderCreator<TDate>
+class ManualRuntimeBuilder<TDate>
+  extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
+  implements IManualRuntimeBuilder<TDate>
 {
   #initialDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate, unknown>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate, unknown>[],
   ) {
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
     this.#addons = addons;
   }
 
-  withInitialTime(initialDateTime: string | number | TDate): IManualTimeProviderCreator<TDate> {
+  withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate> {
     this.#initialDateTime = initialDateTime;
     return this;
   }
@@ -90,17 +90,17 @@ class ManualTimeProviderCreator<TDate>
   }
 }
 
-class SequentialTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
-  implements ISequentialTimeProviderCreator<TDate>
+class SequentialRuntimeBuilder<TDate>
+  extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
+  implements ISequentialRuntimeBuilder<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
-  #addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate, unknown>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicTimeProviderAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate, unknown>[],
   ) {
     super(plugin, localTimezone);
     this.#addons = addons;
@@ -108,7 +108,7 @@ class SequentialTimeProviderCreator<TDate>
 
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
-  ): ISequentialTimeProviderCreator<TDate> {
+  ): ISequentialRuntimeBuilder<TDate> {
     this.#sequentialTimes.push(sequentialDateTime);
     return this;
   }
@@ -123,58 +123,54 @@ class SequentialTimeProviderCreator<TDate>
   }
 }
 
-class DeterministicPluggedTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<AnyDeterministicPlugin<TDate>>
-  implements IDeterministicPluggedTimeProviderCreator<TDate>
+class DeterministicPluggedRuntimeBuilder<TDate>
+  extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
+  implements IDeterministicPluggedRuntimeBuilder<TDate>
 {
-  #addons: IDeterministicTimeProviderAddon<TDate, unknown>[] = [];
+  #addons: IDeterministicAddon<TDate, unknown>[] = [];
 
   constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
   use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: IDeterministicTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra {
+    addon: IDeterministicAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
     const instance = addon.clone();
-    this.#addons.push(instance as IDeterministicTimeProviderAddon<TDate, unknown>);
+    this.#addons.push(instance as IDeterministicAddon<TDate, unknown>);
     Object.assign(this, instance);
-    return this as unknown as IDeterministicPluggedTimeProviderCreator<TDate, TAddonExtra> &
+    return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> &
       TBuilderExtra;
   }
 
-  asManual(): IManualTimeProviderCreator<TDate> {
-    return Object.freeze(
-      new ManualTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
-    );
+  asManual(): IManualRuntimeBuilder<TDate> {
+    return Object.freeze(new ManualRuntimeBuilder(this.plugin, this.localTimezone, this.#addons));
   }
-  asFixed(): IFixedTimeProviderCreator<TDate> {
-    return Object.freeze(
-      new FixedTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
-    );
+  asFixed(): IFixedRuntimeBuilder<TDate> {
+    return Object.freeze(new FixedRuntimeBuilder(this.plugin, this.localTimezone, this.#addons));
   }
-  asSequential(): ISequentialTimeProviderCreator<TDate> {
+  asSequential(): ISequentialRuntimeBuilder<TDate> {
     return Object.freeze(
-      new SequentialTimeProviderCreator(this.plugin, this.localTimezone, this.#addons),
+      new SequentialRuntimeBuilder(this.plugin, this.localTimezone, this.#addons),
     );
   }
 }
 
-class DeterministicTimeProviderCreator implements IDeterministicTimeProviderCreator {
+class DeterministicRuntimeBuilder implements IDeterministicRuntimeBuilder {
   /*
     The underlying runtime objects always have the full capability regardless of which overload matched.
     Only the declared type at this boundary is restricted for IUtcOnlyDeterministicPlugin adapters, so this widening is safe.
   */
   for<TDate>(
     adapter: IUtcOnlyDeterministicPlugin<TDate>,
-  ): IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate>;
-  for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedTimeProviderCreator<TDate>;
+  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate>;
+  for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedRuntimeBuilder<TDate>;
   for<TDate>(
     adapter: AnyDeterministicPlugin<TDate>,
   ):
-    | IDeterministicPluggedTimeProviderCreator<TDate>
-    | IUtcOnlyDeterministicPluggedTimeProviderCreator<TDate> {
-    return new DeterministicPluggedTimeProviderCreator(adapter, "Etc/UTC");
+    | IDeterministicPluggedRuntimeBuilder<TDate>
+    | IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate> {
+    return new DeterministicPluggedRuntimeBuilder(adapter, "Etc/UTC");
   }
 }
 
@@ -187,5 +183,5 @@ class DeterministicTimeProviderCreator implements IDeterministicTimeProviderCrea
  * const timeProvider = createTimeProvider.for(dayjsPlugin).asFixed().withFixedTime("2024-01-01").create();
  * ```
  */
-export const createDeterministicTimeProvider: IDeterministicTimeProviderCreator =
-  new DeterministicTimeProviderCreator();
+export const createDeterministicTimeProvider: IDeterministicRuntimeBuilder =
+  new DeterministicRuntimeBuilder();

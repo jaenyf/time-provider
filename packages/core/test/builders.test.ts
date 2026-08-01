@@ -1,14 +1,14 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   createTimeProvider,
-  type ISystemTimeProviderAddon,
+  type ISystemAddon,
   type IUtcOnlySystemPlugin,
 } from "@time-provider/core";
 import {
   createTimeProvider as createDeterministicTimeProvider,
   type IDeterministicPlugin,
-  type IDeterministicPluggedTimeProviderCreator,
-  type IDeterministicTimeProviderAddon,
+  type IDeterministicPluggedRuntimeBuilder,
+  type IDeterministicAddon,
 } from "@time-provider/core/deterministic";
 
 function fakeSystemPlugin(): IUtcOnlySystemPlugin<unknown> {
@@ -30,7 +30,7 @@ function fakeDeterministicPlugin(): IDeterministicPlugin<unknown> {
 }
 
 function fakeSystemAddon(): {
-  addon: ISystemTimeProviderAddon<unknown, unknown>;
+  addon: ISystemAddon<unknown, unknown>;
   calls: { applyToRuntime: number; clone: number };
 } {
   const calls = { applyToRuntime: 0, clone: 0 };
@@ -44,11 +44,11 @@ function fakeSystemAddon(): {
       return addon;
     },
   };
-  return { addon: addon as unknown as ISystemTimeProviderAddon<unknown, unknown>, calls };
+  return { addon: addon as unknown as ISystemAddon<unknown, unknown>, calls };
 }
 
 function fakeDeterministicAddon(): {
-  addon: IDeterministicTimeProviderAddon<unknown, unknown>;
+  addon: IDeterministicAddon<unknown, unknown>;
   calls: { applyToRuntime: number; clone: number };
 } {
   const calls = { applyToRuntime: 0, clone: 0 };
@@ -62,10 +62,10 @@ function fakeDeterministicAddon(): {
       return addon;
     },
   };
-  return { addon: addon as unknown as IDeterministicTimeProviderAddon<unknown, unknown>, calls };
+  return { addon: addon as unknown as IDeterministicAddon<unknown, unknown>, calls };
 }
 
-describe("SystemPluggedTimeProviderCreator", () => {
+describe("SystemPluggedRuntimeBuilder", () => {
   describe("use", () => {
     test("clones the given addon", () => {
       const { addon, calls } = fakeSystemAddon();
@@ -94,7 +94,7 @@ describe("SystemPluggedTimeProviderCreator", () => {
   });
 });
 
-describe("DeterministicPluggedTimeProviderCreator", () => {
+describe("DeterministicPluggedRuntimeBuilder", () => {
   describe("use", () => {
     test("clones the given addon", () => {
       const { addon, calls } = fakeDeterministicAddon();
@@ -111,16 +111,15 @@ describe("DeterministicPluggedTimeProviderCreator", () => {
   describe.each([
     [
       "asFixed",
-      (builder: IDeterministicPluggedTimeProviderCreator<unknown>) => builder.asFixed().create(),
+      (builder: IDeterministicPluggedRuntimeBuilder<unknown>) => builder.asFixed().create(),
     ],
     [
       "asManual",
-      (builder: IDeterministicPluggedTimeProviderCreator<unknown>) => builder.asManual().create(),
+      (builder: IDeterministicPluggedRuntimeBuilder<unknown>) => builder.asManual().create(),
     ],
     [
       "asSequential",
-      (builder: IDeterministicPluggedTimeProviderCreator<unknown>) =>
-        builder.asSequential().create(),
+      (builder: IDeterministicPluggedRuntimeBuilder<unknown>) => builder.asSequential().create(),
     ],
   ] as const)("%s().create()", (_name, create) => {
     test("applies every used addon to the created runtime", () => {

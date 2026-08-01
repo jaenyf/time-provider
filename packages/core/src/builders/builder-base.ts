@@ -2,9 +2,9 @@ import type { TimezoneDefinition } from "../types/types.ts";
 import { SystemHelper } from "../runtimes/runtime-base.ts";
 
 /**
- * Shared timezone-composition base for both the system and the deterministic plugged creators.
+ * Shared timezone-composition base for both the system and the deterministic plugged builders.
  */
-export abstract class BaseTimeProviderCreator<TPlugin> {
+export abstract class BaseRuntimeBuilder<TPlugin> {
   #plugin: TPlugin;
   #localTimezone: TimezoneDefinition;
   #shouldUseHostLocalTimezone: boolean;
@@ -41,7 +41,7 @@ export abstract class BaseTimeProviderCreator<TPlugin> {
   }
 
   withDefaultTimezone(): this {
-    this.localTimezone = BaseTimeProviderCreator.defaultTimezone;
+    this.localTimezone = BaseRuntimeBuilder.defaultTimezone;
     this.#shouldUseHostLocalTimezone = false;
     return this;
   }

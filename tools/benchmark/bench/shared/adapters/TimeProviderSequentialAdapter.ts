@@ -30,11 +30,11 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    const creator = createTimeProvider.for(plugin).asSequential().withSequentialTime(0);
+    const builder = createTimeProvider.for(plugin).asSequential().withSequentialTime(0);
     for (const timestamp of this.#plannedTimestamps) {
-      creator.withSequentialTime(timestamp);
+      builder.withSequentialTime(timestamp);
     }
-    this.#runtime = creator.create();
+    this.#runtime = builder.create();
   }
   teardown(): void {
     // Nothing to release - the runtime is just discarded.

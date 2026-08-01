@@ -3,14 +3,14 @@ import {
   createTimeProvider,
   type IClock,
   type ISystemPlugin,
-  type ISystemPluggedTimeProviderCreator,
+  type ISystemPluggedRuntimeBuilder,
   type IUtcOnlySystemPlugin,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import {
   createTimeProvider as createDeterministicTimeProvider,
   type IDeterministicPlugin,
-  type IDeterministicPluggedTimeProviderCreator,
+  type IDeterministicPluggedRuntimeBuilder,
   type IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 
@@ -20,10 +20,10 @@ import {
  */
 export function getBuilderFor<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
-): ISystemPluggedTimeProviderCreator<TDate> {
+): ISystemPluggedRuntimeBuilder<TDate> {
   return (
     plugin.supportsLocalTime ? createTimeProvider.for(plugin) : createTimeProvider.for(plugin)
-  ) as ISystemPluggedTimeProviderCreator<TDate>;
+  ) as ISystemPluggedRuntimeBuilder<TDate>;
 }
 
 /**
@@ -31,12 +31,12 @@ export function getBuilderFor<TDate>(
  */
 export function getDeterministicBuilderFor<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
-): IDeterministicPluggedTimeProviderCreator<TDate> {
+): IDeterministicPluggedRuntimeBuilder<TDate> {
   return (
     plugin.supportsLocalTime
       ? createDeterministicTimeProvider.for(plugin)
       : createDeterministicTimeProvider.for(plugin)
-  ) as IDeterministicPluggedTimeProviderCreator<TDate>;
+  ) as IDeterministicPluggedRuntimeBuilder<TDate>;
 }
 
 export function testCreatedValue<T>(getSut: () => T) {
@@ -50,11 +50,11 @@ export function testCreatedValue<T>(getSut: () => T) {
 
 /**
  * Tests the withTimezone/withHostTimezone/withDefaultTimezone composition on
- * whatever creator `getSut` returns - the system plugged creator, or a
- * fixed/manual/sequential creator returned by `.asFixed()`/`.asManual()`/
+ * whatever builder `getSut` returns - the system plugged builder, or a
+ * fixed/manual/sequential builder returned by `.asFixed()`/`.asManual()`/
  * `.asSequential()` - each has its own independent timezone composition.
  */
-export function testCreator<
+export function testBuilder<
   TSut extends { create(): { clock: { timezone: string; hostTimezone(): string } } },
 >(
   supportsLocalTime: boolean,
