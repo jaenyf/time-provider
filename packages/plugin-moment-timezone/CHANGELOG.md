@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.1.0...plugin-moment-timezone-v0.2.0) (2026-08-01)
+
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
 ## [0.1.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.0.1...plugin-moment-timezone-v0.1.0) (2026-07-25)
 
 
