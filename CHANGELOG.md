@@ -4,6 +4,62 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-08-01
+
+### @time-provider/addon-animation-frame 0.1.0
+
+### Features
+
+* animation-frame api addon ([#109](https://github.com/jaenyf/time-provider/issues/109)) ([efd5327](https://github.com/jaenyf/time-provider/commit/efd53279daff2b2144430fc6b532942ee5a32ed6))
+
+### @time-provider/core 1.3.0
+
+### Features
+
+* animation-frame api addon ([#109](https://github.com/jaenyf/time-provider/issues/109)) ([efd5327](https://github.com/jaenyf/time-provider/commit/efd53279daff2b2144430fc6b532942ee5a32ed6))
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+
+### Performance Improvements
+
+* **deterministic runtime:** performances improvement ([#110](https://github.com/jaenyf/time-provider/issues/110)) ([f5e84b3](https://github.com/jaenyf/time-provider/commit/f5e84b384863fc31347fc8b94040bb1b2453a71e))
+
+### @time-provider/plugin-dayjs 0.4.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+### @time-provider/plugin-luxon 0.4.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+### @time-provider/plugin-moment 0.4.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+### @time-provider/plugin-moment-timezone 0.2.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+### @time-provider/plugin-native 0.4.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+### @time-provider/plugin-temporal 0.4.0
+
+### Features
+
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
 ## 2026-07-25
 
 ### @time-provider/core 1.2.0
