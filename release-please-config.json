@@ -7,7 +7,8 @@
     "packages/addon-animation-frame": {
       "release-type": "node",
       "component": "addon-animation-frame",
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-minor",
+      "release-as": "0.2.0"
     },
     "packages/core": {
       "release-type": "node",
