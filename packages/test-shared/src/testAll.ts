@@ -4,7 +4,7 @@ import { testFixedRuntime } from "./testFixedRuntime.ts";
 import { testManualRuntime } from "./testManualRuntime.ts";
 import { testSequentialRuntime } from "./testSequentialRuntime.ts";
 import { testTimeProvider } from "./testTimeProvider.ts";
-import { testTimeProviderCreator } from "./testTimeProviderCreator.ts";
+import { testRuntimeBuilders } from "./testRuntimeBuilders.ts";
 import { getBuilderFor, getDeterministicBuilderFor } from "./helpers/testHelpers.ts";
 import type { ISystemPlugin, IUtcOnlySystemPlugin } from "@time-provider/core";
 import type {
@@ -36,8 +36,8 @@ export function testAll<TDate>(
     testSequentialRuntime(deterministicPlugin, parseTimeToUtc, parseTimeToLocal);
   });
 
-  describe("TimeProviderCreators", () => {
-    testTimeProviderCreator(systemPlugin, deterministicPlugin);
+  describe("RuntimeBuilders", () => {
+    testRuntimeBuilders(systemPlugin, deterministicPlugin);
   });
 
   describe("TimeProviders", () => {

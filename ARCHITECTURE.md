@@ -43,8 +43,8 @@ kinds of file, and no more than that:
     TypeScript type is erased entirely at compile time, so which file it's
     declared in has zero effect on a bundle: one interface per file adds
     navigation overhead without buying anything, so core keeps them in one
-    place instead. `creators.ts` holds the builder/fluent-API contracts
-    specifically (`ITimeProviderCreator` and friends) - kept apart from
+    place instead. `builders.ts` holds the builder/fluent-API contracts
+    specifically (`IRuntimeBuilder` and friends) - kept apart from
     `types.ts` only because it was already a single cohesive file before
     this reorganization and splitting it further wouldn't help readability.
   - Runtime code (classes) is split by which entry point actually needs it,
@@ -60,9 +60,9 @@ kinds of file, and no more than that:
 
 ```
 Plugin (adapter)
-  -> TimeProviderCreator.for(plugin)   (core/src/builders/system-builder.ts,
-                                         core/src/builders/deterministic-builder.ts)
-  -> a PluggedTimeProviderCreator
+  -> RuntimeBuilder.for(plugin)   (core/src/builders/system-builder.ts,
+                                    core/src/builders/deterministic-builder.ts)
+  -> a PluggedRuntimeBuilder
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime (plugin's system.ts/deterministic-runtimes.ts, extending a
      core Base* class from system-runtime.ts/deterministic-runtime.ts)
@@ -139,7 +139,7 @@ with an optional method:
 supportsLocalTime: false` as a literal-typed discriminant, and any code
   that needs to treat the two differently must narrow on it explicitly
   (`plugin.supportsLocalTime ? ... : ...`), even when, as in
-  `TimeProviderCreator.for()`, both branches happen to call the same
+  `RuntimeBuilder.for()`, both branches happen to call the same
   underlying expression - the branching still exists to make the _type_
   resolve correctly, not for the runtime value.
 
@@ -188,7 +188,7 @@ interval behaves when the event loop was blocked past a firing.
 - `packages/test-shared` defines the behavior every plugin must satisfy as
   parameterized spec functions (`testSystemRuntime`, `testFixedRuntime`,
   `testManualRuntime`, `testSequentialRuntime`, `testTimeProvider`,
-  `testTimeProviderCreator`, ...), gating the local-time-specific assertions
+  `testRuntimeBuilders`, ...), gating the local-time-specific assertions
   behind `describe.skipIf(!plugin.supportsLocalTime)` so the same suite runs
   against both kinds of plugin without duplicating it.
 - `packages/test` has one file per plugin (`packages/test/src/plugin-*/all.test.ts`)

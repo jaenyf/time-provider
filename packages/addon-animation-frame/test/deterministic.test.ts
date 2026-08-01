@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { ITimeProvider, IScheduler, SetTimeoutHandle } from "@time-provider/core";
-import type { IDeterministicTimeProviderAddon } from "@time-provider/core/deterministic";
+import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { addon, createAddon, type IAnimationFrameBuilderExtra } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
@@ -96,10 +96,7 @@ describe("animationFrameAddon (deterministic)", () => {
     });
 
     test.each([90, 120])("copy an existing host frames rate", (fps: number) => {
-      const original = addon.clone() as IDeterministicTimeProviderAddon<
-        unknown,
-        WithAnimationFrameApi
-      > &
+      const original = addon.clone() as IDeterministicAddon<unknown, WithAnimationFrameApi> &
         IAnimationFrameBuilderExtra;
       original.withHostFramesRate(fps);
       const runtime = fakeDeterministicRuntime().runtime;
@@ -113,7 +110,7 @@ describe("animationFrameAddon (deterministic)", () => {
       "configuring a clone via withHostFramesRate never affects the shared addon it was cloned from",
       (fps: number) => {
         const defaultFps = 60;
-        const clone = addon.clone() as IDeterministicTimeProviderAddon<unknown, unknown> & {
+        const clone = addon.clone() as IDeterministicAddon<unknown, unknown> & {
           withHostFramesRate(rate: number): unknown;
         };
         clone.withHostFramesRate(fps);

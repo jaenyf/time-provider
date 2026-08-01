@@ -9,11 +9,11 @@ import {
   getBuilderFor,
   getDeterministicBuilderFor,
   testCreatedValue,
-  testCreator,
+  testBuilder,
   testDefaultEpochTime,
 } from "./helpers/testHelpers.ts";
 
-export function testTimeProviderCreator<TDate>(
+export function testRuntimeBuilders<TDate>(
   systemPlugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   deterministicPlugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
 ) {
@@ -29,12 +29,12 @@ export function testTimeProviderCreator<TDate>(
   });
 
   describe("system", () => {
-    testCreator(systemPlugin.supportsLocalTime, () => getBuilderFor(systemPlugin));
+    testBuilder(systemPlugin.supportsLocalTime, () => getBuilderFor(systemPlugin));
     testCreatedValue(() => getBuilderFor(systemPlugin).create());
   });
 
   describe("fixed", () => {
-    testCreator(deterministicPlugin.supportsLocalTime, () =>
+    testBuilder(deterministicPlugin.supportsLocalTime, () =>
       getDeterministicBuilderFor(deterministicPlugin).asFixed(),
     );
     testCreatedValue(() =>
@@ -47,7 +47,7 @@ export function testTimeProviderCreator<TDate>(
   });
 
   describe("manual", () => {
-    testCreator(deterministicPlugin.supportsLocalTime, () =>
+    testBuilder(deterministicPlugin.supportsLocalTime, () =>
       getDeterministicBuilderFor(deterministicPlugin).asManual(),
     );
     testCreatedValue(() =>
@@ -60,7 +60,7 @@ export function testTimeProviderCreator<TDate>(
   });
 
   describe("sequential", () => {
-    testCreator(deterministicPlugin.supportsLocalTime, () =>
+    testBuilder(deterministicPlugin.supportsLocalTime, () =>
       getDeterministicBuilderFor(deterministicPlugin).asSequential(),
     );
     testCreatedValue(() =>

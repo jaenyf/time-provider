@@ -5,32 +5,32 @@ import type {
   TimezoneDefinition,
 } from "../types/types.ts";
 import type {
-  ISystemPluggedTimeProviderCreator,
-  ISystemTimeProviderAddon,
-  ITimeProviderCreator,
-  IUtcOnlySystemPluggedTimeProviderCreator,
+  ISystemPluggedRuntimeBuilder,
+  ISystemAddon,
+  IRuntimeBuilder,
+  IUtcOnlySystemPluggedRuntimeBuilder,
 } from "./builders.ts";
-import { BaseTimeProviderCreator } from "./builder-base.ts";
+import { BaseRuntimeBuilder } from "./builder-base.ts";
 
 type AnySystemPlugin<TDate> = ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>;
 
-class SystemPluggedTimeProviderCreator<TDate>
-  extends BaseTimeProviderCreator<AnySystemPlugin<TDate>>
-  implements ISystemPluggedTimeProviderCreator<TDate>
+class SystemPluggedRuntimeBuilder<TDate>
+  extends BaseRuntimeBuilder<AnySystemPlugin<TDate>>
+  implements ISystemPluggedRuntimeBuilder<TDate>
 {
-  #addons: ISystemTimeProviderAddon<TDate, unknown>[] = [];
+  #addons: ISystemAddon<TDate, unknown>[] = [];
 
   constructor(plugin: AnySystemPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
   use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: ISystemTimeProviderAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra {
+    addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
+  ): ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
     const instance = addon.clone();
-    this.#addons.push(instance as ISystemTimeProviderAddon<TDate, unknown>);
+    this.#addons.push(instance as ISystemAddon<TDate, unknown>);
     Object.assign(this, instance);
-    return this as unknown as ISystemPluggedTimeProviderCreator<TDate, TAddonExtra> & TBuilderExtra;
+    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra;
   }
 
   create(): ITimeProvider<TDate> {
@@ -45,19 +45,19 @@ class SystemPluggedTimeProviderCreator<TDate>
 }
 
 /**
- * Default implementation of {@link ITimeProviderCreator}, exposed as the {@link createTimeProvider} singleton.
+ * Default implementation of {@link IRuntimeBuilder}, exposed as the {@link createTimeProvider} singleton.
  */
-export class TimeProviderCreator implements ITimeProviderCreator {
+export class RuntimeBuilder implements IRuntimeBuilder {
   /*
     The underlying runtime objects always have the full capability regardless of which overload matched.
     Only the declared type at this boundary is restricted for IUtcOnlySystemPlugin adapters, so this widening is safe.
   */
-  for<TDate>(adapter: IUtcOnlySystemPlugin<TDate>): IUtcOnlySystemPluggedTimeProviderCreator<TDate>;
-  for<TDate>(adapter: ISystemPlugin<TDate>): ISystemPluggedTimeProviderCreator<TDate>;
+  for<TDate>(adapter: IUtcOnlySystemPlugin<TDate>): IUtcOnlySystemPluggedRuntimeBuilder<TDate>;
+  for<TDate>(adapter: ISystemPlugin<TDate>): ISystemPluggedRuntimeBuilder<TDate>;
   for<TDate>(
     adapter: AnySystemPlugin<TDate>,
-  ): ISystemPluggedTimeProviderCreator<TDate> | IUtcOnlySystemPluggedTimeProviderCreator<TDate> {
-    return new SystemPluggedTimeProviderCreator(adapter, "Etc/UTC");
+  ): ISystemPluggedRuntimeBuilder<TDate> | IUtcOnlySystemPluggedRuntimeBuilder<TDate> {
+    return new SystemPluggedRuntimeBuilder(adapter, "Etc/UTC");
   }
 }
 
@@ -69,4 +69,4 @@ export class TimeProviderCreator implements ITimeProviderCreator {
  * const timeProvider = createTimeProvider.for(dayjsPlugin).create();
  * ```
  */
-export const createTimeProvider: ITimeProviderCreator = new TimeProviderCreator();
+export const createTimeProvider: IRuntimeBuilder = new RuntimeBuilder();

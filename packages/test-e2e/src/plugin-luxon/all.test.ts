@@ -10,16 +10,16 @@ import { DateTime } from "luxon";
 
 describe("e2e luxon", () => {
   test("createTimeProvider for plugin returns a value", () => {
-    const systemCreator = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
-    const deterministicCreator = createDeterministicTimeProvider
+    const systemBuilder = createSystemTimeProvider.for(systemPlugin).use(systemAfapi);
+    const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50);
 
-    const system = systemCreator.create();
-    const fixed = deterministicCreator.asFixed().create();
-    const manual = deterministicCreator.asManual().create();
-    const sequential = deterministicCreator.asSequential().create();
+    const system = systemBuilder.create();
+    const fixed = deterministicBuilder.asFixed().create();
+    const manual = deterministicBuilder.asManual().create();
+    const sequential = deterministicBuilder.asSequential().create();
 
     expect(system.clock.utcNow().toString()).toBeDefined();
     expect(system.clock.localNow().toString()).toBeDefined();
