@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/jaenyf/time-provider/compare/core-v1.2.0...core-v1.3.0) (2026-08-01)
+
+
+### Features
+
+* animation-frame api addon ([#109](https://github.com/jaenyf/time-provider/issues/109)) ([efd5327](https://github.com/jaenyf/time-provider/commit/efd53279daff2b2144430fc6b532942ee5a32ed6))
+* performance api ([#108](https://github.com/jaenyf/time-provider/issues/108)) ([cde88b7](https://github.com/jaenyf/time-provider/commit/cde88b7147813df1a8d450e55125b60326392549))
+
+
+### Performance Improvements
+
+* **deterministic runtime:** performances improvement ([#110](https://github.com/jaenyf/time-provider/issues/110)) ([f5e84b3](https://github.com/jaenyf/time-provider/commit/f5e84b384863fc31347fc8b94040bb1b2453a71e))
+
 ## [1.2.0](https://github.com/jaenyf/time-provider/compare/core-v1.1.0...core-v1.2.0) (2026-07-25)
 
 
