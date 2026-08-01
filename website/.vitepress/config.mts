@@ -3,8 +3,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "Time-Provider",
-  description:
-    "TypeScript library for injecting time and timers with adapters for multiple date libraries.",
+  description: "Your single time interface for all your JavaScript / TypeScript projects.",
   lang: "en-US",
   base: "/time-provider/",
   cleanUrls: true,

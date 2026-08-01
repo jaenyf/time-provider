@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-moment-timezone",
   "version": "0.1.0",
   "private": false,
-  "description": "Time-Provider : Moment.js plugin ~ TypeScript library for injecting time and timers with adapters for multiple date libraries.",
+  "description": "Time-Provider : Moment.js plugin ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
     "clock",
     "date",
@@ -25,7 +25,7 @@
     "time",
     "timers"
   ],
-  "homepage": "https://github.com/jaenyf/time-provider#readme",
+  "homepage": "https://jaenyf.github.io/time-provider/",
   "bugs": {
     "url": "https://github.com/jaenyf/time-provider/issues"
   },
