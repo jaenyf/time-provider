@@ -31,6 +31,13 @@
  * row at). Swap the flex order so the logo sits to the left of the
  * headline/tagline instead - matches its `order: 1` on mobile already
  * (a stacked column, where it renders above the text).
+ *
+ * The default theme also has `.image` flex-grow to fill the row (sized for
+ * an image bleeding off the right edge) and offsets `.image-container` with
+ * a negative transform tuned for that right-side placement. Now that the
+ * logo is on the left, both would just reserve empty space between it and
+ * the text, so pin the image to its natural size and put the gap on the
+ * container instead.
  */
 @media (min-width: 960px) {
   .VPHero.has-image .main {
@@ -38,6 +45,14 @@
   }
   .VPHero.has-image .image {
     order: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-right: 48px;
+  }
+  .VPHero.has-image .image-container {
+    width: 320px;
+    height: 320px;
+    transform: none;
   }
 }
 

@@ -7,8 +7,8 @@ hero:
   text: Time is a dependency.
   tagline: Your single time interface for all your JavaScript / TypeScript projects.
   image:
-    light: /logo-with-text-light.svg
-    dark: /logo-with-text-dark.svg
+    light: /logo-light.svg
+    dark: /logo-dark.svg
     alt: Time-Provider
   actions:
     - theme: brand
