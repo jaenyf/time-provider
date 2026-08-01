@@ -142,6 +142,8 @@ Within the scope of this library, these two terms refer to different concepts.
 
 ## Learn more
 
+- [Guide](https://jaenyf.github.io/time-provider/guide/) - Read the guide
+- [API](https://jaenyf.github.io/time-provider/api/) - Browse the library API
 - [ARCHITECTURE.md](https://github.com/jaenyf/time-provider/blob/main/ARCHITECTURE.md) - how the packages fit together, the plugin/adapter model, why native `Date` and plain Moment.js are UTC-only.
 - [CONTRIBUTING.md](https://github.com/jaenyf/time-provider/blob/main/CONTRIBUTING.md) - development setup, workflow, reporting bugs/features.
 - [BENCHMARK.md](https://github.com/jaenyf/time-provider/blob/main/BENCHMARK.md) - faster than jest/sinon fake timers.
