@@ -30,5 +30,16 @@ describe("plugin-luxon", () => {
         },
       );
     });
+    describe("parseToLocal", () => {
+      describe("issue#127", () => {
+        test("throws timezone-related error when the timezone is invalid", () => {
+          const sut = createTimeProvider.for(systemPlugin).create();
+          sut.clock.withTimezone("Not/A_Real_Zone");
+          expect(() => {
+            sut.parser.parseToLocal("2026-01-01T00:00:00.000Z");
+          }).toThrow("Invalid timezone value (value was 'Not/A_Real_Zone')");
+        });
+      });
+    });
   });
 });
