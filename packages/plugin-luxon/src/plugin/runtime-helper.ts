@@ -35,7 +35,7 @@ export class RuntimeHelper {
   ): DateTime<boolean> {
     const result = this.convertToUtcDate(time).setZone(timezone);
     if (!result.isValid) {
-      TimeInputValidator.throwInvalidTimeValue(time);
+      TimeInputValidator.throwInvalidTimezone(timezone);
     }
     return result;
   }
