@@ -28,6 +28,7 @@ class SystemPluggedRuntimeBuilder<TDate>
     addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
   ): ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
     const instance = addon.clone();
+    BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
     this.#addons.push(instance as ISystemAddon<TDate, unknown>);
     Object.assign(this, instance);
     return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra;
