@@ -10,6 +10,9 @@ export default defineConfig({
   lastUpdated: true,
   sitemap: { hostname: "https://jaenyf.github.io/time-provider/" },
   vite: {
+    build: {
+      chunkSizeWarningLimit: 1200,
+    },
     resolve: {
       alias: [
         // more specific "/deterministic" subpaths must be listed before their
