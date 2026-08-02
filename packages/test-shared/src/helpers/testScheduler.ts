@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IScheduler } from "@time-provider/core";
+import type { IScheduler, SetIntervalHandle, SetTimeoutHandle } from "@time-provider/core";
 
 export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean = false) {
   describe("setTimeout", () => {
@@ -26,6 +26,26 @@ export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean
       expect(callbackBCalled).toBe(false);
     });
   });
+  describe("clearTimeout", () => {
+    describe("issue#120", () => {
+      test.each([undefined, null])(
+        "does not throw when clearing an undefined or null handle",
+        (undefinedHandle) => {
+          const sut = createSUT();
+          expect(() => sut.clearTimeout(undefinedHandle as never)).not.toThrow();
+        },
+      );
+      test.each([101, 202])(
+        "does not throw when clearing an unexisting handle",
+        (unexistingHandle) => {
+          const sut = createSUT();
+          expect(() =>
+            sut.clearTimeout(unexistingHandle as unknown as SetTimeoutHandle),
+          ).not.toThrow();
+        },
+      );
+    });
+  });
   describe("setInterval", () => {
     test.each([0, -1, -100])("executes immediate callbacks", (immediateDelay: number) => {
       const sut = createSUT();
@@ -48,6 +68,26 @@ export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean
       sut.setInterval(callbackB, futureDelay);
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
+    });
+  });
+  describe("clearInterval", () => {
+    describe("issue#120", () => {
+      test.each([undefined, null])(
+        "does not throw when clearing an undefined or null handle",
+        (undefinedHandle) => {
+          const sut = createSUT();
+          expect(() => sut.clearInterval(undefinedHandle as never)).not.toThrow();
+        },
+      );
+      test.each([101, 202])(
+        "does not throw when clearing an unexisting handle",
+        (unexistingHandle) => {
+          const sut = createSUT();
+          expect(() =>
+            sut.clearInterval(unexistingHandle as unknown as SetIntervalHandle),
+          ).not.toThrow();
+        },
+      );
     });
   });
 }

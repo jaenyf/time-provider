@@ -212,6 +212,9 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
   //#region heap management
   private static clearDueHandle(handle: unknown, queue: DueHeap, kind: TimerKind): void {
+    if (handle === undefined || handle === null) {
+      return;
+    }
     const entry = handle as DueEntry;
     if (entry.owner === queue && entry.kind === kind) {
       queue.remove(entry);
