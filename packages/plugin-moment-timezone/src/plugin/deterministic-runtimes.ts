@@ -40,7 +40,7 @@ class ManualRuntime extends BaseManualRuntime<moment.Moment> {
     return time.add({ hours });
   }
   protected advanceMinutes(time: moment.Moment, minutes: number): moment.Moment {
-    return time.add({ minutes }).clone();
+    return time.add({ minutes });
   }
   protected advanceSeconds(time: moment.Moment, seconds: number): moment.Moment {
     return time.add({ seconds });
