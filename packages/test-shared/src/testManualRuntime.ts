@@ -187,6 +187,31 @@ export function testManualRuntime<TDate>(
           );
         });
       });
+      describe("issue#122", () => {
+        test("advancing by a month from Jan 31 lands on Feb 28 in a non-leap year", () => {
+          const sut = createManualRuntime("Pacific/Kiritimati", "2026-01-31T00:00:00.000Z");
+          sut.advance({ months: 1 });
+          expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-02-28T00:00:00.000Z"));
+        });
+
+        test("going back by a month from Feb 28 still lands on Jan 28", () => {
+          const sut = createManualRuntime("Pacific/Kiritimati", "2026-02-28T00:00:00.000Z");
+          sut.advance({ months: -1 });
+          expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-28T00:00:00.000Z"));
+        });
+
+        test("advancing by a year from Feb 29 in a leap year lands on Feb 28 the next year", () => {
+          const sut = createManualRuntime("Pacific/Kiritimati", "2024-02-29T00:00:00.000Z");
+          sut.advance({ years: 1 });
+          expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2025-02-28T00:00:00.000Z"));
+        });
+
+        test("going back by a year from Feb 28 in a non leap year still lands on Feb 28 the previous leap year", () => {
+          const sut = createManualRuntime("Pacific/Kiritimati", "2025-02-28T00:00:00.000Z");
+          sut.advance({ years: -1 });
+          expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2024-02-28T00:00:00.000Z"));
+        });
+      });
     });
 
     describe("scheduler", () => {

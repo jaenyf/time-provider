@@ -24,12 +24,24 @@ class ManualRuntime extends BaseManualRuntime<Date> {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: Date, years: number): Date {
-    time.setFullYear(time.getFullYear() + years);
-    return time;
+    const result = new Date(time);
+
+    const day = result.getDate();
+    result.setDate(1);
+    result.setFullYear(result.getFullYear() + years);
+    result.setDate(Math.min(day, RuntimeHelper.daysInMonth(result)));
+
+    return result;
   }
   protected advanceMonths(time: Date, months: number): Date {
-    time.setMonth(time.getMonth() + months);
-    return time;
+    const result = new Date(time);
+
+    const day = result.getDate();
+    result.setDate(1);
+    result.setMonth(result.getMonth() + months);
+    result.setDate(Math.min(day, RuntimeHelper.daysInMonth(result)));
+
+    return result;
   }
   protected advanceDays(time: Date, days: number): Date {
     time.setDate(time.getDate() + days);
