@@ -106,3 +106,20 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: test-report.junit.xml
+
+      - name: Extract tests count
+        id: extract-tests-count
+        run: |
+          TESTS_COUNT=$(grep -m1 '<testsuites' test-report.junit.xml | grep -oP 'tests="\K[0-9]+')
+          echo "count=$TESTS_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Update tests count badge
+        if: github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TESTS_COUNTER_SECRET }}
+          gistID: 5c996e614c598efb1231d96c28444493
+          filename: time-provider-tests-count-badge.json
+          label: tests
+          message: ${{ steps.extract-tests-count.outputs.count }}
+          color: brightgreen
