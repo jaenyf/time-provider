@@ -6,6 +6,7 @@
     "website",
     "tools/*"
   ],
+  "type": "module",
   "scripts": {
     "ready": "vp run test && vp run build && vp run check && vp run stryker",
     "dev": "vp run website#dev",
@@ -38,8 +39,8 @@
     "vite-plus": "latest",
     "vitest": "latest",
     "typescript": "^6.0.3",
-    "@types/node": "25.6.2",
-    "@typescript/native-preview": "7.0.0-dev.20260509.2"
+    "@types/node": "26.1.2",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2"
   },
   "validate-branch-name": {
     "pattern": "^(main)$|^(ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor)/.+$",
