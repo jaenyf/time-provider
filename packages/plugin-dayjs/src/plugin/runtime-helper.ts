@@ -20,6 +20,11 @@ export class RuntimeHelper {
     timezone: TimezoneDefinition,
     time: string | number | dayjs.Dayjs,
   ): dayjs.Dayjs {
+    try {
+      new Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    } catch {
+      TimeInputValidator.throwInvalidTimezone(timezone);
+    }
     return this.convertToUtcDate(time).tz(timezone);
   }
 }
