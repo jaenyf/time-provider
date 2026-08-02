@@ -74,9 +74,31 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update changelog and benchmark history [skip ci]"
           git push
 
-  publish:
-    needs: post-release-updates
+  resolve-publish-targets:
+    needs: release
     if: needs.release.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      paths: ${{ steps.resolve.outputs.paths }}
+    steps:
+      - name: Resolve and validate package paths to publish
+        id: resolve
+        env:
+          PATHS: ${{ github.event_name == 'workflow_dispatch' && inputs.paths || needs.release.outputs.paths_released }}
+        run: |
+          echo "Resolved paths: $PATHS"
+          if ! COUNT=$(jq 'length' <<<"$PATHS" 2>&1); then
+            echo "::error::paths input is not valid JSON: $PATHS"
+            exit 1
+          fi
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::release-please reported releases_created=true but paths_released came back empty - nothing to auto-publish. Re-run this workflow manually via workflow_dispatch, passing the paths of the packages that were released (see the release-please PR / new tags), e.g. [\"packages/core\"]."
+            exit 1
+          fi
+          echo "paths=$PATHS" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: [release, post-release-updates, resolve-publish-targets]
     permissions:
       contents: read
       id-token: write
@@ -84,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path: ${{ github.event_name == 'workflow_dispatch' && fromJson(inputs.paths) || fromJson(needs.release.outputs.paths_released) }}
+        path: ${{ fromJson(needs.resolve-publish-targets.outputs.paths) }}
 
     steps:
       - uses: actions/checkout@v7
