@@ -50,4 +50,20 @@ export abstract class BaseRuntimeBuilder<TPlugin> {
     this.#shouldUseHostLocalTimezone = true;
     return this;
   }
+
+  /**
+   * Guards `use()` implementations against an addon's cloned instance defining a property that
+   * would silently shadow an existing builder method (own, inherited, or added by a previously
+   * used addon) when spliced onto the builder via `Object.assign`.
+   * @throws if `addonInstance` has an own enumerable property name already present on `target`.
+   */
+  protected static assertNoAddonCollision(target: object, addonInstance: object): void {
+    for (const key of Object.keys(addonInstance)) {
+      if (key in target) {
+        throw new Error(
+          `Addon defines a property named '${key}' that collides with an existing builder property of the same name`,
+        );
+      }
+    }
+  }
 }

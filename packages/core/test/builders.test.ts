@@ -47,6 +47,16 @@ function fakeSystemAddon(): {
   return { addon: addon as unknown as ISystemAddon<unknown, unknown>, calls };
 }
 
+function fakeCollidingSystemAddon(): ISystemAddon<unknown, unknown> {
+  const addon = {
+    // Collides with ISystemPluggedRuntimeBuilder's own `create()` method.
+    create: () => undefined,
+    applyToRuntime: (runtime: unknown) => runtime,
+    clone: () => addon,
+  };
+  return addon as unknown as ISystemAddon<unknown, unknown>;
+}
+
 function fakeDeterministicAddon(): {
   addon: IDeterministicAddon<unknown, unknown>;
   calls: { applyToRuntime: number; clone: number };
@@ -65,6 +75,16 @@ function fakeDeterministicAddon(): {
   return { addon: addon as unknown as IDeterministicAddon<unknown, unknown>, calls };
 }
 
+function fakeCollidingDeterministicAddon(): IDeterministicAddon<unknown, unknown> {
+  const addon = {
+    // Collides with IDeterministicPluggedRuntimeBuilder's own `asManual()` method.
+    asManual: () => undefined,
+    applyToRuntime: (runtime: unknown) => runtime,
+    clone: () => addon,
+  };
+  return addon as unknown as IDeterministicAddon<unknown, unknown>;
+}
+
 describe("SystemPluggedRuntimeBuilder", () => {
   describe("use", () => {
     test("clones the given addon", () => {
@@ -76,6 +96,11 @@ describe("SystemPluggedRuntimeBuilder", () => {
     test("returns the builder, for chaining", () => {
       const builder = createTimeProvider.for(fakeSystemPlugin());
       expect(builder.use(fakeSystemAddon().addon)).toBe(builder);
+    });
+
+    test("throws instead of silently shadowing an existing builder method", () => {
+      const builder = createTimeProvider.for(fakeSystemPlugin());
+      expect(() => builder.use<unknown>(fakeCollidingSystemAddon())).toThrow(/collides/);
     });
   });
 
@@ -105,6 +130,11 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
     test("returns the builder, for chaining", () => {
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
       expect(builder.use(fakeDeterministicAddon().addon)).toBe(builder);
+    });
+
+    test("throws instead of silently shadowing an existing builder method", () => {
+      const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
+      expect(() => builder.use<unknown>(fakeCollidingDeterministicAddon())).toThrow(/collides/);
     });
   });
 
