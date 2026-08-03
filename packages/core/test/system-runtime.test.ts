@@ -67,4 +67,64 @@ describe("BaseSystemRuntime", () => {
       expect(spy).toHaveBeenCalledWith(expect.any(Function), 42);
     });
   });
+
+  describe("setRecurring", () => {
+    test.each([undefined, -1, 0])(
+      "an %s delay still recurs (~1 run per ms), same as setTimeout's own clamp for the first run",
+      (delay: number | undefined) => {
+        let callbackCounts = 0;
+        sut.setRecurring(() => {
+          ++callbackCounts;
+          return delay as number;
+        }, delay);
+        vi.advanceTimersByTime(8);
+        expect(callbackCounts).toEqual(8 + 1);
+      },
+    );
+
+    test.each([2, 42, 100])("leaves a delay of 1 or more untouched", (delay) => {
+      let callbackCounts = 0;
+      sut.setRecurring(() => {
+        ++callbackCounts;
+        return delay;
+      }, delay);
+      vi.advanceTimersByTime(delay);
+      expect(callbackCounts).toEqual(1);
+    });
+
+    test.each([4, 42, 100])("cancels dynamic intervals when callback returns false", (delay) => {
+      let callbackCounts = 0;
+      sut.setRecurring(() => {
+        ++callbackCounts;
+        return callbackCounts < 3 ? delay : false;
+      }, delay);
+      vi.advanceTimersByTime(delay * 4);
+      expect(callbackCounts).toEqual(3);
+    });
+  });
+
+  describe("clearRecurring", () => {
+    test("cancels the schedule when called reentrantly from inside the callback itself", () => {
+      let callbackCounts = 0;
+      let handle: ReturnType<typeof sut.setRecurring>;
+      handle = sut.setRecurring(() => {
+        ++callbackCounts;
+        sut.clearRecurring(handle);
+        return 10;
+      }, 10);
+      vi.advanceTimersByTime(100);
+      expect(callbackCounts).toEqual(1);
+    });
+
+    test.each([4, 42, 100])("cancels pending recurring callback", (delay) => {
+      let callbackCounts = 0;
+      const handle = sut.setRecurring(() => {
+        ++callbackCounts;
+        return callbackCounts < 3 ? delay : false;
+      }, delay);
+      sut.clearRecurring(handle);
+      vi.advanceTimersByTime(1);
+      expect(callbackCounts).toEqual(0);
+    });
+  });
 });

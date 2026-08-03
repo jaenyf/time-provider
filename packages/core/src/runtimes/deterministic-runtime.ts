@@ -1,18 +1,15 @@
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
+  DueHandle,
   IAdvanceOptions,
   IManualClock,
   IManualRuntime,
   ITimeConverter,
-  SetIntervalHandle,
-  SetTimeoutHandle,
+  TimerKind,
   TimezoneDefinition,
 } from "../types/types.ts";
+import { TIMER_KIND_INTERVAL, TIMER_KIND_RECURRING, TIMER_KIND_TIMEOUT } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
-
-type TimerKind = 0 | 1;
-const TIMER_KIND_TIMEOUT: TimerKind = 0;
-const TIMER_KIND_INTERVAL: TimerKind = 1;
 
 interface DueEntry {
   /**
@@ -33,18 +30,27 @@ interface DueEntry {
    */
   delay: number;
   /**
-   * Whether this entry is a one-shot timeout or a repeating interval
+   * Whether this entry is a one-shot timeout, a repeating interval, or a recurring schedule
    */
   kind: TimerKind;
   /**
-   * The callback to run
+   * The callback to run. For TIMER_KIND_RECURRING, its return value (`number | false`) decides
+   * the next run; for the other kinds it's ignored.
    */
-  callback: () => void;
+  callback: (() => void) | (() => number | false);
   /**
    * The heap instance owning this entry. Guards against a handle from one runtime being used to
    * clear an entry in a different runtime's heap.
    */
   readonly owner: DueHeap;
+  /**
+   * Set by `clearRecurring`; consulted right after `callback` returns to decide whether to rearm
+   * a TIMER_KIND_RECURRING entry. That entry is physically removed from the heap before its
+   * callback runs (its next due time isn't known until the callback returns), so a `clearRecurring`
+   * call reentrant to that same entry's own callback has nothing left in the heap to remove - this
+   * flag is how it still stops the rearm the enclosing drain is about to do once callback returns.
+   */
+  cancelled: boolean;
 }
 
 function isBefore(a: DueEntry, b: DueEntry): boolean {
@@ -84,10 +90,14 @@ class DueHeap {
   }
 
   /**
-   * Equivalent to `pop()` followed by `push()` of the same entry, but without the redundant remove/reinsert.
+   * Equivalent to `pop()` followed by `push()` of the same entry, but without the redundant
+   * remove/reinsert. Takes the entry rather than assuming the root: a plain interval never runs
+   * user code before calling this (safe to assume root), but a recurring entry's callback is
+   * arbitrary reentrant user code that may have already moved this entry (or others) around
+   * the heap by the time its result comes back.
    */
-  fixRootAfterIncrease(): void {
-    this._siftDown(0);
+  fixAfterIncrease(entry: DueEntry): void {
+    this._siftDown(entry.heapIndex);
   }
 
   private _removeAt(index: number): DueEntry {
@@ -123,8 +133,10 @@ class DueHeap {
       const current = entries[index];
       const parent = entries[parentIndex];
       if (!isBefore(current, parent)) break;
-      // Explicit temp-variable swap, not array-destructuring - measured faster here since
-      // sift operations run on every push/pop and this is by far the hottest line in the heap.
+      /*
+        Explicit temp-variable swap, not array-destructuring
+        Measured faster here since sift operations run on every push/pop and this is by far the hottest line in the heap.
+      */
       entries[parentIndex] = current;
       entries[index] = parent;
       current.heapIndex = parentIndex;
@@ -221,6 +233,18 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     }
   }
 
+  private static clearRecurringHandle(handle: unknown, queue: DueHeap): void {
+    if (handle === undefined || handle === null) {
+      return;
+    }
+    const entry = handle as DueEntry;
+    if (entry.owner !== queue || entry.kind !== TIMER_KIND_RECURRING) {
+      return;
+    }
+    entry.cancelled = true;
+    queue.remove(entry);
+  }
+
   /**
    * Runs any pending callbacks due at or before `now`.
    * @param now
@@ -229,26 +253,46 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   private static drainDueCallbacks(now: number, queue: DueHeap): void {
     /*
       Peeking the heap's root instead of scanning the whole map means a `now()` call where
-      nothing is due - the common case - costs O(1), not O(N). Timeouts and intervals share a
-      single heap ordered by (runAt, seq), so a mixed batch of due timers fires in true
-      chronological order - the same order a real timer queue would use - rather than draining
-      every due timeout before any due interval is even considered.
+      nothing is due - the common case - costs O(1), not O(N). Timeouts, intervals and recurring
+      schedules share a single heap ordered by (runAt, seq), so a mixed batch of due timers fires
+      in true chronological order - the same order a real timer queue would use - rather than
+      draining every due timeout before any due interval/recurring entry is even considered.
     */
     let due: DueEntry | undefined;
     while ((due = queue.peek()) !== undefined && due.runAt <= now) {
       if (due.kind === TIMER_KIND_TIMEOUT) {
         queue.pop();
         due.callback();
-      } else {
+      } else if (due.kind === TIMER_KIND_INTERVAL) {
         /*
           Rearm and re-sift BEFORE invoking the callback. It matters to ensure there's nothing
-          stale for a reentrant call to observe.
+          stale for a reentrant call to observe. Safe to assume `due` is still root here: nothing
+          but this loop touches the heap between the `peek()` above and this rearm.
         */
         const callback = due.callback;
         due.runAt += due.delay || 1;
         due.seq = queue.nextSeq();
-        queue.fixRootAfterIncrease();
+        queue.fixAfterIncrease(due);
         callback();
+      } else {
+        /*
+          TIMER_KIND_RECURRING: unlike a plain interval, the next delay isn't known ahead of time
+          - callback's return value decides it, typically from state the run itself just updated
+          (e.g. a counter). There's never a next occurrence already committed by the time it's
+          decided: cancelling (via `cancelled`, or callback returning false) always takes effect
+          immediately, with no trailing extra run - unlike clearTimeout/clearInterval, which can
+          only ever be forward-looking since by definition they race an already-scheduled
+          callback.
+        */
+        const callback = due.callback as () => number | false;
+        const previousRunAt = due.runAt;
+        queue.remove(due);
+        const next = callback();
+        if (!due.cancelled && next !== false) {
+          due.runAt = previousRunAt + (next < 1 ? 1 : next);
+          due.seq = queue.nextSeq();
+          queue.push(due);
+        }
       }
     }
   }
@@ -259,7 +303,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     delayMs: number,
     repeatDelayMs: number,
     kind: TimerKind,
-    callback: () => void,
+    callback: (() => void) | (() => number | false),
   ): DueEntry {
     const queue = runtime.#dueQueue;
     const entry: DueEntry = {
@@ -268,6 +312,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       heapIndex: -1,
       delay: repeatDelayMs,
       kind,
+      cancelled: false,
       callback,
       owner: queue,
     };
@@ -286,7 +331,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
    * Schedules `callback` on this runtime's deterministic clock. See {@link IScheduler} for when
    * it actually runs.
    */
-  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle {
+  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
     const now = this.peekTimestamp();
@@ -297,13 +342,13 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       0,
       TIMER_KIND_TIMEOUT,
       callback,
-    ) as unknown as SetTimeoutHandle;
+    ) as unknown as DueHandle;
   }
   /**
    * Cancels a pending timeout scheduled via {@link setTimeout}. A no-op if it already ran or was
    * already cleared.
    */
-  clearTimeout(handle: SetTimeoutHandle) {
+  clearTimeout(handle: DueHandle) {
     BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_TIMEOUT);
   }
   //#endregion setTimeout
@@ -313,7 +358,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
    * Schedules `callback` to repeat on this runtime's deterministic clock. See {@link IScheduler}
    * for when each run actually happens.
    */
-  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle {
+  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
     const now = this.peekTimestamp();
@@ -324,16 +369,44 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       delay,
       TIMER_KIND_INTERVAL,
       callback,
-    ) as unknown as SetIntervalHandle;
+    ) as unknown as DueHandle;
   }
   /**
    * Cancels a pending interval scheduled via {@link setInterval}. A no-op if it was already
    * cleared.
    */
-  clearInterval(handle: SetIntervalHandle) {
+  clearInterval(handle: DueHandle) {
     BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_INTERVAL);
   }
   //#endregion setInterval
+
+  //#region setRecurring
+  /**
+   * Schedules `callback` to run once, `initialDelay` from now, then again after whatever delay
+   * `callback` itself returns. Returning `false` stops the schedule; see {@link IScheduler} for
+   * when each run actually happens.
+   */
+  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
+    let delay = initialDelay;
+    if (delay === undefined || delay < 0) delay = 0;
+    const now = this.peekTimestamp();
+    return BaseDeterministicRuntime.queueDueEntry(
+      this,
+      now,
+      delay,
+      0,
+      TIMER_KIND_RECURRING,
+      callback,
+    ) as unknown as DueHandle;
+  }
+  /**
+   * Cancels a pending recurring schedule started via {@link setRecurring}. A no-op if it already
+   * stopped (`callback` returned `false`) or was already cleared.
+   */
+  clearRecurring(handle: DueHandle): void {
+    BaseDeterministicRuntime.clearRecurringHandle(handle, this.#dueQueue);
+  }
+  //#endregion setRecurring
 }
 
 /**

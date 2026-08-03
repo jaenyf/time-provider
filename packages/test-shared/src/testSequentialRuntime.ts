@@ -1,10 +1,5 @@
 import { expect, test, describe } from "vite-plus/test";
-import type {
-  IClock,
-  SetIntervalHandle,
-  SetTimeoutHandle,
-  TimezoneDefinition,
-} from "@time-provider/core";
+import type { DueHandle, IClock, TimezoneDefinition } from "@time-provider/core";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
@@ -703,7 +698,7 @@ export function testSequentialRuntime<TDate>(
           test("compaction discards timeout entries once it is triggered (utcNow)", () => {
             const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
             let fireCount = 0;
-            const handles: SetTimeoutHandle[] = [];
+            const handles: DueHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
@@ -722,7 +717,7 @@ export function testSequentialRuntime<TDate>(
           test("compaction discards interval entries once it is triggered (utcNow)", () => {
             const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
             let fireCount = 0;
-            const handles: SetIntervalHandle[] = [];
+            const handles: DueHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));

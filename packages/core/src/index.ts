@@ -19,8 +19,8 @@ export type {
   IRuntime,
   IUtcOnlyRuntime,
   IScheduler,
-  SetTimeoutHandle,
-  SetIntervalHandle,
+  DueHandle,
+  TimerKind,
 } from "./types/types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";
