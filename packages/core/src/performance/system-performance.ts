@@ -29,12 +29,11 @@ export class SystemPerformance implements IPerformance {
   measure = (
     name: string,
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
-  ): IPerformanceMeasure => {
-    if (startMarkOrOptions === undefined) return performance.measure(name) as IPerformanceMeasure;
-    if (typeof startMarkOrOptions === "string")
-      return performance.measure(name, startMarkOrOptions) as IPerformanceMeasure;
-    return performance.measure(name, startMarkOrOptions) as IPerformanceMeasure;
-  };
+  ): IPerformanceMeasure =>
+    performance.measure(
+      name,
+      startMarkOrOptions as Parameters<typeof performance.measure>[1],
+    ) as IPerformanceMeasure;
   clearMarks = (name?: string): void => performance.clearMarks(name);
   clearMeasures = (name?: string): void => performance.clearMeasures(name);
 }

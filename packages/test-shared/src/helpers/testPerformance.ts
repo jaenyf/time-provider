@@ -127,8 +127,12 @@ export function testPerformance<TDate>(
       sut.performance.mark("a");
       sut.performance.measure("a", "a");
       expect(sut.performance.getEntriesByName("a")).toHaveLength(2);
-      expect(sut.performance.getEntriesByName("a", "mark")).toHaveLength(1);
-      expect(sut.performance.getEntriesByName("a", "measure")).toHaveLength(1);
+      expect(sut.performance.getEntriesByName("a", "mark")).toEqual([
+        expect.objectContaining({ name: "a", entryType: "mark" }),
+      ]);
+      expect(sut.performance.getEntriesByName("a", "measure")).toEqual([
+        expect.objectContaining({ name: "a", entryType: "measure" }),
+      ]);
     });
   });
 
@@ -209,6 +213,13 @@ export function testPerformance<TDate>(
     test("throws when the named start mark does not exist", () => {
       const sut = createCleanSUT();
       expect(() => sut.performance.measure("m", "missing")).toThrow();
+    });
+
+    test("throws when the named entry exists only as a measure, not a mark", () => {
+      const sut = createCleanSUT();
+      sut.performance.mark("seed");
+      sut.performance.measure("x", "seed");
+      expect(() => sut.performance.measure("m", "x")).toThrow();
     });
 
     test("computes the duration between two numeric bounds", () => {

@@ -51,7 +51,9 @@ describe("DeterministicAnimationFrameScheduler", () => {
     });
     test.each([0, -1, -100, NaN])("throws for a non-positive value (%d)", (value) => {
       const sut = new DeterministicAnimationFrameScheduler(fakeScheduler().scheduler);
-      expect(() => (sut.hostFramesRate = value)).toThrow();
+      expect(() => (sut.hostFramesRate = value)).toThrow(
+        `Invalid host frame rate (value was "${String(value)}")`,
+      );
     });
   });
 

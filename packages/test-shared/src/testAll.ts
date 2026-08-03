@@ -46,29 +46,35 @@ export function testAll<TDate>(
     });
 
     describe("fixed", () => {
-      testTimeProvider(() =>
-        getDeterministicBuilderFor(deterministicPlugin)
-          .asFixed()
-          .withFixedTime("2026-01-01T00:00:00.000Z")
-          .create(),
+      testTimeProvider(
+        () =>
+          getDeterministicBuilderFor(deterministicPlugin)
+            .asFixed()
+            .withFixedTime("2026-01-01T00:00:00.000Z")
+            .create(),
+        () => parseTimeToUtc("2026-01-01T00:00:00.000Z"),
       );
     });
 
     describe("manual", () => {
-      testTimeProvider(() =>
-        getDeterministicBuilderFor(deterministicPlugin)
-          .asManual()
-          .withInitialTime("2026-01-01T00:00:00.000Z")
-          .create(),
+      testTimeProvider(
+        () =>
+          getDeterministicBuilderFor(deterministicPlugin)
+            .asManual()
+            .withInitialTime("2026-01-01T00:00:00.000Z")
+            .create(),
+        () => parseTimeToUtc("2026-01-01T00:00:00.000Z"),
       );
     });
 
     describe("sequential", () => {
-      testTimeProvider(() =>
-        getDeterministicBuilderFor(deterministicPlugin)
-          .asSequential()
-          .withSequentialTime("2026-01-01T00:00:00.000Z")
-          .create(),
+      testTimeProvider(
+        () =>
+          getDeterministicBuilderFor(deterministicPlugin)
+            .asSequential()
+            .withSequentialTime("2026-01-01T00:00:00.000Z")
+            .create(),
+        () => parseTimeToUtc("2026-01-01T00:00:00.000Z"),
       );
     });
   });

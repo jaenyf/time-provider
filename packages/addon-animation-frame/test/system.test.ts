@@ -30,4 +30,17 @@ describe("animationFrameAddon (system)", () => {
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
   });
+
+  describe("clone", () => {
+    test("returns a distinct instance", () => {
+      expect(addon.clone()).not.toBe(addon);
+    });
+
+    test("returns a distinct addon that still applies a SystemAnimationFrameScheduler", () => {
+      const cloned = addon.clone();
+      const runtime = fakeSystemRuntime();
+      cloned.applyToRuntime(runtime);
+      expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
+    });
+  });
 });
