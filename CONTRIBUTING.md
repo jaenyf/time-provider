@@ -27,18 +27,21 @@ first to avoid filing a duplicate, then:
 
 ## Setup
 
-Requires [Vite+](https://viteplus.dev/) (`vp`) installed globally — see
-the [installation guide](https://viteplus.dev/guide/). Vite+ will automatically
-download the pinned package manager version (currently [Bun](https://bun.com/)) and a compatible [Node.js](https://nodejs.org/)
-runtime if they aren't already available on your system.
+Requires [Vite+](https://viteplus.dev/) (`vp`) installed and available in the PATH (including `vpx`).  
+See the [installation guide](https://viteplus.dev/guide/), or install directly:
+
+```bash
+curl -fsSL https://vite.plus | bash   # macOS/Linux
+irm https://vite.plus/ps1 | iex       # Windows (PowerShell)
+```
+
+_Note: Vite+ will automatically download the pinned package manager version (currently [Bun](https://bun.com/)) and a compatible [Node.js](https://nodejs.org/) runtime if they aren't already available on your system._
 
 ```bash
 git clone https://github.com/jaenyf/time-provider.git
 cd time-provider
 vp install
 ```
-
-The project uses Bun workspaces for our monorepo (`packages/*`).
 
 ## Development Commands
 
