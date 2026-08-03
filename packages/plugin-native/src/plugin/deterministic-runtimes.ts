@@ -20,28 +20,26 @@ class SequentialRuntime extends BaseSequentialRuntime<Date> {
 }
 
 class ManualRuntime extends BaseManualRuntime<Date> {
+  /*
+    All advance* methods in this class mutate and return the same `time` instance rather than cloning it.
+    This is safe because they are called with a `Date` freshly produced for that single call.
+  */
   constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | Date) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: Date, years: number): Date {
-    const result = new Date(time);
-
-    const day = result.getDate();
-    result.setDate(1);
-    result.setFullYear(result.getFullYear() + years);
-    result.setDate(Math.min(day, RuntimeHelper.daysInMonth(result)));
-
-    return result;
+    const day = time.getDate();
+    time.setDate(1);
+    time.setFullYear(time.getFullYear() + years);
+    time.setDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
+    return time;
   }
   protected advanceMonths(time: Date, months: number): Date {
-    const result = new Date(time);
-
-    const day = result.getDate();
-    result.setDate(1);
-    result.setMonth(result.getMonth() + months);
-    result.setDate(Math.min(day, RuntimeHelper.daysInMonth(result)));
-
-    return result;
+    const day = time.getDate();
+    time.setDate(1);
+    time.setMonth(time.getMonth() + months);
+    time.setDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
+    return time;
   }
   protected advanceDays(time: Date, days: number): Date {
     time.setDate(time.getDate() + days);
