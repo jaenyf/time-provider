@@ -561,7 +561,9 @@ export interface IDeterministicPlugin<TDate> {
     initialTime: string | number | TDate,
   ): IRuntime<TDate>;
   /**
-   * Create a runtime for sequential time and scheduler
+   * Create a runtime for sequential time and scheduler.
+   *
+   * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
@@ -587,7 +589,9 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    */
   createFixedRuntime(initialTime: string | number | TDate): IUtcOnlyRuntime<TDate>;
   /**
-   * Create a runtime for sequential time and scheduler
+   * Create a runtime for sequential time and scheduler.
+   *
+   * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
    */
   createSequentialRuntime(sequentialTimes: (string | number | TDate)[]): IUtcOnlyRuntime<TDate>;
 }

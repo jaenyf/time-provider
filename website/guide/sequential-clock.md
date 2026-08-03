@@ -9,6 +9,8 @@ that one) — unlike the manual clock, reading time here is itself what
 advances it, and any due `setTimeout`/`setInterval` callbacks run
 synchronously in-line as a side effect of that same read.
 
+_Note: If the sequence to step through is empty, the resulting clock stays at the Unix epoch._
+
 ```ts
 import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
