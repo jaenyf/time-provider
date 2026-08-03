@@ -8,32 +8,35 @@ export function testParser<TDate>(
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
   /*
-    skipIf guard only protect test run, but test samples (for `each) are evaluated eagerly.
-    Therefore, we ensure it's populated with values.
+    `roundtrip` stands in for a TDate sample in each `test.each` case list. The sample must
+    be resolved lazily, inside the test body, rather than eagerly while building the case list.
+    Otherwise a broken plugin (or a Stryker mutant) throwing there would crash the whole describe
+    block during collection, silently skipping every case instead of failing just the one test.
    */
-  const localTimeSample = supportsLocalTime
-    ? parseTimeToLocal("2026-01-01T00:00:00.000Z")
-    : (undefined as unknown as TDate);
+  const roundtrip = Symbol("roundtrip");
+  type LocalCase = string | number | typeof roundtrip;
+  const resolveLocal = (toParse: LocalCase): string | number | TDate =>
+    toParse === roundtrip ? parseTimeToLocal("2026-01-01T00:00:00.000Z") : toParse;
+  const resolveUtc = (toParse: LocalCase): string | number | TDate =>
+    toParse === roundtrip ? parseTimeToUtc("2026-01-01T00:00:00.000Z") : toParse;
 
   describe.skipIf(!supportsLocalTime)("parseToLocal", () => {
-    test.each(["2026-01-01T00:00Z", 100, localTimeSample])(
-      "doesn't throw",
-      (toParse: string | number | TDate) => {
-        expect(() => (createSut() as IParser<TDate>).parseToLocal(toParse)).not.toThrow();
-      },
-    );
-    test.each(["2026-01-01T00:00Z", 100, localTimeSample])(
-      "returns a value",
-      (toParse: string | number | TDate) => {
-        expect((createSut() as IParser<TDate>).parseToLocal(toParse)).not.toEqual(undefined);
-        expect((createSut() as IParser<TDate>).parseToLocal(toParse)).not.toEqual(null);
-      },
-    );
-    test.each(["2026-01-01T00:00Z", 100, localTimeSample])(
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("doesn't throw", (toParse) => {
+      expect(() =>
+        (createSut() as IParser<TDate>).parseToLocal(resolveLocal(toParse)),
+      ).not.toThrow();
+    });
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("returns a value", (toParse) => {
+      const parsed = resolveLocal(toParse);
+      expect((createSut() as IParser<TDate>).parseToLocal(parsed)).not.toEqual(undefined);
+      expect((createSut() as IParser<TDate>).parseToLocal(parsed)).not.toEqual(null);
+    });
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])(
       "aligns with native TDate construction",
-      (toParse: string | number | TDate) => {
-        expect((createSut() as IParser<TDate>).parseToLocal(toParse)).toEqual(
-          parseTimeToLocal(toParse),
+      (toParse) => {
+        const parsed = resolveLocal(toParse);
+        expect((createSut() as IParser<TDate>).parseToLocal(parsed)).toEqual(
+          parseTimeToLocal(parsed),
         );
       },
     );
@@ -59,23 +62,19 @@ export function testParser<TDate>(
     });
   });
   describe("parseToUtc", () => {
-    test.each(["2026-01-01T00:00Z", 100, parseTimeToUtc("2026-01-01T00:00:00.000Z")])(
-      "doesn't throw",
-      (toParse: string | number | TDate) => {
-        expect(() => createSut().parseToUtc(toParse)).not.toThrow();
-      },
-    );
-    test.each(["2026-01-01T00:00Z", 100, parseTimeToUtc("2026-01-01T00:00:00.000Z")])(
-      "returns a value",
-      (toParse: string | number | TDate) => {
-        expect(createSut().parseToUtc(toParse)).not.toEqual(undefined);
-        expect(createSut().parseToUtc(toParse)).not.toEqual(null);
-      },
-    );
-    test.each(["2026-01-01T00:00Z", 100, parseTimeToUtc("2026-01-01T00:00:00.000Z")])(
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("doesn't throw", (toParse) => {
+      expect(() => createSut().parseToUtc(resolveUtc(toParse))).not.toThrow();
+    });
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("returns a value", (toParse) => {
+      const parsed = resolveUtc(toParse);
+      expect(createSut().parseToUtc(parsed)).not.toEqual(undefined);
+      expect(createSut().parseToUtc(parsed)).not.toEqual(null);
+    });
+    test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])(
       "aligns with native TDate construction",
-      (toParse: string | number | TDate) => {
-        expect(createSut().parseToUtc(toParse)).toEqual(parseTimeToUtc(toParse));
+      (toParse) => {
+        const parsed = resolveUtc(toParse);
+        expect(createSut().parseToUtc(parsed)).toEqual(parseTimeToUtc(parsed));
       },
     );
     test.each([

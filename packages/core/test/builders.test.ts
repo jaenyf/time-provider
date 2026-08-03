@@ -2,6 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   createTimeProvider,
   type ISystemAddon,
+  type ISystemPlugin,
   type IUtcOnlySystemPlugin,
 } from "@time-provider/core";
 import {
@@ -17,6 +18,63 @@ function fakeSystemPlugin(): IUtcOnlySystemPlugin<unknown> {
     createSystemRuntime: () =>
       ({}) as ReturnType<IUtcOnlySystemPlugin<unknown>["createSystemRuntime"]>,
   };
+}
+
+function fakeTimezoneCapturingSystemPlugin(): {
+  plugin: ISystemPlugin<unknown>;
+  getLastTimezone: () => string | undefined;
+} {
+  let lastTimezone: string | undefined;
+  const plugin: ISystemPlugin<unknown> = {
+    supportsLocalTime: true,
+    createSystemRuntime: (timezone) => {
+      lastTimezone = timezone;
+      return {} as ReturnType<ISystemPlugin<unknown>["createSystemRuntime"]>;
+    },
+  };
+  return { plugin, getLastTimezone: () => lastTimezone };
+}
+
+function fakeTimezoneCapturingDeterministicPlugin(): {
+  plugin: IDeterministicPlugin<unknown>;
+  getLastTimezone: () => string | undefined;
+} {
+  let lastTimezone: string | undefined;
+  type Plugin = IDeterministicPlugin<unknown>;
+  const plugin: Plugin = {
+    supportsLocalTime: true,
+    createManualRuntime: (timezone) => {
+      lastTimezone = timezone;
+      return {} as ReturnType<Plugin["createManualRuntime"]>;
+    },
+    createFixedRuntime: (timezone) => {
+      lastTimezone = timezone;
+      return {} as ReturnType<Plugin["createFixedRuntime"]>;
+    },
+    createSequentialRuntime: (timezone) => {
+      lastTimezone = timezone;
+      return {} as ReturnType<Plugin["createSequentialRuntime"]>;
+    },
+  };
+  return { plugin, getLastTimezone: () => lastTimezone };
+}
+
+function fakeSequentialTimesCapturingDeterministicPlugin(): {
+  plugin: IDeterministicPlugin<unknown>;
+  getLastSequentialTimes: () => readonly unknown[] | undefined;
+} {
+  let lastSequentialTimes: readonly unknown[] | undefined;
+  type Plugin = IDeterministicPlugin<unknown>;
+  const plugin: Plugin = {
+    supportsLocalTime: true,
+    createManualRuntime: () => ({}) as ReturnType<Plugin["createManualRuntime"]>,
+    createFixedRuntime: () => ({}) as ReturnType<Plugin["createFixedRuntime"]>,
+    createSequentialRuntime: (_timezone, sequentialTimes) => {
+      lastSequentialTimes = sequentialTimes;
+      return {} as ReturnType<Plugin["createSequentialRuntime"]>;
+    },
+  };
+  return { plugin, getLastSequentialTimes: () => lastSequentialTimes };
 }
 
 function fakeDeterministicPlugin(): IDeterministicPlugin<unknown> {
@@ -85,6 +143,22 @@ function fakeCollidingDeterministicAddon(): IDeterministicAddon<unknown, unknown
   return addon as unknown as IDeterministicAddon<unknown, unknown>;
 }
 
+describe("RuntimeBuilder", () => {
+  describe("for", () => {
+    test.each([undefined, null])("throws a descriptive error for %s plugin", (undefinedValue) => {
+      expect(() => {
+        createTimeProvider.for(undefinedValue as unknown as IUtcOnlySystemPlugin<unknown>);
+      }).toThrow("The given plugin is not defined");
+    });
+
+    test("uses the given timezone by default, not the host's", () => {
+      const { plugin, getLastTimezone } = fakeTimezoneCapturingSystemPlugin();
+      createTimeProvider.for(plugin).create();
+      expect(getLastTimezone()).toBe("Etc/UTC");
+    });
+  });
+});
+
 describe("SystemPluggedRuntimeBuilder", () => {
   describe("use", () => {
     test("clones the given addon", () => {
@@ -119,7 +193,25 @@ describe("SystemPluggedRuntimeBuilder", () => {
   });
 });
 
+describe("DeterministicRuntimeBuilder", () => {
+  describe("for", () => {
+    test("uses the given timezone by default, not the host's", () => {
+      const { plugin, getLastTimezone } = fakeTimezoneCapturingDeterministicPlugin();
+      createDeterministicTimeProvider.for(plugin).asFixed().create();
+      expect(getLastTimezone()).toBe("Etc/UTC");
+    });
+  });
+});
+
 describe("DeterministicPluggedRuntimeBuilder", () => {
+  describe("asSequential().create()", () => {
+    test("defaults to a single epoch-0 entry when withSequentialTime was never called", () => {
+      const { plugin, getLastSequentialTimes } = fakeSequentialTimesCapturingDeterministicPlugin();
+      createDeterministicTimeProvider.for(plugin).asSequential().create();
+      expect(getLastSequentialTimes()).toEqual([0]);
+    });
+  });
+
   describe("use", () => {
     test("clones the given addon", () => {
       const { addon, calls } = fakeDeterministicAddon();

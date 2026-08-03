@@ -95,6 +95,14 @@ describe("animationFrameAddon (deterministic)", () => {
       expect(addon.clone()).not.toBe(addon);
     });
 
+    test("returns a distinct addon that still applies a SystemAnimationFrameScheduler", () => {
+      const cloned = addon.clone() as IDeterministicAddon<unknown, WithAnimationFrameApi> &
+        IAnimationFrameBuilderExtra;
+      const runtime = fakeDeterministicRuntime().runtime;
+      cloned.applyToRuntime(runtime);
+      expect(runtime.animation).toBeInstanceOf(DeterministicAnimationFrameScheduler);
+    });
+
     test.each([90, 120])("copy an existing host frames rate", (fps: number) => {
       const original = addon.clone() as IDeterministicAddon<unknown, WithAnimationFrameApi> &
         IAnimationFrameBuilderExtra;
