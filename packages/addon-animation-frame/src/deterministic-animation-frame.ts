@@ -1,4 +1,4 @@
-import type { IScheduler, SetTimeoutHandle } from "@time-provider/core";
+import type { DueHandle, IScheduler } from "@time-provider/core";
 import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
 /**
@@ -43,6 +43,6 @@ export class DeterministicAnimationFrameScheduler implements IAnimationFrameApi 
     ) as unknown as AnimationFrameHandle;
   }
   cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    this.#scheduler.clearTimeout(handle as unknown as SetTimeoutHandle);
+    this.#scheduler.clearTimeout(handle as unknown as DueHandle);
   }
 }

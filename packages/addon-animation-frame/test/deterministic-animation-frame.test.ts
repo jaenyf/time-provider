@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { IScheduler, SetTimeoutHandle } from "@time-provider/core";
+import type { DueHandle, IScheduler } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame.ts";
 
 /*
@@ -23,7 +23,7 @@ function fakeScheduler(): {
       setTimeout(callback, millisecondsDelay) {
         const handle = nextHandle++;
         scheduled.set(handle, { callback, delayMs: millisecondsDelay });
-        return handle as unknown as SetTimeoutHandle;
+        return handle as unknown as DueHandle;
       },
       clearTimeout(handle) {
         cleared.add(handle as unknown as number);
@@ -32,6 +32,12 @@ function fakeScheduler(): {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
       clearInterval() {
+        throw new Error("not used by DeterministicAnimationFrameScheduler");
+      },
+      setRecurring() {
+        throw new Error("not used by DeterministicAnimationFrameScheduler");
+      },
+      clearRecurring() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
     },

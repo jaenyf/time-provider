@@ -13,7 +13,7 @@ import {
   testUtcNow,
   testTimestampNow,
 } from "./helpers/testHelpers.ts";
-import type { SetIntervalHandle, SetTimeoutHandle, TimezoneDefinition } from "@time-provider/core";
+import type { DueHandle, TimezoneDefinition } from "@time-provider/core";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -476,12 +476,185 @@ export function testManualRuntime<TDate>(
             expect(callCount).toBe(2);
           });
         });
+        describe("setRecurring", () => {
+          test.each([1, 20, 100])(
+            "executes next callbacks when time advance",
+            (futureDelay: number) => {
+              const sut = createSUT();
+              let callbackACalled = false,
+                callbackBCalled = false;
+              sut.setRecurring(() => {
+                callbackACalled = true;
+                return false;
+              }, futureDelay);
+              sut.setRecurring(() => {
+                callbackBCalled = true;
+                return false;
+              }, futureDelay);
+              sut.advance({ milliseconds: futureDelay });
+              expect(callbackACalled).toBe(true);
+              expect(callbackBCalled).toBe(true);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore future callbacks when time advance",
+            (futureDelay: number) => {
+              const sut = createSUT();
+              let callbackACalled = false,
+                callbackBCalled = false;
+              sut.setRecurring(() => {
+                callbackACalled = true;
+                return false;
+              }, futureDelay * 2);
+              sut.setRecurring(() => {
+                callbackBCalled = true;
+                return false;
+              }, futureDelay * 2);
+              sut.advance({ milliseconds: futureDelay });
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test.each([1, 20, 100])(
+            "ignore cleared callbacks when time advance",
+            (futureDelay: number) => {
+              const sut = createSUT();
+              let callbackACalled = false,
+                callbackBCalled = false;
+              const handleA = sut.setRecurring(() => {
+                callbackACalled = true;
+                return false;
+              }, futureDelay);
+              const handleB = sut.setRecurring(() => {
+                callbackBCalled = true;
+                return false;
+              }, futureDelay);
+              sut.clearRecurring(handleA);
+              sut.clearRecurring(handleB);
+              sut.advance({ milliseconds: futureDelay });
+              expect(callbackACalled).toBe(false);
+              expect(callbackBCalled).toBe(false);
+            },
+          );
+          test("stops once callback returns false, instead of continuing to recur", () => {
+            const sut = createManualRuntime("Pacific/Kiritimati", 0);
+            let runs = 0;
+            sut.scheduler.setRecurring(() => {
+              runs++;
+              return runs < 3 ? 10 : false;
+            }, 10);
+            sut.advance({ milliseconds: 1000 });
+            expect(runs).toBe(3);
+          });
+          test("recomputes a fresh delay before every run, replaying every boundary a jump crosses", () => {
+            const sut = createManualRuntime("Pacific/Kiritimati", 0);
+            const delays = [10, 5, 1]; // due at +10, +15, +16
+            let calls = 1; // delays[0] is consumed as the initial delay below
+            let runs = 0;
+            sut.scheduler.setRecurring(() => {
+              runs++;
+              return calls < delays.length ? delays[calls++] : false;
+            }, delays[0]);
+            sut.advance({ milliseconds: 16 });
+            expect(runs).toBe(3);
+          });
+          describe("issue#131", () => {
+            test("does not invoke recurring B if recurring A cancels it during the same time advance", () => {
+              const sut = createSUT();
+              let callbackBCallCount = 0;
+              const recurringHandleB = sut.setRecurring(() => {
+                callbackBCallCount++;
+                return 20;
+              }, 20);
+              sut.setRecurring(() => {
+                sut.clearRecurring(recurringHandleB);
+                return false;
+              }, 10);
+              sut.advance({ milliseconds: 30 });
+              expect(callbackBCallCount).toBe(0);
+            });
+            test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
+              const sut = createSUT();
+              let runs = 0;
+              let handle: DueHandle;
+              handle = sut.setRecurring(() => {
+                runs++;
+                sut.clearRecurring(handle);
+                return 10;
+              }, 10);
+              sut.advance({ milliseconds: 100 });
+              expect(runs).toBe(1);
+            });
+            test("reentrantly draining other due work from inside a run does not see its own entry as still due", () => {
+              const sut = createSUT();
+              let recurringRunCalls = 0;
+              let recurringRunCallsSeenByReentrantWork: number | undefined;
+              sut.setRecurring(() => {
+                recurringRunCalls++;
+                if (recurringRunCalls === 2) {
+                  // this run is being processed from inside drainDueCallbacks, with the entry
+                  // already pulled out of the heap for it to run - scheduling due-now work here
+                  // reentrantly drains the same heap; without that removal, it would still find
+                  // this same entry sitting there stale and rerun it
+                  sut.setTimeout(() => {
+                    recurringRunCallsSeenByReentrantWork = recurringRunCalls;
+                  }, 0);
+                }
+                return recurringRunCalls < 3 ? 0 : false;
+              }, 0);
+              sut.advance({ milliseconds: 2 });
+              expect(recurringRunCallsSeenByReentrantWork).toBe(2);
+              expect(recurringRunCalls).toBe(3);
+            });
+          });
+          test("passing another runtime's handle does not cancel this runtime's recurring schedule", () => {
+            const sut = createSUT();
+            const otherRuntime = createSUT();
+            let callCount = 0;
+            const handle = sut.setRecurring(() => {
+              callCount++;
+              return 10;
+            }, 10);
+            otherRuntime.clearRecurring(handle);
+            sut.advance({ milliseconds: 25 });
+            expect(callCount).toBe(2);
+          });
+          test("clearing a recurring schedule via clearTimeout/clearInterval does not cancel it", () => {
+            const sut = createSUT();
+            let runs = 0;
+            const handle = sut.setRecurring(() => {
+              runs++;
+              return 10;
+            }, 10);
+            sut.clearTimeout(handle);
+            sut.clearInterval(handle);
+            sut.advance({ milliseconds: 25 });
+            expect(runs).toBe(2);
+          });
+          test("clearing an interval via clearRecurring does not cancel it", () => {
+            const sut = createSUT();
+            let callCount = 0;
+            const handle = sut.setInterval(() => callCount++, 10);
+            sut.clearRecurring(handle);
+            sut.advance({ milliseconds: 25 });
+            expect(callCount).toBe(2);
+          });
+          test("clearing a timeout via clearInterval/clearRecurring does not cancel it", () => {
+            const sut = createSUT();
+            let called = false;
+            const handle = sut.setTimeout(() => (called = true), 10);
+            sut.clearInterval(handle);
+            sut.clearRecurring(handle);
+            sut.advance({ milliseconds: 10 });
+            expect(called).toBe(true);
+          });
+        });
         describe("runtime heap", () => {
           const compactionThreshold = 1000;
           test("compaction discards timeout entries once it is triggered", () => {
             const sut = createSUT();
             let fireCount = 0;
-            const handles: SetTimeoutHandle[] = [];
+            const handles: DueHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
@@ -498,7 +671,7 @@ export function testManualRuntime<TDate>(
           test("compaction discards interval entries once it is triggered", () => {
             const sut = createSUT();
             let fireCount = 0;
-            const handles: SetIntervalHandle[] = [];
+            const handles: DueHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));

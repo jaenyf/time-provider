@@ -340,8 +340,25 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 // Scheduler
 // ---------------------------------------------------------------------------
 
-export type SetTimeoutHandle = ReturnType<typeof setTimeout>;
-export type SetIntervalHandle = ReturnType<typeof setInterval>;
+/**
+ * Discriminates what a {@link DueHandle} was obtained from.
+ */
+export const TIMER_KIND_TIMEOUT = 0;
+export const TIMER_KIND_INTERVAL = 1;
+export const TIMER_KIND_RECURRING = 2;
+export type TimerKind =
+  | typeof TIMER_KIND_TIMEOUT
+  | typeof TIMER_KIND_INTERVAL
+  | typeof TIMER_KIND_RECURRING;
+
+/**
+ * Opaque handle returned by {@link IScheduler.setTimeout}, {@link IScheduler.setInterval} and
+ * {@link IScheduler.setRecurring}. Pass it back to the matching `clear*` method to cancel it -
+ * `kind` is for introspection/debugging only, not meant to be branched on by consumers.
+ */
+export interface DueHandle {
+  readonly kind: TimerKind;
+}
 
 /**
  * Schedules and cancels timeouts/intervals.
@@ -366,23 +383,37 @@ export interface IScheduler {
    * now (0 if omitted or negative). See {@link IScheduler} for when the
    * callback actually runs depending on the clock strategy.
    */
-  setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
+  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
   /**
    * Cancels a pending timeout scheduled via {@link IScheduler.setTimeout}.
    * A no-op if it already ran or was already cleared.
    */
-  clearTimeout(handle: SetTimeoutHandle): void;
+  clearTimeout(handle: DueHandle): void;
   /**
    * Schedules `callback` to run repeatedly, every `millisecondsDelay`
    * milliseconds (0 if omitted or negative). See {@link IScheduler} for when
    * each run actually happens depending on the clock strategy.
    */
-  setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
+  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
   /**
    * Cancels a pending interval scheduled via {@link IScheduler.setInterval}.
    * A no-op if it was already cleared.
    */
-  clearInterval(handle: SetIntervalHandle): void;
+  clearInterval(handle: DueHandle): void;
+  /**
+   * Schedules `callback` to run once, `initialDelay` milliseconds from now (0 if omitted or
+   * negative), then again after whatever delay `callback` itself returns - typically computed
+   * from state the run itself just updated (a counter, remaining time, ...). Return `false` to
+   * stop recurring; any other falsy value (e.g. `0`) still schedules a run, `0` milliseconds from
+   * the previous one. See {@link IScheduler} for when each run actually happens depending on the
+   * clock strategy.
+   */
+  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
+  /**
+   * Cancels a pending recurring schedule started via {@link IScheduler.setRecurring}. A no-op if
+   * it already stopped (`callback` returned `false`) or was already cleared.
+   */
+  clearRecurring(handle: DueHandle): void;
 }
 
 interface ISchedulerProvider {

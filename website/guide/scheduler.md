@@ -21,6 +21,15 @@ This is what makes manual/sequential tests deterministic without `await`,
 call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
+`setRecurring` (see [IScheduler](/api/scheduler)) shares a heap with
+`setTimeout`/`setInterval`, so it fires in the same true chronological order
+as the other two. A due `setRecurring` entry is pulled out of the heap
+before its run happens, and only reinserted afterward if the run's return
+value is actually rearming it. That's what keeps it safe for the run to
+itself schedule new work (on a manual/sequential clock, that reentrantly
+drains the same heap) without the entry being visible to that nested drain
+while its own fate is still being decided.
+
 ## Implementation notes
 
 Internally, `setTimeout`/`setInterval` insert into a binary heap ordered by

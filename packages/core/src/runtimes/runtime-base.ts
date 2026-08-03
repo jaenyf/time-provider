@@ -1,12 +1,11 @@
 import type {
+  DueHandle,
   IClock,
   IParser,
   IPerformance,
   IRuntime,
   IScheduler,
   ITimeConverter,
-  SetIntervalHandle,
-  SetTimeoutHandle,
   TimezoneDefinition,
 } from "../types/types.ts";
 
@@ -91,10 +90,12 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#performance;
   }
 
-  abstract setTimeout(callback: () => void, millisecondsDelay?: number): SetTimeoutHandle;
-  abstract clearTimeout(handle: SetTimeoutHandle): void;
-  abstract setInterval(callback: () => void, millisecondsDelay?: number): SetIntervalHandle;
-  abstract clearInterval(handle: SetTimeoutHandle): void;
+  abstract setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
+  abstract clearTimeout(handle: DueHandle): void;
+  abstract setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
+  abstract clearInterval(handle: DueHandle): void;
+  abstract setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
+  abstract clearRecurring(handle: DueHandle): void;
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();

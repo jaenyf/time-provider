@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { BaseManualRuntime } from "@time-provider/core/deterministic";
-import type { ITimeConverter, SetIntervalHandle, SetTimeoutHandle } from "@time-provider/core";
+import type { DueHandle, ITimeConverter } from "@time-provider/core";
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (time) => Number(time),
@@ -59,7 +59,7 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 
       const sut = new FakeManualRuntime(0);
       const fired: number[] = [];
-      const handles: SetTimeoutHandle[] = uniqueDelays.map((delay) =>
+      const handles: DueHandle[] = uniqueDelays.map((delay) =>
         sut.scheduler.setTimeout(() => fired.push(delay), delay),
       );
 
@@ -89,7 +89,7 @@ describe("BaseDeterministicRuntime clearDueHandle", () => {
     let timeoutFired = false;
     const timeoutHandle = sut.scheduler.setTimeout(() => (timeoutFired = true), 10);
 
-    sut.scheduler.clearInterval(timeoutHandle as unknown as SetIntervalHandle);
+    sut.scheduler.clearInterval(timeoutHandle);
     sut.advance({ milliseconds: 10 });
 
     expect(timeoutFired).toBe(true);
@@ -100,7 +100,7 @@ describe("BaseDeterministicRuntime clearDueHandle", () => {
     let intervalFireCount = 0;
     const intervalHandle = sut.scheduler.setInterval(() => intervalFireCount++, 10);
 
-    sut.scheduler.clearTimeout(intervalHandle as unknown as SetTimeoutHandle);
+    sut.scheduler.clearTimeout(intervalHandle);
     sut.advance({ milliseconds: 10 });
 
     expect(intervalFireCount).toBe(1);
