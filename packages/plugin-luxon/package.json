@@ -61,7 +61,7 @@
     "luxon": "^3.7.2"
   },
   "peerDependencies": {
-    "@time-provider/core": "^0.0.4",
+    "@time-provider/core": "^1.4.0",
     "luxon": "^3.7.2"
   }
 }
