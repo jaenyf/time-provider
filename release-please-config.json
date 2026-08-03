@@ -3,46 +3,39 @@
   "changelog-path": "CHANGELOG.md",
   "separate-pull-requests": false,
   "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
   "packages": {
     "packages/addon-animation-frame": {
       "release-type": "node",
-      "component": "addon-animation-frame",
-      "versioning": "always-bump-minor"
+      "component": "addon-animation-frame"
     },
     "packages/core": {
       "release-type": "node",
-      "component": "core",
-      "versioning": "always-bump-minor"
+      "component": "core"
     },
     "packages/plugin-dayjs": {
       "release-type": "node",
-      "component": "plugin-dayjs",
-      "versioning": "always-bump-minor"
+      "component": "plugin-dayjs"
     },
     "packages/plugin-luxon": {
       "release-type": "node",
-      "component": "plugin-luxon",
-      "versioning": "always-bump-minor"
+      "component": "plugin-luxon"
     },
     "packages/plugin-moment": {
       "release-type": "node",
-      "component": "plugin-moment",
-      "versioning": "always-bump-minor"
+      "component": "plugin-moment"
     },
     "packages/plugin-moment-timezone": {
       "release-type": "node",
-      "component": "plugin-moment-timezone",
-      "versioning": "always-bump-minor"
+      "component": "plugin-moment-timezone"
     },
     "packages/plugin-native": {
       "release-type": "node",
-      "component": "plugin-native",
-      "versioning": "always-bump-minor"
+      "component": "plugin-native"
     },
     "packages/plugin-temporal": {
       "release-type": "node",
-      "component": "plugin-temporal",
-      "versioning": "always-bump-minor"
+      "component": "plugin-temporal"
     }
   }
 }

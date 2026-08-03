@@ -59,7 +59,7 @@
     "@time-provider/core": "workspace:*"
   },
   "peerDependencies": {
-    "@time-provider/core": "^1.4.0",
+    "@time-provider/core": "^1.3.0",
     "dayjs": "~1.8.15"
   }
 }
