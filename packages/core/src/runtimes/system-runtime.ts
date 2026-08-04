@@ -47,6 +47,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     const h = handle as SystemDueHandle | undefined;
     if (h?.kind === TIMER_KIND_TIMEOUT && h.current !== undefined) {
       clearTimeout(h.current);
+      h.current = undefined;
     }
   }
   /**
@@ -65,6 +66,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     const h = handle as SystemDueHandle | undefined;
     if (h?.kind === TIMER_KIND_INTERVAL && h.current !== undefined) {
       clearInterval(h.current);
+      h.current = undefined;
     }
   }
   /**
@@ -102,5 +104,6 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     }
     h.cancelled = true;
     clearTimeout(h.current);
+    h.current = undefined;
   }
 }
