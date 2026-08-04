@@ -11,169 +11,271 @@ import type {
 import { TIMER_KIND_INTERVAL, TIMER_KIND_RECURRING, TIMER_KIND_TIMEOUT } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 
-interface DueEntry {
-  /**
-   * Timestamp of when to run the callback
-   */
+interface BaseDueEntry {
   runAt: number;
-  /**
-   * Ordering for callbacks having the same runAt value
-   */
   seq: number;
   /**
    * Current position of this entry in the owning heap's backing array, or -1 when the entry
    * isn't currently stored in the heap (fired or cancelled).
    */
   heapIndex: number;
-  /**
-   * Repeat period in ms, only meaningful for TIMER_KIND_INTERVAL entries
-   */
+  /** Meaningful only for TIMER_KIND_INTERVAL; 0 on the other kinds. */
   delay: number;
-  /**
-   * Whether this entry is a one-shot timeout, a repeating interval, or a recurring schedule
-   */
-  kind: TimerKind;
-  /**
-   * The callback to run. For TIMER_KIND_RECURRING, its return value (`number | false`) decides
-   * the next run; for the other kinds it's ignored.
-   */
-  callback: (() => void) | (() => number | false);
+  /** Meaningful only for TIMER_KIND_RECURRING; false on the other kinds. */
+  cancelled: boolean;
   /**
    * The heap instance owning this entry. Guards against a handle from one runtime being used to
    * clear an entry in a different runtime's heap.
    */
   readonly owner: DueHeap;
-  /**
-   * Set by `clearRecurring`; consulted right after `callback` returns to decide whether to rearm
-   * a TIMER_KIND_RECURRING entry. That entry is physically removed from the heap before its
-   * callback runs (its next due time isn't known until the callback returns), so a `clearRecurring`
-   * call reentrant to that same entry's own callback has nothing left in the heap to remove - this
-   * flag is how it still stops the rearm the enclosing drain is about to do once callback returns.
-   */
-  cancelled: boolean;
 }
 
-function isBefore(a: DueEntry, b: DueEntry): boolean {
-  const ar = a.runAt;
-  const br = b.runAt;
-  return ar < br || (ar === br && a.seq < b.seq);
+interface TimeoutEntry extends BaseDueEntry {
+  readonly kind: typeof TIMER_KIND_TIMEOUT;
+  callback: () => void;
 }
 
+interface IntervalEntry extends BaseDueEntry {
+  readonly kind: typeof TIMER_KIND_INTERVAL;
+  callback: () => void;
+}
+
+interface RecurringEntry extends BaseDueEntry {
+  readonly kind: typeof TIMER_KIND_RECURRING;
+  /** Return value decides the next run; `false` stops the schedule. */
+  callback: () => number | false;
+}
+
+type DueEntry = TimeoutEntry | IntervalEntry | RecurringEntry;
+
+/** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap {
   private _entries: DueEntry[] = [];
   private _nextSeq = 1;
 
-  nextSeq(): number {
-    return this._nextSeq++;
+  registerTimeout(runAt: number, callback: () => void): TimeoutEntry {
+    const entry: TimeoutEntry = {
+      runAt,
+      seq: this._nextSeq++,
+      heapIndex: -1,
+      delay: 0,
+      cancelled: false,
+      kind: TIMER_KIND_TIMEOUT,
+      callback,
+      owner: this,
+    };
+    this._insert(entry);
+    return entry;
   }
 
-  peek(): DueEntry | undefined {
-    return this._entries[0];
+  registerInterval(runAt: number, delay: number, callback: () => void): IntervalEntry {
+    const entry: IntervalEntry = {
+      runAt,
+      seq: this._nextSeq++,
+      heapIndex: -1,
+      delay,
+      cancelled: false,
+      kind: TIMER_KIND_INTERVAL,
+      callback,
+      owner: this,
+    };
+    this._insert(entry);
+    return entry;
   }
 
-  push(entry: DueEntry): void {
-    const entries = this._entries;
-    entry.heapIndex = entries.length;
-    entries.push(entry);
-    this._siftUp(entry.heapIndex);
-  }
-
-  pop(): DueEntry | undefined {
-    return this._removeAt(0);
+  registerRecurring(runAt: number, callback: () => number | false): RecurringEntry {
+    const entry: RecurringEntry = {
+      runAt,
+      seq: this._nextSeq++,
+      heapIndex: -1,
+      delay: 0,
+      cancelled: false,
+      kind: TIMER_KIND_RECURRING,
+      callback,
+      owner: this,
+    };
+    this._insert(entry);
+    return entry;
   }
 
   /** Removes an arbitrary entry in O(log n) using its tracked heapIndex; no-op if already removed. */
   remove(entry: DueEntry): void {
-    if (entry.heapIndex >= 0) {
-      this._removeAt(entry.heapIndex);
-    }
+    if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
   }
 
-  /**
-   * Equivalent to `pop()` followed by `push()` of the same entry, but without the redundant
-   * remove/reinsert. Takes the entry rather than assuming the root: a plain interval never runs
-   * user code before calling this (safe to assume root), but a recurring entry's callback is
-   * arbitrary reentrant user code that may have already moved this entry (or others) around
-   * the heap by the time its result comes back.
-   */
-  fixAfterIncrease(entry: DueEntry): void {
-    this._siftDown(entry.heapIndex);
+  /** Appends `entry` at the end of the heap and sifts it up into place. */
+  private _insert(entry: DueEntry): void {
+    const index = this._entries.length;
+    this._entries.push(entry);
+    this._siftUp(entry, index);
   }
 
-  private _removeAt(index: number): DueEntry {
+  /** Removes whatever entry occupies heap position `index` and re-seats the heap around the gap. */
+  private _removeAtIndex(index: number): void {
     const entries = this._entries;
+    entries[index].heapIndex = -1;
     const lastIndex = entries.length - 1;
-    const removed = entries[index];
-    removed.heapIndex = -1;
-    if (index !== lastIndex) {
-      const last = entries.pop()!;
-      entries[index] = last;
-      last.heapIndex = index;
-      /*
-        The replacement is either smaller or larger than what used to sit here, never both, so
-        only one direction can ever move it - checking against the parent picks the right one
-        instead of unconditionally trying both.
-      */
-      const parentIndex = (index - 1) >>> 1;
-      if (index > 0 && isBefore(last, entries[parentIndex])) {
-        this._siftUp(index);
-      } else {
-        this._siftDown(index);
-      }
-    } else {
+    if (index === lastIndex) {
       entries.pop();
+      return;
     }
-    return removed;
+    const moved = entries.pop()!;
+    const parent = entries[(index - 1) >>> 1];
+    /*
+      The replacement is either smaller or larger than what used to sit here, never both, so
+      only one direction can ever move it - comparing against the parent picks the right one
+      instead of unconditionally trying both.
+    */
+    //#region inlining of isBefore
+    if (
+      index > 0 &&
+      (moved.runAt < parent.runAt || (moved.runAt === parent.runAt && moved.seq < parent.seq))
+    ) {
+      //#endregion inlining of isBefore
+      this._siftUp(moved, index);
+    } else {
+      this._siftDown(moved, index);
+    }
   }
 
-  private _siftUp(index: number): void {
+  /** Hole-algorithm siftUp: shifts ancestors down one slot at a time, then seats `moving` once. */
+  private _siftUp(moving: DueEntry, index: number): void {
     const entries = this._entries;
+    const movingRunAt = moving.runAt;
+    const movingSeq = moving.seq;
     while (index > 0) {
       const parentIndex = (index - 1) >>> 1;
-      const current = entries[index];
       const parent = entries[parentIndex];
-      if (!isBefore(current, parent)) break;
-      /*
-        Explicit temp-variable swap, not array-destructuring
-        Measured faster here since sift operations run on every push/pop and this is by far the hottest line in the heap.
-      */
-      entries[parentIndex] = current;
+      const parentRunAt = parent.runAt;
+      const parentSeq = parent.seq;
+      //#region inlining of isBefore
+      if (movingRunAt > parentRunAt || (movingRunAt === parentRunAt && movingSeq >= parentSeq)) {
+        break;
+      }
+      //#endregion inlining of isBefore
       entries[index] = parent;
-      current.heapIndex = parentIndex;
       parent.heapIndex = index;
       index = parentIndex;
     }
+    entries[index] = moving;
+    moving.heapIndex = index;
   }
 
-  private _siftDown(index: number): void {
+  /** Hole-algorithm siftDown: shifts the smaller child up one slot at a time, then seats `moving` once. */
+  private _siftDown(moving: DueEntry, index: number): void {
     const entries = this._entries;
     const length = entries.length;
+    const movingRunAt = moving.runAt;
+    const movingSeq = moving.seq;
     for (;;) {
       const left = index * 2 + 1;
-      const right = index * 2 + 2;
-      let smallest = index;
-      let smallestEntry = entries[index];
-      if (left < length) {
-        const leftEntry = entries[left];
-        if (isBefore(leftEntry, smallestEntry)) {
-          smallest = left;
-          smallestEntry = leftEntry;
-        }
-      }
+      if (left >= length) break;
+      const right = left + 1;
+      let smallestIndex = left;
+      let smallest = entries[left];
+      let smallestRunAt = smallest.runAt;
+      let smallestSeq = smallest.seq;
       if (right < length) {
         const rightEntry = entries[right];
-        if (isBefore(rightEntry, smallestEntry)) {
-          smallest = right;
-          smallestEntry = rightEntry;
+        const rightRunAt = rightEntry.runAt;
+        const rightSeq = rightEntry.seq;
+        //#region inlining of isBefore
+        if (
+          rightRunAt < smallestRunAt ||
+          (rightRunAt === smallestRunAt && rightSeq < smallestSeq)
+        ) {
+          smallestIndex = right;
+          smallest = rightEntry;
+          smallestRunAt = rightRunAt;
+          smallestSeq = rightSeq;
+        }
+        //#endregion inlining of isBefore
+      }
+      //#region inlining of isBefore
+      if (
+        movingRunAt < smallestRunAt ||
+        (movingRunAt === smallestRunAt && movingSeq <= smallestSeq)
+      ) {
+        break;
+      }
+      //#endregion inlining of isBefore
+      entries[index] = smallest;
+      smallest.heapIndex = index;
+      index = smallestIndex;
+    }
+    entries[index] = moving;
+    moving.heapIndex = index;
+  }
+
+  /**
+   * Runs any pending callbacks due at or before `now`. Lives on the heap itself and touches
+   * `_entries` directly instead of going through peek/pop/push: method dispatch isn't free, and
+   * this loop can run millions of times over a scheduler's lifetime. Timeouts, intervals and
+   * recurring schedules share one heap ordered by `(runAt, seq)`, so a mixed batch of due timers
+   * fires in true chronological order rather than draining every due timeout before any due
+   * interval/recurring entry is even considered.
+   */
+  drainDue(now: number): void {
+    const entries = this._entries;
+
+    for (;;) {
+      //#region inlining of DueHeap.peek
+      if (entries.length === 0) break;
+      const root = entries[0];
+      //#endregion inlining of DueHeap.peek
+      if (root.runAt > now) break;
+
+      switch (root.kind) {
+        case TIMER_KIND_TIMEOUT: {
+          //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
+          //#region inlining of DueHeap.pop
+          root.heapIndex = -1;
+          const lastIndex = entries.length - 1;
+          if (lastIndex > 0) {
+            const last = entries.pop()!;
+            this._siftDown(last, 0);
+          } else {
+            entries.pop();
+          }
+          //#endregion inlining of DueHeap.pop
+          root.callback();
+          break;
+        }
+        case TIMER_KIND_INTERVAL: {
+          const callback = root.callback;
+          //#region inlining of DueHeap.nextSeq
+          root.seq = this._nextSeq++;
+          //#endregion inlining of DueHeap.nextSeq
+          root.runAt += root.delay > 0 ? root.delay : 1;
+          //#region inlining of DueHeap.fixAfterIncrease
+          this._siftDown(root, 0);
+          //#endregion inlining of DueHeap.fixAfterIncrease
+          callback();
+          break;
+        }
+        case TIMER_KIND_RECURRING: {
+          //#region inlining of DueHeap.pop
+          root.heapIndex = -1;
+          const lastIndex = entries.length - 1;
+          if (lastIndex > 0) {
+            const last = entries.pop()!;
+            this._siftDown(last, 0);
+          } else {
+            entries.pop();
+          }
+          //#endregion inlining of DueHeap.pop
+          const previousRunAt = root.runAt;
+          const next = root.callback();
+          if (!root.cancelled && next !== false) {
+            //#region inlining of DueHeap.nextSeq
+            root.seq = this._nextSeq++;
+            //#endregion inlining of DueHeap.nextSeq
+            root.runAt = previousRunAt + (next < 1 ? 1 : next);
+            this._insert(root);
+          }
+          break;
         }
       }
-      if (smallest === index) break;
-      const swappedIndex = entries[index];
-      entries[smallest] = swappedIndex;
-      entries[index] = smallestEntry;
-      swappedIndex.heapIndex = smallest;
-      smallestEntry.heapIndex = index;
-      index = smallest;
     }
   }
 }
@@ -224,106 +326,24 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
   //#region heap management
   private static clearDueHandle(handle: unknown, queue: DueHeap, kind: TimerKind): void {
-    if (handle === undefined || handle === null) {
-      return;
-    }
+    if (handle === undefined || handle === null) return;
     const entry = handle as DueEntry;
-    if (entry.owner === queue && entry.kind === kind) {
-      queue.remove(entry);
-    }
+    if (entry.owner !== queue || entry.kind !== kind) return;
+    queue.remove(entry);
   }
 
   private static clearRecurringHandle(handle: unknown, queue: DueHeap): void {
-    if (handle === undefined || handle === null) {
-      return;
-    }
+    if (handle === undefined || handle === null) return;
     const entry = handle as DueEntry;
-    if (entry.owner !== queue || entry.kind !== TIMER_KIND_RECURRING) {
-      return;
-    }
+    if (entry.owner !== queue || entry.kind !== TIMER_KIND_RECURRING) return;
     entry.cancelled = true;
     queue.remove(entry);
   }
 
-  /**
-   * Runs any pending callbacks due at or before `now`.
-   * @param now
-   * @param queue
-   */
-  private static drainDueCallbacks(now: number, queue: DueHeap): void {
-    /*
-      Peeking the heap's root instead of scanning the whole map means a `now()` call where
-      nothing is due - the common case - costs O(1), not O(N). Timeouts, intervals and recurring
-      schedules share a single heap ordered by (runAt, seq), so a mixed batch of due timers fires
-      in true chronological order - the same order a real timer queue would use - rather than
-      draining every due timeout before any due interval/recurring entry is even considered.
-    */
-    let due: DueEntry | undefined;
-    while ((due = queue.peek()) !== undefined && due.runAt <= now) {
-      if (due.kind === TIMER_KIND_TIMEOUT) {
-        queue.pop();
-        due.callback();
-      } else if (due.kind === TIMER_KIND_INTERVAL) {
-        /*
-          Rearm and re-sift BEFORE invoking the callback. It matters to ensure there's nothing
-          stale for a reentrant call to observe. Safe to assume `due` is still root here: nothing
-          but this loop touches the heap between the `peek()` above and this rearm.
-        */
-        const callback = due.callback;
-        due.runAt += due.delay || 1;
-        due.seq = queue.nextSeq();
-        queue.fixAfterIncrease(due);
-        callback();
-      } else {
-        /*
-          TIMER_KIND_RECURRING: unlike a plain interval, the next delay isn't known ahead of time
-          - callback's return value decides it, typically from state the run itself just updated
-          (e.g. a counter). There's never a next occurrence already committed by the time it's
-          decided: cancelling (via `cancelled`, or callback returning false) always takes effect
-          immediately, with no trailing extra run - unlike clearTimeout/clearInterval, which can
-          only ever be forward-looking since by definition they race an already-scheduled
-          callback.
-        */
-        const callback = due.callback as () => number | false;
-        const previousRunAt = due.runAt;
-        queue.remove(due);
-        const next = callback();
-        if (!due.cancelled && next !== false) {
-          due.runAt = previousRunAt + (next < 1 ? 1 : next);
-          due.seq = queue.nextSeq();
-          queue.push(due);
-        }
-      }
-    }
-  }
-
-  private static queueDueEntry(
-    runtime: BaseDeterministicRuntime<any>,
-    nowTimestamp: number,
-    delayMs: number,
-    repeatDelayMs: number,
-    kind: TimerKind,
-    callback: (() => void) | (() => number | false),
-  ): DueEntry {
-    const queue = runtime.#dueQueue;
-    const entry: DueEntry = {
-      runAt: nowTimestamp + delayMs,
-      seq: queue.nextSeq(),
-      heapIndex: -1,
-      delay: repeatDelayMs,
-      kind,
-      cancelled: false,
-      callback,
-      owner: queue,
-    };
-    queue.push(entry);
-    runtime.mayRunDueCallbacks(nowTimestamp);
-    return entry;
-  }
   //#endregion heap management
 
   protected mayRunDueCallbacks(nowTimestamp: number): void {
-    BaseDeterministicRuntime.drainDueCallbacks(nowTimestamp, this.#dueQueue);
+    this.#dueQueue.drainDue(nowTimestamp);
   }
 
   //#region setTimeout
@@ -335,14 +355,9 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
     const now = this.peekTimestamp();
-    return BaseDeterministicRuntime.queueDueEntry(
-      this,
-      now,
-      delay,
-      0,
-      TIMER_KIND_TIMEOUT,
-      callback,
-    ) as unknown as DueHandle;
+    const entry = this.#dueQueue.registerTimeout(now + delay, callback);
+    this.mayRunDueCallbacks(now);
+    return entry;
   }
   /**
    * Cancels a pending timeout scheduled via {@link setTimeout}. A no-op if it already ran or was
@@ -362,14 +377,9 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
     const now = this.peekTimestamp();
-    return BaseDeterministicRuntime.queueDueEntry(
-      this,
-      now,
-      delay,
-      delay,
-      TIMER_KIND_INTERVAL,
-      callback,
-    ) as unknown as DueHandle;
+    const entry = this.#dueQueue.registerInterval(now + delay, delay, callback);
+    this.mayRunDueCallbacks(now);
+    return entry;
   }
   /**
    * Cancels a pending interval scheduled via {@link setInterval}. A no-op if it was already
@@ -390,14 +400,9 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     let delay = initialDelay;
     if (delay === undefined || delay < 0) delay = 0;
     const now = this.peekTimestamp();
-    return BaseDeterministicRuntime.queueDueEntry(
-      this,
-      now,
-      delay,
-      0,
-      TIMER_KIND_RECURRING,
-      callback,
-    ) as unknown as DueHandle;
+    const entry = this.#dueQueue.registerRecurring(now + delay, callback);
+    this.mayRunDueCallbacks(now);
+    return entry;
   }
   /**
    * Cancels a pending recurring schedule started via {@link setRecurring}. A no-op if it already

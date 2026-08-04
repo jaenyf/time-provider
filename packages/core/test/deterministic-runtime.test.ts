@@ -81,6 +81,43 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
       expect(fired).toEqual(expected);
     },
   );
+
+  test("clearing the current root while other entries remain re-seats the heap from a leaf", () => {
+    const sut = new FakeManualRuntime(0);
+    const fired: string[] = [];
+    const root = sut.scheduler.setTimeout(() => fired.push("a"), 1);
+    sut.scheduler.setTimeout(() => fired.push("b"), 100);
+    sut.scheduler.setTimeout(() => fired.push("c"), 50);
+
+    // "a" is the earliest-due entry (heap root) at the moment it's cleared, with two other
+    // entries still pending - unlike clearing a non-root entry, there's no parent to compare
+    // the replacement against here.
+    sut.scheduler.clearTimeout(root);
+
+    sut.advance({ milliseconds: 100 });
+    expect(fired).toEqual(["c", "b"]);
+  });
+
+  test("clearing the root when other entries share its runAt exercises the siftDown tie-break", () => {
+    const sut = new FakeManualRuntime(0);
+    const fired: number[] = [];
+    const makeTimeout = (id: number) => sut.scheduler.setTimeout(() => fired.push(id), 100);
+
+    const root = makeTimeout(0);
+    const toClear = makeTimeout(1);
+    makeTimeout(2);
+    makeTimeout(3);
+    sut.scheduler.clearTimeout(toClear);
+    makeTimeout(10);
+    makeTimeout(11);
+    // "0" is still the root (smallest seq among entries sharing runAt 100) when cleared, with
+    // several same-runAt siblings left - the resulting re-seat has to compare same-runAt
+    // children by seq to find which one moves up.
+    sut.scheduler.clearTimeout(root);
+
+    sut.advance({ milliseconds: 100 });
+    expect(fired).toEqual([2, 3, 10, 11]);
+  });
 });
 
 describe("BaseDeterministicRuntime clearDueHandle", () => {
