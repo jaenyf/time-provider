@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@time-provider/addon-animation-frame": "workspace:*",
+    "@time-provider/addon-cron": "workspace:*",
     "@time-provider/core": "workspace:*",
     "@time-provider/plugin-dayjs": "workspace:*",
     "@time-provider/plugin-luxon": "workspace:*",

@@ -48,6 +48,12 @@ const ANIMATION_ADDON_MARKERS = [
 const SYSTEM_ANIMATION_MARKER = "SystemAnimationFrameScheduler";
 const DETERMINISTIC_ANIMATION_MARKER = "DeterministicAnimationFrameScheduler";
 
+/*
+ * Same story for @time-provider/addon-cron: never imported by core or by any plugin, so a bundle
+ * that doesn't `.use()` it should carry none of its parser or scheduler.
+ */
+const CRON_ADDON_MARKERS = ["CronScheduler", "Invalid cron expression"];
+
 async function bundle(entry: string): Promise<string> {
   const result = await build({
     // prevent vite-plus from trying to load this package's own vite.config.ts
@@ -119,6 +125,46 @@ describe("tree-shaking", () => {
       const code = await bundle("./fixtures/with-animation-addon/deterministic.ts");
       expect(code).toContain(DETERMINISTIC_ANIMATION_MARKER);
       expect(code).not.toContain(SYSTEM_ANIMATION_MARKER);
+    });
+  });
+
+  describe("cron addon", () => {
+    test("is entirely absent from a bundle that never imports it", async () => {
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      for (const marker of CRON_ADDON_MARKERS) {
+        expect(code).not.toContain(marker);
+      }
+    });
+
+    /*
+     * Unlike the animation addon, both cron entry points share one CronScheduler - the split that
+     * matters here is which *runtime* each one drags in, since the parser is the same either way.
+     */
+    test("system entry point pulls in the cron scheduler but no deterministic runtime", async () => {
+      const code = await bundle("./fixtures/with-cron-addon/system.ts");
+      for (const marker of CRON_ADDON_MARKERS) {
+        expect(code).toContain(marker);
+      }
+      for (const marker of DETERMINISTIC_MARKERS) {
+        expect(code).not.toContain(marker);
+      }
+    });
+
+    test("deterministic entry point pulls in the cron scheduler and the deterministic runtime", async () => {
+      const code = await bundle("./fixtures/with-cron-addon/deterministic.ts");
+      for (const marker of CRON_ADDON_MARKERS) {
+        expect(code).toContain(marker);
+      }
+      expect(code).toContain("BaseManualRuntime");
+    });
+
+    test("neither cron entry point drags in the animation addon", async () => {
+      for (const fixture of ["system", "deterministic"]) {
+        const code = await bundle(`./fixtures/with-cron-addon/${fixture}.ts`);
+        for (const marker of ANIMATION_ADDON_MARKERS) {
+          expect(code).not.toContain(marker);
+        }
+      }
     });
   });
 });

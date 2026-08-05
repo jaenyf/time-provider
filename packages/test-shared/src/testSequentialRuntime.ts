@@ -3,11 +3,17 @@ import type { DueHandle, IClock, TimezoneDefinition } from "@time-provider/core"
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
-import { testConstructorArgs, testTimestampNow, testWithTimezone } from "./helpers/testHelpers.ts";
+import {
+  testConstructorArgs,
+  testTimestampNow,
+  testWithTimezone,
+  getDeterministicBuilderFor,
+} from "./helpers/testHelpers.ts";
 import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
+import { testAddonCronSequential } from "./helpers/testCron.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -787,6 +793,10 @@ export function testSequentialRuntime<TDate>(
         const sut = createSequentialRuntime("Pacific/Kiritimati", []);
         expect(sut.performance.now()).toBe(0);
       });
+    });
+
+    describe("addon-cron", () => {
+      testAddonCronSequential(() => getDeterministicBuilderFor(plugin));
     });
   });
 }

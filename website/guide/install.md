@@ -48,4 +48,5 @@ date library? See [Addons](/guide/addons) — e.g.
 @time-provider/plugin-moment-timezone  Moment.js + moment-timezone
 @time-provider/plugin-temporal         Temporal (via @js-temporal/polyfill until native)
 @time-provider/addon-animation-frame   Animation Frame API addon (requestAnimationFrame/cancelAnimationFrame)
+@time-provider/addon-cron              Cron scheduling addon (standard 5-field cron expressions)
 ```

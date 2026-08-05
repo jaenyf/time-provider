@@ -3,6 +3,8 @@
  * None of them cause JavaScript to be emited, so it has no effect on bundle size or tree-shaking.
  */
 
+import type { GregorianMonthName, GregorianWeekdayName } from "../calendar/gregorian-names.ts";
+
 //#region Performance
 // ---------------------------------------------------------------------------
 // Performance
@@ -230,6 +232,10 @@ interface IClockProvider<TClock> {
 interface ITimestampClock {
   /**
    * Returns the current time stamp.
+   * Note: This operation is guaranteed to be side effects free.
+   * On sequential clock, it does not consume the next queued value, and never runs due scheduler callbacks.
+   * {@link IUtcOnlyClock.utcNow}/{@link ILocalOnlyClock.localNow} are the reads that do.
+   * Use this instead when "now" is only needed to compute something (e.g. a delay), not to observe the passage of time.
    */
   timestampNow(): number;
 }
@@ -240,15 +246,25 @@ interface ITimestampClock {
 interface IUtcOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now in UTC.
+   * Note: On a sequential clock, this read also makes time advance and may run due scheduler callbacks.
+   * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
    */
   utcNow(): TDate;
+  /**
+   * The calendar adapter backing this clock's date library - see {@link ICalendarAdapter}. Every
+   * runtime has one: a plugin's own, if it provides one, otherwise a shared Gregorian/`Intl`
+   * default. Exposed here (rather than only on {@link ITimeConverter}) so calendar-consuming
+   * addons (e.g. cron) can reach it through the runtime's public facade.
+   */
+  get calendarAdapter(): ICalendarAdapter<TDate>;
 }
 
 interface ILocalOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now for the local timezone of the runtime.
    * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwhich timezone).
-   * Therefor, the runtime will not try to guess the host localtime !
+   * Note: On a sequential clock, this read also makes time advance and may run due scheduler callbacks.
+   * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
    */
   localNow(): TDate;
   /**
@@ -282,6 +298,100 @@ export interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManual
 
 interface IUtcOnlyManualClock<TDate>
   extends IUtcOnlyClock<TDate>, IAdvanceable<IUtcOnlyManualClock<TDate>> {}
+
+//#endregion
+
+//#region Calendar
+// ---------------------------------------------------------------------------
+// Calendar
+// ---------------------------------------------------------------------------
+
+/**
+ * The wall-clock calendar fields a `TDate` decomposes into, in whatever calendar system that
+ * `TDate`'s {@link ICalendarAdapter} represents - not necessarily Gregorian. `weekday` is derived
+ * (0-based, calendar-defined), not an independent field - see {@link ComposableCalendarFields}
+ * for the subset {@link ICalendarAdapter.compose} actually accepts.
+ */
+export interface CalendarFields {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly weekday: number;
+}
+
+/**
+ * The fields {@link ICalendarAdapter.compose} accepts - every {@link CalendarFields} member
+ * except the derived `weekday`.
+ */
+export type ComposableCalendarFields = Omit<CalendarFields, "weekday">;
+
+/**
+ * Calendar introspection/arithmetic for a `TDate`, delegated to whichever date library backs it -
+ * lets calendar-consuming code (e.g. the cron addon) work against any plugin's own calendar
+ * system and timezone data instead of assuming Gregorian/`Intl`. Optional on
+ * {@link ITimeConverter}: a plugin only implements it to diverge from the shared default (e.g. to
+ * honor its own bundled timezone data) or to support an operation the default can't. When a
+ * plugin doesn't provide one, {@link IUtcOnlyClock.calendarAdapter} falls back to that default.
+ *
+ * Nothing here assumes a specific calendar system: the unit sizes are all queried rather than
+ * assumed (a calendar with 36 months of 10 days, or a day of 10 hours, is describable), and the
+ * month/weekday names are whatever this calendar calls them - `TMonthName`/`TWeekdayName` default
+ * to the Gregorian ones so the overwhelmingly common case needs no type arguments at all.
+ *
+ * Every member is cheap to implement even for a plugin with nothing to diverge on: the
+ * constant-shaped ones are one-liners, and the rest are thin forwards to an accessor/method the
+ * date library already exposes natively (`.year()`, `.add()`/`.plus()`, ...) - none of it is
+ * calendar math reimplemented per plugin, just a uniform shape generic code can call across
+ * incompatible APIs.
+ */
+export interface ICalendarAdapter<
+  TDate,
+  TMonthName extends string = GregorianMonthName,
+  TWeekdayName extends string = GregorianWeekdayName,
+> {
+  /** Converts `date` to epoch milliseconds - same as {@link ITimeConverter.convertToTimestamp}. */
+  toTimestamp(date: TDate): number;
+  /** Converts epoch milliseconds to a `TDate` - same as {@link ITimeConverter.convertToUtcDate}. */
+  fromTimestamp(timestampMs: number): TDate;
+  /** Number of minutes in an hour for this calendar's timekeeping - `60` for Gregorian. */
+  minutesPerHour(): number;
+  /** Number of hours in a day for this calendar's timekeeping - `24` for Gregorian. */
+  hoursPerDay(): number;
+  /** Number of days in a week for this calendar - `7` for Gregorian. */
+  daysPerWeek(): number;
+  /** Number of months in a year for this calendar - `12` for Gregorian. */
+  monthsPerYear(): number;
+  /** The largest a day-of-month value can ever be for this calendar - `31` for Gregorian. */
+  maxDayOfMonth(): number;
+  /**
+   * The names this calendar gives its months, in calendar order - index 0 names month 1. Empty
+   * when this calendar names no months, in which case only numeric month values are accepted.
+   * Matched case-insensitively by consumers.
+   */
+  readonly monthNames: readonly TMonthName[];
+  /** The names this calendar gives its weekdays, in calendar order - see {@link monthNames}. */
+  readonly weekdayNames: readonly TWeekdayName[];
+  /**
+   * Normalizes possibly out-of-range `fields` (e.g. minute 65, month 13) via this calendar's own
+   * carry rules, same as how out-of-range arguments to `new Date(...)` roll over - timezone-
+   * independent, pure calendar-field arithmetic, unrelated to any real instant. Distinct from
+   * {@link ICalendarAdapter.compose}: repeatedly normalizing (rather than composing) while
+   * searching for a candidate date, and only resolving to a real `TDate`/instant once a match is
+   * found, keeps a DST transition from perturbing every step along the way to the answer instead
+   * of just the answer itself.
+   */
+  normalize(fields: ComposableCalendarFields): CalendarFields;
+  /** Decomposes `date` into its wall-clock calendar fields, as observed in `timezone`. */
+  decompose(date: TDate, timezone: TimezoneDefinition): CalendarFields;
+  /**
+   * Constructs a `TDate` from `fields` (already in range - see {@link ICalendarAdapter.normalize}
+   * for fields that might not be), interpreted as local time in `timezone`. For a timezone-aware
+   * adapter, this is where DST ambiguity (a skipped or repeated wall-clock instant) is resolved.
+   */
+  compose(fields: ComposableCalendarFields, timezone: TimezoneDefinition): TDate;
+}
 
 //#endregion
 
@@ -449,6 +559,11 @@ export interface ITimeConverter<TDate> {
    * Converts `time` to a `TDate` instance expressed in the given local `timezone`.
    */
   convertToLocalDate(timezone: TimezoneDefinition, time: string | number | TDate): TDate;
+  /**
+   * This plugin's own {@link ICalendarAdapter}, when it diverges from (or supports an operation
+   * the) shared Gregorian/`Intl` default (can't). Omit to inherit that default.
+   */
+  readonly calendarAdapter?: ICalendarAdapter<TDate>;
 }
 
 /**
