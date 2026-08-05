@@ -1,0 +1,96 @@
+import type { DueHandle, ICalendarAdapter, IScheduler } from "@time-provider/core";
+import {
+  computeNextOccurrence,
+  parseCronExpression,
+  parseCronSpec,
+  type DayOfWeekName,
+  type ICronSpec,
+  type MonthName,
+} from "./cron-parser.ts";
+import type { ICronApi } from "./types.ts";
+
+/**
+ * Implements {@link ICronApi} on top of `IScheduler.setRecurring`, re-deriving the delay to the
+ * next occurrence after every run. Generic over `TDate`, delegated to `adapter` for every
+ * calendar/timezone computation - see {@link ICalendarAdapter} - so the same implementation backs
+ * every plugin, and each one's own calendar/timezone behavior (if it diverges from the shared
+ * default) is honored automatically.
+ */
+export class CronScheduler<
+  TDate,
+  TMonthName extends string = MonthName,
+  TWeekdayName extends string = DayOfWeekName,
+> implements ICronApi<TMonthName, TWeekdayName> {
+  #scheduler: IScheduler;
+  #timestampNow: () => number;
+  #timezone: () => string;
+  #adapter: ICalendarAdapter<TDate, TMonthName, TWeekdayName>;
+
+  /**
+   * @param scheduler the runtime's scheduler used to run due callbacks.
+   * @param timestampNow reads the runtime's current time, in epoch milliseconds. Side-effect-free
+   * by contract - see {@link ITimestampClock.timestampNow} - which is what lets `schedule()` read
+   * it once to compute the first delay and trust that `IScheduler.setRecurring` reads the same
+   * "now" internally to turn that delay into an absolute run time.
+   * @param timezone reads the IANA timezone cron expressions are evaluated against. Called once
+   * per {@link schedule} so a schedule created after `IClock.withTimezone` uses the timezone the
+   * clock has by then; each schedule then keeps that timezone for its whole life, since retiming
+   * a running job underneath its owner would be the more surprising behaviour.
+   * @param adapter the runtime's calendar adapter - see {@link ICalendarAdapter}.
+   */
+  constructor(
+    scheduler: IScheduler,
+    timestampNow: () => number,
+    timezone: () => string,
+    adapter: ICalendarAdapter<TDate, TMonthName, TWeekdayName>,
+  ) {
+    this.#scheduler = scheduler;
+    this.#timestampNow = timestampNow;
+    this.#timezone = timezone;
+    this.#adapter = adapter;
+  }
+
+  schedule(expression: string, callback: () => void): DueHandle;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): DueHandle;
+  schedule(
+    expressionOrSpec: string | ICronSpec<TMonthName, TWeekdayName>,
+    callback: () => void,
+  ): DueHandle {
+    const adapter = this.#adapter;
+    const timezone = this.#timezone();
+    const parsed =
+      typeof expressionOrSpec === "string"
+        ? parseCronExpression(expressionOrSpec, adapter)
+        : parseCronSpec(expressionOrSpec, adapter);
+    /*
+      Anchored to the schedule's own last computed occurrence, not a fresh `timestampNow()` read
+      on every rearm: on a deterministic runtime, a single advance() can drain several due
+      callbacks in one batch, and by the time a later one runs, timestampNow() already reflects
+      advance()'s final target - not the instant this particular occurrence is actually due at.
+      Re-querying it there would skip every occurrence between "now" and that final target.
+    */
+    let lastOccurrence = adapter.fromTimestamp(this.#timestampNow());
+    const nextDelay = (): number => {
+      const next = computeNextOccurrence(parsed, lastOccurrence, timezone, adapter);
+      const delay = adapter.toTimestamp(next) - adapter.toTimestamp(lastOccurrence);
+      lastOccurrence = next;
+      return delay;
+    };
+    /*
+      `callback` is invoked without a try/catch on purpose: a throwing cron callback is just a
+      throwing scheduler callback, and the runtime already has one policy for those - rethrow in a
+      Node-like environment, log and carry on in a browser-like one (see IScheduler). Catching here
+      would put cron on a third path of its own, invisible to that policy. It does mean a run that
+      throws stops the schedule, exactly as `setRecurring` documents; catch inside your own callback
+      if a failing run should not end the job.
+    */
+    return this.#scheduler.setRecurring(() => {
+      callback();
+      return nextDelay();
+    }, nextDelay());
+  }
+
+  unschedule(handle: DueHandle): void {
+    this.#scheduler.clearRecurring(handle);
+  }
+}

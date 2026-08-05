@@ -32,3 +32,17 @@ const timeProvider = createTimeProvider.for(plugin).asFixed().withFixedTime(0).c
 Pick this over [plain `plugin-moment`](/plugins/moment) whenever you need
 `.withTimezone(...)`/`clock.localNow()` and can afford
 `moment-timezone`'s extra bundle size.
+
+## Which timezone database wins
+
+`moment-timezone` ships its own copy of the IANA database, which you pin and
+update on your own schedule. Every other plugin here reads the host engine's
+ICU data instead, which updates when the engine does. The two can disagree for
+zones whose rules changed recently — Morocco's Ramadan DST shifts, for example,
+or the Canadian permanent-DST proposals.
+
+This plugin resolves wall-clock times through `moment-timezone`'s data, so a
+`.withTimezone(...)` reading — and any [cron schedule](/guide/cron) built on it
+— matches the rest of your `moment-timezone` code rather than the engine. Which
+version of the database is in play is therefore the one you installed, exactly
+as it is everywhere else you call `moment.tz(...)`.

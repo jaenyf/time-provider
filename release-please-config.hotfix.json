@@ -10,6 +10,11 @@
       "component": "addon-animation-frame",
       "versioning": "always-bump-patch"
     },
+    "packages/addon-cron": {
+      "release-type": "node",
+      "component": "addon-cron",
+      "versioning": "always-bump-patch"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core",

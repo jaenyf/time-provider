@@ -229,6 +229,7 @@ class DueHeap {
 
       switch (root.kind) {
         case TIMER_KIND_TIMEOUT: {
+          //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
           //#region inlining of DueHeap.pop
           root.heapIndex = -1;
           const lastIndex = entries.length - 1;
@@ -324,11 +325,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
 
   /**
-   * Returns the current timestamp without advancing the deterministic clock or running due
-   * callbacks, unlike {@link timestampNow}.
-   */
-  abstract peekTimestamp(): number;
-  /**
    * Produces the local `TDate` for the clock read this call represents. Called by
    * {@link localNow}, after which any callbacks that became due are run.
    */
@@ -339,8 +335,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
    */
   protected abstract utcNowImpl(): TDate;
   /**
-   * Produces the timestamp for the clock read this call represents. Called by
-   * {@link timestampNow}, after which any callbacks that became due are run.
+   * Produces the timestamp for {@link timestampNow}. Unlike {@link localNowImpl}/
+   * {@link utcNowImpl}, must be side-effect-free - see {@link ITimestampClock.timestampNow}.
    */
   protected abstract timestampNowImpl(): number;
 
@@ -384,7 +380,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
-    const now = this.peekTimestamp();
+    const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(now + delay, callback);
     this.mayRunDueCallbacks(now);
     return entry;
@@ -406,7 +402,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
     let delay = millisecondsDelay;
     if (delay === undefined || delay < 0) delay = 0;
-    const now = this.peekTimestamp();
+    const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(now + delay, delay, callback);
     this.mayRunDueCallbacks(now);
     return entry;
@@ -429,7 +425,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
     let delay = initialDelay;
     if (delay === undefined || delay < 0) delay = 0;
-    const now = this.peekTimestamp();
+    const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(now + delay, callback);
     this.mayRunDueCallbacks(now);
     return entry;
@@ -469,31 +465,27 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   }
 
   localNowImpl(): TDate {
-    const nowTimestamp = this.getNextSequentialTimestamp();
+    const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
     return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp);
   }
   utcNowImpl(): TDate {
-    const nowTimestamp = this.getNextSequentialTimestamp();
+    const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
     return this.convertToUtcDateImpl(nowTimestamp);
   }
-  timestampNowImpl(): number {
-    const nowTimestamp = this.getNextSequentialTimestamp();
-    this.mayRunDueCallbacks(nowTimestamp);
-    return nowTimestamp;
-  }
-
   /**
-   * Returns the timestamp at the current position in the sequence without advancing it.
+   * Side-effect-free, as required by {@link ITimestampClock.timestampNow}: returns the timestamp
+   * at the current position in the sequence without consuming it or running due callbacks, unlike
+   * {@link localNowImpl}/{@link utcNowImpl}.
    */
-  peekTimestamp(): number {
+  timestampNowImpl(): number {
     return this._sequentialTimestamps.length > 0
       ? this._sequentialTimestamps[this.#sequentialIndex]
       : 0;
   }
 
-  private getNextSequentialTimestamp(): number {
+  private consumeNextSequentialTimestamp(): number {
     if (this.#sequentialIndex < this._sequentialTimestamps.length - 1) {
       return this._sequentialTimestamps[this.#sequentialIndex++];
     }
@@ -590,7 +582,7 @@ export abstract class BaseManualRuntime<TDate>
     }
 
     this.setDeterminedTime(time);
-    const now = this.peekTimestamp();
+    const now = this.timestampNow();
     this.mayRunDueCallbacks(now);
     return this;
   }

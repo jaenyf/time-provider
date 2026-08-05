@@ -46,14 +46,14 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       return timeOrigine;
     }
 
-    timeOrigine = this.#runtime.peekTimestamp();
+    timeOrigine = this.#runtime.timestampNow();
     this.#timeOrigin = timeOrigine;
     return timeOrigine;
   }
 
   now(): number {
     this.assertInitialization();
-    return this.#runtime.peekTimestamp() - this.assertAndGetTimeOrigin();
+    return this.#runtime.timestampNow() - this.assertAndGetTimeOrigin();
   }
 
   get timeOrigin(): number {

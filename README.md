@@ -150,6 +150,11 @@ Within the scope of this library, these two terms refer to different concepts.
 - A **plugin**, is essentially an adapter. It allows you to connect your preferred date library (e.g. Luxon, Temporal, etc.) to the Time Provider core library without adding any new functionality. Its sole purpose is to bridge the two libraries (e.g. [the dayjs plugin](https://www.npmjs.com/package/@time-provider/plugin-dayjs)).
 - An **addon**, as the name suggests, extends the library by introducing new functionality or enhancing existing facades (e.g. [the animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame))
 
+### Available addons
+
+- [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser specific animation frames scheduling
+- [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a jsons friendlier one.
+
 ## Learn more
 
 - [Guide](https://jaenyf.github.io/time-provider/guide/) - Read the guide

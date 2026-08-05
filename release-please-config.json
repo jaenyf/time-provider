@@ -9,6 +9,10 @@
       "release-type": "node",
       "component": "addon-animation-frame"
     },
+    "packages/addon-cron": {
+      "release-type": "node",
+      "component": "addon-cron"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core"

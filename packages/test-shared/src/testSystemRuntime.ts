@@ -11,9 +11,11 @@ import {
   testWithTimezone,
   testUtcNow,
   testTimestampNow,
+  getBuilderFor,
 } from "./helpers/testHelpers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
+import { testAddonCronSystem } from "./helpers/testCron.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
@@ -328,6 +330,10 @@ export function testSystemRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT, true);
+    });
+
+    describe("addon-cron", () => {
+      testAddonCronSystem(() => getBuilderFor(plugin));
     });
   });
 }
