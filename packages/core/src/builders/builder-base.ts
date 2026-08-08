@@ -52,18 +52,38 @@ export abstract class BaseRuntimeBuilder<TPlugin> {
   }
 
   /**
-   * Guards `use()` implementations against an addon's cloned instance defining a property that
-   * would silently shadow an existing builder method (own, inherited, or added by a previously
-   * used addon) when spliced onto the builder via `Object.assign`.
-   * @throws if `addonInstance` has an own enumerable property name already present on `target`.
+   * Every addon's cloned instance necessarily has these two members (see `ISystemAddon`/
+   * `IDeterministicAddon`), excluded from collision-checking.
+   */
+  private static readonly REQUIRED_ADDON_MEMBERS = new Set(["applyToRuntime", "clone"]);
+
+  /**
+   * Guards `use()` implementations against an addon's cloned instance defining an extra,
+   * builder-chain-extending property that would silently shadow an existing builder method.
+   * @throws if `addonInstance` has an own enumerable, non-required property name already present
+   * on `target`.
    */
   protected static assertNoAddonCollision(target: object, addonInstance: object): void {
     for (const key of Object.keys(addonInstance)) {
+      if (BaseRuntimeBuilder.REQUIRED_ADDON_MEMBERS.has(key)) continue;
       if (key in target) {
         throw new Error(
           `Addon defines a property named '${key}' that collides with an existing builder property of the same name`,
         );
       }
+    }
+  }
+
+  /**
+   * Splices `addonInstance`'s own properties onto `target` (a builder), for an addon that also
+   * extends the builder chain itself with extra chainable methods - excluding the required
+   * `applyToRuntime`/`clone` members every addon has, which stay on the stored instance only. Call
+   * {@link assertNoAddonCollision} first.
+   */
+  protected static spliceAddonExtras(target: object, addonInstance: object): void {
+    for (const key of Object.keys(addonInstance)) {
+      if (BaseRuntimeBuilder.REQUIRED_ADDON_MEMBERS.has(key)) continue;
+      (target as Record<string, unknown>)[key] = (addonInstance as Record<string, unknown>)[key];
     }
   }
 }
