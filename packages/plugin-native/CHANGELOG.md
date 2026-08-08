@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/jaenyf/time-provider/compare/plugin-native-v0.4.0...plugin-native-v0.4.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* **plugin-native-date:** issue [#122](https://github.com/jaenyf/time-provider/issues/122) ([#124](https://github.com/jaenyf/time-provider/issues/124)) ([67f899b](https://github.com/jaenyf/time-provider/commit/67f899b7bb422a496f8d5b6fb3911047cc60ab4b))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
 ## [0.4.0](https://github.com/jaenyf/time-provider/compare/plugin-native-v0.3.0...plugin-native-v0.4.0) (2026-08-01)
 
 

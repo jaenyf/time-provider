@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/jaenyf/time-provider/compare/plugin-luxon-v0.4.0...plugin-luxon-v0.4.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* **plugin-luxon:** [#127](https://github.com/jaenyf/time-provider/issues/127) ([#128](https://github.com/jaenyf/time-provider/issues/128)) ([34d7b66](https://github.com/jaenyf/time-provider/commit/34d7b6686fbafa8e2cb2f29007ef565ec9b66343))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
 ## [0.4.0](https://github.com/jaenyf/time-provider/compare/plugin-luxon-v0.3.0...plugin-luxon-v0.4.0) (2026-08-01)
 
 

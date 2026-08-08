@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-moment",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
   "description": "Time-Provider : Moment.js plugin ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
