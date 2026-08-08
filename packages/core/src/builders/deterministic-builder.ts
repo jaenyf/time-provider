@@ -139,7 +139,7 @@ class DeterministicPluggedRuntimeBuilder<TDate>
     const instance = addon.clone();
     BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
     this.#addons.push(instance as IDeterministicAddon<TDate, unknown>);
-    Object.assign(this, instance);
+    BaseRuntimeBuilder.spliceAddonExtras(this, instance);
     return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> &
       TBuilderExtra;
   }
