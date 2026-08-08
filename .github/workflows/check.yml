@@ -32,7 +32,7 @@ jobs:
         run: vpx validate-branch-name -t ${{ github.ref_name }}
 
   commitlint:
-    # Enforces Conventional Commit
+    # Enforces Conventional Commits
     needs: branchlint
     permissions:
       contents: read
