@@ -1,5 +1,6 @@
 {
   "name": "@time-provider/test-shared",
+  "private": true,
   "description": "Library tests",
   "files": [
     "dist"

@@ -1,5 +1,6 @@
 {
   "name": "@time-provider/test-e2e",
+  "private": true,
   "description": "Library tests e2e",
   "type": "module",
   "exports": {

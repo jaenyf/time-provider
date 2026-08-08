@@ -1,5 +1,6 @@
 {
   "name": "@time-provider/test-treeshake",
+  "private": true,
   "description": "Library treeshake tests",
   "type": "module",
   "scripts": {
