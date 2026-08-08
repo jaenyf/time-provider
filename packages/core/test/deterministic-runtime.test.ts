@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vite-plus/test";
+import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseManualRuntime } from "@time-provider/core/deterministic";
 import type { DueHandle, ITimeConverter } from "@time-provider/core";
 
@@ -117,6 +117,148 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 
     sut.advance({ milliseconds: 100 });
     expect(fired).toEqual([2, 3, 10, 11]);
+  });
+});
+
+describe("BaseManualRuntime drainDue exception handling", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  describe("in a Node-like environment (rethrows, matching a real Node timer callback's fatal default)", () => {
+    function stubNodeLike(): void {
+      vi.stubGlobal("window", undefined);
+      vi.stubGlobal("process", { versions: { node: "20.11.0" } });
+    }
+
+    test("a throwing setTimeout callback rethrows synchronously and stops the rest of that batch", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setTimeout(() => {
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 20);
+
+      expect(() => sut.advance({ milliseconds: 20 })).toThrow(error);
+      expect(otherFired).toBe(false);
+    });
+
+    test("a throwing setInterval callback rethrows, but is still armed for its next tick since re-arming happens before the callback runs", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let intervalFires = 0;
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setInterval(() => {
+        intervalFires++;
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+
+      // Due at 10 within this batch - throws immediately, stopping before the timeout due at 15
+      // ever gets a turn.
+      expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
+      expect(intervalFires).toBe(1);
+      expect(otherFired).toBe(false);
+
+      // Nothing was lost: the interval's next tick (already re-armed for 20) and the still-due
+      // timeout at 15 are both still pending, and draining resumes on the next call.
+      expect(() => sut.advance({})).toThrow(error);
+      expect(intervalFires).toBe(2);
+      expect(otherFired).toBe(true);
+    });
+
+    test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let recurringFires = 0;
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setRecurring(() => {
+        recurringFires++;
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+
+      expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
+      expect(recurringFires).toBe(1);
+      expect(otherFired).toBe(false);
+
+      // The recurring schedule never re-armed, so draining what's left only runs the timeout.
+      expect(() => sut.advance({})).not.toThrow();
+      expect(recurringFires).toBe(1);
+      expect(otherFired).toBe(true);
+    });
+  });
+
+  describe("in a browser-like environment (logs via console.error and keeps going, matching a browser's non-fatal default)", () => {
+    function stubBrowserLike(): void {
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("process", undefined);
+    }
+
+    test("a throwing setTimeout callback doesn't block another due timeout in the same batch", () => {
+      stubBrowserLike();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sut = new FakeManualRuntime(0);
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setTimeout(() => {
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 20);
+
+      expect(() => sut.advance({ milliseconds: 20 })).not.toThrow();
+      expect(otherFired).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    });
+
+    test("a throwing setInterval callback still re-arms for its next tick, and doesn't block others", () => {
+      stubBrowserLike();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sut = new FakeManualRuntime(0);
+      let intervalFires = 0;
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setInterval(() => {
+        intervalFires++;
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+
+      // Due at both 10 and 20 within the advance() below - throws twice, logged each time, and
+      // the whole batch (including the unrelated timeout due at 15) still runs to completion.
+      expect(() => sut.advance({ milliseconds: 25 })).not.toThrow();
+      expect(intervalFires).toBe(2);
+      expect(otherFired).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+      expect(consoleErrorSpy).toHaveBeenNthCalledWith(1, error);
+      expect(consoleErrorSpy).toHaveBeenNthCalledWith(2, error);
+    });
+
+    test("a throwing setRecurring callback doesn't re-arm (same as returning false), and doesn't block others", () => {
+      stubBrowserLike();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sut = new FakeManualRuntime(0);
+      let recurringFires = 0;
+      let otherFired = false;
+      const error = new Error("boom");
+      sut.scheduler.setRecurring(() => {
+        recurringFires++;
+        throw error;
+      }, 10);
+      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+
+      expect(() => sut.advance({ milliseconds: 25 })).not.toThrow();
+      expect(recurringFires).toBe(1); // never re-armed after throwing once
+      expect(otherFired).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    });
   });
 });
 

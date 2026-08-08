@@ -1,3 +1,4 @@
+import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
   DueHandle,
@@ -52,6 +53,10 @@ type DueEntry = TimeoutEntry | IntervalEntry | RecurringEntry;
 class DueHeap {
   private _entries: DueEntry[] = [];
   private _nextSeq = 1;
+  private _shouldRethrowTimerErrors: boolean;
+  constructor() {
+    this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
+  }
 
   registerTimeout(runAt: number, callback: () => void): TimeoutEntry {
     const entry: TimeoutEntry = {
@@ -208,15 +213,12 @@ class DueHeap {
   }
 
   /**
-   * Runs any pending callbacks due at or before `now`. Lives on the heap itself and touches
-   * `_entries` directly instead of going through peek/pop/push: method dispatch isn't free, and
-   * this loop can run millions of times over a scheduler's lifetime. Timeouts, intervals and
-   * recurring schedules share one heap ordered by `(runAt, seq)`, so a mixed batch of due timers
-   * fires in true chronological order rather than draining every due timeout before any due
-   * interval/recurring entry is even considered.
+   * Runs any pending callbacks due at or before `now`.
+   * A callback that throws is handled per {@link shouldRethrowTimerErrors}
    */
   drainDue(now: number): void {
     const entries = this._entries;
+    const rethrowTimersErrors = this._shouldRethrowTimerErrors;
 
     for (;;) {
       //#region inlining of DueHeap.peek
@@ -227,7 +229,6 @@ class DueHeap {
 
       switch (root.kind) {
         case TIMER_KIND_TIMEOUT: {
-          //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
           //#region inlining of DueHeap.pop
           root.heapIndex = -1;
           const lastIndex = entries.length - 1;
@@ -238,7 +239,16 @@ class DueHeap {
             entries.pop();
           }
           //#endregion inlining of DueHeap.pop
-          root.callback();
+          if (rethrowTimersErrors) {
+            root.callback();
+          } else {
+            try {
+              root.callback();
+            } catch (error) {
+              console.error(error);
+            }
+          }
+
           break;
         }
         case TIMER_KIND_INTERVAL: {
@@ -250,7 +260,15 @@ class DueHeap {
           //#region inlining of DueHeap.fixAfterIncrease
           this._siftDown(root, 0);
           //#endregion inlining of DueHeap.fixAfterIncrease
-          callback();
+          if (rethrowTimersErrors) {
+            callback();
+          } else {
+            try {
+              callback();
+            } catch (error) {
+              console.error(error);
+            }
+          }
           break;
         }
         case TIMER_KIND_RECURRING: {
@@ -265,7 +283,19 @@ class DueHeap {
           }
           //#endregion inlining of DueHeap.pop
           const previousRunAt = root.runAt;
-          const next = root.callback();
+          let next: number | false;
+
+          if (rethrowTimersErrors) {
+            next = root.callback();
+          } else {
+            try {
+              next = root.callback();
+            } catch (error) {
+              console.error(error);
+              next = false;
+            }
+          }
+
           if (!root.cancelled && next !== false) {
             //#region inlining of DueHeap.nextSeq
             root.seq = this._nextSeq++;

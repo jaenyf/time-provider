@@ -376,6 +376,9 @@ export interface DueHandle {
  *   returns.
  * - On a **fixed** clock, time never advances, so no scheduled callback is
  *   ever due - it never runs, regardless of the delay it was registered with.
+ *
+ * A callback that throws is handled per {@link shouldRethrowTimerErrors} on a manual/sequential
+ * clock, to match what a native timer callback throwing would actually do in the current environment.
  */
 export interface IScheduler {
   /**
