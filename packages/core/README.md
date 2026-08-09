@@ -152,8 +152,9 @@ Within the scope of this library, these two terms refer to different concepts.
 
 ### Available addons
 
-- [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser specific animation frames scheduling
-- [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a jsons friendlier one.
+- [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser-specific animation frame scheduling
+- [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a JSON-friendlier one.
+- [ETA addon](https://www.npmjs.com/package/@time-provider/addon-eta) - get the ETA (estimated time of arrival) for a task by notifying its progression.
 
 ## Learn more
 
