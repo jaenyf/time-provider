@@ -30,8 +30,8 @@ jobs:
 
       - run: vp install --frozen-lockfile
 
-      - name: Build website
-        run: vp run --filter website build
+      - name: Build packages and website
+        run: vp run build
 
       - uses: actions/configure-pages@v6
 
