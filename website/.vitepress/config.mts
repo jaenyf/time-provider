@@ -32,6 +32,18 @@ export default defineConfig({
           ),
         },
         {
+          find: "@time-provider/addon-cron/deterministic",
+          replacement: fileURLToPath(
+            new URL("../../packages/addon-cron/src/deterministic.ts", import.meta.url),
+          ),
+        },
+        {
+          find: "@time-provider/addon-cron",
+          replacement: fileURLToPath(
+            new URL("../../packages/addon-cron/src/index.ts", import.meta.url),
+          ),
+        },
+        {
           find: "@time-provider/core/deterministic",
           replacement: fileURLToPath(
             new URL("../../packages/core/src/deterministic.ts", import.meta.url),
@@ -211,6 +223,7 @@ export default defineConfig({
           { text: "Timezones & Local Time", link: "/guide/timezones" },
           { text: "Testing With Time-Provider", link: "/guide/testing" },
           { text: "Addons", link: "/guide/addons" },
+          { text: "Cron Schedules", link: "/guide/cron" },
         ],
       },
       {

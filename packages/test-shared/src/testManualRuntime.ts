@@ -12,8 +12,10 @@ import {
   testLocalNow,
   testUtcNow,
   testTimestampNow,
+  getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
 import type { DueHandle, TimezoneDefinition } from "@time-provider/core";
+import { testAddonCronManual } from "./helpers/testCron.ts";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -706,6 +708,10 @@ export function testManualRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT);
+    });
+
+    describe("addon-cron", () => {
+      testAddonCronManual(() => getDeterministicBuilderFor(plugin));
     });
   });
 }

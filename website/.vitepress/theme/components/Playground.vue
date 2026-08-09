@@ -17,11 +17,7 @@
           <input type="checkbox" v-model="enabledAddons" :value="a.key" />
           {{ a.label }}
         </label>
-        <span class="pg-hint">{{
-          hasAnimationFrameAddon
-            ? "requestAnimationFrame is available in the Scheduler panel"
-            : "Adds .animation to the built provider"
-        }}</span>
+        <span class="pg-hint">{{ addonsHint }}</span>
       </div>
 
       <div class="pg-field">
@@ -154,22 +150,134 @@
             <option value="interval">Interval</option>
             <option value="timeout">Timeout</option>
             <option v-if="hasAnimationFrameAddon" value="raf">Frame</option>
+            <option v-if="hasCronAddon" value="cron">Cron</option>
           </select>
           <input
-            v-if="timerKind !== 'raf'"
+            v-if="timerKind === 'interval' || timerKind === 'timeout'"
             type="number"
             v-model.number="timerDelay"
             style="width: 90px"
             placeholder="delay ms"
           />
+          <div v-if="timerKind === 'cron'" class="pg-seg">
+            <button
+              type="button"
+              class="pg-seg-btn"
+              :class="{ active: cronInputMode === 'expression' }"
+              @click="cronInputMode = 'expression'"
+            >
+              Expression
+            </button>
+            <button
+              type="button"
+              class="pg-seg-btn"
+              :class="{ active: cronInputMode === 'builder' }"
+              @click="cronInputMode = 'builder'"
+            >
+              Builder
+            </button>
+          </div>
+          <input
+            v-if="timerKind === 'cron' && cronInputMode === 'expression'"
+            type="text"
+            v-model="cronExpression"
+            style="width: 140px"
+            placeholder="* * * * *"
+          />
           <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="addTimer">
-            {{ timerKind === "raf" ? "Request frame" : "Add timer" }}
+            {{
+              timerKind === "raf"
+                ? "Request frame"
+                : timerKind === "cron"
+                  ? "Add schedule"
+                  : "Add timer"
+            }}
           </button>
+        </div>
+        <div v-if="timerKind === 'cron' && cronInputMode === 'builder'" class="pg-cron-builder">
+          <div class="pg-cron-preview">
+            <div>
+              <span class="pg-cron-preview-label">Equivalent expression</span>
+              <code>{{ cronBuilderExpression }}</code>
+            </div>
+            <div>
+              <span class="pg-cron-preview-label">ICronSpec</span>
+              <pre class="pg-cron-preview-json"><code>{{ cronBuilderJson }}</code></pre>
+            </div>
+          </div>
+
+          <div class="pg-cron-field" v-for="field in CRON_FIELDS" :key="field.key">
+            <div class="pg-cron-field-header">
+              <span>{{ field.label }}</span>
+              <label class="pg-checkbox">
+                <input type="checkbox" v-model="cronBuilder[field.key].wildcard" />
+                Every value
+              </label>
+            </div>
+
+            <div v-if="!cronBuilder[field.key].wildcard" class="pg-cron-atom-list">
+              <div
+                class="pg-cron-atom-row"
+                v-for="atom in cronBuilder[field.key].atoms"
+                :key="atom.id"
+              >
+                <select v-model="atom.mode" class="pg-cron-atom-mode">
+                  <option value="value">Value</option>
+                  <option value="range">Range</option>
+                </select>
+
+                <template v-if="atom.mode === 'value'">
+                  <select v-if="field.names" v-model="atom.value">
+                    <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                  <input
+                    v-else
+                    type="number"
+                    v-model="atom.value"
+                    :min="field.min"
+                    :max="field.max"
+                  />
+                </template>
+
+                <template v-else>
+                  <template v-if="field.names">
+                    <select v-model="atom.from">
+                      <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                    </select>
+                    <span class="pg-cron-range-sep">–</span>
+                    <select v-model="atom.to">
+                      <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                    </select>
+                  </template>
+                  <template v-else>
+                    <input type="number" v-model="atom.from" :min="field.min" :max="field.max" />
+                    <span class="pg-cron-range-sep">–</span>
+                    <input type="number" v-model="atom.to" :min="field.min" :max="field.max" />
+                  </template>
+                  <input
+                    type="number"
+                    v-model="atom.step"
+                    min="1"
+                    placeholder="step"
+                    class="pg-cron-step"
+                  />
+                </template>
+
+                <button class="pg-btn" title="Remove" @click="removeCronAtom(field, atom.id)">
+                  ×
+                </button>
+              </div>
+              <button class="pg-btn" @click="addCronAtom(field)">+ Add</button>
+            </div>
+          </div>
         </div>
         <div class="pg-timer-list">
           <div class="pg-timer-row" v-for="row in timerRows" :key="row.id">
             <span v-if="row.kind === 'raf'"
               ><span class="pg-timer-kind">raf</span>"{{ row.label }}" (pending frame)</span
+            >
+            <span v-else-if="row.kind === 'cron'"
+              ><span class="pg-timer-kind">cron</span>"{{ row.label }}" ({{ row.expression }})</span
             >
             <span v-else
               ><span class="pg-timer-kind">{{ row.kind }}</span
@@ -186,6 +294,10 @@
           <template v-if="hasAnimationFrameAddon">
             <code>requestAnimationFrame</code> fires the same way, once, whenever a frame becomes
             due for the current strategy.
+          </template>
+          <template v-if="hasCronAddon">
+            A cron schedule repeats the same way, on the next minute the expression matches, in the
+            runtime's local timezone (<code>Etc/UTC</code> for a UTC-only plugin).
           </template>
         </p>
       </div>
@@ -212,7 +324,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from "vue";
 import { createTimeProvider } from "@time-provider/core";
 import { createTimeProvider as createDeterministicTimeProvider } from "@time-provider/core/deterministic";
 import { plugin as nativePlugin } from "@time-provider/plugin-native";
@@ -236,10 +348,12 @@ import { plugin as temporalPlugin } from "@time-provider/plugin-temporal";
 import { plugin as temporalDeterministicPlugin } from "@time-provider/plugin-temporal/deterministic";
 import { addon as animationFrameAddon } from "@time-provider/addon-animation-frame";
 import { addon as animationFrameDeterministicAddon } from "@time-provider/addon-animation-frame/deterministic";
+import { addon as cronAddon } from "@time-provider/addon-cron";
+import { addon as cronDeterministicAddon } from "@time-provider/addon-cron/deterministic";
 import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
-type TimerKind = "timeout" | "interval" | "raf";
+type TimerKind = "timeout" | "interval" | "raf" | "cron";
 
 interface PluginOption {
   key: string;
@@ -302,6 +416,10 @@ const pluginOptions: PluginOption[] = [
 interface AddonOption {
   key: string;
   label: string;
+  // Local identifier used for this addon's import/`.use(...)` call in the generated "equivalent
+  // code" snippet - distinct per addon so two addons enabled together don't both import as the
+  // same `addon` binding.
+  varName: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   systemAddon: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -313,11 +431,68 @@ const addonOptions: AddonOption[] = [
   {
     key: "animation-frame",
     label: "Animation Frame API",
+    varName: "animationFrameAddon",
     systemAddon: animationFrameAddon,
     deterministicAddon: animationFrameDeterministicAddon,
     importName: "addon-animation-frame",
   },
+  {
+    key: "cron",
+    label: "Cron",
+    varName: "cronAddon",
+    systemAddon: cronAddon,
+    deterministicAddon: cronDeterministicAddon,
+    importName: "addon-cron",
+  },
 ];
+
+// The builder's own model of one ICronSpec field (minute/hour/dayOfMonth/month/dayOfWeek) -
+// mirrors the library's CronFieldSpec shape ("*" | value | range | array of either) closely
+// enough to derive both a real ICronSpec and its equivalent cron expression string from the
+// same state.
+interface CronFieldMeta {
+  key: "minute" | "hour" | "dayOfMonth" | "month" | "dayOfWeek";
+  label: string;
+  min: number;
+  max: number;
+  names?: readonly string[];
+}
+
+const CRON_FIELDS: CronFieldMeta[] = [
+  { key: "minute", label: "Minute", min: 0, max: 59 },
+  { key: "hour", label: "Hour", min: 0, max: 23 },
+  { key: "dayOfMonth", label: "Day of month", min: 1, max: 31 },
+  {
+    key: "month",
+    label: "Month",
+    min: 1,
+    max: 12,
+    names: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  },
+  {
+    key: "dayOfWeek",
+    label: "Day of week",
+    min: 0,
+    max: 6,
+    names: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+  },
+];
+
+interface CronAtom {
+  id: number;
+  mode: "value" | "range";
+  // Bound to either a <select> (always a string - a MonthName/DayOfWeekName) or a native
+  // <input type="number"> - Vue 3.4+ auto-casts those v-model bindings to an actual number, so
+  // these can't be typed as plain `string` even though `makeCronAtom` seeds them as strings.
+  value: string | number;
+  from: string | number;
+  to: string | number;
+  step: string | number;
+}
+interface CronFieldState {
+  wildcard: boolean;
+  atoms: CronAtom[];
+}
 
 const strategies: { key: Strategy; label: string }[] = [
   { key: "system", label: "System" },
@@ -361,6 +536,69 @@ const advanceUnit = ref<
 const timerLabel = ref("Tick");
 const timerKind = ref<TimerKind>("interval");
 const timerDelay = ref(1000);
+const cronExpression = ref("* * * * *");
+
+const cronInputMode = ref<"expression" | "builder">("expression");
+let cronAtomId = 1;
+function makeCronAtom(field: CronFieldMeta): CronAtom {
+  const initial = field.names ? field.names[0] : String(field.min);
+  return { id: cronAtomId++, mode: "value", value: initial, from: initial, to: initial, step: "" };
+}
+const cronBuilder = reactive<Record<CronFieldMeta["key"], CronFieldState>>(
+  Object.fromEntries(CRON_FIELDS.map((f) => [f.key, { wildcard: true, atoms: [] }])) as Record<
+    CronFieldMeta["key"],
+    CronFieldState
+  >,
+);
+function addCronAtom(field: CronFieldMeta) {
+  cronBuilder[field.key].atoms.push(makeCronAtom(field));
+}
+function removeCronAtom(field: CronFieldMeta, atomId: number) {
+  const state = cronBuilder[field.key];
+  state.atoms = state.atoms.filter((a) => a.id !== atomId);
+}
+
+function cronFieldExpression(state: CronFieldState): string {
+  if (state.wildcard || state.atoms.length === 0) return "*";
+  return state.atoms
+    .map((atom) => {
+      if (atom.mode === "value") return String(atom.value).trim() || "*";
+      const step = String(atom.step).trim();
+      return step ? `${atom.from}-${atom.to}/${step}` : `${atom.from}-${atom.to}`;
+    })
+    .join(",");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function cronFieldSpecValue(field: CronFieldMeta, state: CronFieldState): any {
+  if (state.wildcard || state.atoms.length === 0) return "*";
+  // Names (month/dayOfWeek) are entered via <select>, always a valid name string already; a
+  // numeric field's value arrives as a number (Vue 3.4+ auto-casts type="number" v-model
+  // bindings) or occasionally still a numeric string, so normalize either through Number().
+  const endpoint = (raw: string | number) => (field.names ? raw : Number(raw));
+  const atoms = state.atoms.map((atom) => {
+    if (atom.mode === "value") return endpoint(atom.value);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const range: any = { from: endpoint(atom.from), to: endpoint(atom.to) };
+    const step = String(atom.step).trim();
+    if (step) range.step = Number(step);
+    return range;
+  });
+  return atoms.length === 1 ? atoms[0] : atoms;
+}
+
+const cronBuilderExpression = computed(() =>
+  CRON_FIELDS.map((f) => cronFieldExpression(cronBuilder[f.key])).join(" "),
+);
+const cronBuilderSpec = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const spec: Record<string, any> = {};
+  for (const f of CRON_FIELDS) {
+    spec[f.key] = cronFieldSpecValue(f, cronBuilder[f.key]);
+  }
+  return spec;
+});
+const cronBuilderJson = computed(() => JSON.stringify(cronBuilderSpec.value, null, 2));
 
 const selectedPlugin = computed(
   () => pluginOptions.find((p) => p.key === selectedPluginKey.value) ?? pluginOptions[0],
@@ -369,6 +607,16 @@ const supportsLocalTime = computed(() =>
   Boolean(selectedPlugin.value.systemPlugin.supportsLocalTime),
 );
 const hasAnimationFrameAddon = computed(() => enabledAddons.value.includes("animation-frame"));
+const hasCronAddon = computed(() => enabledAddons.value.includes("cron"));
+const enabledAddonList = computed(() =>
+  addonOptions.filter((a) => enabledAddons.value.includes(a.key)),
+);
+const addonsHint = computed(() => {
+  const hints: string[] = [];
+  if (hasAnimationFrameAddon.value) hints.push("requestAnimationFrame in the Scheduler panel");
+  if (hasCronAddon.value) hints.push("cron schedules in the Scheduler panel");
+  return hints.length > 0 ? hints.join(" · ") : "Adds .animation/.cron to the built provider";
+});
 const strategyHint = computed(() => strategyHints[selectedStrategy.value]);
 const schedulerModeLabel = computed(() => schedulerModeLabels[selectedStrategy.value]);
 
@@ -418,6 +666,7 @@ interface TimerRow {
   kind: TimerKind;
   label: string;
   delayMs: number;
+  expression?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handle: any;
 }
@@ -428,6 +677,7 @@ function clearAllTimers() {
   for (const row of timerRows.value) {
     if (row.kind === "interval") timeProvider.value.scheduler.clearInterval(row.handle);
     else if (row.kind === "raf") timeProvider.value.animation.cancelAnimationFrame(row.handle);
+    else if (row.kind === "cron") timeProvider.value.cron.unschedule(row.handle);
     else timeProvider.value.scheduler.clearTimeout(row.handle);
   }
   timerRows.value = [];
@@ -494,7 +744,7 @@ function buildProvider() {
     }
 
     timeProvider.value = builder.create();
-    const addonSuffix = hasAnimationFrameAddon.value ? " + animation-frame addon" : "";
+    const addonSuffix = enabledAddonList.value.map((a) => ` + ${a.label} addon`).join("");
     pushLog(
       "tick",
       `Built ${selectedPlugin.value.label} · ${selectedStrategy.value} provider${addonSuffix}`,
@@ -547,37 +797,66 @@ function advance() {
 function addTimer() {
   if (!timeProvider.value) return;
   const kind = timerKind.value;
-  const label = timerLabel.value.trim() || (kind === "raf" ? "frame" : "timer");
-  const delay = kind === "raf" ? 0 : Math.max(0, Number(timerDelay.value) || 0);
+  const label =
+    timerLabel.value.trim() || (kind === "raf" ? "frame" : kind === "cron" ? "cron" : "timer");
+  const delay = kind === "raf" || kind === "cron" ? 0 : Math.max(0, Number(timerDelay.value) || 0);
+  const isCronBuilder = kind === "cron" && cronInputMode.value === "builder";
+  const expression = isCronBuilder
+    ? cronBuilderExpression.value
+    : cronExpression.value.trim() || "* * * * *";
+  const cronArg = isCronBuilder ? cronBuilderSpec.value : expression;
   const id = nextId++;
 
   const callback = () => {
-    pushLog(kind, kind === "raf" ? `"${label}" frame fired` : `"${label}" fired (${delay}ms)`);
+    pushLog(
+      kind,
+      kind === "raf"
+        ? `"${label}" frame fired`
+        : kind === "cron"
+          ? `"${label}" fired (${expression})`
+          : `"${label}" fired (${delay}ms)`,
+    );
     if (kind === "timeout" || kind === "raf") {
       timerRows.value = timerRows.value.filter((r) => r.id !== id);
     }
   };
 
-  const handle =
-    kind === "interval"
-      ? timeProvider.value.scheduler.setInterval(callback, delay)
-      : kind === "raf"
-        ? timeProvider.value.animation.requestAnimationFrame(callback)
-        : timeProvider.value.scheduler.setTimeout(callback, delay);
+  try {
+    const handle =
+      kind === "interval"
+        ? timeProvider.value.scheduler.setInterval(callback, delay)
+        : kind === "raf"
+          ? timeProvider.value.animation.requestAnimationFrame(callback)
+          : kind === "cron"
+            ? timeProvider.value.cron.schedule(cronArg, callback)
+            : timeProvider.value.scheduler.setTimeout(callback, delay);
 
-  timerRows.value.push({ id, kind, label, delayMs: delay, handle });
-  pushLog(
-    "tick",
-    kind === "raf"
-      ? `Requested animation frame "${label}"`
-      : `Registered ${kind} "${label}" (${delay}ms)`,
-  );
+    timerRows.value.push({
+      id,
+      kind,
+      label,
+      delayMs: delay,
+      expression: kind === "cron" ? expression : undefined,
+      handle,
+    });
+    pushLog(
+      "tick",
+      kind === "raf"
+        ? `Requested animation frame "${label}"`
+        : kind === "cron"
+          ? `Registered cron "${label}" (${expression})`
+          : `Registered ${kind} "${label}" (${delay}ms)`,
+    );
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
 }
 
 function removeTimer(row: TimerRow) {
   if (!timeProvider.value) return;
   if (row.kind === "interval") timeProvider.value.scheduler.clearInterval(row.handle);
   else if (row.kind === "raf") timeProvider.value.animation.cancelAnimationFrame(row.handle);
+  else if (row.kind === "cron") timeProvider.value.cron.unschedule(row.handle);
   else timeProvider.value.scheduler.clearTimeout(row.handle);
   timerRows.value = timerRows.value.filter((r) => r.id !== row.id);
   pushLog("tick", `Cleared "${row.label}"`);
@@ -597,6 +876,9 @@ function removeSequentialTime(index: number) {
 
 watch(enabledAddons, () => {
   if (!hasAnimationFrameAddon.value && timerKind.value === "raf") {
+    timerKind.value = "interval";
+  }
+  if (!hasCronAddon.value && timerKind.value === "cron") {
     timerKind.value = "interval";
   }
 });
@@ -633,8 +915,8 @@ const codeSnippet = computed(() => {
   ) {
     calls.push(`.withTimezone("${timezone.value.trim()}")`);
   }
-  if (hasAnimationFrameAddon.value) {
-    calls.push(".use(addon)");
+  for (const a of enabledAddonList.value) {
+    calls.push(`.use(${a.varName})`);
   }
   if (selectedStrategy.value === "fixed") {
     calls.push(".asFixed()", `.withFixedTime("${fixedTime.value.trim()}")`);
@@ -656,11 +938,10 @@ const codeSnippet = computed(() => {
   const pluginImport = isSystem
     ? `import { plugin } from "@time-provider/${p.importName}";`
     : `import { plugin } from "@time-provider/${p.importName}/deterministic";`;
-  const addonImports = addonOptions
-    .filter((a) => enabledAddons.value.includes(a.key))
+  const addonImports = enabledAddonList.value
     .map(
       (a) =>
-        `\nimport { addon } from "@time-provider/${a.importName}${isSystem ? "" : "/deterministic"}";`,
+        `\nimport { addon as ${a.varName} } from "@time-provider/${a.importName}${isSystem ? "" : "/deterministic"}";`,
     )
     .join("");
 

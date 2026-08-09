@@ -61,6 +61,14 @@ const timeProvider = createTimeProvider
   .create();
 ```
 
+## Available addons
+
+- `@time-provider/addon-animation-frame` — an `.animation` facade over
+  `requestAnimationFrame`/`cancelAnimationFrame`, described above.
+- `@time-provider/addon-cron` — a `.cron` facade running callbacks on cron
+  schedules, in the runtime's own timezone. See
+  [Cron Schedules](/guide/cron).
+
 ## Writing a custom addon
 
 An addon is a plain object matching `ISystemAddon<TDate, TExtra>`

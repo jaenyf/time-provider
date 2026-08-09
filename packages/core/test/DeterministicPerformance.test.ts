@@ -7,7 +7,7 @@ function fakeRuntimeWithTimestamps(
 ): BaseDeterministicRuntime<unknown> {
   let index = 0;
   return {
-    peekTimestamp: () => timestamps[index++],
+    timestampNow: () => timestamps[index++],
   } as unknown as BaseDeterministicRuntime<unknown>;
 }
 

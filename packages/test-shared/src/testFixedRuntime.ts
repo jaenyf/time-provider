@@ -10,10 +10,12 @@ import {
   testWithTimezone,
   testUtcNow,
   testTimestampNow,
+  getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testScheduler } from "./helpers/testScheduler.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
+import { testAddonCronFixed } from "./helpers/testCron.ts";
 
 export function testFixedRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -101,6 +103,10 @@ export function testFixedRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT);
+    });
+
+    describe("addon-cron", () => {
+      testAddonCronFixed(() => getDeterministicBuilderFor(plugin));
     });
   });
 }

@@ -18,6 +18,7 @@
     "prepublishOnly": "vp run build"
   },
   "dependencies": {
+    "@time-provider/addon-cron": "workspace:*",
     "@time-provider/core": "workspace:*"
   },
   "peerDependencies": {
