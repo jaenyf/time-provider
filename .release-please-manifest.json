@@ -1,6 +1,7 @@
 {
   "packages/addon-animation-frame": "0.1.0",
   "packages/addon-cron": "0.0.1",
+  "packages/addon-eta": "0.0.1",
   "packages/core": "1.3.0",
   "packages/plugin-dayjs": "0.4.0",
   "packages/plugin-luxon": "0.4.0",
