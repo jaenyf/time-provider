@@ -98,6 +98,95 @@ name to `hour` — or a month name to `dayOfWeek` — is a compile-time error, n
 a runtime surprise. `cronExpressionToSpec` converts an existing expression
 string into this form.
 
+### Spec field types
+
+Every `ICronSpec` field is optional and defaults to `"*"`. Each accepts a
+single value, a `{ from, to, step? }` range, or an array mixing both — and
+anywhere a number is accepted, a `NumericString` like `"9"` works identically:
+
+| Field                          | Type                     | Range type               |
+| ------------------------------ | ------------------------ | ------------------------ |
+| `minute`, `hour`, `dayOfMonth` | `CronNumericFieldSpec`   | `CronNumericRangeSpec`   |
+| `month`                        | `CronMonthFieldSpec`     | `CronMonthRangeSpec`     |
+| `dayOfWeek`                    | `CronDayOfWeekFieldSpec` | `CronDayOfWeekRangeSpec` |
+
+The month and day-of-week variants differ from the numeric one only in also
+accepting their own names — `MonthName` (`"JAN"`–`"DEC"`) and `DayOfWeekName`
+(`"SUN"`–`"SAT"`) for the default Gregorian calendar. That's what makes the
+field/name mismatch a compile-time error: the name types are separate, so
+`{ hour: "MON" }` doesn't type-check.
+
+```ts
+import type { CronNumericFieldSpec, ICronSpec, MonthName } from "@time-provider/addon-cron";
+
+const everyQuarterHour: CronNumericFieldSpec = { from: 0, to: 45, step: 15 };
+const summer: MonthName[] = ["JUN", "JUL", "AUG"];
+const spec: ICronSpec = { minute: everyQuarterHour, month: summer };
+```
+
+Both name types come from the runtime's calendar, so a plugin backed by a
+different calendar system substitutes its own — see
+[Which calendar?](#which-calendar) below.
+
+## Parsing without scheduling
+
+Three functions back `.cron` and are exported for use on their own — validating
+a user-supplied expression at config-load time, say, or computing an occurrence
+without registering a callback:
+
+```ts
+import {
+  computeNextOccurrence,
+  cronExpressionToSpec,
+  parseCronExpression,
+  parseCronSpec,
+} from "@time-provider/addon-cron";
+
+const adapter = timeProvider.clock.calendarAdapter;
+
+const parsed = parseCronExpression("0 9 * * MON-FRI", adapter);
+const next = computeNextOccurrence(parsed, timeProvider.clock.utcNow(), "Europe/Paris", adapter);
+```
+
+- **`parseCronExpression(expression, adapter)`** — parses a 5-field expression
+  into a `ParsedCronExpression`, which holds one resolved field per position.
+  Throws unless there are exactly five whitespace-separated fields and each is
+  well-formed and in range for the calendar.
+- **`parseCronSpec(spec, adapter)`** — the same, for the `ICronSpec` object
+  form.
+- **`cronExpressionToSpec(expression, adapter)`** — converts an expression
+  string into an `ICronSpec`.
+- **`computeNextOccurrence(parsed, from, timezone, adapter)`** — the next
+  `TDate` strictly after `from` at which `parsed` matches, read in `timezone`.
+  Resolves DST exactly as a schedule does: the first instant after a
+  spring-forward gap, the earlier of the two on a fall-back overlap. Throws if
+  no match exists within a ten-year search bound, which is how an impossible
+  expression like `"0 0 31 2 *"` fails fast instead of spinning.
+
+Every one of them takes the runtime's calendar adapter, reachable as
+`timeProvider.clock.calendarAdapter`, so they resolve field ranges and names
+against whatever calendar backs your plugin.
+
+`CronScheduler` is also exported — the class implementing `.cron` on top of
+`IScheduler.setRecurring`, re-deriving the delay to the next occurrence after
+every run. Composing the addon builds one for you; construct it directly only
+if you need a cron facade outside the addon pipeline, passing it the scheduler,
+a `timestampNow` reader, a timezone reader, and a calendar adapter.
+
+The `.cron` property itself is typed `ICronApi`, and `WithCronApi` names a
+Time-Provider with this addon composed in:
+
+```ts
+import type { ICronApi, WithCronApi } from "@time-provider/addon-cron";
+
+function everyMorning(cron: ICronApi) {
+  cron.schedule("0 9 * * *", () => {});
+}
+function schedule(tp: ITimeProvider<Date> & WithCronApi) {
+  everyMorning(tp.cron);
+}
+```
+
 ## Timezones and DST
 
 Schedules are read in the runtime's local timezone, so `"0 9 * * *"` means

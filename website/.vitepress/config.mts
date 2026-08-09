@@ -108,7 +108,9 @@ export default defineConfig({
           { text: "Timezones & Local Time", link: "/guide/timezones" },
           { text: "Testing With Time-Provider", link: "/guide/testing" },
           { text: "Addons", link: "/guide/addons" },
+          { text: "Animation Frames", link: "/guide/animation-frame" },
           { text: "Cron Schedules", link: "/guide/cron" },
+          { text: "ETA Estimates", link: "/guide/eta" },
         ],
       },
       {

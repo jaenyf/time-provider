@@ -12,6 +12,11 @@ interface ILocalOnlyParser<TDate> {
 interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<TDate> {}
 ```
 
+`IParser` and `IUtcOnlyParser` are both exported from `@time-provider/core` —
+which one your `timeProvider.parser` is follows the plugin, exactly as for
+[IClock](/api/clock). `ILocalOnlyParser` only describes how `IParser` is
+composed and is not exported.
+
 Both methods accept an ISO 8601 time string, an epoch-milliseconds number,
 or an already-parsed `TDate` — other string formats (e.g. RFC 2822, or a
 date library's own non-ISO `toString()` output) aren't supported and may

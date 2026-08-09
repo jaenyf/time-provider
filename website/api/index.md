@@ -25,11 +25,24 @@ interface IRuntimeBuilder {
 ```
 
 Two overloads, not a union: the plugin you pass picks the builder you get, so
-the timezone methods below are either there or they aren't. (On the
-deterministic entry point, `IDeterministicRuntimeBuilder` mirrors this with
-`IDeterministicPlugin`/`IUtcOnlyDeterministicPlugin` and returns an
-`IDeterministicPluggedRuntimeBuilder`/
-`IUtcOnlyDeterministicPluggedRuntimeBuilder`.)
+the timezone methods below are either there or they aren't. The deterministic
+entry point's `createTimeProvider.for(...)` mirrors this exactly, taking an
+`IDeterministicPlugin`/`IUtcOnlyDeterministicPlugin` instead.
+
+`createTimeProvider` is a singleton instance of the exported `RuntimeBuilder`
+class, which holds nothing but the `.for(...)` overloads above. You never need
+to construct one — the singleton is stateless, and every option you set lives on
+the builder `.for(...)` returns, so two call sites never interfere.
+
+`IRuntimeBuilder`, `ISystemPluggedRuntimeBuilder` and
+`IUtcOnlySystemPluggedRuntimeBuilder` are exported from
+`@time-provider/core`, and `IDeterministicPluggedRuntimeBuilder` from
+`@time-provider/core/deterministic`. The remaining builder interfaces — the
+UTC-only deterministic one, and the per-strategy builders `.asFixed()`,
+`.asManual()` and `.asSequential()` return — are internal; you never need to
+name a half-built builder, and the finished provider type is what you'd
+annotate anyway. See
+[Naming these types](/api/clock#naming-these-types).
 
 Starts a builder for the given plugin (adapter). Which methods are
 available afterwards (`withTimezone`, `.create()` returning a

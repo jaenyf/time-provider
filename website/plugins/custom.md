@@ -32,6 +32,30 @@ export class RuntimeHelper {
 }
 ```
 
+## Validating time inputs
+
+Your converter receives whatever a caller passed to `parseToUtc`, `withFixedTime`
+and friends, so it has to reject nonsense before handing it to the date library.
+`@time-provider/core` exports `TimeInputValidator` for that, with static guards
+the built-in plugins use:
+
+```ts
+import { TimeInputValidator } from "@time-provider/core";
+
+static convertToTimestamp(time: string | number | MyDate): number {
+  TimeInputValidator.assertValid(time); // throws on undefined, null, NaN, blank string
+  /* ... */
+}
+```
+
+- **`assertValid(time)`** — throws unless `time` is usable, rejecting
+  `undefined`, `null`, `NaN`, and empty or whitespace-only strings. Typed as an
+  assertion, so `time` narrows afterwards.
+- **`throwInvalidTimeValue(time)`** — throws the same error directly, for when
+  your own parsing rejects a value the generic guard accepts.
+- **`throwInvalidTimezone(timezone)`** — the equivalent for an unusable
+  `TimezoneDefinition`.
+
 ## Two entry points, two plugin classes
 
 Like `core` itself, a plugin is split into a system half and a deterministic

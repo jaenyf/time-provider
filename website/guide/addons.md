@@ -81,14 +81,16 @@ const timeProvider = createTimeProvider
 ## Available addons
 
 - `@time-provider/addon-animation-frame` — an `.animation` facade over
-  `requestAnimationFrame`/`cancelAnimationFrame`, described above.
+  `requestAnimationFrame`/`cancelAnimationFrame`, described above. See
+  [Animation Frames](/guide/animation-frame).
 - `@time-provider/addon-cron` — a `.cron` facade running callbacks on cron
   schedules, in the runtime's own timezone. See
   [Cron Schedules](/guide/cron).
 - `@time-provider/addon-eta` — an `.eta` facade estimating when a job will
   finish, either from reported progress toward a known total (optionally
   split into weighted stages) or from a fixed expected duration. Notifies a
-  callback with a snapshot on an interval you pick.
+  callback with a snapshot on an interval you pick. See
+  [ETA Estimates](/guide/eta).
 
 ## Writing a custom addon
 
