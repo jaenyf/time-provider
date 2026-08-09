@@ -18,12 +18,15 @@ likewise for deterministic.
 ## `.for(plugin)`
 
 ```ts
-createTimeProvider.for<TDate>(
-  plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
-): ISystemPluggedRuntimeBuilder<TDate> | IUtcOnlySystemPluggedRuntimeBuilder<TDate>;
+interface IRuntimeBuilder {
+  for<TDate>(adapter: IUtcOnlySystemPlugin<TDate>): IUtcOnlySystemPluggedRuntimeBuilder<TDate>;
+  for<TDate>(adapter: ISystemPlugin<TDate>): ISystemPluggedRuntimeBuilder<TDate>;
+}
 ```
 
-(On the deterministic entry point, the equivalent accepts an
+Two overloads, not a union: the plugin you pass picks the builder you get, so
+the timezone methods below are either there or they aren't. (On the
+deterministic entry point, `IDeterministicRuntimeBuilder` mirrors this with
 `IDeterministicPlugin`/`IUtcOnlyDeterministicPlugin` and returns an
 `IDeterministicPluggedRuntimeBuilder`/
 `IUtcOnlyDeterministicPluggedRuntimeBuilder`.)

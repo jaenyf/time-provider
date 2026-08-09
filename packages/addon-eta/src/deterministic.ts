@@ -18,6 +18,7 @@ export type {
   IStagedProgressEtaTrackBuilder,
   IProgressEtaTracker,
   IProgressEtaTrackBuilder,
+  WithEtaApi,
 } from "./types.ts";
 export { EtaScheduler } from "./eta-scheduler.ts";
 

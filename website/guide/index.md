@@ -13,9 +13,9 @@ single object — an `ITimeProvider` — exposing a **clock**, a **parser**, a
 
 ```ts
 interface ITimeProvider<TDate> {
-  clock: IClock<TDate>; // localNow(), utcNow(), withTimezone()
+  clock: IClock<TDate>; // localNow(), utcNow(), timestampNow(), withTimezone()
   parser: IParser<TDate>; // parseToUtc(), parseToLocal()
-  scheduler: IScheduler; // setTimeout/clearTimeout/setInterval/clearInterval
+  scheduler: IScheduler; // setTimeout(), setInterval(), setRecurring() (+ clear*)
   performance: IPerformance; // now(), mark(), measure(), getEntries()
 }
 ```

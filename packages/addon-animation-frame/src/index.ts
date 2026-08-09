@@ -5,6 +5,7 @@ import { SystemAnimationFrameScheduler } from "./system-animation-frame.ts";
 export type {
   AnimationFrameHandle,
   IAnimationFrameApi as IAnimationFrameScheduler,
+  WithAnimationFrameApi,
 } from "./types.ts";
 export { SystemAnimationFrameScheduler } from "./system-animation-frame.ts";
 

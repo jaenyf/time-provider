@@ -487,14 +487,19 @@ export interface DueHandle {
  * - On a **fixed** clock, time never advances, so no scheduled callback is
  *   ever due - it never runs, regardless of the delay it was registered with.
  *
- * A callback that throws is handled per {@link shouldRethrowTimerErrors} on a manual/sequential
- * clock, to match what a native timer callback throwing would actually do in the current environment.
+ * On a manual/sequential clock, a callback that throws is handled to match what a native timer
+ * callback throwing would actually do in the current environment: the error propagates out of the
+ * triggering call in a Node-like environment, and is logged via `console.error` and swallowed in a
+ * browser-like one.
  */
 export interface IScheduler {
   /**
    * Schedules `callback` to run once, `millisecondsDelay` milliseconds from
-   * now (0 if omitted or negative). See {@link IScheduler} for when the
-   * callback actually runs depending on the clock strategy.
+   * now (0 if omitted or negative).
+   *
+   * When it runs depends on the clock strategy: asynchronously via real native timers on a system
+   * clock, synchronously and in-line the moment it becomes due on a manual/sequential clock, and
+   * never on a fixed clock (time never advances there). See {@link IScheduler} for the full model.
    */
   setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
   /**
@@ -504,8 +509,16 @@ export interface IScheduler {
   clearTimeout(handle: DueHandle): void;
   /**
    * Schedules `callback` to run repeatedly, every `millisecondsDelay`
-   * milliseconds (0 if omitted or negative). See {@link IScheduler} for when
-   * each run actually happens depending on the clock strategy.
+   * milliseconds (0 if omitted or negative). No interval ever repeats faster
+   * than once per millisecond: a system one clamps `millisecondsDelay` to 1
+   * up front, and a deterministic one accepts 0 - firing immediately, since
+   * it is already due - then re-arms every 1 millisecond, matching what a
+   * native interval does with a delay of 0.
+   *
+   * When each run happens depends on the clock strategy: asynchronously via real native timers on
+   * a system clock, synchronously and in-line as each run becomes due on a manual/sequential clock
+   * (so an interval whose delay is shorter than an `advance()` re-fires as many times as fit), and
+   * never on a fixed clock. See {@link IScheduler} for the full model.
    */
   setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
   /**
@@ -517,9 +530,14 @@ export interface IScheduler {
    * Schedules `callback` to run once, `initialDelay` milliseconds from now (0 if omitted or
    * negative), then again after whatever delay `callback` itself returns - typically computed
    * from state the run itself just updated (a counter, remaining time, ...). Return `false` to
-   * stop recurring; any other falsy value (e.g. `0`) still schedules a run, `0` milliseconds from
-   * the previous one. See {@link IScheduler} for when each run actually happens depending on the
-   * clock strategy.
+   * stop recurring; any other falsy value (e.g. `0`) still schedules a run - `0` milliseconds
+   * from the previous one on a system clock, and `1` on a deterministic one, which never re-arms
+   * faster than once per millisecond.
+   *
+   * When each run happens depends on the clock strategy, exactly as for
+   * {@link IScheduler.setTimeout}: asynchronously via real native timers on a system clock,
+   * synchronously and in-line as each run becomes due on a manual/sequential clock, and never on a
+   * fixed clock. See {@link IScheduler} for the full model.
    */
   setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
   /**

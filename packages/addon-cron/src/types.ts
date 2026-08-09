@@ -9,7 +9,13 @@ import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 export type WithCronApi<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
-> = { cron: ICronApi<TMonthName, TWeekdayName> };
+> = {
+  /**
+   * Schedules and cancels callbacks running on cron schedules, evaluated in this runtime's own
+   * local timezone (`"Etc/UTC"` on a UTC-only runtime) - see {@link ICronApi}.
+   */
+  cron: ICronApi<TMonthName, TWeekdayName>;
+};
 
 /**
  * The cron API facade this addon adds to a composed Time-Provider, reachable as

@@ -8,7 +8,7 @@ Time-Provider, one for a deterministic one:
 
 ```ts
 import { createTimeProvider } from "@time-provider/core";
-import { plugin } from "@time-provider/plugin-native";
+import { plugin } from "@time-provider/plugin-dayjs";
 import { addon } from "@time-provider/addon-cron";
 
 const timeProvider = createTimeProvider
@@ -21,6 +21,11 @@ const handle = timeProvider.cron.schedule("0 9 * * MON-FRI", () => console.log("
 
 timeProvider.cron.unschedule(handle);
 ```
+
+`withTimezone(...)` needs a timezone-aware plugin, hence `plugin-dayjs` above
+rather than `plugin-native`. On a UTC-only plugin the schedule still works,
+it just reads in `"Etc/UTC"` — see
+[Timezones & Local Time](/guide/timezones).
 
 On a deterministic Time-Provider the schedule runs against that runtime's own
 simulated clock, so a whole week of a job's behaviour is a single `advance()`

@@ -19,9 +19,21 @@ interface IPerformanceMeasure extends IPerformanceEntry {
   readonly entryType: "measure";
 }
 
+interface IPerformanceMarkOptions {
+  startTime?: number;
+  detail?: unknown;
+}
+
+interface IPerformanceMeasureOptions {
+  start?: string | number;
+  end?: string | number;
+  duration?: number;
+  detail?: unknown;
+}
+
 interface IPerformance {
   now(): number;
-  get timeOrigin(): number;
+  readonly timeOrigin: number;
   getEntries(): readonly IPerformanceEntry[];
   getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];
   getEntriesByType(entryType: PerformanceEntryType): readonly IPerformanceEntry[];
@@ -37,8 +49,7 @@ interface IPerformance {
 
 `timeProvider.performance` mirrors the shape of the browser/Node
 [`Performance`](https://developer.mozilla.org/en-US/docs/Web/API/Performance)
-API, scoped to one `ITimeProvider` instance instead of the process-wide
-timeline:
+API, reached through the Time-Provider rather than the global object:
 
 ```ts
 timeProvider.performance.mark("start");
@@ -49,7 +60,9 @@ measure.duration; // milliseconds between the "start" mark and now
 
 - **`now()`** — a high-resolution timestamp, in milliseconds relative to
   `timeOrigin`.
-- **`.timeOrigin`** — the timestamp this performance timeline started at.
+- **`.timeOrigin`** — the timestamp this performance timeline started at. On
+  a deterministic Time-Provider that's the clock's own timestamp the first
+  time `now()` or `timeOrigin` is read, not when the runtime was built.
 - **`getEntries()` / `getEntriesByName(name, type?)` / `getEntriesByType(type)`**
   — read back previously recorded marks/measures.
 - **`mark(name, options?)`** — records an `IPerformanceMark` at the current
@@ -65,9 +78,13 @@ measure.duration; // milliseconds between the "start" mark and now
 Like `clock` and `scheduler`, `performance` is driven by whichever strategy
 built the Time-Provider:
 
-- **System** — `now()`/`timeOrigin` pass through to the host's real
-  `performance` object.
-- **Fixed, Manual, Sequential** — `now()` advances (or stays frozen) exactly
-  in step with `clock.utcNow()`/`clock.advance()` on the same runtime, so a
-  `measure()` between two marks reflects simulated time elapsed, not
-  wall-clock time.
+- **System** — every method passes straight through to the host's real
+  `performance` object, so the timeline is the process-wide one: a mark
+  recorded here is visible to `performance.getEntries()` and to every other
+  system Time-Provider in the process.
+- **Fixed, Manual, Sequential** — the runtime keeps its own entry list, and
+  `now()` advances (or stays frozen) exactly in step with
+  `clock.utcNow()`/`clock.advance()` on the same runtime, so a `measure()`
+  between two marks reflects simulated time elapsed, not wall-clock time.
+  Nothing here touches the global timeline, and two deterministic
+  Time-Providers never see each other's entries.

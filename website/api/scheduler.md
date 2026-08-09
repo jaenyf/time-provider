@@ -19,7 +19,12 @@ interface IScheduler {
 
 The same familiar shape as the global `setTimeout`/`setInterval`, scoped to
 one `ITimeProvider` instance instead of the process-wide timer queue.
-`millisecondsDelay` defaults to `0` (or is clamped to `0` if negative).  
+`millisecondsDelay` defaults to `0` (or is clamped to `0` if negative), with
+one exception: no `setInterval` ever repeats faster than once per
+millisecond. A system one clamps the requested delay to `1` up front, and a
+deterministic one accepts `0` — firing immediately, since it is already due
+— then re-arms every `1` millisecond, matching what a native interval does
+with a delay of `0`.  
 _Note: `DueHandle` is opaque - pass it back to the matching `clear*` method; `kind` is for introspection/debugging, not meant to be branched on._
 
 **When each callback actually runs depends on the clock strategy backing
@@ -59,7 +64,7 @@ counter, remaining time, ...), which is why it's the run itself deciding,
 not a separate function evaluated beforehand. Returning `false` stops the
 schedule, with no extra trailing run: there's never a next occurrence
 already committed by the time `callback` decides against it.  
-_Note: any other falsy value (`0` included) still schedules a run, `0` milliseconds out._
+_Note: any other falsy value (`0` included) still schedules a run - `0` milliseconds out on a system clock, and `1` on a deterministic one, which never re-arms faster than once per millisecond._
 
 `clearRecurring` works the same way - calling it, whether from outside or
 reentrantly from within the run itself, always prevents any further run.

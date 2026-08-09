@@ -6,6 +6,7 @@ import { type WithAnimationFrameApi } from "./types.ts";
 export type {
   AnimationFrameHandle,
   IAnimationFrameApi as IAnimationFrameScheduler,
+  WithAnimationFrameApi,
 } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame.ts";
 

@@ -8,7 +8,14 @@ export type AnimationFrameHandle = ReturnType<typeof requestAnimationFrame>;
  * The shape this addon adds to a composed Time-Provider: an `animation` property exposing
  * {@link IAnimationFrameApi}.
  */
-export type WithAnimationFrameApi = { animation: IAnimationFrameApi };
+export type WithAnimationFrameApi = {
+  /**
+   * Schedules work to run before the next host frame update, via `requestAnimationFrame`/
+   * `cancelAnimationFrame` - the host's real frames on a system runtime, frames simulated against
+   * this runtime's own clock on a deterministic one. See {@link IAnimationFrameApi}.
+   */
+  animation: IAnimationFrameApi;
+};
 
 /**
  * The animation-frame API facade this addon adds to a composed Time-Provider,

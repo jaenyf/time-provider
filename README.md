@@ -52,7 +52,7 @@ Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.
 - **Four clock strategies**: system (real time), fixed, manual (advance time explicitly), sequential (predefined instants) - same API for production and tests.
 - **Deterministic timers**: `setTimeout`/`setInterval` driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
 - **Bring your own date library**: adapters for [Temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal), [Day.js](https://www.npmjs.com/package/@time-provider/plugin-dayjs), [Luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon), [Moment.js](https://www.npmjs.com/package/@time-provider/plugin-moment), [Moment.js + moment-timezone](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone), and [native `Date`](https://www.npmjs.com/package/@time-provider/plugin-native). Your code keeps working with the date type it already uses.
-- **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withLocalTimezone(...)` plus `localNow()`/`utcNow()`.
+- **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withTimezone(...)` plus `localNow()`/`utcNow()`.
 - **Tree-shakable**: no deterministic runtimes bundled when not imported.
 - **Zero runtime dependencies** in `@time-provider/core`.
 
@@ -106,9 +106,9 @@ Every time provider exposes the same four-part surface:
 
 ```typescript
 interface ITimeProvider<TDate> {
-  clock: IClock<TDate>; // localNow, utcNow, withLocalTimezone
+  clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
   parser: IParser<TDate>; // parseToUtc, parseToLocal
-  scheduler: IScheduler; // setTimeout, clearTimeout, setInterval, clearInterval
+  scheduler: IScheduler; // setTimeout, setInterval, setRecurring (+ the matching clear*)
   performance: IPerformance; //now, getEntries, measure,...
 }
 ```
@@ -117,7 +117,7 @@ Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-p
 
 ```typescript
 interface ITimeProvider<TDate> {
-  animation: IAnimationFrameApi; //requestAnimationFrame, cancelAnimationFrame
+  animation: IAnimationFrameScheduler; //requestAnimationFrame, cancelAnimationFrame
 }
 ```
 

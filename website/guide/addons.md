@@ -20,6 +20,23 @@ timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
 `parser`, `scheduler`, `performance` — plus whatever the addon adds, here an
 `.animation` facade exposing `requestAnimationFrame`/`cancelAnimationFrame`.
 
+Inference picks all of that up, so you don't normally write the type down. If
+you need to — a parameter in a shared helper, say — each addon exports the
+shape it contributes, to intersect with the provider type:
+
+```ts
+import type { WithAnimationFrameApi } from "@time-provider/addon-animation-frame";
+
+function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
+  tp.animation.requestAnimationFrame(() => {});
+}
+```
+
+`@time-provider/addon-cron` exports `WithCronApi` and `@time-provider/addon-eta`
+exports `WithEtaApi` the same way. Annotating the build site instead would drop
+the addon's property, so prefer inference there — see
+[Naming these types](/api/clock#naming-these-types).
+
 ## Addons are split by entry point too
 
 Just like plugins, an addon that needs to behave differently on a
@@ -68,6 +85,10 @@ const timeProvider = createTimeProvider
 - `@time-provider/addon-cron` — a `.cron` facade running callbacks on cron
   schedules, in the runtime's own timezone. See
   [Cron Schedules](/guide/cron).
+- `@time-provider/addon-eta` — an `.eta` facade estimating when a job will
+  finish, either from reported progress toward a known total (optionally
+  split into weighted stages) or from a fixed expected duration. Notifies a
+  callback with a snapshot on an interval you pick.
 
 ## Writing a custom addon
 

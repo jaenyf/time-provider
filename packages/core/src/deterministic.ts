@@ -7,6 +7,8 @@ export type { GregorianMonthName, GregorianWeekdayName } from "./calendar/gregor
 export type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
+  IManualTimeProvider,
+  IUtcOnlyManualTimeProvider,
   CalendarFields,
   ComposableCalendarFields,
   ICalendarAdapter,

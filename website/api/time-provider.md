@@ -33,12 +33,23 @@ are two separate interfaces rather than one with optional members.
 interface IManualTimeProvider<TDate> extends ITimeProvider<TDate> {
   get clock(): IManualClock<TDate>;
 }
+
+interface IUtcOnlyManualTimeProvider<TDate> extends IUtcOnlyTimeProvider<TDate> {
+  get clock(): IUtcOnlyManualClock<TDate>;
+}
 ```
 
 What `.asManual()....create()` (from `@time-provider/core/deterministic`)
-returns — identical to `ITimeProvider` except `clock` is additionally
-`IAdvanceable`, i.e. has `.advance(options)`. See
-[Manual Clock](/guide/manual-clock).
+returns — identical to `ITimeProvider`/`IUtcOnlyTimeProvider` except `clock`
+is additionally `IAdvanceable`, i.e. has `.advance(options)`. Which of the
+two you get follows the plugin, exactly as above: `IManualTimeProvider` from
+a timezone-aware plugin, `IUtcOnlyManualTimeProvider` from a UTC-only one.
+See [Manual Clock](/guide/manual-clock).
+
+Both are exported from `@time-provider/core/deterministic`, and they are the
+entry point for naming anything below them —
+`IManualTimeProvider<TDate>["clock"]` and so on. See
+[Naming these types](/api/clock#naming-these-types).
 
 ## Composing with an addon
 
