@@ -13,6 +13,10 @@
       "release-type": "node",
       "component": "addon-cron"
     },
+    "packages/addon-eta": {
+      "release-type": "node",
+      "component": "addon-eta"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core"

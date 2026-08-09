@@ -7,6 +7,8 @@ import { addon as systemAfapi } from "../../../addon-animation-frame/dist/index.
 import { addon as deterministicAfapi } from "../../../addon-animation-frame/dist/deterministic.mjs";
 import { addon as systemCron } from "../../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../../addon-cron/dist/deterministic.mjs";
+import { addon as systemEta } from "../../../addon-eta/dist/index.mjs";
+import { addon as deterministicEta } from "../../../addon-eta/dist/deterministic.mjs";
 import "../polyfills.ts";
 
 describe("e2e native", () => {
@@ -14,12 +16,14 @@ describe("e2e native", () => {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
       .use(systemAfapi)
-      .use(systemCron);
+      .use(systemCron)
+      .use(systemEta);
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
-      .use(deterministicCron);
+      .use(deterministicCron)
+      .use(deterministicEta);
 
     const system = systemBuilder.create();
     const fixed = deterministicBuilder.asFixed().create();
@@ -62,6 +66,43 @@ describe("e2e native", () => {
         ),
       ),
     );
+    expect(() => {
+      const eta = system.eta
+        .estimate()
+        .withEstimatedDuration(5000)
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = system.eta
+        .estimate()
+        .withKnownTotal(100)
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = system.eta
+        .estimate()
+        .withStages([
+          { weight: 1, total: 1 },
+          { weight: 1, total: 1 },
+        ])
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.nextStage();
+      eta.done();
+      eta.abandon();
+    });
 
     expect(fixed.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -96,6 +137,43 @@ describe("e2e native", () => {
         ),
       ),
     );
+    expect(() => {
+      const eta = fixed.eta
+        .estimate()
+        .withEstimatedDuration(5000)
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = fixed.eta
+        .estimate()
+        .withKnownTotal(100)
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = fixed.eta
+        .estimate()
+        .withStages([
+          { weight: 1, total: 1 },
+          { weight: 1, total: 1 },
+        ])
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.nextStage();
+      eta.done();
+      eta.abandon();
+    });
 
     expect(manual.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -130,6 +208,43 @@ describe("e2e native", () => {
         ),
       ),
     );
+    expect(() => {
+      const eta = manual.eta
+        .estimate()
+        .withEstimatedDuration(5000)
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = manual.eta
+        .estimate()
+        .withKnownTotal(100)
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = manual.eta
+        .estimate()
+        .withStages([
+          { weight: 1, total: 1 },
+          { weight: 1, total: 1 },
+        ])
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.nextStage();
+      eta.done();
+      eta.abandon();
+    });
 
     expect(sequential.clock.utcNow().toString()).toBeDefined();
     //@ts-expect-error: localNow does not exist
@@ -166,6 +281,43 @@ describe("e2e native", () => {
         ),
       ),
     );
+    expect(() => {
+      const eta = sequential.eta
+        .estimate()
+        .withEstimatedDuration(5000)
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = sequential.eta
+        .estimate()
+        .withKnownTotal(100)
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.done();
+      eta.abandon();
+    });
+    expect(() => {
+      const eta = sequential.eta
+        .estimate()
+        .withStages([
+          { weight: 1, total: 1 },
+          { weight: 1, total: 1 },
+        ])
+        .withAlgorithm("complete")
+        .withNotificationInterval(500)
+        .start((_status) => {});
+      eta.progress(10);
+      eta.progressTo(50);
+      eta.nextStage();
+      eta.done();
+      eta.abandon();
+    });
 
     return untracked;
   });

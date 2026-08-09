@@ -302,6 +302,175 @@
         </p>
       </div>
 
+      <div class="pg-panel" v-if="hasEtaAddon">
+        <div class="pg-panel-header">
+          <span>ETA</span>
+          <span class="pg-badge">{{ etaStatusLabel }}</span>
+        </div>
+        <div class="pg-timer-form">
+          <div class="pg-input-label">
+            <span>controls</span>
+            <div class="pg-eta-actions">
+              <button class="pg-btn pg-btn-brand" :disabled="!canStartEta" @click="startEtaTracker">
+                Start
+              </button>
+              <button class="pg-btn" :disabled="!etaTracker" @click="etaDoneAction">done()</button>
+              <button class="pg-btn" :disabled="!etaTracker" @click="etaAbandonAction">
+                abandon()
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pg-timer-form">
+          <label class="pg-input-label">
+            <span>mode</span>
+            <select v-model="etaMode" :disabled="!!etaTracker">
+              <option value="known-total">Known total</option>
+              <option value="stages">Stages</option>
+              <option value="duration">Estimated duration</option>
+            </select>
+          </label>
+
+          <label class="pg-input-label" v-if="etaMode === 'known-total'">
+            <span>total</span>
+            <input
+              type="number"
+              v-model.number="etaTotal"
+              style="width: 90px"
+              placeholder="e.g. 1000000"
+              :disabled="!!etaTracker"
+            />
+          </label>
+
+          <label class="pg-input-label" v-if="etaMode === 'duration'">
+            <span>expected duration</span>
+            <input
+              type="number"
+              v-model.number="etaDurationMs"
+              style="width: 110px"
+              placeholder="ms"
+              :disabled="!!etaTracker"
+            />
+          </label>
+
+          <label class="pg-input-label" v-if="etaMode !== 'duration'">
+            <span>algorithm</span>
+            <select v-model="etaAlgorithm" :disabled="!!etaTracker">
+              <option value="complete">Complete</option>
+              <option value="windowed">Windowed</option>
+              <option value="smoothed">Smoothed</option>
+            </select>
+          </label>
+
+          <label class="pg-input-label">
+            <span>notification interval</span>
+            <input
+              type="number"
+              v-model.number="etaNotificationInterval"
+              style="width: 110px"
+              placeholder="ms"
+              :disabled="!!etaTracker"
+            />
+          </label>
+        </div>
+
+        <div class="pg-seq-list pg-eta-stages" v-if="etaMode === 'stages'">
+          <div class="pg-seq-row pg-eta-stages-header">
+            <span class="pg-caption">weight (relative to the other stages)</span>
+            <span class="pg-caption">total (this stage's own unit)</span>
+            <span class="pg-eta-stages-header-spacer"></span>
+          </div>
+          <div class="pg-seq-row" v-for="(_p, i) in etaStages" :key="i">
+            <input
+              type="number"
+              v-model.number="etaStages[i].weight"
+              placeholder="weight"
+              :disabled="!!etaTracker"
+            />
+            <input
+              type="number"
+              v-model.number="etaStages[i].total"
+              placeholder="total"
+              :disabled="!!etaTracker"
+            />
+            <button
+              class="pg-btn"
+              title="Remove"
+              :disabled="!!etaTracker || etaStages.length <= 1"
+              @click="removeEtaStage(i)"
+            >
+              ×
+            </button>
+          </div>
+          <button class="pg-btn" :disabled="!!etaTracker" @click="addEtaStage">+ Add stage</button>
+        </div>
+
+        <div class="pg-timer-form" v-if="etaTracker && etaMode !== 'duration'">
+          <label class="pg-input-label">
+            <span>chunk to add</span>
+            <input type="number" v-model.number="etaProgressChunk" style="width: 90px" />
+          </label>
+          <button class="pg-btn" @click="etaProgress">progress(chunk)</button>
+          <label class="pg-input-label">
+            <span>total completed so far</span>
+            <input type="number" v-model.number="etaProgressToValue" style="width: 90px" />
+          </label>
+          <button class="pg-btn" @click="etaProgressToAction">progressTo(done)</button>
+          <button
+            class="pg-btn"
+            v-if="etaMode === 'stages'"
+            :disabled="etaSnapshot?.currentStageIndex >= etaStages.length - 1"
+            @click="etaNextStage"
+          >
+            nextStage()
+          </button>
+        </div>
+
+        <div class="pg-readout pg-eta-readout" v-if="etaSnapshot">
+          <div class="pg-readout-item" v-if="etaMode !== 'duration'">
+            <div class="pg-label">
+              {{ etaMode === "stages" ? "stagePercentage" : "percentage" }}
+            </div>
+            <div class="pg-value">{{ etaPercentage.toFixed(1) }}%</div>
+          </div>
+          <div class="pg-readout-item" v-if="etaMode === 'stages'">
+            <div class="pg-label">stage</div>
+            <div class="pg-value">
+              {{ etaSnapshot.currentStageIndex + 1 }} / {{ etaSnapshot.stageCount }}
+            </div>
+          </div>
+          <div class="pg-readout-item" v-if="etaMode !== 'duration'">
+            <div class="pg-label">rate</div>
+            <div class="pg-value">
+              {{ etaSnapshot.rate !== undefined ? etaSnapshot.rate.toFixed(6) : "—" }}
+            </div>
+          </div>
+          <div class="pg-readout-item">
+            <div class="pg-label">eta</div>
+            <div class="pg-value">
+              {{ etaSnapshot.eta !== undefined ? new Date(etaSnapshot.eta).toISOString() : "—" }}
+            </div>
+          </div>
+          <div class="pg-readout-item">
+            <div class="pg-label">remainingMilliseconds</div>
+            <div class="pg-value">
+              {{
+                etaSnapshot.remainingMilliseconds !== undefined
+                  ? etaSnapshot.remainingMilliseconds
+                  : "—"
+              }}
+            </div>
+          </div>
+        </div>
+
+        <p class="pg-note">
+          <code>progress()</code>/<code>progressTo()</code> never notify by themselves - snapshots
+          are delivered strictly on the notification interval above, plus one final notification
+          after <code>done()</code>/<code>abandon()</code>.
+        </p>
+      </div>
+
       <div class="pg-panel">
         <div class="pg-panel-header">
           <span>Event log</span>
@@ -350,6 +519,8 @@ import { addon as animationFrameAddon } from "@time-provider/addon-animation-fra
 import { addon as animationFrameDeterministicAddon } from "@time-provider/addon-animation-frame/deterministic";
 import { addon as cronAddon } from "@time-provider/addon-cron";
 import { addon as cronDeterministicAddon } from "@time-provider/addon-cron/deterministic";
+import { addon as etaAddon } from "@time-provider/addon-eta";
+import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/deterministic";
 import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
@@ -443,6 +614,14 @@ const addonOptions: AddonOption[] = [
     systemAddon: cronAddon,
     deterministicAddon: cronDeterministicAddon,
     importName: "addon-cron",
+  },
+  {
+    key: "eta",
+    label: "ETA",
+    systemAddon: etaAddon,
+    deterministicAddon: etaDeterministicAddon,
+    importName: "addon-eta",
+    varName: "etaAddon",
   },
 ];
 
@@ -600,6 +779,35 @@ const cronBuilderSpec = computed(() => {
 });
 const cronBuilderJson = computed(() => JSON.stringify(cronBuilderSpec.value, null, 2));
 
+type EtaMode = "known-total" | "stages" | "duration";
+type EtaAlgorithm = "complete" | "windowed" | "smoothed";
+
+const etaMode = ref<EtaMode>("known-total");
+const etaTotal = ref(100);
+const etaStages = ref<{ weight: number; total: number }[]>([
+  { weight: 1, total: 100 },
+  { weight: 1, total: 100 },
+]);
+const etaDurationMs = ref(5000);
+const etaNotificationInterval = ref(1000);
+const etaAlgorithm = ref<EtaAlgorithm>("windowed");
+const etaProgressChunk = ref(10);
+const etaProgressToValue = ref(50);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const etaTracker = shallowRef<any>(null);
+// shallowRef, not ref: the snapshot classes use private (#-prefixed) fields for their lazy
+// getters - wrapping one in Vue's deep reactive Proxy makes those getters run with `this` bound
+// to the proxy instead of the real instance, and private-field access throws in that case
+// ("Cannot read private member ... from an object whose class did not declare it").
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const etaSnapshot = shallowRef<any>(null);
+const etaStatusLabel = computed(() => etaSnapshot.value?.status ?? "idle");
+// IStagedEtaProgressSnapshot doesn't declare `percentage` - only the stage-scoped
+// `stagePercentage` - see its doc comment for why.
+const etaPercentage = computed(() =>
+  etaMode.value === "stages" ? etaSnapshot.value?.stagePercentage : etaSnapshot.value?.percentage,
+);
+
 const selectedPlugin = computed(
   () => pluginOptions.find((p) => p.key === selectedPluginKey.value) ?? pluginOptions[0],
 );
@@ -608,6 +816,7 @@ const supportsLocalTime = computed(() =>
 );
 const hasAnimationFrameAddon = computed(() => enabledAddons.value.includes("animation-frame"));
 const hasCronAddon = computed(() => enabledAddons.value.includes("cron"));
+const hasEtaAddon = computed(() => enabledAddons.value.includes("eta"));
 const enabledAddonList = computed(() =>
   addonOptions.filter((a) => enabledAddons.value.includes(a.key)),
 );
@@ -615,7 +824,8 @@ const addonsHint = computed(() => {
   const hints: string[] = [];
   if (hasAnimationFrameAddon.value) hints.push("requestAnimationFrame in the Scheduler panel");
   if (hasCronAddon.value) hints.push("cron schedules in the Scheduler panel");
-  return hints.length > 0 ? hints.join(" · ") : "Adds .animation/.cron to the built provider";
+  if (hasEtaAddon.value) hints.push(".eta in the ETA panel below");
+  return hints.length > 0 ? hints.join(" · ") : "Adds extra facades to the built provider";
 });
 const strategyHint = computed(() => strategyHints[selectedStrategy.value]);
 const schedulerModeLabel = computed(() => schedulerModeLabels[selectedStrategy.value]);
@@ -683,6 +893,21 @@ function clearAllTimers() {
   timerRows.value = [];
 }
 
+function clearEtaTracker() {
+  // On the system strategy this stops a real, native setInterval - without this, rebuilding the
+  // provider (e.g. switching plugins) would otherwise leak it, still ticking against a runtime
+  // that's no longer reachable from anywhere else.
+  if (etaTracker.value) {
+    try {
+      etaTracker.value.abandon();
+    } catch {
+      /* already ended */
+    }
+  }
+  etaTracker.value = null;
+  etaSnapshot.value = null;
+}
+
 function formatValue(value: unknown, isLocal: boolean): string {
   if (value === null || value === undefined) return String(value);
   const v = value as Record<string, unknown>;
@@ -704,6 +929,7 @@ function useHostTimezone() {
 
 function buildProvider() {
   clearAllTimers();
+  clearEtaTracker();
   buildError.value = "";
   utcReadout.value = "—";
   localReadout.value = "—";
@@ -872,6 +1098,109 @@ function addSequentialTime() {
 
 function removeSequentialTime(index: number) {
   sequentialTimes.value.splice(index, 1);
+}
+
+function addEtaStage() {
+  etaStages.value.push({ weight: 1, total: 100 });
+}
+
+function removeEtaStage(index: number) {
+  etaStages.value.splice(index, 1);
+}
+
+// v-model.number leaves a cleared/non-numeric input as the raw string instead of coercing it.
+function isValidEtaNumber(value: number): boolean {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+// Reset a cleared/invalid field to a sane default rather than letting it reach the addon. A
+// value the user genuinely typed (including 0) is a real number and passes through untouched.
+function coerceEtaNumber(value: number, fallback: number): number {
+  return isValidEtaNumber(value) ? value : fallback;
+}
+
+const canStartEta = computed(() => {
+  if (!timeProvider.value || etaTracker.value) return false;
+  if (!isValidEtaNumber(etaNotificationInterval.value)) return false;
+  if (etaMode.value === "known-total") return isValidEtaNumber(etaTotal.value);
+  if (etaMode.value === "duration") return isValidEtaNumber(etaDurationMs.value);
+  return etaStages.value.every((s) => isValidEtaNumber(s.weight) && isValidEtaNumber(s.total));
+});
+
+function startEtaTracker() {
+  if (!canStartEta.value) return;
+  etaSnapshot.value = null;
+  try {
+    const builder = timeProvider.value.eta.estimate();
+    const notify = (snapshot: { status: string; percentage?: number }) => {
+      etaSnapshot.value = snapshot;
+      const pct = snapshot.percentage !== undefined ? ` · ${snapshot.percentage.toFixed(1)}%` : "";
+      pushLog("eta", `[eta] ${snapshot.status}${pct}`);
+    };
+
+    if (etaMode.value === "known-total") {
+      etaTracker.value = builder
+        .withKnownTotal(etaTotal.value)
+        .withNotificationInterval(etaNotificationInterval.value)
+        .withAlgorithm(etaAlgorithm.value)
+        .start(notify);
+    } else if (etaMode.value === "stages") {
+      etaTracker.value = builder
+        .withStages(etaStages.value.map((p) => ({ weight: p.weight, total: p.total })))
+        .withNotificationInterval(etaNotificationInterval.value)
+        .withAlgorithm(etaAlgorithm.value)
+        .start(notify);
+    } else {
+      etaTracker.value = builder
+        .withEstimatedDuration(etaDurationMs.value)
+        .withNotificationInterval(etaNotificationInterval.value)
+        .start(notify);
+    }
+    pushLog("tick", `Started .eta.estimate() (${etaMode.value})`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function etaProgress() {
+  if (!etaTracker.value) return;
+  etaProgressChunk.value = coerceEtaNumber(etaProgressChunk.value, 10);
+  try {
+    etaTracker.value.progress(etaProgressChunk.value);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function etaProgressToAction() {
+  if (!etaTracker.value) return;
+  etaProgressToValue.value = coerceEtaNumber(etaProgressToValue.value, 50);
+  try {
+    etaTracker.value.progressTo(etaProgressToValue.value);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function etaNextStage() {
+  if (!etaTracker.value) return;
+  try {
+    etaTracker.value.nextStage();
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function etaDoneAction() {
+  if (!etaTracker.value) return;
+  etaTracker.value.done();
+  etaTracker.value = null;
+}
+
+function etaAbandonAction() {
+  if (!etaTracker.value) return;
+  etaTracker.value.abandon();
+  etaTracker.value = null;
 }
 
 watch(enabledAddons, () => {

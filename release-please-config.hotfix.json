@@ -15,6 +15,11 @@
       "component": "addon-cron",
       "versioning": "always-bump-patch"
     },
+    "packages/addon-eta": {
+      "release-type": "node",
+      "component": "addon-eta",
+      "versioning": "always-bump-patch"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core",
