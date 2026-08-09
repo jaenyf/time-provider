@@ -366,6 +366,54 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+/* Nothing is left below the header once a pane is folded, so its separator would just hang there. */
+.pg-panel-collapsed .pg-panel-header {
+  border-bottom: none;
+}
+
+/* The header's title doubles as the fold/unfold control - stretched across the header so the
+   whole strip is clickable, not just the few characters of the title itself. */
+.pg-panel-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pg-panel-toggle:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.pg-panel-chevron {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: currentcolor;
+  transition: transform 0.15s;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
+.pg-panel-collapsed .pg-panel-chevron {
+  transform: rotate(-90deg);
+}
+
+/* The clock's readout grid, flattened to sit inside a .pg-panel that already draws the border
+   and background around it. */
+.pg-clock-readout {
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .pg-timer-form {
@@ -382,6 +430,7 @@
 .pg-timer-form input[type="text"],
 .pg-timer-form input[type="number"],
 .pg-timer-form select,
+.pg-advance-row input[type="number"],
 .pg-advance-row select {
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
@@ -554,6 +603,14 @@
   display: block;
 }
 
+.pg-timer-list-frames:empty::before {
+  content: "No pending frames";
+}
+
+.pg-timer-list-cron:empty::before {
+  content: "No cron schedules";
+}
+
 .pg-timer-row {
   display: flex;
   align-items: center;
@@ -670,6 +727,12 @@
 }
 .pg-log-row.pg-log-interval .pg-log-msg {
   color: var(--vp-c-brand-1);
+}
+.pg-log-row.pg-log-recurring .pg-log-msg {
+  color: #38bdf8;
+}
+.pg-log-row.pg-log-cron .pg-log-msg {
+  color: #f472b6;
 }
 .pg-log-row.pg-log-error .pg-log-msg {
   color: var(--vp-c-danger-1, #e5484d);

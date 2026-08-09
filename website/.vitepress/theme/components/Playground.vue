@@ -11,8 +11,8 @@
         }}</span>
       </div>
 
-      <div class="pg-field">
-        <label>Addons</label>
+      <div class="pg-field" role="group" aria-labelledby="pg-addons-label">
+        <label id="pg-addons-label">Addons</label>
         <label class="pg-checkbox" v-for="a in addonOptions" :key="a.key">
           <input type="checkbox" v-model="enabledAddons" :value="a.key" />
           {{ a.label }}
@@ -60,12 +60,24 @@
         <input id="pg-initial" type="text" v-model="initialTime" />
       </div>
 
-      <div class="pg-field" v-if="selectedStrategy === 'sequential'">
-        <label>Sequential instants (ISO 8601)</label>
+      <div
+        class="pg-field"
+        v-if="selectedStrategy === 'sequential'"
+        role="group"
+        aria-labelledby="pg-sequential-label"
+      >
+        <label id="pg-sequential-label">Sequential instants (ISO 8601)</label>
         <div class="pg-seq-list">
           <div class="pg-seq-row" v-for="(_t, i) in sequentialTimes" :key="i">
-            <input type="text" v-model="sequentialTimes[i]" />
-            <button class="pg-btn" title="Remove" @click="removeSequentialTime(i)">×</button>
+            <input type="text" v-model="sequentialTimes[i]" :aria-label="`Instant ${i + 1}`" />
+            <button
+              class="pg-btn"
+              :title="`Remove instant ${i + 1}`"
+              :aria-label="`Remove instant ${i + 1}`"
+              @click="removeSequentialTime(i)"
+            >
+              ×
+            </button>
           </div>
         </div>
         <button class="pg-btn" @click="addSequentialTime">+ Add instant</button>
@@ -93,398 +105,613 @@
     </aside>
 
     <main class="pg-main">
-      <div class="pg-readout">
-        <div class="pg-readout-item">
-          <div class="pg-label">clock.utcNow()</div>
-          <div class="pg-value">{{ utcReadout }}</div>
-          <button class="pg-btn" style="margin-top: 8px" :disabled="!timeProvider" @click="readUtc">
-            Read utcNow()
-          </button>
-        </div>
-        <div class="pg-readout-item">
-          <div class="pg-label">clock.localNow()</div>
-          <div class="pg-value">
-            {{ supportsLocalTime ? localReadout : "— (UTC-only adapter)" }}
-          </div>
-          <button
-            class="pg-btn"
-            style="margin-top: 8px"
-            :disabled="!timeProvider || !supportsLocalTime"
-            @click="readLocal"
-          >
-            Read localNow()
-          </button>
-        </div>
-        <div class="pg-readout-item" v-if="selectedStrategy === 'sequential'">
-          <div class="pg-label">Remaining instants</div>
-          <div class="pg-value">{{ remainingSequential }}</div>
-        </div>
-        <div class="pg-readout-item" v-if="selectedStrategy === 'manual'">
-          <div class="pg-label">clock.advance(...)</div>
-          <div class="pg-advance-row">
-            <input type="number" v-model.number="advanceAmount" />
-            <select v-model="advanceUnit">
-              <option value="milliseconds">ms</option>
-              <option value="seconds">seconds</option>
-              <option value="minutes">minutes</option>
-              <option value="hours">hours</option>
-              <option value="days">days</option>
-              <option value="months">months</option>
-              <option value="years">years</option>
-            </select>
-            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="advance">
-              Advance
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="pg-panel">
+      <div class="pg-panel" :class="{ 'pg-panel-collapsed': !openPanes.clock }">
         <div class="pg-panel-header">
-          <span>Scheduler</span>
-          <span class="pg-badge">{{ schedulerModeLabel }}</span>
-        </div>
-        <div class="pg-timer-form">
-          <input type="text" v-model="timerLabel" placeholder="label" style="width: 110px" />
-          <select v-model="timerKind">
-            <option value="interval">Interval</option>
-            <option value="timeout">Timeout</option>
-            <option v-if="hasAnimationFrameAddon" value="raf">Frame</option>
-            <option v-if="hasCronAddon" value="cron">Cron</option>
-          </select>
-          <input
-            v-if="timerKind === 'interval' || timerKind === 'timeout'"
-            type="number"
-            v-model.number="timerDelay"
-            style="width: 90px"
-            placeholder="delay ms"
-          />
-          <div v-if="timerKind === 'cron'" class="pg-seg">
-            <button
-              type="button"
-              class="pg-seg-btn"
-              :class="{ active: cronInputMode === 'expression' }"
-              @click="cronInputMode = 'expression'"
-            >
-              Expression
-            </button>
-            <button
-              type="button"
-              class="pg-seg-btn"
-              :class="{ active: cronInputMode === 'builder' }"
-              @click="cronInputMode = 'builder'"
-            >
-              Builder
-            </button>
-          </div>
-          <input
-            v-if="timerKind === 'cron' && cronInputMode === 'expression'"
-            type="text"
-            v-model="cronExpression"
-            style="width: 140px"
-            placeholder="* * * * *"
-          />
-          <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="addTimer">
-            {{
-              timerKind === "raf"
-                ? "Request frame"
-                : timerKind === "cron"
-                  ? "Add schedule"
-                  : "Add timer"
-            }}
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.clock"
+            aria-controls="pg-pane-clock"
+            @click="togglePane('clock')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Clock</span>
           </button>
+          <span class="pg-badge">{{ strategyLabel }}</span>
         </div>
-        <div v-if="timerKind === 'cron' && cronInputMode === 'builder'" class="pg-cron-builder">
-          <div class="pg-cron-preview">
-            <div>
-              <span class="pg-cron-preview-label">Equivalent expression</span>
-              <code>{{ cronBuilderExpression }}</code>
-            </div>
-            <div>
-              <span class="pg-cron-preview-label">ICronSpec</span>
-              <pre class="pg-cron-preview-json"><code>{{ cronBuilderJson }}</code></pre>
-            </div>
-          </div>
-
-          <div class="pg-cron-field" v-for="field in CRON_FIELDS" :key="field.key">
-            <div class="pg-cron-field-header">
-              <span>{{ field.label }}</span>
-              <label class="pg-checkbox">
-                <input type="checkbox" v-model="cronBuilder[field.key].wildcard" />
-                Every value
-              </label>
-            </div>
-
-            <div v-if="!cronBuilder[field.key].wildcard" class="pg-cron-atom-list">
-              <div
-                class="pg-cron-atom-row"
-                v-for="atom in cronBuilder[field.key].atoms"
-                :key="atom.id"
+        <div class="pg-panel-body" id="pg-pane-clock" v-show="openPanes.clock">
+          <div class="pg-readout pg-clock-readout">
+            <div class="pg-readout-item">
+              <div class="pg-label">clock.utcNow()</div>
+              <div class="pg-value">{{ utcReadout }}</div>
+              <button
+                class="pg-btn"
+                style="margin-top: 8px"
+                :disabled="!timeProvider"
+                @click="readUtc"
               >
-                <select v-model="atom.mode" class="pg-cron-atom-mode">
-                  <option value="value">Value</option>
-                  <option value="range">Range</option>
-                </select>
-
-                <template v-if="atom.mode === 'value'">
-                  <select v-if="field.names" v-model="atom.value">
-                    <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                Read utcNow()
+              </button>
+            </div>
+            <div class="pg-readout-item">
+              <div class="pg-label">clock.localNow()</div>
+              <div class="pg-value">
+                {{ supportsLocalTime ? localReadout : "— (UTC-only adapter)" }}
+              </div>
+              <button
+                class="pg-btn"
+                style="margin-top: 8px"
+                :disabled="!timeProvider || !supportsLocalTime"
+                @click="readLocal"
+              >
+                Read localNow()
+              </button>
+            </div>
+            <div class="pg-readout-item" v-if="selectedStrategy === 'sequential'">
+              <div class="pg-label">Remaining instants</div>
+              <div class="pg-value">{{ remainingSequential }}</div>
+            </div>
+            <div class="pg-readout-item" v-if="selectedStrategy === 'manual'">
+              <div class="pg-label">clock.advance(...)</div>
+              <div class="pg-advance-row">
+                <label class="pg-input-label">
+                  <span>amount</span>
+                  <input type="number" v-model.number="advanceAmount" />
+                </label>
+                <label class="pg-input-label">
+                  <span>unit</span>
+                  <select v-model="advanceUnit">
+                    <option value="milliseconds">ms</option>
+                    <option value="seconds">seconds</option>
+                    <option value="minutes">minutes</option>
+                    <option value="hours">hours</option>
+                    <option value="days">days</option>
+                    <option value="months">months</option>
+                    <option value="years">years</option>
                   </select>
-                  <input
-                    v-else
-                    type="number"
-                    v-model="atom.value"
-                    :min="field.min"
-                    :max="field.max"
-                  />
-                </template>
-
-                <template v-else>
-                  <template v-if="field.names">
-                    <select v-model="atom.from">
-                      <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
-                    </select>
-                    <span class="pg-cron-range-sep">–</span>
-                    <select v-model="atom.to">
-                      <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
-                    </select>
-                  </template>
-                  <template v-else>
-                    <input type="number" v-model="atom.from" :min="field.min" :max="field.max" />
-                    <span class="pg-cron-range-sep">–</span>
-                    <input type="number" v-model="atom.to" :min="field.min" :max="field.max" />
-                  </template>
-                  <input
-                    type="number"
-                    v-model="atom.step"
-                    min="1"
-                    placeholder="step"
-                    class="pg-cron-step"
-                  />
-                </template>
-
-                <button class="pg-btn" title="Remove" @click="removeCronAtom(field, atom.id)">
-                  ×
+                </label>
+                <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="advance">
+                  Advance
                 </button>
               </div>
-              <button class="pg-btn" @click="addCronAtom(field)">+ Add</button>
             </div>
           </div>
         </div>
-        <div class="pg-timer-list">
-          <div class="pg-timer-row" v-for="row in timerRows" :key="row.id">
-            <span v-if="row.kind === 'raf'"
-              ><span class="pg-timer-kind">raf</span>"{{ row.label }}" (pending frame)</span
-            >
-            <span v-else-if="row.kind === 'cron'"
-              ><span class="pg-timer-kind">cron</span>"{{ row.label }}" ({{ row.expression }})</span
-            >
-            <span v-else
-              ><span class="pg-timer-kind">{{ row.kind }}</span
-              >"{{ row.label }}" every {{ row.delayMs }}ms</span
-            >
-            <button class="pg-btn" @click="removeTimer(row)">Clear</button>
-          </div>
-        </div>
-        <p class="pg-note">
-          On <strong>system</strong>, timers fire for real, asynchronously. On
-          <strong>manual</strong>/<strong>sequential</strong>, they fire synchronously, in-line, the
-          moment <code>advance()</code>/<code>utcNow()</code>/<code>localNow()</code> makes them
-          due. On <strong>fixed</strong>, they never fire.
-          <template v-if="hasAnimationFrameAddon">
-            <code>requestAnimationFrame</code> fires the same way, once, whenever a frame becomes
-            due for the current strategy.
-          </template>
-          <template v-if="hasCronAddon">
-            A cron schedule repeats the same way, on the next minute the expression matches, in the
-            runtime's local timezone (<code>Etc/UTC</code> for a UTC-only plugin).
-          </template>
-        </p>
       </div>
 
-      <div class="pg-panel" v-if="hasEtaAddon">
+      <div class="pg-panel" :class="{ 'pg-panel-collapsed': !openPanes.scheduler }">
         <div class="pg-panel-header">
-          <span>ETA</span>
-          <span class="pg-badge">{{ etaStatusLabel }}</span>
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.scheduler"
+            aria-controls="pg-pane-scheduler"
+            @click="togglePane('scheduler')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Scheduler</span>
+          </button>
+          <span class="pg-badge">{{ schedulerModeLabel }}</span>
         </div>
-        <div class="pg-timer-form">
-          <div class="pg-input-label">
-            <span>controls</span>
-            <div class="pg-eta-actions">
-              <button class="pg-btn pg-btn-brand" :disabled="!canStartEta" @click="startEtaTracker">
-                Start
-              </button>
-              <button class="pg-btn" :disabled="!etaTracker" @click="etaDoneAction">done()</button>
-              <button class="pg-btn" :disabled="!etaTracker" @click="etaAbandonAction">
-                abandon()
-              </button>
-            </div>
-          </div>
-        </div>
+        <div class="pg-panel-body" id="pg-pane-scheduler" v-show="openPanes.scheduler">
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>label</span>
+              <input type="text" v-model="timerLabel" placeholder="Tick" style="width: 110px" />
+            </label>
 
-        <div class="pg-timer-form">
-          <label class="pg-input-label">
-            <span>mode</span>
-            <select v-model="etaMode" :disabled="!!etaTracker">
-              <option value="known-total">Known total</option>
-              <option value="stages">Stages</option>
-              <option value="duration">Estimated duration</option>
-            </select>
-          </label>
+            <label class="pg-input-label">
+              <span>method</span>
+              <select v-model="timerKind">
+                <option value="interval">setInterval</option>
+                <option value="timeout">setTimeout</option>
+                <option value="recurring">setRecurring</option>
+              </select>
+            </label>
 
-          <label class="pg-input-label" v-if="etaMode === 'known-total'">
-            <span>total</span>
-            <input
-              type="number"
-              v-model.number="etaTotal"
-              style="width: 90px"
-              placeholder="e.g. 1000000"
-              :disabled="!!etaTracker"
-            />
-          </label>
+            <label class="pg-input-label" v-if="timerKind !== 'recurring'">
+              <span>delay (ms)</span>
+              <input type="number" v-model.number="timerDelay" style="width: 100px" min="0" />
+            </label>
 
-          <label class="pg-input-label" v-if="etaMode === 'duration'">
-            <span>expected duration</span>
-            <input
-              type="number"
-              v-model.number="etaDurationMs"
-              style="width: 110px"
-              placeholder="ms"
-              :disabled="!!etaTracker"
-            />
-          </label>
+            <template v-else>
+              <label class="pg-input-label">
+                <span>initial delay (ms)</span>
+                <input
+                  type="number"
+                  v-model.number="recurringInitialDelay"
+                  style="width: 110px"
+                  min="0"
+                />
+              </label>
+              <label class="pg-input-label">
+                <span>backoff factor</span>
+                <input
+                  type="number"
+                  v-model.number="recurringFactor"
+                  style="width: 100px"
+                  min="0"
+                  step="0.5"
+                />
+              </label>
+              <label class="pg-input-label">
+                <span>stop after (runs)</span>
+                <input
+                  type="number"
+                  v-model.number="recurringMaxRuns"
+                  style="width: 110px"
+                  min="1"
+                  :max="RECURRING_MAX_RUNS"
+                />
+              </label>
+            </template>
 
-          <label class="pg-input-label" v-if="etaMode !== 'duration'">
-            <span>algorithm</span>
-            <select v-model="etaAlgorithm" :disabled="!!etaTracker">
-              <option value="complete">Complete</option>
-              <option value="windowed">Windowed</option>
-              <option value="smoothed">Smoothed</option>
-            </select>
-          </label>
-
-          <label class="pg-input-label">
-            <span>notification interval</span>
-            <input
-              type="number"
-              v-model.number="etaNotificationInterval"
-              style="width: 110px"
-              placeholder="ms"
-              :disabled="!!etaTracker"
-            />
-          </label>
-        </div>
-
-        <div class="pg-seq-list pg-eta-stages" v-if="etaMode === 'stages'">
-          <div class="pg-seq-row pg-eta-stages-header">
-            <span class="pg-caption">weight (relative to the other stages)</span>
-            <span class="pg-caption">total (this stage's own unit)</span>
-            <span class="pg-eta-stages-header-spacer"></span>
-          </div>
-          <div class="pg-seq-row" v-for="(_p, i) in etaStages" :key="i">
-            <input
-              type="number"
-              v-model.number="etaStages[i].weight"
-              placeholder="weight"
-              :disabled="!!etaTracker"
-            />
-            <input
-              type="number"
-              v-model.number="etaStages[i].total"
-              placeholder="total"
-              :disabled="!!etaTracker"
-            />
             <button
-              class="pg-btn"
-              title="Remove"
-              :disabled="!!etaTracker || etaStages.length <= 1"
-              @click="removeEtaStage(i)"
+              class="pg-btn pg-btn-brand"
+              :disabled="!timeProvider"
+              @click="addSchedulerTimer"
             >
-              ×
+              Add timer
             </button>
           </div>
-          <button class="pg-btn" :disabled="!!etaTracker" @click="addEtaStage">+ Add stage</button>
+          <div class="pg-timer-list">
+            <div class="pg-timer-row" v-for="row in schedulerRows" :key="row.id">
+              <span
+                ><span class="pg-timer-kind">{{ row.kind }}</span
+                >{{ describeTimer(row) }}</span
+              >
+              <button class="pg-btn" @click="removeTimer(row)">Clear</button>
+            </div>
+          </div>
+          <p class="pg-note">
+            On <strong>system</strong>, timers fire for real, asynchronously. On
+            <strong>manual</strong>/<strong>sequential</strong>, they fire synchronously, in-line,
+            the moment <code>advance()</code>/<code>utcNow()</code>/<code>localNow()</code> makes
+            them due. On <strong>fixed</strong>, they never fire. <code>setRecurring</code> re-reads
+            its period from what the run itself returns — here, the previous delay times the backoff
+            factor — and returns <code>false</code> on the last run to stop.
+          </p>
         </div>
-
-        <div class="pg-timer-form" v-if="etaTracker && etaMode !== 'duration'">
-          <label class="pg-input-label">
-            <span>chunk to add</span>
-            <input type="number" v-model.number="etaProgressChunk" style="width: 90px" />
-          </label>
-          <button class="pg-btn" @click="etaProgress">progress(chunk)</button>
-          <label class="pg-input-label">
-            <span>total completed so far</span>
-            <input type="number" v-model.number="etaProgressToValue" style="width: 90px" />
-          </label>
-          <button class="pg-btn" @click="etaProgressToAction">progressTo(done)</button>
-          <button
-            class="pg-btn"
-            v-if="etaMode === 'stages'"
-            :disabled="etaSnapshot?.currentStageIndex >= etaStages.length - 1"
-            @click="etaNextStage"
-          >
-            nextStage()
-          </button>
-        </div>
-
-        <div class="pg-readout pg-eta-readout" v-if="etaSnapshot">
-          <div class="pg-readout-item" v-if="etaMode !== 'duration'">
-            <div class="pg-label">
-              {{ etaMode === "stages" ? "stagePercentage" : "percentage" }}
-            </div>
-            <div class="pg-value">{{ etaPercentage.toFixed(1) }}%</div>
-          </div>
-          <div class="pg-readout-item" v-if="etaMode === 'stages'">
-            <div class="pg-label">stage</div>
-            <div class="pg-value">
-              {{ etaSnapshot.currentStageIndex + 1 }} / {{ etaSnapshot.stageCount }}
-            </div>
-          </div>
-          <div class="pg-readout-item" v-if="etaMode !== 'duration'">
-            <div class="pg-label">rate</div>
-            <div class="pg-value">
-              {{ etaSnapshot.rate !== undefined ? etaSnapshot.rate.toFixed(6) : "—" }}
-            </div>
-          </div>
-          <div class="pg-readout-item">
-            <div class="pg-label">eta</div>
-            <div class="pg-value">
-              {{ etaSnapshot.eta !== undefined ? new Date(etaSnapshot.eta).toISOString() : "—" }}
-            </div>
-          </div>
-          <div class="pg-readout-item">
-            <div class="pg-label">remainingMilliseconds</div>
-            <div class="pg-value">
-              {{
-                etaSnapshot.remainingMilliseconds !== undefined
-                  ? etaSnapshot.remainingMilliseconds
-                  : "—"
-              }}
-            </div>
-          </div>
-        </div>
-
-        <p class="pg-note">
-          <code>progress()</code>/<code>progressTo()</code> never notify by themselves - snapshots
-          are delivered strictly on the notification interval above, plus one final notification
-          after <code>done()</code>/<code>abandon()</code>.
-        </p>
       </div>
 
-      <div class="pg-panel">
+      <div
+        class="pg-panel"
+        v-if="hasAnimationFrameAddon"
+        :class="{ 'pg-panel-collapsed': !openPanes.frame }"
+      >
         <div class="pg-panel-header">
-          <span>Event log</span>
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.frame"
+            aria-controls="pg-pane-frame"
+            @click="togglePane('frame')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Animation Frame</span>
+          </button>
+          <span class="pg-badge">{{ schedulerModeLabel }}</span>
+        </div>
+        <div class="pg-panel-body" id="pg-pane-frame" v-show="openPanes.frame">
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>label</span>
+              <input type="text" v-model="frameLabel" placeholder="Frame" style="width: 110px" />
+            </label>
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="requestFrame">
+              Request frame
+            </button>
+          </div>
+          <div class="pg-timer-list pg-timer-list-frames">
+            <div class="pg-timer-row" v-for="row in frameRows" :key="row.id">
+              <span
+                ><span class="pg-timer-kind">{{ row.kind }}</span
+                >{{ describeTimer(row) }}</span
+              >
+              <button class="pg-btn" @click="removeTimer(row)">Cancel</button>
+            </div>
+          </div>
+          <p class="pg-note">
+            <code>requestAnimationFrame</code> fires once, whenever a frame becomes due for the
+            current strategy — asynchronously on <strong>system</strong>, in-line on
+            <strong>manual</strong>/<strong>sequential</strong>, never on <strong>fixed</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="pg-panel" v-if="hasCronAddon" :class="{ 'pg-panel-collapsed': !openPanes.cron }">
+        <div class="pg-panel-header">
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.cron"
+            aria-controls="pg-pane-cron"
+            @click="togglePane('cron')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Cron</span>
+          </button>
+          <span class="pg-badge">{{ schedulerModeLabel }}</span>
+        </div>
+        <div class="pg-panel-body" id="pg-pane-cron" v-show="openPanes.cron">
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>label</span>
+              <input type="text" v-model="cronLabel" placeholder="Nightly" style="width: 110px" />
+            </label>
+
+            <div class="pg-input-label">
+              <span id="pg-cron-mode-label">input mode</span>
+              <div class="pg-seg" role="group" aria-labelledby="pg-cron-mode-label">
+                <button
+                  type="button"
+                  class="pg-seg-btn"
+                  :class="{ active: cronInputMode === 'expression' }"
+                  :aria-pressed="cronInputMode === 'expression'"
+                  @click="cronInputMode = 'expression'"
+                >
+                  Expression
+                </button>
+                <button
+                  type="button"
+                  class="pg-seg-btn"
+                  :class="{ active: cronInputMode === 'builder' }"
+                  :aria-pressed="cronInputMode === 'builder'"
+                  @click="cronInputMode = 'builder'"
+                >
+                  Builder
+                </button>
+              </div>
+            </div>
+
+            <label class="pg-input-label" v-if="cronInputMode === 'expression'">
+              <span>expression</span>
+              <input
+                type="text"
+                v-model="cronExpression"
+                style="width: 140px"
+                placeholder="* * * * *"
+              />
+            </label>
+
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="addCronSchedule">
+              Add schedule
+            </button>
+          </div>
+          <div v-if="cronInputMode === 'builder'" class="pg-cron-builder">
+            <div class="pg-cron-preview">
+              <div>
+                <span class="pg-cron-preview-label">Equivalent expression</span>
+                <code>{{ cronBuilderExpression }}</code>
+              </div>
+              <div>
+                <span class="pg-cron-preview-label">ICronSpec</span>
+                <pre class="pg-cron-preview-json"><code>{{ cronBuilderJson }}</code></pre>
+              </div>
+            </div>
+
+            <div class="pg-cron-field" v-for="field in CRON_FIELDS" :key="field.key">
+              <div class="pg-cron-field-header">
+                <span>{{ field.label }}</span>
+                <label class="pg-checkbox">
+                  <input type="checkbox" v-model="cronBuilder[field.key].wildcard" />
+                  Every value
+                </label>
+              </div>
+
+              <div v-if="!cronBuilder[field.key].wildcard" class="pg-cron-atom-list">
+                <div
+                  class="pg-cron-atom-row"
+                  v-for="atom in cronBuilder[field.key].atoms"
+                  :key="atom.id"
+                >
+                  <select
+                    v-model="atom.mode"
+                    class="pg-cron-atom-mode"
+                    :aria-label="`${field.label} entry mode`"
+                  >
+                    <option value="value">Value</option>
+                    <option value="range">Range</option>
+                  </select>
+
+                  <template v-if="atom.mode === 'value'">
+                    <select v-if="field.names" v-model="atom.value" :aria-label="field.label">
+                      <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                    </select>
+                    <input
+                      v-else
+                      type="number"
+                      v-model="atom.value"
+                      :min="field.min"
+                      :max="field.max"
+                      :aria-label="field.label"
+                    />
+                  </template>
+
+                  <template v-else>
+                    <template v-if="field.names">
+                      <select v-model="atom.from" :aria-label="`${field.label} range start`">
+                        <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                      </select>
+                      <span class="pg-cron-range-sep">–</span>
+                      <select v-model="atom.to" :aria-label="`${field.label} range end`">
+                        <option v-for="n in field.names" :key="n" :value="n">{{ n }}</option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <input
+                        type="number"
+                        v-model="atom.from"
+                        :min="field.min"
+                        :max="field.max"
+                        :aria-label="`${field.label} range start`"
+                      />
+                      <span class="pg-cron-range-sep">–</span>
+                      <input
+                        type="number"
+                        v-model="atom.to"
+                        :min="field.min"
+                        :max="field.max"
+                        :aria-label="`${field.label} range end`"
+                      />
+                    </template>
+                    <input
+                      type="number"
+                      v-model="atom.step"
+                      min="1"
+                      placeholder="step"
+                      class="pg-cron-step"
+                      :aria-label="`${field.label} range step`"
+                    />
+                  </template>
+
+                  <button
+                    class="pg-btn"
+                    :title="`Remove ${field.label} entry`"
+                    :aria-label="`Remove ${field.label} entry`"
+                    @click="removeCronAtom(field, atom.id)"
+                  >
+                    ×
+                  </button>
+                </div>
+                <button class="pg-btn" @click="addCronAtom(field)">+ Add {{ field.label }}</button>
+              </div>
+            </div>
+          </div>
+          <div class="pg-timer-list pg-timer-list-cron">
+            <div class="pg-timer-row" v-for="row in cronRows" :key="row.id">
+              <span
+                ><span class="pg-timer-kind">{{ row.kind }}</span
+                >{{ describeTimer(row) }}</span
+              >
+              <button class="pg-btn" @click="removeTimer(row)">Unschedule</button>
+            </div>
+          </div>
+          <p class="pg-note">
+            A cron schedule repeats on the next minute the expression matches, in the runtime's
+            local timezone (<code>Etc/UTC</code> for a UTC-only plugin), and follows the same firing
+            model as the scheduler above — asynchronously on <strong>system</strong>, in-line on
+            <strong>manual</strong>/<strong>sequential</strong>, never on <strong>fixed</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="pg-panel" v-if="hasEtaAddon" :class="{ 'pg-panel-collapsed': !openPanes.eta }">
+        <div class="pg-panel-header">
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.eta"
+            aria-controls="pg-pane-eta"
+            @click="togglePane('eta')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>ETA</span>
+          </button>
+          <span class="pg-badge">{{ etaStatusLabel }}</span>
+        </div>
+        <div class="pg-panel-body" id="pg-pane-eta" v-show="openPanes.eta">
+          <div class="pg-timer-form">
+            <div class="pg-input-label">
+              <span id="pg-eta-controls-label">controls</span>
+              <div class="pg-eta-actions" role="group" aria-labelledby="pg-eta-controls-label">
+                <button
+                  class="pg-btn pg-btn-brand"
+                  :disabled="!canStartEta"
+                  @click="startEtaTracker"
+                >
+                  Start
+                </button>
+                <button class="pg-btn" :disabled="!etaTracker" @click="etaDoneAction">
+                  done()
+                </button>
+                <button class="pg-btn" :disabled="!etaTracker" @click="etaAbandonAction">
+                  abandon()
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>mode</span>
+              <select v-model="etaMode" :disabled="!!etaTracker">
+                <option value="known-total">Known total</option>
+                <option value="stages">Stages</option>
+                <option value="duration">Estimated duration</option>
+              </select>
+            </label>
+
+            <label class="pg-input-label" v-if="etaMode === 'known-total'">
+              <span>total</span>
+              <input
+                type="number"
+                v-model.number="etaTotal"
+                style="width: 90px"
+                placeholder="e.g. 1000000"
+                :disabled="!!etaTracker"
+              />
+            </label>
+
+            <label class="pg-input-label" v-if="etaMode === 'duration'">
+              <span>expected duration</span>
+              <input
+                type="number"
+                v-model.number="etaDurationMs"
+                style="width: 110px"
+                placeholder="ms"
+                :disabled="!!etaTracker"
+              />
+            </label>
+
+            <label class="pg-input-label" v-if="etaMode !== 'duration'">
+              <span>algorithm</span>
+              <select v-model="etaAlgorithm" :disabled="!!etaTracker">
+                <option value="complete">Complete</option>
+                <option value="windowed">Windowed</option>
+                <option value="smoothed">Smoothed</option>
+              </select>
+            </label>
+
+            <label class="pg-input-label">
+              <span>notification interval</span>
+              <input
+                type="number"
+                v-model.number="etaNotificationInterval"
+                style="width: 110px"
+                placeholder="ms"
+                :disabled="!!etaTracker"
+              />
+            </label>
+          </div>
+
+          <div class="pg-seq-list pg-eta-stages" v-if="etaMode === 'stages'">
+            <div class="pg-seq-row pg-eta-stages-header">
+              <span class="pg-caption">weight (relative to the other stages)</span>
+              <span class="pg-caption">total (this stage's own unit)</span>
+              <span class="pg-eta-stages-header-spacer"></span>
+            </div>
+            <div class="pg-seq-row" v-for="(_p, i) in etaStages" :key="i">
+              <input
+                type="number"
+                v-model.number="etaStages[i].weight"
+                placeholder="weight"
+                :aria-label="`Stage ${i + 1} weight`"
+                :disabled="!!etaTracker"
+              />
+              <input
+                type="number"
+                v-model.number="etaStages[i].total"
+                placeholder="total"
+                :aria-label="`Stage ${i + 1} total`"
+                :disabled="!!etaTracker"
+              />
+              <button
+                class="pg-btn"
+                :title="`Remove stage ${i + 1}`"
+                :aria-label="`Remove stage ${i + 1}`"
+                :disabled="!!etaTracker || etaStages.length <= 1"
+                @click="removeEtaStage(i)"
+              >
+                ×
+              </button>
+            </div>
+            <button class="pg-btn" :disabled="!!etaTracker" @click="addEtaStage">
+              + Add stage
+            </button>
+          </div>
+
+          <div class="pg-timer-form" v-if="etaTracker && etaMode !== 'duration'">
+            <label class="pg-input-label">
+              <span>chunk to add</span>
+              <input type="number" v-model.number="etaProgressChunk" style="width: 90px" />
+            </label>
+            <button class="pg-btn" @click="etaProgress">progress(chunk)</button>
+            <label class="pg-input-label">
+              <span>total completed so far</span>
+              <input type="number" v-model.number="etaProgressToValue" style="width: 90px" />
+            </label>
+            <button class="pg-btn" @click="etaProgressToAction">progressTo(done)</button>
+            <button
+              class="pg-btn"
+              v-if="etaMode === 'stages'"
+              :disabled="etaSnapshot?.currentStageIndex >= etaStages.length - 1"
+              @click="etaNextStage"
+            >
+              nextStage()
+            </button>
+          </div>
+
+          <div class="pg-readout pg-eta-readout" v-if="etaSnapshot">
+            <div class="pg-readout-item" v-if="etaMode !== 'duration'">
+              <div class="pg-label">
+                {{ etaMode === "stages" ? "stagePercentage" : "percentage" }}
+              </div>
+              <div class="pg-value">{{ etaPercentage.toFixed(1) }}%</div>
+            </div>
+            <div class="pg-readout-item" v-if="etaMode === 'stages'">
+              <div class="pg-label">stage</div>
+              <div class="pg-value">
+                {{ etaSnapshot.currentStageIndex + 1 }} / {{ etaSnapshot.stageCount }}
+              </div>
+            </div>
+            <div class="pg-readout-item" v-if="etaMode !== 'duration'">
+              <div class="pg-label">rate</div>
+              <div class="pg-value">
+                {{ etaSnapshot.rate !== undefined ? etaSnapshot.rate.toFixed(6) : "—" }}
+              </div>
+            </div>
+            <div class="pg-readout-item">
+              <div class="pg-label">eta</div>
+              <div class="pg-value">
+                {{ etaSnapshot.eta !== undefined ? new Date(etaSnapshot.eta).toISOString() : "—" }}
+              </div>
+            </div>
+            <div class="pg-readout-item">
+              <div class="pg-label">remainingMilliseconds</div>
+              <div class="pg-value">
+                {{
+                  etaSnapshot.remainingMilliseconds !== undefined
+                    ? etaSnapshot.remainingMilliseconds
+                    : "—"
+                }}
+              </div>
+            </div>
+          </div>
+
+          <p class="pg-note">
+            <code>progress()</code>/<code>progressTo()</code> never notify by themselves - snapshots
+            are delivered strictly on the notification interval above, plus one final notification
+            after <code>done()</code>/<code>abandon()</code>.
+          </p>
+        </div>
+      </div>
+
+      <div class="pg-panel" :class="{ 'pg-panel-collapsed': !openPanes.log }">
+        <div class="pg-panel-header">
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.log"
+            aria-controls="pg-pane-log"
+            @click="togglePane('log')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Event log</span>
+          </button>
           <button class="pg-btn" @click="clearLog">Clear</button>
         </div>
-        <div class="pg-log" ref="logEl">
-          <div
-            class="pg-log-row"
-            :class="`pg-log-${row.kind}`"
-            v-for="row in reversedLog"
-            :key="row.id"
-          >
-            <span class="pg-log-time">{{ row.time }}</span>
-            <span class="pg-log-msg">{{ row.msg }}</span>
+        <div class="pg-panel-body" id="pg-pane-log" v-show="openPanes.log">
+          <div class="pg-log" ref="logEl">
+            <div
+              class="pg-log-row"
+              :class="`pg-log-${row.kind}`"
+              v-for="row in reversedLog"
+              :key="row.id"
+            >
+              <span class="pg-log-time">{{ row.time }}</span>
+              <span class="pg-log-msg">{{ row.msg }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -524,7 +751,11 @@ import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/determi
 import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
-type TimerKind = "timeout" | "interval" | "raf" | "cron";
+// What the Scheduler panel's own dropdown offers - one entry per IScheduler method.
+type SchedulerTimerKind = "timeout" | "interval" | "recurring";
+// Plus the two addon-backed panels, which register through their own facade rather than
+// `.scheduler`, but end up in the same row list so a rebuild can clear everything at once.
+type TimerKind = SchedulerTimerKind | "raf" | "cron";
 
 interface PluginOption {
   key: string;
@@ -713,8 +944,23 @@ const advanceUnit = ref<
 >("seconds");
 
 const timerLabel = ref("Tick");
-const timerKind = ref<TimerKind>("interval");
+const timerKind = ref<SchedulerTimerKind>("interval");
 const timerDelay = ref(1000);
+
+// A recurring schedule computes its next delay from the run that just happened, so the playground
+// needs a rule for that: start at `recurringInitialDelay`, multiply by `recurringFactor` after
+// every run (factor 1 behaves exactly like setInterval), and return `false` once
+// `recurringMaxRuns` runs have happened. The run cap is mandatory rather than optional: on a
+// manual clock a single advance() drains everything already due, so an unbounded schedule with a
+// small delay would spin in-line until the browser gave up.
+const RECURRING_MAX_RUNS = 1000;
+const recurringInitialDelay = ref(1000);
+const recurringFactor = ref(2);
+const recurringMaxRuns = ref(5);
+
+const frameLabel = ref("Frame");
+
+const cronLabel = ref("Nightly");
 const cronExpression = ref("* * * * *");
 
 const cronInputMode = ref<"expression" | "builder">("expression");
@@ -822,13 +1068,31 @@ const enabledAddonList = computed(() =>
 );
 const addonsHint = computed(() => {
   const hints: string[] = [];
-  if (hasAnimationFrameAddon.value) hints.push("requestAnimationFrame in the Scheduler panel");
-  if (hasCronAddon.value) hints.push("cron schedules in the Scheduler panel");
-  if (hasEtaAddon.value) hints.push(".eta in the ETA panel below");
+  if (hasAnimationFrameAddon.value) hints.push(".animation in the Animation Frame panel");
+  if (hasCronAddon.value) hints.push(".cron in the Cron panel");
+  if (hasEtaAddon.value) hints.push(".eta in the ETA panel");
   return hints.length > 0 ? hints.join(" · ") : "Adds extra facades to the built provider";
 });
 const strategyHint = computed(() => strategyHints[selectedStrategy.value]);
+const strategyLabel = computed(
+  () => strategies.find((s) => s.key === selectedStrategy.value)?.label ?? selectedStrategy.value,
+);
 const schedulerModeLabel = computed(() => schedulerModeLabels[selectedStrategy.value]);
+
+// Each pane in the main column can be folded away to keep the ones being worked with in view.
+// Collapsing only hides the pane's body (`v-show`), so a timer registered from a pane keeps
+// running - and keeps logging - while it's folded.
+const openPanes = reactive({
+  clock: true,
+  scheduler: true,
+  frame: true,
+  cron: true,
+  eta: true,
+  log: true,
+});
+function togglePane(key: keyof typeof openPanes) {
+  openPanes[key] = !openPanes[key];
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const timeProvider = shallowRef<any>(null);
@@ -877,19 +1141,52 @@ interface TimerRow {
   label: string;
   delayMs: number;
   expression?: string;
+  // Recurring only, and mutated by the schedule's own callback so the row tracks it live.
+  runs?: number;
+  maxRuns?: number;
+  nextDelayMs?: number;
+  stopped?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handle: any;
 }
 const timerRows = ref<TimerRow[]>([]);
 
+const schedulerRows = computed(() =>
+  timerRows.value.filter((r) => r.kind !== "raf" && r.kind !== "cron"),
+);
+const frameRows = computed(() => timerRows.value.filter((r) => r.kind === "raf"));
+const cronRows = computed(() => timerRows.value.filter((r) => r.kind === "cron"));
+
+function describeTimer(row: TimerRow): string {
+  switch (row.kind) {
+    case "timeout":
+      return `"${row.label}" once, ${row.delayMs}ms out`;
+    case "interval":
+      return `"${row.label}" every ${row.delayMs}ms`;
+    case "recurring":
+      if (row.stopped) return `"${row.label}" stopped after ${row.runs}/${row.maxRuns} runs`;
+      return row.runs === 0
+        ? `"${row.label}" first run ${row.delayMs}ms out, up to ${row.maxRuns} runs`
+        : `"${row.label}" run ${row.runs}/${row.maxRuns}, next in ${row.nextDelayMs}ms`;
+    case "raf":
+      return `"${row.label}" pending frame`;
+    default:
+      return `"${row.label}" (${row.expression})`;
+  }
+}
+
+function cancelTimer(row: TimerRow) {
+  const provider = timeProvider.value;
+  if (row.kind === "interval") provider.scheduler.clearInterval(row.handle);
+  else if (row.kind === "recurring") provider.scheduler.clearRecurring(row.handle);
+  else if (row.kind === "raf") provider.animation.cancelAnimationFrame(row.handle);
+  else if (row.kind === "cron") provider.cron.unschedule(row.handle);
+  else provider.scheduler.clearTimeout(row.handle);
+}
+
 function clearAllTimers() {
   if (!timeProvider.value) return;
-  for (const row of timerRows.value) {
-    if (row.kind === "interval") timeProvider.value.scheduler.clearInterval(row.handle);
-    else if (row.kind === "raf") timeProvider.value.animation.cancelAnimationFrame(row.handle);
-    else if (row.kind === "cron") timeProvider.value.cron.unschedule(row.handle);
-    else timeProvider.value.scheduler.clearTimeout(row.handle);
-  }
+  for (const row of timerRows.value) cancelTimer(row);
   timerRows.value = [];
 }
 
@@ -1020,59 +1317,128 @@ function advance() {
   }
 }
 
-function addTimer() {
+// A cleared `<input type="number">` leaves v-model.number holding the raw string, so every delay
+// read out of one goes through this rather than straight into the scheduler.
+function positiveNumber(value: number, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+function dropTimerRow(id: number) {
+  timerRows.value = timerRows.value.filter((r) => r.id !== id);
+}
+
+function addSchedulerTimer() {
   if (!timeProvider.value) return;
   const kind = timerKind.value;
-  const label =
-    timerLabel.value.trim() || (kind === "raf" ? "frame" : kind === "cron" ? "cron" : "timer");
-  const delay = kind === "raf" || kind === "cron" ? 0 : Math.max(0, Number(timerDelay.value) || 0);
-  const isCronBuilder = kind === "cron" && cronInputMode.value === "builder";
-  const expression = isCronBuilder
-    ? cronBuilderExpression.value
-    : cronExpression.value.trim() || "* * * * *";
-  const cronArg = isCronBuilder ? cronBuilderSpec.value : expression;
+  const label = timerLabel.value.trim() || "timer";
   const id = nextId++;
 
-  const callback = () => {
-    pushLog(
-      kind,
-      kind === "raf"
-        ? `"${label}" frame fired`
-        : kind === "cron"
-          ? `"${label}" fired (${expression})`
-          : `"${label}" fired (${delay}ms)`,
-    );
-    if (kind === "timeout" || kind === "raf") {
-      timerRows.value = timerRows.value.filter((r) => r.id !== id);
-    }
-  };
-
   try {
+    if (kind === "recurring") {
+      addRecurringTimer(id, label);
+      return;
+    }
+
+    const delay = positiveNumber(timerDelay.value, 0);
+    const callback = () => {
+      pushLog(kind, `"${label}" fired (${delay}ms)`);
+      if (kind === "timeout") dropTimerRow(id);
+    };
     const handle =
       kind === "interval"
         ? timeProvider.value.scheduler.setInterval(callback, delay)
-        : kind === "raf"
-          ? timeProvider.value.animation.requestAnimationFrame(callback)
-          : kind === "cron"
-            ? timeProvider.value.cron.schedule(cronArg, callback)
-            : timeProvider.value.scheduler.setTimeout(callback, delay);
+        : timeProvider.value.scheduler.setTimeout(callback, delay);
 
-    timerRows.value.push({
-      id,
-      kind,
-      label,
-      delayMs: delay,
-      expression: kind === "cron" ? expression : undefined,
-      handle,
+    timerRows.value.push({ id, kind, label, delayMs: delay, handle });
+    pushLog("tick", `Registered ${kind} "${label}" (${delay}ms)`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function addRecurringTimer(id: number, label: string) {
+  const initialDelay = positiveNumber(recurringInitialDelay.value, 0);
+  const factor = positiveNumber(recurringFactor.value, 1);
+  const maxRuns = Math.min(
+    RECURRING_MAX_RUNS,
+    Math.max(1, Math.round(positiveNumber(recurringMaxRuns.value, 5))),
+  );
+
+  let delay = initialDelay;
+  const callback = (): number | false => {
+    const row = timerRows.value.find((r) => r.id === id);
+    const runs = (row?.runs ?? 0) + 1;
+    if (runs >= maxRuns) {
+      if (row) {
+        row.runs = runs;
+        row.stopped = true;
+      }
+      pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned false, stopped`);
+      return false;
+    }
+    delay = Math.round(delay * factor);
+    if (row) {
+      row.runs = runs;
+      row.nextDelayMs = delay;
+    }
+    pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned ${delay}ms`);
+    return delay;
+  };
+
+  // Pushed before scheduling: on a manual/sequential clock an initial delay of 0 is already due,
+  // so `setRecurring` runs the callback in-line before it ever returns a handle - the row has to
+  // exist by then for that first run to be counted against it.
+  timerRows.value.push({
+    id,
+    kind: "recurring",
+    label,
+    delayMs: initialDelay,
+    runs: 0,
+    maxRuns,
+    nextDelayMs: initialDelay,
+    handle: null,
+  });
+  const handle = timeProvider.value.scheduler.setRecurring(callback, initialDelay);
+  const row = timerRows.value.find((r) => r.id === id);
+  if (row) row.handle = handle;
+  pushLog(
+    "tick",
+    `Registered recurring "${label}" (${initialDelay}ms, ×${factor}, ${maxRuns} runs)`,
+  );
+}
+
+function requestFrame() {
+  if (!timeProvider.value) return;
+  const label = frameLabel.value.trim() || "frame";
+  const id = nextId++;
+  try {
+    const handle = timeProvider.value.animation.requestAnimationFrame(() => {
+      pushLog("raf", `"${label}" frame fired`);
+      dropTimerRow(id);
     });
-    pushLog(
-      "tick",
-      kind === "raf"
-        ? `Requested animation frame "${label}"`
-        : kind === "cron"
-          ? `Registered cron "${label}" (${expression})`
-          : `Registered ${kind} "${label}" (${delay}ms)`,
+    timerRows.value.push({ id, kind: "raf", label, delayMs: 0, handle });
+    pushLog("tick", `Requested animation frame "${label}"`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function addCronSchedule() {
+  if (!timeProvider.value) return;
+  const label = cronLabel.value.trim() || "cron";
+  const isBuilder = cronInputMode.value === "builder";
+  const expression = isBuilder
+    ? cronBuilderExpression.value
+    : cronExpression.value.trim() || "* * * * *";
+  const id = nextId++;
+  try {
+    const handle = timeProvider.value.cron.schedule(
+      isBuilder ? cronBuilderSpec.value : expression,
+      () => pushLog("cron", `"${label}" fired (${expression})`),
     );
+    timerRows.value.push({ id, kind: "cron", label, delayMs: 0, expression, handle });
+    pushLog("tick", `Registered cron "${label}" (${expression})`);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }
@@ -1080,11 +1446,8 @@ function addTimer() {
 
 function removeTimer(row: TimerRow) {
   if (!timeProvider.value) return;
-  if (row.kind === "interval") timeProvider.value.scheduler.clearInterval(row.handle);
-  else if (row.kind === "raf") timeProvider.value.animation.cancelAnimationFrame(row.handle);
-  else if (row.kind === "cron") timeProvider.value.cron.unschedule(row.handle);
-  else timeProvider.value.scheduler.clearTimeout(row.handle);
-  timerRows.value = timerRows.value.filter((r) => r.id !== row.id);
+  cancelTimer(row);
+  dropTimerRow(row.id);
   pushLog("tick", `Cleared "${row.label}"`);
 }
 
@@ -1202,15 +1565,6 @@ function etaAbandonAction() {
   etaTracker.value.abandon();
   etaTracker.value = null;
 }
-
-watch(enabledAddons, () => {
-  if (!hasAnimationFrameAddon.value && timerKind.value === "raf") {
-    timerKind.value = "interval";
-  }
-  if (!hasCronAddon.value && timerKind.value === "cron") {
-    timerKind.value = "interval";
-  }
-});
 
 // Any of these fully redefine what the provider *is* (or its initial state), so rebuilding is the
 // only correct response to a change - equivalent to what the old "Build provider" button did,
