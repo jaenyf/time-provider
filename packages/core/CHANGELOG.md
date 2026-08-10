@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.4.0](https://github.com/jaenyf/time-provider/compare/core-v1.3.0...core-v1.4.0) (2026-08-10)
+
+
+### Features
+
+* add setRecurring / clearRecurring to IScheduler ([#133](https://github.com/jaenyf/time-provider/issues/133)) ([564edb8](https://github.com/jaenyf/time-provider/commit/564edb8a2cf29c161fa4749f60ba3e827779b63a))
+* **addon-cron:** add cron scheduling addon ([#139](https://github.com/jaenyf/time-provider/issues/139)) ([7abca3b](https://github.com/jaenyf/time-provider/commit/7abca3b9d00ce15c7d4258aecfb4bdca586a6895))
+* **core:** export the manual Time-Provider types and addon facade shapes ([30a6290](https://github.com/jaenyf/time-provider/commit/30a629093e6b280806afb20ba6e472103a09378d))
+
+
+### Bug Fixes
+
+* **core:** align uncaught timer callback exceptions with the environment ([#135](https://github.com/jaenyf/time-provider/issues/135)) ([#136](https://github.com/jaenyf/time-provider/issues/136)) ([167fabf](https://github.com/jaenyf/time-provider/commit/167fabff7a0211f80b03e26c902dfe57794bf406))
+* **core:** guard addon composition against property collisions, fixes [#129](https://github.com/jaenyf/time-provider/issues/129) ([#130](https://github.com/jaenyf/time-provider/issues/130)) ([09cd3fc](https://github.com/jaenyf/time-provider/commit/09cd3fcaacbb37e21df21984aea13940a783aef3))
+* **core:** prevent bare addons members from colliding ([#137](https://github.com/jaenyf/time-provider/issues/137)) ([#138](https://github.com/jaenyf/time-provider/issues/138)) ([0c87637](https://github.com/jaenyf/time-provider/commit/0c87637f78318eba02c22398f7318a2c0c2ca05a))
+* **core:** prevent deterministic scheduler from throwing when clearing undefined or null handles ([#121](https://github.com/jaenyf/time-provider/issues/121)) ([63ca6e0](https://github.com/jaenyf/time-provider/commit/63ca6e0c3ca7d3344e796870ffab393a047316bd)), closes [#120](https://github.com/jaenyf/time-provider/issues/120)
+
+
+### Performance Improvements
+
+* **runtime:** optimize deterministic runtime, minor-fix system runtime ([#134](https://github.com/jaenyf/time-provider/issues/134)) ([eec5987](https://github.com/jaenyf/time-provider/commit/eec5987b89e6727b3ac3b9015ab18fc425ae0c57))
+
 ## [1.3.0](https://github.com/jaenyf/time-provider/compare/core-v1.2.0...core-v1.3.0) (2026-08-01)
 
 

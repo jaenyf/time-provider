@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-eta",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": false,
   "description": "Time-Provider : ETA estimation addon ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
