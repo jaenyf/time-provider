@@ -33,6 +33,14 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   setInterval(callback: () => void, delayMs: number): void {
     globalThis.setInterval(callback, delayMs);
   }
+  drainMicrotasks(): void {
+    //jest doesn't expose a dedicated method for this (such as runMicrotasks()).
+    //runAllTicks() is the closest we can have.
+    this.#timers.runAllTicks();
+  }
+  queueMicrotask(callback: () => void): void {
+    globalThis.queueMicrotask(callback);
+  }
   advance(): void {
     this.#timers.advanceTimersByTime(this.#delays.next());
   }

@@ -49,6 +49,9 @@ describe("e2e native", () => {
     expect(() => {
       system.scheduler.clearTimeout(system.scheduler.setTimeout(() => {}));
     }).not.toThrow();
+    expect(() => {
+      system.scheduler.queueMicrotask(() => {});
+    }).not.toThrow();
     expect(() =>
       system.animation.cancelAnimationFrame(system.animation.requestAnimationFrame(() => {})),
     ).not.toThrow();
@@ -119,6 +122,12 @@ describe("e2e native", () => {
     }).not.toThrow();
     expect(() => {
       fixed.scheduler.clearTimeout(fixed.scheduler.setTimeout(() => {}));
+    }).not.toThrow();
+    expect(() => {
+      fixed.scheduler.drainMicrotasks();
+    }).not.toThrow();
+    expect(() => {
+      fixed.scheduler.queueMicrotask(() => {});
     }).not.toThrow();
     expect(() =>
       fixed.animation.cancelAnimationFrame(fixed.animation.requestAnimationFrame(() => {})),
@@ -191,6 +200,12 @@ describe("e2e native", () => {
     expect(() => {
       manual.scheduler.clearTimeout(manual.scheduler.setTimeout(() => {}));
     }).not.toThrow();
+    expect(() => {
+      manual.scheduler.drainMicrotasks();
+    }).not.toThrow();
+    expect(() => {
+      manual.scheduler.queueMicrotask(() => {});
+    }).not.toThrow();
     expect(() =>
       manual.animation.cancelAnimationFrame(manual.animation.requestAnimationFrame(() => {})),
     ).not.toThrow();
@@ -261,6 +276,12 @@ describe("e2e native", () => {
     }).not.toThrow();
     expect(() => {
       sequential.scheduler.clearTimeout(sequential.scheduler.setTimeout(() => {}));
+    }).not.toThrow();
+    expect(() => {
+      sequential.scheduler.drainMicrotasks();
+    }).not.toThrow();
+    expect(() => {
+      sequential.scheduler.queueMicrotask(() => {});
     }).not.toThrow();
     expect(() =>
       sequential.animation.cancelAnimationFrame(

@@ -51,6 +51,9 @@ function fakeSystemRuntime(
       return {} as DueHandle;
     },
     clearRecurring() {},
+    queueMicrotask() {
+      throw new Error("not used by the cron addon");
+    },
   };
   const clock =
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };

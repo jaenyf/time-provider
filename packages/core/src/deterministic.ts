@@ -4,6 +4,7 @@ export { CalendarSchemeFieldsHelper } from "./calendar/calendar-fields-helper.ts
 export type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
+  IDeterministicScheduler,
   IManualTimeProvider,
   IUtcOnlyManualTimeProvider,
   CalendarSchemeFields,

@@ -127,4 +127,25 @@ describe("BaseSystemRuntime", () => {
       expect(callbackCounts).toEqual(0);
     });
   });
+
+  describe("queueMicrotask", () => {
+    test("hands the callback to the host's own microtask queue", async () => {
+      const log: string[] = [];
+      sut.queueMicrotask(() => log.push("queued"));
+
+      // A system runtime defers to the host, so nothing has run while the stack is still up.
+      expect(log).toEqual([]);
+      await Promise.resolve();
+      expect(log).toEqual(["queued"]);
+    });
+
+    test("shares one FIFO queue with promise continuations, as the host does", async () => {
+      const log: string[] = [];
+      void Promise.resolve().then(() => log.push("promise"));
+      sut.queueMicrotask(() => log.push("microtask"));
+
+      await Promise.resolve();
+      expect(log).toEqual(["promise", "microtask"]);
+    });
+  });
 });

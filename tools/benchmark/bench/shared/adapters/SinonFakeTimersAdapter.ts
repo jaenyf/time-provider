@@ -13,7 +13,7 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    this.#clock = FakeTimers.install();
+    this.#clock = FakeTimers.install({ loopLimit: 5000 });
   }
   teardown(): void {
     this.#clock?.uninstall();
@@ -29,6 +29,12 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   }
   setInterval(callback: () => void, delayMs: number): void {
     this.#clock!.setInterval(callback, delayMs);
+  }
+  drainMicrotasks(): void {
+    this.#clock!.runMicrotasks();
+  }
+  queueMicrotask(callback: () => void): void {
+    this.#clock!.queueMicrotask(callback);
   }
   advance(): void {
     this.#clock!.tick(this.#delays.next());

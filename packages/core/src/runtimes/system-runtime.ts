@@ -106,4 +106,10 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     clearTimeout(h.current);
     h.current = undefined;
   }
+  /**
+   * Queues `callback` via the native `queueMicrotask`, onto the host's own microtask queue.
+   */
+  queueMicrotask(callback: () => void): void {
+    queueMicrotask(callback);
+  }
 }

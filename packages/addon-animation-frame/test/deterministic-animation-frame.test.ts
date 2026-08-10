@@ -40,6 +40,9 @@ function fakeScheduler(): {
       clearRecurring() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
+      queueMicrotask() {
+        throw new Error("not used by DeterministicAnimationFrameScheduler");
+      },
     },
   };
 }

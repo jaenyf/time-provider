@@ -171,6 +171,104 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(otherFired).toBe(true);
     });
 
+    test("a throwing microtask rethrows, and never runs again on a later checkpoint", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.scheduler.queueMicrotask(() => {
+        log.push("throwing");
+        throw error;
+      });
+      sut.scheduler.queueMicrotask(() => log.push("after"));
+
+      // The checkpoint stops where it threw, exactly as a due callback batch does.
+      expect(() => sut.scheduler.drainMicrotasks()).toThrow(error);
+      expect(log).toEqual(["throwing"]);
+
+      // The one that threw already ran, so only what is genuinely still pending resumes.
+      expect(() => sut.scheduler.drainMicrotasks()).not.toThrow();
+      expect(log).toEqual(["throwing", "after"]);
+    });
+
+    test("a throwing due callback still leaves its microtask checkpoint owed", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.scheduler.setTimeout(() => {
+        sut.scheduler.queueMicrotask(() => log.push("microtask"));
+        throw error;
+      }, 10);
+
+      expect(() => sut.advance({ milliseconds: 10 })).toThrow(error);
+      expect(log).toEqual(["microtask"]);
+    });
+
+    test("a microtask that schedules a timer doesn't re-run itself (checkpoint reentrancy)", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.scheduler.queueMicrotask(() => {
+        runCount++;
+        // Scheduling a timer runs mayRunDueCallbacks, which would restart the checkpoint on the
+        // same, not-yet-cleared queue without the reentrancy guard.
+        sut.scheduler.setTimeout(() => {}, 1000);
+      });
+
+      sut.scheduler.drainMicrotasks();
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask that reads the clock doesn't re-run itself (checkpoint reentrancy)", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.scheduler.queueMicrotask(() => {
+        runCount++;
+        // A sequential/manual clock read also runs mayRunDueCallbacks.
+        sut.clock.utcNow();
+      });
+
+      sut.scheduler.drainMicrotasks();
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask queued by a due callback and reading the clock doesn't re-run itself", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.scheduler.setTimeout(() => {
+        sut.scheduler.queueMicrotask(() => {
+          runCount++;
+          sut.clock.utcNow();
+        });
+      }, 10);
+
+      sut.advance({ milliseconds: 10 });
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask queued during a nested checkpoint attempt still runs, in the same drain", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.scheduler.queueMicrotask(() => {
+        log.push("m1");
+        // The nested checkpoint this triggers is a no-op, but m2 must still be picked up by the
+        // outer, still-running checkpoint loop.
+        sut.scheduler.setTimeout(() => {}, 1000);
+        sut.scheduler.queueMicrotask(() => log.push("m2"));
+      });
+
+      sut.scheduler.drainMicrotasks();
+
+      expect(log).toEqual(["m1", "m2"]);
+    });
+
     test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
@@ -213,6 +311,23 @@ describe("BaseManualRuntime drainDue exception handling", () => {
 
       expect(() => sut.advance({ milliseconds: 20 })).not.toThrow();
       expect(otherFired).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    });
+
+    test("a throwing microtask is logged and doesn't block the rest of the checkpoint", () => {
+      stubBrowserLike();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.scheduler.queueMicrotask(() => {
+        throw error;
+      });
+      sut.scheduler.queueMicrotask(() => log.push("after"));
+
+      expect(() => sut.scheduler.drainMicrotasks()).not.toThrow();
+      expect(log).toEqual(["after"]);
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
     });

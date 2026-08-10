@@ -1,7 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { IScheduler } from "@time-provider/core";
+import type { IDeterministicScheduler } from "@time-provider/core/deterministic";
 
-export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean = false) {
+export function testScheduler(
+  createSUT: () => IDeterministicScheduler,
+  isTimeFrozen: boolean = false,
+) {
   describe("setTimeout", () => {
     test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
       const sut = createSUT();
@@ -147,6 +150,118 @@ export function testScheduler(createSUT: () => IScheduler, isTimeFrozen: boolean
         expect(() => sut.clearRecurring(timeoutHandle)).not.toThrow();
         expect(() => sut.clearRecurring(intervalHandle)).not.toThrow();
       });
+    });
+  });
+  describe("queueMicrotask", () => {
+    test("does not run the callback in-line", () => {
+      const sut = createSUT();
+      let called = false;
+      sut.queueMicrotask(() => (called = true));
+      expect(called).toBe(false);
+    });
+
+    test("queued microtasks run in order, on the next drain", () => {
+      const sut = createSUT();
+      const log: string[] = [];
+      sut.queueMicrotask(() => log.push("m1"));
+      sut.queueMicrotask(() => log.push("m2"));
+      sut.drainMicrotasks();
+
+      expect(log).toEqual(["m1", "m2"]);
+    });
+
+    test("a microtask queued by a microtask runs in the same drain", () => {
+      const sut = createSUT();
+      const log: string[] = [];
+      sut.queueMicrotask(() => {
+        log.push("m1");
+        sut.queueMicrotask(() => {
+          log.push("m2");
+          sut.queueMicrotask(() => log.push("m3"));
+        });
+      });
+      sut.drainMicrotasks();
+
+      expect(log).toEqual(["m1", "m2", "m3"]);
+    });
+
+    test("a microtask never runs twice, however many drains follow", () => {
+      const sut = createSUT();
+      const log: string[] = [];
+      sut.queueMicrotask(() => log.push("m1"));
+      sut.drainMicrotasks();
+      sut.drainMicrotasks();
+
+      expect(log).toEqual(["m1"]);
+    });
+
+    test("draining an empty queue does not throw", () => {
+      const sut = createSUT();
+      expect(() => sut.drainMicrotasks()).not.toThrow();
+    });
+  });
+
+  describe("microtask checkpoints around due callbacks", () => {
+    /*
+      Scheduling a callback runs a checkpoint too, whether or not it ever becomes due - a frozen
+      clock has no due callback to hang one off, but still auto-drains on every schedule call.
+    */
+    test("a scheduling call auto-drains pending microtasks, frozen or not", () => {
+      const sut = createSUT();
+      const log: string[] = [];
+      sut.queueMicrotask(() => log.push("m1"));
+      // A far-future delay: never due, on either a frozen or an advancing clock - only the
+      // auto-drain that scheduling itself triggers can be responsible for m1 having run.
+      sut.setTimeout(() => {}, 1_000_000);
+
+      expect(log).toEqual(["m1"]);
+    });
+
+    /*
+      A due callback is a task, and the host runs a microtask checkpoint at the end of every
+      task - so a microtask queued by one due callback runs before the next one. A frozen clock
+      never has a due callback to hang a checkpoint off, hence the guard.
+    */
+    test.skipIf(isTimeFrozen)(
+      "a due callback's microtasks run before the next due callback",
+      () => {
+        const sut = createSUT();
+        const log: string[] = [];
+        sut.setTimeout(() => {
+          log.push("t1");
+          sut.queueMicrotask(() => log.push("m1"));
+        }, 0);
+        sut.setTimeout(() => log.push("t2"), 0);
+
+        expect(log).toEqual(["t1", "m1", "t2"]);
+      },
+    );
+
+    test.skipIf(isTimeFrozen)(
+      "the checkpoint after a due callback runs nested microtasks too",
+      () => {
+        const sut = createSUT();
+        const log: string[] = [];
+        sut.setTimeout(() => {
+          log.push("t1");
+          sut.queueMicrotask(() => {
+            log.push("m1");
+            sut.queueMicrotask(() => log.push("m2"));
+          });
+        }, 0);
+        sut.setTimeout(() => log.push("t2"), 0);
+
+        expect(log).toEqual(["t1", "m1", "m2", "t2"]);
+      },
+    );
+
+    test.skipIf(isTimeFrozen)("microtasks queued before a due callback run first", () => {
+      const sut = createSUT();
+      const log: string[] = [];
+      sut.queueMicrotask(() => log.push("m1"));
+      sut.setTimeout(() => log.push("t1"), 0);
+
+      expect(log).toEqual(["m1", "t1"]);
     });
   });
 }

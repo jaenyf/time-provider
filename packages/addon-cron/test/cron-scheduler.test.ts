@@ -55,6 +55,9 @@ function fakeScheduler(): {
       clearRecurring(h) {
         cleared.push(h);
       },
+      queueMicrotask() {
+        throw new Error("not used by CronScheduler");
+      },
     },
   };
 }

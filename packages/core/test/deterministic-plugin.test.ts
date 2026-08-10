@@ -2,8 +2,9 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,
-} from "@time-provider/core/deterministic";
-import type { IRuntime, IUtcOnlyRuntime, TimezoneDefinition } from "@time-provider/core";
+} from "../src/plugins/deterministic-plugin.ts";
+import type { TimezoneDefinition } from "@time-provider/core";
+import type { IDeterministicRuntime, IUtcOnlyDeterministicRuntime } from "../src/types/types.ts";
 import type { IManualRuntime, IUtcOnlyManualRuntime } from "../src/types/types.ts";
 
 class FakeRuntime {
@@ -21,11 +22,11 @@ class FakeDeterministicPlugin extends BaseDeterministicPlugin<unknown> {
   protected readonly FixedRuntimeCtor = FakeRuntime as unknown as new (
     localTimezone: TimezoneDefinition,
     initialTime: unknown,
-  ) => IRuntime<unknown>;
+  ) => IDeterministicRuntime<unknown>;
   protected readonly SequentialRuntimeCtor = FakeRuntime as unknown as new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: unknown[],
-  ) => IRuntime<unknown>;
+  ) => IDeterministicRuntime<unknown>;
 }
 
 class FakeUtcOnlyDeterministicPlugin extends BaseUtcOnlyDeterministicPlugin<unknown> {
@@ -36,11 +37,11 @@ class FakeUtcOnlyDeterministicPlugin extends BaseUtcOnlyDeterministicPlugin<unkn
   protected readonly FixedRuntimeCtor = FakeRuntime as unknown as new (
     localTimezone: TimezoneDefinition,
     initialTime: unknown,
-  ) => IUtcOnlyRuntime<unknown>;
+  ) => IUtcOnlyDeterministicRuntime<unknown>;
   protected readonly SequentialRuntimeCtor = FakeRuntime as unknown as new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: unknown[],
-  ) => IUtcOnlyRuntime<unknown>;
+  ) => IUtcOnlyDeterministicRuntime<unknown>;
 }
 
 describe("BaseUtcOnlyDeterministicPlugin", () => {

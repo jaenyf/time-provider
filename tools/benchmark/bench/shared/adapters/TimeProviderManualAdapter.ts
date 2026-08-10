@@ -10,6 +10,8 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     scheduler: {
       setTimeout(callback: () => void, ms: number): unknown;
       setInterval(callback: () => void, ms: number): unknown;
+      drainMicrotasks(): void;
+      queueMicrotask(callback: () => void): void;
     };
     clock: { utcNow(): unknown; advance(config: { milliseconds: number }): unknown };
   };
@@ -34,6 +36,12 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   }
   setInterval(callback: () => void, delayMs: number): void {
     this.#runtime.scheduler.setInterval(callback, delayMs);
+  }
+  drainMicrotasks(): void {
+    this.#runtime.scheduler.drainMicrotasks();
+  }
+  queueMicrotask(callback: () => void): void {
+    this.#runtime.scheduler.queueMicrotask(callback);
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });

@@ -100,6 +100,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract clearInterval(handle: DueHandle): void;
   abstract setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
   abstract clearRecurring(handle: DueHandle): void;
+  abstract queueMicrotask(callback: () => void): void;
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();
