@@ -55,11 +55,14 @@ jobs:
 
       # A squash-merge uses the PR title as the final commit message on main - release-please reads that message to classify the change.
       # Lint it too, with the same rules, so a non-conventional title can't slip through and silently drop out of the changelog.
+      # GitHub appends " (#<number>)" to that squash header, so lint the exact string it will produce: a title sitting just under
+      # commitlint's 100-character header limit passes on its own, then breaks the limit on main once the suffix is added.
       - name: Lint PR title (squash-merge commit message)
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: echo "$PR_TITLE" | vpx commitlint --verbose
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: echo "$PR_TITLE (#$PR_NUMBER)" | vpx commitlint --verbose
 
       # Direct pushes bypass PR review entirely.
       # This step re-validates, server-side, whichever commits actually landed by this push
