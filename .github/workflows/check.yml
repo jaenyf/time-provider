@@ -96,20 +96,15 @@ jobs:
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 
-      - uses: codecov/codecov-action@v7
+      - name: Upload coverage to Codecov
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
 
-      - if: >
-          !cancelled() &&
-          (
-            github.ref == 'refs/heads/main' ||
-            (
-              github.event_name == 'pull_request' &&
-              github.event.pull_request.base.ref == 'main'
-            )
-          )
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
