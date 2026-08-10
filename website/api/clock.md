@@ -19,9 +19,13 @@ interface ILocalOnlyClock<TDate> extends ITimestampClock {
 interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 ```
 
-`IClock` is exported from `@time-provider/core`. The three interfaces above it
-describe how it is composed and are not exported — see
-[Naming these types](#naming-these-types) if you need to write one down.
+`IClock` is exported from `@time-provider/core`. `ITimestampClock`,
+`IUtcOnlyClock` and `ILocalOnlyClock` are **not exported** — they are shown here
+because they are part of the public API surface, not because you can import
+them: they are the shape your `timeProvider.clock` actually has, and which of
+their members exists depends on the plugin. You will see these names in editor
+tooltips and type errors, which is why they are documented under them. To write
+one down, derive it — see [Naming these types](#naming-these-types).
 
 - **`utcNow()`** — the current instant, in UTC, as the plugin's `TDate`.
   Always available. On a sequential clock this read is what consumes the next
@@ -69,8 +73,11 @@ interface IAdvanceable<TSelf> {
 
 Only on a manual clock (see [Manual Clock](/guide/manual-clock)) —
 `IManualClock` from a timezone-aware plugin, `IUtcOnlyManualClock` from a
-UTC-only one. Neither is exported, nor are `IAdvanceOptions` and
-`IAdvanceable`; reach them from the provider type as shown
+UTC-only one.
+
+None of these four is exported either. Same reason as above: they describe what
+`.asManual()....create()` hands you, so they belong in the reference even though
+the names aren't importable. Derive them from the provider type as shown
 [below](#naming-these-types).
 
 `advance()` moves the clock's time forward (or backward, with negative

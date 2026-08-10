@@ -51,6 +51,12 @@ entry point for naming anything below them —
 `IManualTimeProvider<TDate>["clock"]` and so on. See
 [Naming these types](/api/clock#naming-these-types).
 
+Of the clock types referenced above, only `IClock` is exported.
+`IUtcOnlyClock`, `IManualClock`, `IUtcOnlyManualClock` and `IAdvanceable` are
+documented in [IClock](/api/clock) because they are part of the public API
+surface — the shape of what `.create()` hands you — not because you can import
+them. [IParser](/api/parser) notes the same about `ILocalOnlyParser`.
+
 ## Composing with an addon
 
 `.use(addon)` on the builder, before `.create()`, widens the resulting
