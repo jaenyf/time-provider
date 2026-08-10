@@ -9,6 +9,8 @@ import { addon as systemCron } from "../../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../../addon-eta/dist/index.mjs";
 import { addon as deterministicEta } from "../../../addon-eta/dist/deterministic.mjs";
+import { addon as systemIdle } from "../../../addon-idle/dist/index.mjs";
+import { addon as deterministicIdle } from "../../../addon-idle/dist/deterministic.mjs";
 import "../polyfills.ts";
 
 describe("e2e native", () => {
@@ -17,13 +19,15 @@ describe("e2e native", () => {
       .for(systemPlugin)
       .use(systemAfapi)
       .use(systemCron)
-      .use(systemEta);
+      .use(systemEta)
+      .use(systemIdle);
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
       .use(deterministicCron)
-      .use(deterministicEta);
+      .use(deterministicEta)
+      .use(deterministicIdle);
 
     const system = systemBuilder.create();
     const fixed = deterministicBuilder.asFixed().create();
@@ -38,6 +42,7 @@ describe("e2e native", () => {
     untracked = system.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = system.clock.withTimezone;
+    expect(system.idle.cancelIdleCallback(system.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(system.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = system.parser.parseToLocal;
@@ -109,6 +114,7 @@ describe("e2e native", () => {
     untracked = fixed.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = fixed.clock.withTimezone;
+    expect(fixed.idle.cancelIdleCallback(fixed.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(fixed.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = fixed.parser.parseToLocal;
@@ -180,6 +186,7 @@ describe("e2e native", () => {
     untracked = manual.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = manual.clock.withTimezone;
+    expect(manual.idle.cancelIdleCallback(manual.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(manual.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = manual.parser.parseToLocal;
@@ -251,6 +258,9 @@ describe("e2e native", () => {
     untracked = sequential.clock.localNow;
     //@ts-expect-error: withTimezone does not exist
     untracked = sequential.clock.withTimezone;
+    expect(
+      sequential.idle.cancelIdleCallback(sequential.idle.requestIdleCallback(() => {})),
+    ).not.toThrow();
     expect(sequential.parser.parseToUtc(new Date().getTime())).toBeDefined();
     //@ts-expect-error: parseToLocal does not exist
     untracked = sequential.parser.parseToLocal;

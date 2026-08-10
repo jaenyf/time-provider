@@ -9,6 +9,8 @@ import { addon as systemCron } from "../../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../../addon-eta/dist/index.mjs";
 import { addon as deterministicEta } from "../../../addon-eta/dist/deterministic.mjs";
+import { addon as systemIdle } from "../../../addon-idle/dist/index.mjs";
+import { addon as deterministicIdle } from "../../../addon-idle/dist/deterministic.mjs";
 import "../polyfills.ts";
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -26,13 +28,15 @@ describe("e2e temporal", () => {
       .for(systemPlugin)
       .use(systemAfapi)
       .use(systemCron)
-      .use(systemEta);
+      .use(systemEta)
+      .use(systemIdle);
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
       .use(deterministicCron)
-      .use(deterministicEta);
+      .use(deterministicEta)
+      .use(deterministicIdle);
 
     const system = systemBuilder.create();
     const fixed = deterministicBuilder.asFixed().create();
@@ -43,6 +47,7 @@ describe("e2e temporal", () => {
     expect(system.clock.localNow().toString()).toBeDefined();
     expect(system.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(system.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(system.idle.cancelIdleCallback(system.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(system.parser.parseToUtc(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
     expect(system.parser.parseToLocal(Temporal.Now.instant().epochMilliseconds)).toBeDefined();
     expect(system.performance.now()).toBeDefined();
@@ -112,6 +117,7 @@ describe("e2e temporal", () => {
     expect(fixed.clock.localNow().toString()).toBeDefined();
     expect(fixed.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(fixed.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(fixed.idle.cancelIdleCallback(fixed.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(
       fixed.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
@@ -185,6 +191,7 @@ describe("e2e temporal", () => {
     expect(manual.clock.localNow().toString()).toBeDefined();
     expect(manual.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(manual.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(manual.idle.cancelIdleCallback(manual.idle.requestIdleCallback(() => {}))).not.toThrow();
     expect(
       manual.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
@@ -258,6 +265,9 @@ describe("e2e temporal", () => {
     expect(sequential.clock.localNow().toString()).toBeDefined();
     expect(sequential.clock.withTimezone("Pacific/Kiritimati").localNow()).toBeDefined();
     expect(sequential.clock.withTimezone("Pacific/Kiritimati").utcNow()).toBeDefined();
+    expect(
+      sequential.idle.cancelIdleCallback(sequential.idle.requestIdleCallback(() => {})),
+    ).not.toThrow();
     expect(
       sequential.parser.parseToUtc(Temporal.Now.instant().toString()).epochMilliseconds,
     ).toBeDefined();
