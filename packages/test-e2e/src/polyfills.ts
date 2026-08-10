@@ -12,3 +12,13 @@ if ((typeof globalThis.cancelAnimationFrame as unknown) !== "function") {
   //@ts-ignore 'any' type
   globalThis.cancelAnimationFrame = function (_id: unknown) {};
 }
+//@ts-ignore 'any' type
+if ((typeof globalThis.requestIdleCallback as unknown) !== "function") {
+  //@ts-ignore 'any' type
+  globalThis.requestIdleCallback = function (_callback: () => void) {};
+}
+//@ts-ignore 'any' type
+if ((typeof globalThis.cancelIdleCallback as unknown) !== "function") {
+  //@ts-ignore 'any' type
+  globalThis.cancelIdleCallback = function (_id: unknown) {};
+}
