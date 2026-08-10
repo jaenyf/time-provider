@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  DefaultCalendarAdapter,
+  DefaultCalendarScheme,
   type DueHandle,
   type IScheduler,
   type ITimeConverter,
@@ -17,7 +17,7 @@ const identityConverter: ITimeConverter<number> = {
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };
-const adapter = new DefaultCalendarAdapter(identityConverter);
+const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
 
 /*
  * CronScheduler only ever touches IScheduler.setRecurring/clearRecurring, so a minimal fake
@@ -67,7 +67,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     expect(() => sut.schedule("not a cron expression", () => {})).toThrow(
       /Invalid cron expression/,
@@ -82,7 +82,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     sut.schedule("* * * * *", () => {});
     expect(recurring).toHaveLength(1);
@@ -96,7 +96,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     const runs: number[] = [];
     sut.schedule("* * * * *", () => runs.push(now));
@@ -117,7 +117,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     sut.schedule("* * * * *", () => {});
 
@@ -134,7 +134,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     sut.schedule("0 9,10,11 * * *", () => {});
 
@@ -154,7 +154,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     const error = new Error("boom");
     sut.schedule("* * * * *", () => {
@@ -170,7 +170,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => 0,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     const handle = sut.schedule("* * * * *", () => {});
     sut.unschedule(handle);
@@ -184,7 +184,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     sut.schedule({ minute: 30, hour: 9 }, () => {});
     expect(recurring[0]?.initialDelay).toBe(Date.UTC(2024, 0, 1, 9, 30, 0) - now);
@@ -196,7 +196,7 @@ describe("CronScheduler", () => {
       scheduler,
       () => 0,
       () => "Etc/UTC",
-      adapter,
+      defaultCalendarScheme,
     );
     expect(() => sut.schedule({ minute: 60 }, () => {})).toThrow(/out of range/);
     expect(recurring).toHaveLength(0);
@@ -209,12 +209,12 @@ describe("CronScheduler", () => {
       scheduler,
       () => now,
       () => "Europe/Paris",
-      adapter,
+      defaultCalendarScheme,
     );
     sut.schedule("0 9 * * *", () => {});
-    const parsed = parseCronExpression("0 9 * * *", adapter);
+    const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay).toBe(
-      computeNextOccurrence(parsed, now, "Europe/Paris", adapter) - now,
+      computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
     );
   });
 
@@ -227,19 +227,19 @@ describe("CronScheduler", () => {
         scheduler,
         () => now,
         () => timezone,
-        adapter,
+        defaultCalendarScheme,
       );
 
       timezone = "Asia/Tokyo";
       sut.schedule("0 9 * * *", () => {});
 
-      const parsed = parseCronExpression("0 9 * * *", adapter);
+      const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
       expect(recurring[0]?.initialDelay).toBe(
-        computeNextOccurrence(parsed, now, "Asia/Tokyo", adapter) - now,
+        computeNextOccurrence(parsed, now, "Asia/Tokyo", defaultCalendarScheme) - now,
       );
       // 09:00 in Tokyo is 00:00Z, so the delay must not be the 9h a UTC reading would give.
       expect(recurring[0]?.initialDelay).not.toBe(
-        computeNextOccurrence(parsed, now, "Etc/UTC", adapter) - now,
+        computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
       );
     });
 
@@ -251,16 +251,17 @@ describe("CronScheduler", () => {
         scheduler,
         () => now,
         () => timezone,
-        adapter,
+        defaultCalendarScheme,
       );
       sut.schedule("0 9 * * *", () => {});
 
       timezone = "Asia/Tokyo";
-      const parsed = parseCronExpression("0 9 * * *", adapter);
-      const utcOccurrence = computeNextOccurrence(parsed, now, "Etc/UTC", adapter);
+      const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
+      const utcOccurrence = computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme);
       // Re-arming still walks the UTC occurrence chain this schedule started on.
       expect(recurring[0]?.callback()).toBe(
-        computeNextOccurrence(parsed, utcOccurrence, "Etc/UTC", adapter) - utcOccurrence,
+        computeNextOccurrence(parsed, utcOccurrence, "Etc/UTC", defaultCalendarScheme) -
+          utcOccurrence,
       );
     });
   });

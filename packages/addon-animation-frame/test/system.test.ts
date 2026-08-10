@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { ITimeProvider } from "@time-provider/core";
+import type { IRuntime } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame.ts";
 import "./polyfills.ts";
 
-type FakeRuntime = ITimeProvider<unknown> & { animation?: unknown };
+type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
 
 /*
  * applyToSystem only touches what it's documented to (define `.animation`),

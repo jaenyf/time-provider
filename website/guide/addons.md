@@ -100,9 +100,7 @@ side) from `@time-provider/core`:
 
 ```ts
 interface ISystemAddon<TDate, TExtra> {
-  applyToRuntime<TRuntime extends ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>>(
-    runtime: TRuntime,
-  ): TRuntime & TExtra;
+  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): TRuntime & TExtra;
   clone(): ISystemAddon<TDate, TExtra>;
 }
 ```
@@ -111,6 +109,11 @@ interface ISystemAddon<TDate, TExtra> {
 `AddonHelper.extendRuntimeWithProperty` from `@time-provider/core`, which
 defines it as non-writable and non-configurable — and `clone()` returns a
 fresh instance so composing the same addon with two different
-Time-Providers never shares state between them. See the
+Time-Providers never shares state between them.
+
+Note the `IRuntime<TDate>` constraint: an addon is handed the runtime, not the
+narrower `ITimeProvider` facade a consumer holds. That's what gives it typed
+access to everything a runtime carries beyond the four public facades — the
+[cron addon](/guide/cron) reads `runtime.calendarScheme` this way. See the
 [`@time-provider/addon-animation-frame` source](https://github.com/jaenyf/time-provider/tree/main/packages/addon-animation-frame/src)
 for a complete, worked example of both entry points.

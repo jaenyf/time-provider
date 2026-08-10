@@ -1,6 +1,7 @@
 import type {
   IDeterministicPlugin,
   IManualTimeProvider,
+  IRuntime,
   ISystemPlugin,
   ITimeProvider,
   IUtcOnlyDeterministicPlugin,
@@ -46,9 +47,7 @@ export interface ISystemAddon<TDate, TExtra> {
   /**
    * Extends a system runtime.
    */
-  applyToRuntime<TRuntime extends ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>>(
-    runtime: TRuntime,
-  ): TRuntime & TExtra;
+  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): TRuntime & TExtra;
   /**
    * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
    */
@@ -63,15 +62,7 @@ export interface IDeterministicAddon<TDate, TExtra> {
   /**
    * Extends a deterministic runtime.
    */
-  applyToRuntime<
-    TRuntime extends
-      | ITimeProvider<TDate>
-      | IUtcOnlyTimeProvider<TDate>
-      | IManualTimeProvider<TDate>
-      | IUtcOnlyManualTimeProvider<TDate>,
-  >(
-    runtime: TRuntime,
-  ): TRuntime & TExtra;
+  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): TRuntime & TExtra;
   /**
    * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
    */

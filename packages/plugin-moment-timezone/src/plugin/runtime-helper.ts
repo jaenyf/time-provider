@@ -1,20 +1,21 @@
 import {
   TimeInputValidator,
-  type ICalendarAdapter,
+  type ICalendarScheme,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import moment from "moment-timezone";
-import { MomentTimezoneCalendarAdapter } from "./calendar-adapter.ts";
+import { MomentTimezoneCalendarScheme } from "./calendar-scheme.ts";
 
 export class RuntimeHelper {
   /**
    * Resolves wall-clock times against moment-timezone's own bundled tzdata rather than the host's
-   * ICU - see {@link MomentTimezoneCalendarAdapter}. Passing `RuntimeHelper` to itself is safe:
+   * ICU - see {@link MomentTimezoneCalendarScheme}. Passing `RuntimeHelper` to itself is safe:
    * static methods are installed on the class before any static field initializer runs, so the
    * converter this adapter captures is already complete.
    */
-  static readonly calendarAdapter: ICalendarAdapter<moment.Moment> =
-    new MomentTimezoneCalendarAdapter(RuntimeHelper);
+  static readonly calendarScheme: ICalendarScheme<moment.Moment> = new MomentTimezoneCalendarScheme(
+    RuntimeHelper,
+  );
 
   /* @__INLINE__ */
   static convertToTimestamp(time: string | number | moment.Moment): number {

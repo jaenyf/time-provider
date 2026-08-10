@@ -1,12 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
+import { CalendarSchemeFieldsHelper, DefaultCalendarScheme } from "@time-provider/core";
+import type { CalendarSchemeFields, ITimeConverter } from "@time-provider/core";
 import {
-  CalendarFieldsHelper,
-  DefaultCalendarAdapter,
-  GREGORIAN_MONTH_NAMES,
-  GREGORIAN_WEEKDAY_NAMES,
-  IntlFormatterCache,
-} from "@time-provider/core";
-import type { CalendarFields, ITimeConverter } from "@time-provider/core";
+  DEFAULT_CALENDAR_SCHEME_MONTH_NAMES,
+  DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES,
+} from "../src/calendar/default-calendar-scheme-names.ts";
+import { IntlFormatterCache } from "../src/calendar/intl-formatter-cache.ts";
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (time) => Number(time),
@@ -14,30 +13,32 @@ const identityConverter: ITimeConverter<number> = {
   convertToLocalDate: (_timezone, time) => Number(time),
 };
 
-describe("CalendarFieldsHelper", () => {
+describe("CalendarSchemeFieldsHelper", () => {
   const base = { year: 2024, month: 3, day: 31, hour: 2, minute: 30 };
 
   test("equals is true for identical fields", () => {
-    expect(CalendarFieldsHelper.equals(base, { ...base })).toBe(true);
+    expect(CalendarSchemeFieldsHelper.equals(base, { ...base })).toBe(true);
   });
 
   test.each(["year", "month", "day", "hour", "minute"] as const)(
     "equals is false when %s differs",
     (field) => {
-      expect(CalendarFieldsHelper.equals(base, { ...base, [field]: base[field] + 1 })).toBe(false);
+      expect(CalendarSchemeFieldsHelper.equals(base, { ...base, [field]: base[field] + 1 })).toBe(
+        false,
+      );
     },
   );
 
   test("equals ignores the derived weekday", () => {
     // Two field bags denoting the same instant can't disagree on weekday in practice, but equals
     // is defined over the composable subset - a bogus weekday must not change the answer.
-    const withWeekday: CalendarFields = { ...base, weekday: 0 };
-    const withOtherWeekday: CalendarFields = { ...base, weekday: 5 };
-    expect(CalendarFieldsHelper.equals(withWeekday, withOtherWeekday)).toBe(true);
+    const withWeekday: CalendarSchemeFields = { ...base, weekday: 0 };
+    const withOtherWeekday: CalendarSchemeFields = { ...base, weekday: 5 };
+    expect(CalendarSchemeFieldsHelper.equals(withWeekday, withOtherWeekday)).toBe(true);
   });
 
   test("toComposable drops the weekday and keeps everything else", () => {
-    expect(CalendarFieldsHelper.toComposable({ ...base, weekday: 4 })).toEqual(base);
+    expect(CalendarSchemeFieldsHelper.toComposable({ ...base, weekday: 4 })).toEqual(base);
   });
 });
 
@@ -61,8 +62,8 @@ describe("IntlFormatterCache", () => {
   });
 });
 
-describe("DefaultCalendarAdapter", () => {
-  const sut = new DefaultCalendarAdapter(identityConverter);
+describe("DefaultCalendarScheme", () => {
+  const sut = new DefaultCalendarScheme(identityConverter);
 
   test("reports the Gregorian calendar's unit sizes", () => {
     expect(sut.minutesPerHour()).toBe(60);
@@ -73,8 +74,8 @@ describe("DefaultCalendarAdapter", () => {
   });
 
   test("exposes the Gregorian month/weekday names in calendar order", () => {
-    expect(sut.monthNames).toEqual(GREGORIAN_MONTH_NAMES);
-    expect(sut.weekdayNames).toEqual(GREGORIAN_WEEKDAY_NAMES);
+    expect(sut.monthNames).toEqual(DEFAULT_CALENDAR_SCHEME_MONTH_NAMES);
+    expect(sut.weekdayNames).toEqual(DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES);
     // index 0 names the first month / first weekday, which is what consumers rely on.
     expect(sut.monthNames[0]).toBe("JAN");
     expect(sut.weekdayNames[0]).toBe("SUN");
@@ -84,7 +85,7 @@ describe("DefaultCalendarAdapter", () => {
     const timestamp = Date.UTC(2024, 5, 15, 14, 30);
     const fields = sut.decompose(timestamp, "Etc/UTC");
     expect(fields).toEqual({ year: 2024, month: 6, day: 15, hour: 14, minute: 30, weekday: 6 });
-    expect(sut.compose(CalendarFieldsHelper.toComposable(fields), "Etc/UTC")).toBe(timestamp);
+    expect(sut.compose(CalendarSchemeFieldsHelper.toComposable(fields), "Etc/UTC")).toBe(timestamp);
   });
 
   test("decompose reports wall-clock fields as observed in the given timezone", () => {

@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, ITimeProvider, IScheduler } from "@time-provider/core";
+import type { DueHandle, IScheduler, IRuntime } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { addon, createAddon, type IAnimationFrameBuilderExtra } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
 
-type FakeRuntime = ITimeProvider<unknown> & { animation?: unknown };
+type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
 
 /*
  * applyToRuntime only touches what it's documented to (define `.animation`,

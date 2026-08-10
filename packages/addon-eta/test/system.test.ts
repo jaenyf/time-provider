@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, IScheduler, ITimeProvider } from "@time-provider/core";
+import type { DueHandle, IRuntime, IScheduler } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-type FakeRuntime = ITimeProvider<unknown> & { eta?: unknown };
+type FakeRuntime = IRuntime<unknown> & { eta?: unknown };
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and

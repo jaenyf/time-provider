@@ -4,7 +4,7 @@
  * per call - the cache is static so that sharing spans every adapter instance in the process.
  *
  * Not calendar-specific: `Intl.DateTimeFormat` formats non-Gregorian calendars too (via its own
- * `calendar` option), so this stays out of {@link DefaultCalendarAdapter} and is reusable by any
+ * `calendar` option), so this stays out of {@link DefaultCalendarScheme} and is reusable by any
  * future `Intl`-backed adapter.
  */
 export class IntlFormatterCache {

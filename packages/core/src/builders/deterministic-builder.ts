@@ -1,6 +1,8 @@
 import type {
   IDeterministicPlugin,
+  IManualRuntime,
   IManualTimeProvider,
+  IRuntime,
   ITimeProvider,
   IUtcOnlyDeterministicPlugin,
   TimezoneDefinition,
@@ -22,7 +24,7 @@ type AnyDeterministicPlugin<TDate> =
 
 function applyAddons<TDate>(
   addons: readonly IDeterministicAddon<TDate, unknown>[],
-  runtime: ITimeProvider<TDate> | IManualTimeProvider<TDate>,
+  runtime: IRuntime<TDate>,
 ): void {
   for (const addon of addons) {
     addon.applyToRuntime(runtime);
@@ -53,7 +55,7 @@ class FixedRuntimeBuilder<TDate>
     const initialTime = undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0;
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
-      : (this.plugin.createFixedRuntime(initialTime) as unknown as ITimeProvider<TDate>);
+      : (this.plugin.createFixedRuntime(initialTime) as unknown as IRuntime<TDate>);
     applyAddons(this.#addons, runtime);
     return Object.freeze(runtime);
   }
@@ -84,7 +86,7 @@ class ManualRuntimeBuilder<TDate>
     const initialTime = undefined !== this.#initialDateTime ? this.#initialDateTime : 0;
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
-      : (this.plugin.createManualRuntime(initialTime) as unknown as IManualTimeProvider<TDate>);
+      : (this.plugin.createManualRuntime(initialTime) as unknown as IManualRuntime<TDate>);
     applyAddons(this.#addons, runtime);
     return Object.freeze(runtime);
   }
@@ -117,7 +119,7 @@ class SequentialRuntimeBuilder<TDate>
     const sequentialTimes = this.#sequentialTimes.length ? this.#sequentialTimes : [0];
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
-      : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as ITimeProvider<TDate>);
+      : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as IRuntime<TDate>);
     applyAddons(this.#addons, runtime);
     return Object.freeze(runtime);
   }

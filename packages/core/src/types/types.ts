@@ -3,7 +3,10 @@
  * None of them cause JavaScript to be emited, so it has no effect on bundle size or tree-shaking.
  */
 
-import type { GregorianMonthName, GregorianWeekdayName } from "../calendar/gregorian-names.ts";
+import type {
+  DefaultCalendarSchemeMonthName,
+  DefaultCalendarSchemeWeekdayName,
+} from "../calendar/default-calendar-scheme-names.ts";
 
 //#region Performance
 // ---------------------------------------------------------------------------
@@ -250,13 +253,6 @@ interface IUtcOnlyClock<TDate> extends ITimestampClock {
    * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
    */
   utcNow(): TDate;
-  /**
-   * The calendar adapter backing this clock's date library - see {@link ICalendarAdapter}. Every
-   * runtime has one: a plugin's own, if it provides one, otherwise a shared Gregorian/`Intl`
-   * default. Exposed here (rather than only on {@link ITimeConverter}) so calendar-consuming
-   * addons (e.g. cron) can reach it through the runtime's public facade.
-   */
-  get calendarAdapter(): ICalendarAdapter<TDate>;
 }
 
 interface ILocalOnlyClock<TDate> extends ITimestampClock {
@@ -301,18 +297,18 @@ interface IUtcOnlyManualClock<TDate>
 
 //#endregion
 
-//#region Calendar
+//#region Calendar Scheme
 // ---------------------------------------------------------------------------
-// Calendar
+// Calendar Scheme
 // ---------------------------------------------------------------------------
 
 /**
  * The wall-clock calendar fields a `TDate` decomposes into, in whatever calendar system that
- * `TDate`'s {@link ICalendarAdapter} represents - not necessarily Gregorian. `weekday` is derived
- * (0-based, calendar-defined), not an independent field - see {@link ComposableCalendarFields}
- * for the subset {@link ICalendarAdapter.compose} actually accepts.
+ * `TDate`'s {@link ICalendarScheme} represents - not necessarily Gregorian. `weekday` is derived
+ * (0-based, calendar-defined), not an independent field - see {@link ComposableCalendarSchemeFields}
+ * for the subset {@link ICalendarScheme.compose} actually accepts.
  */
-export interface CalendarFields {
+export interface CalendarSchemeFields {
   readonly year: number;
   readonly month: number;
   readonly day: number;
@@ -322,18 +318,19 @@ export interface CalendarFields {
 }
 
 /**
- * The fields {@link ICalendarAdapter.compose} accepts - every {@link CalendarFields} member
+ * The fields {@link ICalendarScheme.compose} accepts - every {@link CalendarSchemeFields} member
  * except the derived `weekday`.
  */
-export type ComposableCalendarFields = Omit<CalendarFields, "weekday">;
+export type ComposableCalendarSchemeFields = Omit<CalendarSchemeFields, "weekday">;
 
 /**
- * Calendar introspection/arithmetic for a `TDate`, delegated to whichever date library backs it -
+ * This interface acts as an adapter between any plugin calendar and any calendar-related code consummers.
+ * It provides calendar-related introspection/arithmetic for a `TDate`, delegated to whichever date library backs it -
  * lets calendar-consuming code (e.g. the cron addon) work against any plugin's own calendar
  * system and timezone data instead of assuming Gregorian/`Intl`. Optional on
  * {@link ITimeConverter}: a plugin only implements it to diverge from the shared default (e.g. to
  * honor its own bundled timezone data) or to support an operation the default can't. When a
- * plugin doesn't provide one, {@link IUtcOnlyClock.calendarAdapter} falls back to that default.
+ * plugin doesn't provide one, {@link IUtcOnlyClock.calendar} falls back to that default.
  *
  * Nothing here assumes a specific calendar system: the unit sizes are all queried rather than
  * assumed (a calendar with 36 months of 10 days, or a day of 10 hours, is describable), and the
@@ -346,10 +343,10 @@ export type ComposableCalendarFields = Omit<CalendarFields, "weekday">;
  * calendar math reimplemented per plugin, just a uniform shape generic code can call across
  * incompatible APIs.
  */
-export interface ICalendarAdapter<
+export interface ICalendarScheme<
   TDate,
-  TMonthName extends string = GregorianMonthName,
-  TWeekdayName extends string = GregorianWeekdayName,
+  TMonthName extends string = DefaultCalendarSchemeMonthName,
+  TWeekdayName extends string = DefaultCalendarSchemeWeekdayName,
 > {
   /** Converts `date` to epoch milliseconds - same as {@link ITimeConverter.convertToTimestamp}. */
   toTimestamp(date: TDate): number;
@@ -377,20 +374,20 @@ export interface ICalendarAdapter<
    * Normalizes possibly out-of-range `fields` (e.g. minute 65, month 13) via this calendar's own
    * carry rules, same as how out-of-range arguments to `new Date(...)` roll over - timezone-
    * independent, pure calendar-field arithmetic, unrelated to any real instant. Distinct from
-   * {@link ICalendarAdapter.compose}: repeatedly normalizing (rather than composing) while
+   * {@link ICalendarScheme.compose}: repeatedly normalizing (rather than composing) while
    * searching for a candidate date, and only resolving to a real `TDate`/instant once a match is
    * found, keeps a DST transition from perturbing every step along the way to the answer instead
    * of just the answer itself.
    */
-  normalize(fields: ComposableCalendarFields): CalendarFields;
+  normalize(fields: ComposableCalendarSchemeFields): CalendarSchemeFields;
   /** Decomposes `date` into its wall-clock calendar fields, as observed in `timezone`. */
-  decompose(date: TDate, timezone: TimezoneDefinition): CalendarFields;
+  decompose(date: TDate, timezone: TimezoneDefinition): CalendarSchemeFields;
   /**
-   * Constructs a `TDate` from `fields` (already in range - see {@link ICalendarAdapter.normalize}
+   * Constructs a `TDate` from `fields` (already in range - see {@link ICalendarScheme.normalize}
    * for fields that might not be), interpreted as local time in `timezone`. For a timezone-aware
    * adapter, this is where DST ambiguity (a skipped or repeated wall-clock instant) is resolved.
    */
-  compose(fields: ComposableCalendarFields, timezone: TimezoneDefinition): TDate;
+  compose(fields: ComposableCalendarSchemeFields, timezone: TimezoneDefinition): TDate;
 }
 
 //#endregion
@@ -578,23 +575,48 @@ export interface ITimeConverter<TDate> {
    */
   convertToLocalDate(timezone: TimezoneDefinition, time: string | number | TDate): TDate;
   /**
-   * This plugin's own {@link ICalendarAdapter}, when it diverges from (or supports an operation
+   * This plugin's own {@link ICalendarScheme}, when it diverges from (or supports an operation
    * the) shared Gregorian/`Intl` default (can't). Omit to inherit that default.
    */
-  readonly calendarAdapter?: ICalendarAdapter<TDate>;
+  readonly calendarScheme?: ICalendarScheme<TDate>;
+}
+
+/**
+ * Supplies the {@link ICalendarScheme} backing a runtime's date library: the plugin's own, when
+ * it provides one via {@link ITimeConverter.calendarScheme}, otherwise a shared Gregorian/`Intl`
+ * default.
+ *
+ * Deliberately on the runtime rather than on {@link IUtcOnlyClock}: calendar-consuming addons
+ * (e.g. cron) are handed the runtime itself by `applyToRuntime`, so they reach the adapter with
+ * full type safety from here, while an ordinary consumer holding an {@link ITimeProvider} never
+ * sees it on `clock`.
+ */
+export interface ICalendarSchemeProvider<TDate> {
+  /** This runtime's calendar scheme - see {@link ICalendarScheme}. */
+  get calendarScheme(): ICalendarScheme<TDate>;
 }
 
 /**
  * A runtime backed by a timezone-aware clock.
  */
 export interface IRuntime<TDate>
-  extends IScheduler, IClock<TDate>, IParser<TDate>, ITimeProvider<TDate> {}
+  extends
+    IScheduler,
+    IClock<TDate>,
+    IParser<TDate>,
+    ITimeProvider<TDate>,
+    ICalendarSchemeProvider<TDate> {}
 
 /**
  * A runtime backed by an UTC only clock.
  */
 export interface IUtcOnlyRuntime<TDate>
-  extends IScheduler, IUtcOnlyClock<TDate>, IUtcOnlyParser<TDate>, IUtcOnlyTimeProvider<TDate> {}
+  extends
+    IScheduler,
+    IUtcOnlyClock<TDate>,
+    IUtcOnlyParser<TDate>,
+    IUtcOnlyTimeProvider<TDate>,
+    ICalendarSchemeProvider<TDate> {}
 
 /**
  * A runtime backed by a manual clock.
@@ -606,7 +628,8 @@ export interface IManualRuntime<TDate>
     IScheduler,
     IClock<TDate>,
     IParser<TDate>,
-    IManualTimeProvider<TDate> {}
+    IManualTimeProvider<TDate>,
+    ICalendarSchemeProvider<TDate> {}
 
 /**
  * A runtime backed by an UTC only manual clock.
@@ -618,7 +641,8 @@ export interface IUtcOnlyManualRuntime<TDate>
     IScheduler,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
-    IUtcOnlyManualTimeProvider<TDate> {}
+    IUtcOnlyManualTimeProvider<TDate>,
+    ICalendarSchemeProvider<TDate> {}
 //#endregion
 
 //#region Time provider facades

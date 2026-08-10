@@ -1,13 +1,13 @@
-import type { CalendarFields, ComposableCalendarFields } from "../types/types.ts";
+import type { CalendarSchemeFields, ComposableCalendarSchemeFields } from "../types/types.ts";
 
 /**
- * Operations on {@link CalendarFields} that hold for any calendar system - they only ever compare
+ * Operations on {@link CalendarSchemeFields} that hold for any calendar system - they only ever compare
  * or reshape the field bag itself, never interpret what a month/day *means*. Intended for
- * {@link ICalendarAdapter} implementors and calendar-consuming code alike.
+ * {@link ICalendarScheme} implementors and calendar-consuming code alike.
  */
-export class CalendarFieldsHelper {
+export class CalendarSchemeFieldsHelper {
   /** Whether `a` and `b` denote the same wall-clock instant, ignoring the derived `weekday`. */
-  static equals(a: ComposableCalendarFields, b: ComposableCalendarFields): boolean {
+  static equals(a: ComposableCalendarSchemeFields, b: ComposableCalendarSchemeFields): boolean {
     return (
       a.year === b.year &&
       a.month === b.month &&
@@ -18,10 +18,10 @@ export class CalendarFieldsHelper {
   }
 
   /**
-   * Drops the derived `weekday`, leaving the subset {@link ICalendarAdapter.compose} and
-   * {@link ICalendarAdapter.normalize} accept.
+   * Drops the derived `weekday`, leaving the subset {@link ICalendarScheme.compose} and
+   * {@link ICalendarScheme.normalize} accept.
    */
-  static toComposable(fields: CalendarFields): ComposableCalendarFields {
+  static toComposable(fields: CalendarSchemeFields): ComposableCalendarSchemeFields {
     const { year, month, day, hour, minute } = fields;
     return { year, month, day, hour, minute };
   }
