@@ -1,13 +1,14 @@
-import { DefaultCalendarAdapter } from "@time-provider/core";
+import { DefaultCalendarScheme } from "@time-provider/core";
 import type {
-  CalendarFields,
-  ComposableCalendarFields,
+  CalendarSchemeFields,
+  ComposableCalendarSchemeFields,
+  ICalendarScheme,
   TimezoneDefinition,
 } from "@time-provider/core";
 import moment from "moment-timezone";
 
 /**
- * The calendar adapter for this plugin, overriding only the two timezone-dependent operations so
+ * The calendar scheme for this plugin, overriding only the two timezone-dependent operations so
  * that cron (and anything else calendar-aware) resolves wall-clock times against
  * **moment-timezone's own bundled tzdata**, exactly like the rest of a moment-timezone app -
  * rather than against the host's ICU, which the shared default uses.
@@ -23,8 +24,11 @@ import moment from "moment-timezone";
  * *not* be routed through moment - `moment.utc({ minute: 60 })` yields an invalid moment rather
  * than carrying into the next hour the way the contract requires.
  */
-export class MomentTimezoneCalendarAdapter extends DefaultCalendarAdapter<moment.Moment> {
-  override decompose(date: moment.Moment, timezone: TimezoneDefinition): CalendarFields {
+export class MomentTimezoneCalendarScheme
+  extends DefaultCalendarScheme<moment.Moment>
+  implements ICalendarScheme<moment.Moment>
+{
+  override decompose(date: moment.Moment, timezone: TimezoneDefinition): CalendarSchemeFields {
     const zoned = moment.tz(date.valueOf(), timezone);
     return {
       year: zoned.year(),
@@ -37,12 +41,15 @@ export class MomentTimezoneCalendarAdapter extends DefaultCalendarAdapter<moment
   }
 
   /**
-   * `fields` arrives already in range (see {@link ICalendarAdapter.compose}), which is what makes
+   * `fields` arrives already in range (see {@link ICalendarScheme.compose}), which is what makes
    * moment's non-carrying object form safe to use here. moment-timezone resolves a DST gap forward
    * past it and a DST overlap to the earlier of the two occurrences - the same resolution the
    * shared default documents, so this override changes *which tzdata* decides, not the rules.
    */
-  override compose(fields: ComposableCalendarFields, timezone: TimezoneDefinition): moment.Moment {
+  override compose(
+    fields: ComposableCalendarSchemeFields,
+    timezone: TimezoneDefinition,
+  ): moment.Moment {
     return moment.tz(
       {
         year: fields.year,

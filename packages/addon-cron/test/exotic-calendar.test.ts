@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
 import type {
-  CalendarFields,
-  ComposableCalendarFields,
-  ICalendarAdapter,
+  CalendarSchemeFields,
+  ComposableCalendarSchemeFields,
+  ICalendarScheme,
   TimezoneDefinition,
 } from "@time-provider/core";
 import { computeNextOccurrence, parseCronExpression, parseCronSpec } from "../src/cron-parser.ts";
@@ -66,11 +66,7 @@ type ExoticMonthName = (typeof EXOTIC_MONTH_NAMES)[number];
 const EXOTIC_WEEKDAY_NAMES = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9"] as const;
 type ExoticWeekdayName = (typeof EXOTIC_WEEKDAY_NAMES)[number];
 
-class ExoticCalendarAdapter implements ICalendarAdapter<
-  number,
-  ExoticMonthName,
-  ExoticWeekdayName
-> {
+class ExoticCalendarScheme implements ICalendarScheme<number, ExoticMonthName, ExoticWeekdayName> {
   readonly monthNames: readonly ExoticMonthName[] = EXOTIC_MONTH_NAMES;
   readonly weekdayNames: readonly ExoticWeekdayName[] = EXOTIC_WEEKDAY_NAMES;
 
@@ -96,24 +92,24 @@ class ExoticCalendarAdapter implements ICalendarAdapter<
     return DAYS_PER_MONTH;
   }
 
-  normalize(fields: ComposableCalendarFields): CalendarFields {
-    return this.#fromTotalMinutes(ExoticCalendarAdapter.#toTotalMinutes(fields));
+  normalize(fields: ComposableCalendarSchemeFields): CalendarSchemeFields {
+    return this.#fromTotalMinutes(ExoticCalendarScheme.#toTotalMinutes(fields));
   }
   /** This calendar has no timezones at all - `timezone` is irrelevant to it. */
-  decompose(date: number, _timezone: TimezoneDefinition): CalendarFields {
+  decompose(date: number, _timezone: TimezoneDefinition): CalendarSchemeFields {
     return this.#fromTotalMinutes(date);
   }
-  compose(fields: ComposableCalendarFields, _timezone: TimezoneDefinition): number {
-    return ExoticCalendarAdapter.#toTotalMinutes(fields);
+  compose(fields: ComposableCalendarSchemeFields, _timezone: TimezoneDefinition): number {
+    return ExoticCalendarScheme.#toTotalMinutes(fields);
   }
 
-  static #toTotalMinutes(fields: ComposableCalendarFields): number {
+  static #toTotalMinutes(fields: ComposableCalendarSchemeFields): number {
     const months = fields.year * MONTHS_PER_YEAR + (fields.month - 1);
     const days = months * DAYS_PER_MONTH + (fields.day - 1);
     return days * MINUTES_PER_DAY + fields.hour * MINUTES_PER_HOUR + fields.minute;
   }
 
-  #fromTotalMinutes(total: number): CalendarFields {
+  #fromTotalMinutes(total: number): CalendarSchemeFields {
     const days = Math.floor(total / MINUTES_PER_DAY);
     const months = Math.floor(days / DAYS_PER_MONTH);
     return {
@@ -127,7 +123,7 @@ class ExoticCalendarAdapter implements ICalendarAdapter<
   }
 }
 
-const adapter = new ExoticCalendarAdapter();
+const adapter = new ExoticCalendarScheme();
 /** This calendar is timezone-free; the argument is threaded through but never consulted. */
 const noTimezone = "";
 

@@ -131,8 +131,14 @@ different calendar system substitutes its own — see
 ## Parsing without scheduling
 
 Three functions back `.cron` and are exported for use on their own — validating
-a user-supplied expression at config-load time, say, or computing an occurrence
-without registering a callback:
+a user-supplied expression before scheduling anything, say, or computing an
+occurrence without registering a callback.
+
+Each takes an `ICalendarScheme`, which is how the same syntax describes whatever
+calendar backs the runtime. The scheme lives on the runtime rather than on
+`clock`, so these are addon-author tools: `applyToRuntime` is handed the
+runtime itself (constrained to `IRuntime<TDate>`), and `calendarScheme` is
+there on it.
 
 ```ts
 import {
@@ -142,36 +148,37 @@ import {
   parseCronSpec,
 } from "@time-provider/addon-cron";
 
-const adapter = timeProvider.clock.calendarAdapter;
+// inside an addon's applyToRuntime(runtime)
+const scheme = runtime.calendarScheme;
 
-const parsed = parseCronExpression("0 9 * * MON-FRI", adapter);
-const next = computeNextOccurrence(parsed, timeProvider.clock.utcNow(), "Europe/Paris", adapter);
+const parsed = parseCronExpression("0 9 * * MON-FRI", scheme);
+const next = computeNextOccurrence(parsed, runtime.clock.utcNow(), "Europe/Paris", scheme);
 ```
 
-- **`parseCronExpression(expression, adapter)`** — parses a 5-field expression
+- **`parseCronExpression(expression, scheme)`** — parses a 5-field expression
   into a `ParsedCronExpression`, which holds one resolved field per position.
   Throws unless there are exactly five whitespace-separated fields and each is
   well-formed and in range for the calendar.
-- **`parseCronSpec(spec, adapter)`** — the same, for the `ICronSpec` object
+- **`parseCronSpec(spec, scheme)`** — the same, for the `ICronSpec` object
   form.
-- **`cronExpressionToSpec(expression, adapter)`** — converts an expression
+- **`cronExpressionToSpec(expression, scheme)`** — converts an expression
   string into an `ICronSpec`.
-- **`computeNextOccurrence(parsed, from, timezone, adapter)`** — the next
+- **`computeNextOccurrence(parsed, from, timezone, scheme)`** — the next
   `TDate` strictly after `from` at which `parsed` matches, read in `timezone`.
   Resolves DST exactly as a schedule does: the first instant after a
   spring-forward gap, the earlier of the two on a fall-back overlap. Throws if
   no match exists within a ten-year search bound, which is how an impossible
   expression like `"0 0 31 2 *"` fails fast instead of spinning.
 
-Every one of them takes the runtime's calendar adapter, reachable as
-`timeProvider.clock.calendarAdapter`, so they resolve field ranges and names
-against whatever calendar backs your plugin.
+A plugin that ships its own scheme has it directly, as the
+`calendarScheme` it declares on its `ITimeConverter` — see
+[Writing a Custom Plugin](/plugins/custom).
 
 `CronScheduler` is also exported — the class implementing `.cron` on top of
 `IScheduler.setRecurring`, re-deriving the delay to the next occurrence after
 every run. Composing the addon builds one for you; construct it directly only
 if you need a cron facade outside the addon pipeline, passing it the scheduler,
-a `timestampNow` reader, a timezone reader, and a calendar adapter.
+a `timestampNow` reader, a timezone reader, and an `ICalendarScheme`.
 
 The `.cron` property itself is typed `ICronApi`, and `WithCronApi` names a
 Time-Provider with this addon composed in:

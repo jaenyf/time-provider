@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { DefaultCalendarAdapter } from "@time-provider/core";
+import { DefaultCalendarScheme } from "@time-provider/core";
 import moment from "moment-timezone";
 import { RuntimeHelper } from "../src/plugin/runtime-helper.ts";
-import { MomentTimezoneCalendarAdapter } from "../src/plugin/calendar-adapter.ts";
+import { MomentTimezoneCalendarScheme } from "../src/plugin/calendar-scheme.ts";
 
-const sut = RuntimeHelper.calendarAdapter;
+const sut = RuntimeHelper.calendarScheme;
 /** What a runtime would have used before this plugin supplied its own - the host's ICU. */
-const icuAdapter = new DefaultCalendarAdapter(RuntimeHelper);
+const defaultCalendarScheme = new DefaultCalendarScheme(RuntimeHelper);
 
 /*
  * A zone where moment-timezone's bundled tzdata and the host's ICU genuinely disagree. Morocco
@@ -16,9 +16,9 @@ const icuAdapter = new DefaultCalendarAdapter(RuntimeHelper);
 const DIVERGENT_ZONE = "Africa/Casablanca";
 const DIVERGENT_INSTANT = Date.UTC(2026, 10, 15, 12, 0, 0);
 
-describe("MomentTimezoneCalendarAdapter", () => {
+describe("MomentTimezoneCalendarScheme", () => {
   test("is the adapter the plugin's converter hands to a runtime", () => {
-    expect(sut).toBeInstanceOf(MomentTimezoneCalendarAdapter);
+    expect(sut).toBeInstanceOf(MomentTimezoneCalendarScheme);
   });
 
   describe("resolves wall-clock time against moment-timezone's tzdata, not the host's ICU", () => {
@@ -40,7 +40,7 @@ describe("MomentTimezoneCalendarAdapter", () => {
       // Guards the test above from silently becoming vacuous if the datasets ever converge:
       // should that happen this fails loudly rather than asserting nothing.
       const mine = sut.decompose(moment.utc(DIVERGENT_INSTANT), DIVERGENT_ZONE);
-      const icu = icuAdapter.decompose(moment.utc(DIVERGENT_INSTANT), DIVERGENT_ZONE);
+      const icu = defaultCalendarScheme.decompose(moment.utc(DIVERGENT_INSTANT), DIVERGENT_ZONE);
       expect(mine.hour).not.toBe(icu.hour);
     });
 

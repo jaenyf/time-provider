@@ -15,7 +15,7 @@ function createAddon<TDate>(): IDeterministicAddon<TDate, WithCronApi> {
           runtime.scheduler,
           () => runtime.clock.timestampNow(),
           timezone,
-          runtime.clock.calendarAdapter,
+          runtime.calendarScheme,
         ),
         undefined as unknown as WithCronApi,
       );
@@ -26,4 +26,4 @@ function createAddon<TDate>(): IDeterministicAddon<TDate, WithCronApi> {
   };
 }
 
-export const addon: IDeterministicAddon<unknown, WithCronApi> = createAddon();
+export const addon = createAddon();

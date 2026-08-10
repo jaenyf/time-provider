@@ -1,23 +1,23 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  DefaultCalendarAdapter,
+  DefaultCalendarScheme,
   type DueHandle,
   type ITimeConverter,
-  type ITimeProvider,
   type IScheduler,
+  type IRuntime,
 } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
 
-type FakeRuntime = ITimeProvider<unknown> & { cron?: unknown };
+type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (time) => Number(time),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };
-const adapter = new DefaultCalendarAdapter(identityConverter);
+const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
 
 /*
  * applyToRuntime only touches what it's documented to (define `.cron`, read `.clock` and
@@ -53,11 +53,9 @@ function fakeSystemRuntime(
     clearRecurring() {},
   };
   const clock =
-    timezone === undefined
-      ? { timestampNow: () => now, calendarAdapter: adapter }
-      : { timestampNow: () => now, timezone, calendarAdapter: adapter };
+    timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };
   return {
-    runtime: { scheduler, clock } as unknown as FakeRuntime,
+    runtime: { scheduler, clock, calendarScheme: defaultCalendarScheme } as unknown as FakeRuntime,
     recurring,
   };
 }
@@ -89,9 +87,9 @@ describe("cronAddon (system)", () => {
     const { runtime, recurring } = fakeSystemRuntime(now, "Europe/Paris");
     addon.applyToRuntime(runtime);
     (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
-    const parsed = parseCronExpression("0 9 * * *", adapter);
+    const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay).toBe(
-      computeNextOccurrence(parsed, now, "Europe/Paris", adapter) - now,
+      computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
     );
   });
 
@@ -100,9 +98,9 @@ describe("cronAddon (system)", () => {
     const { runtime, recurring } = fakeSystemRuntime(now);
     addon.applyToRuntime(runtime);
     (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
-    const parsed = parseCronExpression("0 9 * * *", adapter);
+    const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay).toBe(
-      computeNextOccurrence(parsed, now, "Etc/UTC", adapter) - now,
+      computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
     );
   });
 

@@ -1,14 +1,14 @@
 import type {
-  CalendarFields,
-  ComposableCalendarFields,
-  GregorianMonthName,
-  GregorianWeekdayName,
-  ICalendarAdapter,
+  CalendarSchemeFields,
+  ComposableCalendarSchemeFields,
+  DefaultCalendarSchemeMonthName,
+  DefaultCalendarSchemeWeekdayName,
+  ICalendarScheme,
 } from "@time-provider/core";
-import { CalendarFieldsHelper } from "@time-provider/core";
+import { CalendarSchemeFieldsHelper } from "@time-provider/core";
 
 /**
- * What a single cron field accepts, entirely derived from the runtime's {@link ICalendarAdapter}
+ * What a single cron field accepts, entirely derived from the runtime's {@link ICalendarScheme}
  */
 interface FieldBounds {
   readonly min: number;
@@ -22,23 +22,27 @@ interface FieldBounds {
   readonly wrapsMaxToMin?: boolean;
 }
 
-function minuteBounds<TDate>(adapter: ICalendarAdapter<TDate, string, string>): FieldBounds {
-  return { min: 0, max: adapter.minutesPerHour() - 1 };
+function minuteBounds<TDate>(calendarScheme: ICalendarScheme<TDate, string, string>): FieldBounds {
+  return { min: 0, max: calendarScheme.minutesPerHour() - 1 };
 }
-function hourBounds<TDate>(adapter: ICalendarAdapter<TDate, string, string>): FieldBounds {
-  return { min: 0, max: adapter.hoursPerDay() - 1 };
+function hourBounds<TDate>(calendarScheme: ICalendarScheme<TDate, string, string>): FieldBounds {
+  return { min: 0, max: calendarScheme.hoursPerDay() - 1 };
 }
-function dayOfMonthBounds<TDate>(adapter: ICalendarAdapter<TDate, string, string>): FieldBounds {
-  return { min: 1, max: adapter.maxDayOfMonth() };
+function dayOfMonthBounds<TDate>(
+  calendarScheme: ICalendarScheme<TDate, string, string>,
+): FieldBounds {
+  return { min: 1, max: calendarScheme.maxDayOfMonth() };
 }
-function monthBounds<TDate>(adapter: ICalendarAdapter<TDate, string, string>): FieldBounds {
-  return { min: 1, max: adapter.monthsPerYear(), names: adapter.monthNames };
+function monthBounds<TDate>(calendarScheme: ICalendarScheme<TDate, string, string>): FieldBounds {
+  return { min: 1, max: calendarScheme.monthsPerYear(), names: calendarScheme.monthNames };
 }
-function dayOfWeekBounds<TDate>(adapter: ICalendarAdapter<TDate, string, string>): FieldBounds {
+function dayOfWeekBounds<TDate>(
+  calendarScheme: ICalendarScheme<TDate, string, string>,
+): FieldBounds {
   return {
     min: 0,
-    max: adapter.daysPerWeek(),
-    names: adapter.weekdayNames,
+    max: calendarScheme.daysPerWeek(),
+    names: calendarScheme.weekdayNames,
     wrapsMaxToMin: true,
   };
 }
@@ -161,7 +165,7 @@ function parseField(fieldText: string, bounds: FieldBounds, expression: string):
  */
 export function parseCronExpression<TDate, TMonthName extends string, TWeekdayName extends string>(
   expression: string,
-  adapter: ICalendarAdapter<TDate, TMonthName, TWeekdayName>,
+  calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>,
 ): ParsedCronExpression {
   const fields = expression.trim().split(/\s+/);
   if (fields.length !== 5) {
@@ -172,11 +176,11 @@ export function parseCronExpression<TDate, TMonthName extends string, TWeekdayNa
   }
   const [minuteText, hourText, dayOfMonthText, monthText, dayOfWeekText] = fields;
   return {
-    minute: parseField(minuteText, minuteBounds(adapter), expression),
-    hour: parseField(hourText, hourBounds(adapter), expression),
-    dayOfMonth: parseField(dayOfMonthText, dayOfMonthBounds(adapter), expression),
-    month: parseField(monthText, monthBounds(adapter), expression),
-    dayOfWeek: parseField(dayOfWeekText, dayOfWeekBounds(adapter), expression),
+    minute: parseField(minuteText, minuteBounds(calendarScheme), expression),
+    hour: parseField(hourText, hourBounds(calendarScheme), expression),
+    dayOfMonth: parseField(dayOfMonthText, dayOfMonthBounds(calendarScheme), expression),
+    month: parseField(monthText, monthBounds(calendarScheme), expression),
+    dayOfWeek: parseField(dayOfWeekText, dayOfWeekBounds(calendarScheme), expression),
   };
 }
 
@@ -184,12 +188,12 @@ export function parseCronExpression<TDate, TMonthName extends string, TWeekdayNa
 
 /**
  * The month names accepted by a runtime backed by the default Gregorian calendar. A runtime whose
- * plugin supplies a different {@link ICalendarAdapter} names its months differently - pass that
+ * plugin supplies a different {@link ICalendarScheme} names its months differently - pass that
  * calendar's names as {@link ICronSpec}'s first type argument to type-check against those instead.
  */
-export type MonthName = GregorianMonthName;
+export type MonthName = DefaultCalendarSchemeMonthName;
 /** The day-of-week names accepted by the default Gregorian calendar - see {@link MonthName}. */
-export type DayOfWeekName = GregorianWeekdayName;
+export type DayOfWeekName = DefaultCalendarSchemeWeekdayName;
 /** A string that looks like a number (e.g. `"9"`), accepted anywhere a number is - the runtime
  * parses it the same way as the equivalent number. */
 export type NumericString = `${number}`;
@@ -369,14 +373,14 @@ export function parseCronSpec<TDate, TMonthName extends string, TWeekdayName ext
     field/name mismatch check into a no-op.
   */
   spec: ICronSpec<NoInfer<TMonthName>, NoInfer<TWeekdayName>>,
-  adapter: ICalendarAdapter<TDate, TMonthName, TWeekdayName>,
+  calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>,
 ): ParsedCronExpression {
   return {
-    minute: parseSpecField(spec.minute, minuteBounds(adapter), "minute"),
-    hour: parseSpecField(spec.hour, hourBounds(adapter), "hour"),
-    dayOfMonth: parseSpecField(spec.dayOfMonth, dayOfMonthBounds(adapter), "dayOfMonth"),
-    month: parseSpecField(spec.month, monthBounds(adapter), "month"),
-    dayOfWeek: parseSpecField(spec.dayOfWeek, dayOfWeekBounds(adapter), "dayOfWeek"),
+    minute: parseSpecField(spec.minute, minuteBounds(calendarScheme), "minute"),
+    hour: parseSpecField(spec.hour, hourBounds(calendarScheme), "hour"),
+    dayOfMonth: parseSpecField(spec.dayOfMonth, dayOfMonthBounds(calendarScheme), "dayOfMonth"),
+    month: parseSpecField(spec.month, monthBounds(calendarScheme), "month"),
+    dayOfWeek: parseSpecField(spec.dayOfWeek, dayOfWeekBounds(calendarScheme), "dayOfWeek"),
   };
 }
 
@@ -386,9 +390,9 @@ export function parseCronSpec<TDate, TMonthName extends string, TWeekdayName ext
  */
 export function cronExpressionToSpec<TDate, TMonthName extends string, TWeekdayName extends string>(
   expression: string,
-  adapter: ICalendarAdapter<TDate, TMonthName, TWeekdayName>,
+  calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>,
 ): ICronSpec<TMonthName, TWeekdayName> {
-  const parsed = parseCronExpression(expression, adapter);
+  const parsed = parseCronExpression(expression, calendarScheme);
   const toFieldSpec = (field: ParsedField): "*" | number[] =>
     field.isWildcard ? "*" : [...field.values].sort((a, b) => a - b);
   return {
@@ -404,7 +408,7 @@ export function cronExpressionToSpec<TDate, TMonthName extends string, TWeekdayN
 
 //#region next-occurrence computation
 
-function dayMatches(parsed: ParsedCronExpression, fields: CalendarFields): boolean {
+function dayMatches(parsed: ParsedCronExpression, fields: CalendarSchemeFields): boolean {
   const { dayOfMonth, dayOfWeek } = parsed;
   if (dayOfMonth.isWildcard && dayOfWeek.isWildcard) {
     return true;
@@ -439,7 +443,7 @@ const MAX_SEARCH_YEARS_AHEAD = 10;
  * wall-clock calendar, per `adapter`. On a wall-clock instant that a DST transition skips (a
  * "spring forward" gap), resolves to the first instant after the gap; on one a DST transition
  * repeats (a "fall back" overlap), resolves to the earlier of the two occurrences - see
- * {@link ICalendarAdapter.compose}.
+ * {@link ICalendarScheme.compose}.
  * @throws if no match is found within a multi-year search bound (the expression can never match,
  * e.g. a day-of-month/month combination that never occurs, like `"0 0 31 2 *"`).
  */
@@ -447,12 +451,13 @@ export function computeNextOccurrence<TDate>(
   parsed: ParsedCronExpression,
   from: TDate,
   timezone: string,
-  adapter: ICalendarAdapter<TDate, string, string>,
+  calendarScheme: ICalendarScheme<TDate, string, string>,
 ): TDate {
-  const fromFields = adapter.decompose(from, timezone);
-  const step = (fields: ComposableCalendarFields): CalendarFields => adapter.normalize(fields);
+  const fromFields = calendarScheme.decompose(from, timezone);
+  const step = (fields: ComposableCalendarSchemeFields): CalendarSchemeFields =>
+    calendarScheme.normalize(fields);
   let fields = step({
-    ...CalendarFieldsHelper.toComposable(fromFields),
+    ...CalendarSchemeFieldsHelper.toComposable(fromFields),
     minute: fromFields.minute + 1,
   });
   const searchLimitYear = fromFields.year + MAX_SEARCH_YEARS_AHEAD;
@@ -470,7 +475,7 @@ export function computeNextOccurrence<TDate>(
     }
     if (!dayMatches(parsed, fields)) {
       fields = step({
-        ...CalendarFieldsHelper.toComposable(fields),
+        ...CalendarSchemeFieldsHelper.toComposable(fields),
         day: fields.day + 1,
         hour: 0,
         minute: 0,
@@ -479,19 +484,22 @@ export function computeNextOccurrence<TDate>(
     }
     if (!parsed.hour.values.has(fields.hour)) {
       fields = step({
-        ...CalendarFieldsHelper.toComposable(fields),
+        ...CalendarSchemeFieldsHelper.toComposable(fields),
         hour: fields.hour + 1,
         minute: 0,
       });
       continue;
     }
     if (!parsed.minute.values.has(fields.minute)) {
-      fields = step({ ...CalendarFieldsHelper.toComposable(fields), minute: fields.minute + 1 });
+      fields = step({
+        ...CalendarSchemeFieldsHelper.toComposable(fields),
+        minute: fields.minute + 1,
+      });
       continue;
     }
     // Every intermediate step above stayed in pure calendar-field arithmetic (adapter.normalize),
     // never touching the timezone - DST ambiguity is only resolved here, once, for the actual match.
-    return adapter.compose(CalendarFieldsHelper.toComposable(fields), timezone);
+    return calendarScheme.compose(CalendarSchemeFieldsHelper.toComposable(fields), timezone);
   }
   throw new Error("No matching cron occurrence found - this expression can never match");
 }

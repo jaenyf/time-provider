@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
-import { BaseSystemRuntime, DefaultCalendarAdapter, TimeInputValidator } from "@time-provider/core";
-import type { ICalendarAdapter, ITimeConverter } from "@time-provider/core";
+import { BaseSystemRuntime, DefaultCalendarScheme, TimeInputValidator } from "@time-provider/core";
+import type { ICalendarScheme, ITimeConverter } from "@time-provider/core";
 
 describe("TimeInputValidator", () => {
   describe("assertValid", () => {
@@ -17,7 +17,7 @@ describe("TimeInputValidator", () => {
   });
 });
 
-describe("BaseRuntime calendarAdapter", () => {
+describe("BaseRuntime calendar", () => {
   class FakeRuntime extends BaseSystemRuntime<unknown> {
     constructor(converter: ITimeConverter<unknown>) {
       super("Etc/UTC", converter);
@@ -40,8 +40,8 @@ describe("BaseRuntime calendarAdapter", () => {
       convertToLocalDate: (_timezone, time) => time,
     };
     const sut = new FakeRuntime(converter);
-    expect(sut.calendarAdapter).toBeInstanceOf(DefaultCalendarAdapter);
-    expect(sut.calendarAdapter.daysPerWeek()).toBe(7);
+    expect(sut.calendarScheme).toBeInstanceOf(DefaultCalendarScheme);
+    expect(sut.calendarScheme.daysPerWeek()).toBe(7);
   });
 
   test("resolves the adapter once, so every read returns the same instance", () => {
@@ -51,7 +51,7 @@ describe("BaseRuntime calendarAdapter", () => {
       convertToLocalDate: (_timezone, time) => time,
     };
     const sut = new FakeRuntime(converter);
-    expect(sut.calendarAdapter).toBe(sut.calendarAdapter);
+    expect(sut.calendarScheme).toBe(sut.calendarScheme);
   });
 
   test("a converter that provides no adapter doesn't get one written back onto it", () => {
@@ -63,11 +63,11 @@ describe("BaseRuntime calendarAdapter", () => {
       convertToLocalDate: (_timezone, time) => time,
     };
     new FakeRuntime(converter);
-    expect(converter.calendarAdapter).toBeUndefined();
+    expect(converter.calendarScheme).toBeUndefined();
   });
 
-  test("returns the converter's own calendar adapter when it provides one", () => {
-    const custom: ICalendarAdapter<unknown> = new DefaultCalendarAdapter({
+  test("returns the converter's own calendar scheme when it provides one", () => {
+    const custom: ICalendarScheme<unknown> = new DefaultCalendarScheme({
       convertToTimestamp: () => 0,
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
@@ -76,9 +76,9 @@ describe("BaseRuntime calendarAdapter", () => {
       convertToTimestamp: () => 0,
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
-      calendarAdapter: custom,
+      calendarScheme: custom,
     };
     const sut = new FakeRuntime(converter);
-    expect(sut.calendarAdapter).toBe(custom);
+    expect(sut.calendarScheme).toBe(custom);
   });
 });

@@ -1,4 +1,5 @@
 import type {
+  IRuntime,
   ISystemPlugin,
   ITimeProvider,
   IUtcOnlySystemPlugin,
@@ -37,7 +38,7 @@ class SystemPluggedRuntimeBuilder<TDate>
   create(): ITimeProvider<TDate> {
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSystemRuntime(this.localTimezone)
-      : (this.plugin.createSystemRuntime() as unknown as ITimeProvider<TDate>);
+      : (this.plugin.createSystemRuntime() as unknown as IRuntime<TDate>);
     for (const addon of this.#addons) {
       addon.applyToRuntime(runtime);
     }

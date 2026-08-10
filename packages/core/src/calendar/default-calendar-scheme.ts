@@ -1,40 +1,39 @@
 import type {
-  CalendarFields,
-  ComposableCalendarFields,
-  ICalendarAdapter,
+  CalendarSchemeFields,
+  ComposableCalendarSchemeFields,
+  ICalendarScheme,
   ITimeConverter,
   TimezoneDefinition,
 } from "../types/types.ts";
-import { CalendarFieldsHelper } from "./calendar-fields-helper.ts";
+import { CalendarSchemeFieldsHelper } from "./calendar-fields-helper.ts";
 import {
-  GREGORIAN_MONTH_NAMES,
-  GREGORIAN_WEEKDAY_NAMES,
-  type GregorianMonthName,
-  type GregorianWeekdayName,
-} from "./gregorian-names.ts";
+  DEFAULT_CALENDAR_SCHEME_MONTH_NAMES,
+  DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES,
+  type DefaultCalendarSchemeMonthName,
+  type DefaultCalendarSchemeWeekdayName,
+} from "./default-calendar-scheme-names.ts";
 import { IntlFormatterCache } from "./intl-formatter-cache.ts";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * The shared Gregorian/`Intl` {@link ICalendarAdapter} every plugin gets unless it provides its
- * own - see {@link ITimeConverter.calendarAdapter}. `converter` bridges `TDate` to/from epoch
- * milliseconds, which is all a calendar-agnostic `TDate` conversion needs; everything else here
- * only ever deals in plain numbers/strings.
- *
- * Calendar arithmetic goes through `Date.UTC`, deliberately: treating fields as UTC turns the
- * native `Date` into a pure proleptic-Gregorian calculator with no timezone of its own, which is
- * exactly what {@link normalize} wants. Timezone awareness comes separately, from `Intl`.
+ * The default shared Gregorian/`Intl` {@link ICalendarScheme} every plugin gets unless it provides its
+ * own - see {@link ITimeConverter.calendarScheme}.
  */
-export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
+export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
   TDate,
-  GregorianMonthName,
-  GregorianWeekdayName
+  DefaultCalendarSchemeMonthName,
+  DefaultCalendarSchemeWeekdayName
 > {
+  /*
+    Note: `Date` is only used here to perform pure calendar arithmetics.
+  */
   #converter: ITimeConverter<TDate>;
 
-  readonly monthNames: readonly GregorianMonthName[] = GREGORIAN_MONTH_NAMES;
-  readonly weekdayNames: readonly GregorianWeekdayName[] = GREGORIAN_WEEKDAY_NAMES;
+  readonly monthNames: readonly DefaultCalendarSchemeMonthName[] =
+    DEFAULT_CALENDAR_SCHEME_MONTH_NAMES;
+  readonly weekdayNames: readonly DefaultCalendarSchemeWeekdayName[] =
+    DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES;
 
   constructor(converter: ITimeConverter<TDate>) {
     this.#converter = converter;
@@ -62,8 +61,8 @@ export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
     return 31;
   }
 
-  normalize(fields: ComposableCalendarFields): CalendarFields {
-    const date = new Date(DefaultCalendarAdapter.#fieldsAsUtcMs(fields));
+  normalize(fields: ComposableCalendarSchemeFields): CalendarSchemeFields {
+    const date = new Date(DefaultCalendarScheme.#fieldsAsUtcMs(fields));
     return {
       year: date.getUTCFullYear(),
       month: date.getUTCMonth() + 1,
@@ -74,24 +73,24 @@ export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
     };
   }
 
-  decompose(date: TDate, timezone: TimezoneDefinition): CalendarFields {
-    return DefaultCalendarAdapter.#decomposeAt(this.#converter.convertToTimestamp(date), timezone);
+  decompose(date: TDate, timezone: TimezoneDefinition): CalendarSchemeFields {
+    return DefaultCalendarScheme.#decomposeAt(this.#converter.convertToTimestamp(date), timezone);
   }
 
-  compose(fields: ComposableCalendarFields, timezone: TimezoneDefinition): TDate {
-    return this.#converter.convertToUtcDate(DefaultCalendarAdapter.#composeAt(fields, timezone));
+  compose(fields: ComposableCalendarSchemeFields, timezone: TimezoneDefinition): TDate {
+    return this.#converter.convertToUtcDate(DefaultCalendarScheme.#composeAt(fields, timezone));
   }
 
   /**
    * Treats `fields` as UTC and lets `Date.UTC`'s own calendar math carry any overflow (e.g. minute
    * 60, or month 13) - a pure Gregorian calendar calculator, unrelated to any real timezone.
    */
-  static #fieldsAsUtcMs(fields: ComposableCalendarFields): number {
+  static #fieldsAsUtcMs(fields: ComposableCalendarSchemeFields): number {
     return Date.UTC(fields.year, fields.month - 1, fields.day, fields.hour, fields.minute);
   }
 
   /** The wall-clock fields `timestampMs` represents in `timezone`, per the host's ICU data. */
-  static #decomposeAt(timestampMs: number, timezone: string): CalendarFields {
+  static #decomposeAt(timestampMs: number, timezone: string): CalendarSchemeFields {
     const parts = IntlFormatterCache.wallClockFormatter(timezone).formatToParts(
       new Date(timestampMs),
     );
@@ -116,9 +115,8 @@ export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
    */
   static #offsetAt(instant: number, timezone: string): number {
     return (
-      DefaultCalendarAdapter.#fieldsAsUtcMs(
-        DefaultCalendarAdapter.#decomposeAt(instant, timezone),
-      ) - instant
+      DefaultCalendarScheme.#fieldsAsUtcMs(DefaultCalendarScheme.#decomposeAt(instant, timezone)) -
+      instant
     );
   }
 
@@ -137,10 +135,10 @@ export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
    * - if *both* do, it's a "fall back" overlap (`fields` occurs twice) - resolves to the earlier of
    *   the two, the first time it's valid.
    */
-  static #composeAt(fields: ComposableCalendarFields, timezone: string): number {
-    const target = DefaultCalendarAdapter.#fieldsAsUtcMs(fields);
-    const offsetBefore = DefaultCalendarAdapter.#offsetAt(target - ONE_DAY_MS, timezone);
-    const offsetAfter = DefaultCalendarAdapter.#offsetAt(target + ONE_DAY_MS, timezone);
+  static #composeAt(fields: ComposableCalendarSchemeFields, timezone: string): number {
+    const target = DefaultCalendarScheme.#fieldsAsUtcMs(fields);
+    const offsetBefore = DefaultCalendarScheme.#offsetAt(target - ONE_DAY_MS, timezone);
+    const offsetAfter = DefaultCalendarScheme.#offsetAt(target + ONE_DAY_MS, timezone);
 
     if (offsetBefore === offsetAfter) {
       return target - offsetBefore;
@@ -148,12 +146,12 @@ export class DefaultCalendarAdapter<TDate> implements ICalendarAdapter<
 
     const candidateBefore = target - offsetBefore;
     const candidateAfter = target - offsetAfter;
-    const roundTripsBefore = CalendarFieldsHelper.equals(
-      DefaultCalendarAdapter.#decomposeAt(candidateBefore, timezone),
+    const roundTripsBefore = CalendarSchemeFieldsHelper.equals(
+      DefaultCalendarScheme.#decomposeAt(candidateBefore, timezone),
       fields,
     );
-    const roundTripsAfter = CalendarFieldsHelper.equals(
-      DefaultCalendarAdapter.#decomposeAt(candidateAfter, timezone),
+    const roundTripsAfter = CalendarSchemeFieldsHelper.equals(
+      DefaultCalendarScheme.#decomposeAt(candidateAfter, timezone),
       fields,
     );
 

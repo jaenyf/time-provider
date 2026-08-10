@@ -1,9 +1,10 @@
 export { AddonHelper } from "./addons/addon-helper.ts";
-export { DefaultCalendarAdapter } from "./calendar/default-calendar-adapter.ts";
-export { CalendarFieldsHelper } from "./calendar/calendar-fields-helper.ts";
-export { IntlFormatterCache } from "./calendar/intl-formatter-cache.ts";
-export { GREGORIAN_MONTH_NAMES, GREGORIAN_WEEKDAY_NAMES } from "./calendar/gregorian-names.ts";
-export type { GregorianMonthName, GregorianWeekdayName } from "./calendar/gregorian-names.ts";
+export { DefaultCalendarScheme } from "./calendar/default-calendar-scheme.ts";
+export { CalendarSchemeFieldsHelper } from "./calendar/calendar-fields-helper.ts";
+export type {
+  DefaultCalendarSchemeMonthName,
+  DefaultCalendarSchemeWeekdayName,
+} from "./calendar/default-calendar-scheme-names.ts";
 export type {
   TimezoneDefinition,
   IClock,
@@ -26,9 +27,9 @@ export type {
   IScheduler,
   DueHandle,
   TimerKind,
-  CalendarFields,
-  ComposableCalendarFields,
-  ICalendarAdapter,
+  CalendarSchemeFields,
+  ComposableCalendarSchemeFields,
+  ICalendarScheme,
 } from "./types/types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";

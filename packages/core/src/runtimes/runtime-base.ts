@@ -1,7 +1,7 @@
-import { DefaultCalendarAdapter } from "../calendar/default-calendar-adapter.ts";
+import { DefaultCalendarScheme } from "../calendar/default-calendar-scheme.ts";
 import type {
   DueHandle,
-  ICalendarAdapter,
+  ICalendarScheme,
   IClock,
   IParser,
   IPerformance,
@@ -65,7 +65,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #localTimezone: TimezoneDefinition;
   #converter: ITimeConverter<TDate>;
   #performance: IPerformance;
-  #calendarAdapter: ICalendarAdapter<TDate>;
+  #calendarScheme: ICalendarScheme<TDate>;
   protected constructor(
     localTimezone: TimezoneDefinition,
     converter: ITimeConverter<TDate>,
@@ -74,12 +74,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     this.#localTimezone = localTimezone;
     this.#converter = converter;
     this.#performance = performance;
-    /*
-      Resolved once, here, rather than on every read: `calendarAdapter` is optional on
-      ITimeConverter so that a plugin with nothing to diverge on doesn't have to supply one, but
-      every runtime always has exactly one adapter for its whole lifetime.
-    */
-    this.#calendarAdapter = converter.calendarAdapter ?? new DefaultCalendarAdapter(converter);
+    this.#calendarScheme = converter.calendarScheme ?? new DefaultCalendarScheme(converter);
   }
 
   protected get localTimezone(): TimezoneDefinition {
@@ -119,11 +114,11 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract utcNow(): TDate;
 
   /**
-   * This runtime's calendar adapter - the plugin's own {@link ITimeConverter.calendarAdapter} if
+   * This runtime's calendar scheme - the plugin's own {@link ITimeConverter.calendarScheme} if
    * it provided one, otherwise the shared Gregorian/`Intl` default.
    */
-  get calendarAdapter(): ICalendarAdapter<TDate> {
-    return this.#calendarAdapter;
+  get calendarScheme(): ICalendarScheme<TDate> {
+    return this.#calendarScheme;
   }
 
   withTimezone(localTimezone: TimezoneDefinition): this {
