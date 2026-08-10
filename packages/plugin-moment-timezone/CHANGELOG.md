@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.2.0...plugin-moment-timezone-v0.3.0) (2026-08-10)
+
+
+### Features
+
+* **addon-cron:** add cron scheduling addon ([#139](https://github.com/jaenyf/time-provider/issues/139)) ([7abca3b](https://github.com/jaenyf/time-provider/commit/7abca3b9d00ce15c7d4258aecfb4bdca586a6895))
+
+
+### Bug Fixes
+
+* **plugin-moment-timezone:** remove redundant clone() in advanceMinutes ([7bb103d](https://github.com/jaenyf/time-provider/commit/7bb103da0d7785bdded5db707848921d9a8cc72f))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
 ## [0.2.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.1.0...plugin-moment-timezone-v0.2.0) (2026-08-01)
 
 
