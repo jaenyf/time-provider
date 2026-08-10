@@ -4,6 +4,108 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-08-10
+
+### @time-provider/addon-animation-frame 0.2.0
+
+### Features
+
+* add setRecurring / clearRecurring to IScheduler ([#133](https://github.com/jaenyf/time-provider/issues/133)) ([564edb8](https://github.com/jaenyf/time-provider/commit/564edb8a2cf29c161fa4749f60ba3e827779b63a))
+* **core:** export the manual Time-Provider types and addon facade shapes ([30a6290](https://github.com/jaenyf/time-provider/commit/30a629093e6b280806afb20ba6e472103a09378d))
+
+
+### Bug Fixes
+
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/addon-cron 0.1.0
+
+### Features
+
+* **addon-cron:** add cron scheduling addon ([#139](https://github.com/jaenyf/time-provider/issues/139)) ([7abca3b](https://github.com/jaenyf/time-provider/commit/7abca3b9d00ce15c7d4258aecfb4bdca586a6895))
+* **core:** export the manual Time-Provider types and addon facade shapes ([30a6290](https://github.com/jaenyf/time-provider/commit/30a629093e6b280806afb20ba6e472103a09378d))
+
+### @time-provider/addon-eta 0.1.0
+
+### Features
+
+* **addon-eta:** add eta addon ([#140](https://github.com/jaenyf/time-provider/issues/140)) ([78967c2](https://github.com/jaenyf/time-provider/commit/78967c20a76eb811f327d6517e551738cad4b375))
+* **core:** export the manual Time-Provider types and addon facade shapes ([30a6290](https://github.com/jaenyf/time-provider/commit/30a629093e6b280806afb20ba6e472103a09378d))
+
+### @time-provider/core 1.4.0
+
+### Features
+
+* add setRecurring / clearRecurring to IScheduler ([#133](https://github.com/jaenyf/time-provider/issues/133)) ([564edb8](https://github.com/jaenyf/time-provider/commit/564edb8a2cf29c161fa4749f60ba3e827779b63a))
+* **addon-cron:** add cron scheduling addon ([#139](https://github.com/jaenyf/time-provider/issues/139)) ([7abca3b](https://github.com/jaenyf/time-provider/commit/7abca3b9d00ce15c7d4258aecfb4bdca586a6895))
+* **core:** export the manual Time-Provider types and addon facade shapes ([30a6290](https://github.com/jaenyf/time-provider/commit/30a629093e6b280806afb20ba6e472103a09378d))
+
+
+### Bug Fixes
+
+* **core:** align uncaught timer callback exceptions with the environment ([#135](https://github.com/jaenyf/time-provider/issues/135)) ([#136](https://github.com/jaenyf/time-provider/issues/136)) ([167fabf](https://github.com/jaenyf/time-provider/commit/167fabff7a0211f80b03e26c902dfe57794bf406))
+* **core:** guard addon composition against property collisions, fixes [#129](https://github.com/jaenyf/time-provider/issues/129) ([#130](https://github.com/jaenyf/time-provider/issues/130)) ([09cd3fc](https://github.com/jaenyf/time-provider/commit/09cd3fcaacbb37e21df21984aea13940a783aef3))
+* **core:** prevent bare addons members from colliding ([#137](https://github.com/jaenyf/time-provider/issues/137)) ([#138](https://github.com/jaenyf/time-provider/issues/138)) ([0c87637](https://github.com/jaenyf/time-provider/commit/0c87637f78318eba02c22398f7318a2c0c2ca05a))
+* **core:** prevent deterministic scheduler from throwing when clearing undefined or null handles ([#121](https://github.com/jaenyf/time-provider/issues/121)) ([63ca6e0](https://github.com/jaenyf/time-provider/commit/63ca6e0c3ca7d3344e796870ffab393a047316bd)), closes [#120](https://github.com/jaenyf/time-provider/issues/120)
+
+
+### Performance Improvements
+
+* **runtime:** optimize deterministic runtime, minor-fix system runtime ([#134](https://github.com/jaenyf/time-provider/issues/134)) ([eec5987](https://github.com/jaenyf/time-provider/commit/eec5987b89e6727b3ac3b9015ab18fc425ae0c57))
+
+### @time-provider/plugin-dayjs 0.4.1
+
+### Bug Fixes
+
+* **plugin-dayjs:** [#125](https://github.com/jaenyf/time-provider/issues/125) ([#126](https://github.com/jaenyf/time-provider/issues/126)) ([c2badf5](https://github.com/jaenyf/time-provider/commit/c2badf5bed9c80c3137810b0bbed5a49905d8543))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/plugin-luxon 0.4.1
+
+### Bug Fixes
+
+* **plugin-luxon:** [#127](https://github.com/jaenyf/time-provider/issues/127) ([#128](https://github.com/jaenyf/time-provider/issues/128)) ([34d7b66](https://github.com/jaenyf/time-provider/commit/34d7b6686fbafa8e2cb2f29007ef565ec9b66343))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/plugin-moment 0.4.1
+
+### Bug Fixes
+
+* **plugin-moment-timezone:** remove redundant clone() in advanceMinutes ([7bb103d](https://github.com/jaenyf/time-provider/commit/7bb103da0d7785bdded5db707848921d9a8cc72f))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/plugin-moment-timezone 0.3.0
+
+### Features
+
+* **addon-cron:** add cron scheduling addon ([#139](https://github.com/jaenyf/time-provider/issues/139)) ([7abca3b](https://github.com/jaenyf/time-provider/commit/7abca3b9d00ce15c7d4258aecfb4bdca586a6895))
+
+
+### Bug Fixes
+
+* **plugin-moment-timezone:** remove redundant clone() in advanceMinutes ([7bb103d](https://github.com/jaenyf/time-provider/commit/7bb103da0d7785bdded5db707848921d9a8cc72f))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/plugin-native 0.4.1
+
+### Bug Fixes
+
+* **plugin-native-date:** issue [#122](https://github.com/jaenyf/time-provider/issues/122) ([#124](https://github.com/jaenyf/time-provider/issues/124)) ([67f899b](https://github.com/jaenyf/time-provider/commit/67f899b7bb422a496f8d5b6fb3911047cc60ab4b))
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
+### @time-provider/plugin-temporal 0.4.1
+
+### Bug Fixes
+
+* **plugins:** bump peered dependencies to core to its next version ([b5cc641](https://github.com/jaenyf/time-provider/commit/b5cc641901d0b9a8d7660b849d1026dd23991a87))
+* **release:** use real semver versioning instead of always-bump-minor ([#131](https://github.com/jaenyf/time-provider/issues/131)) ([5130ec8](https://github.com/jaenyf/time-provider/commit/5130ec886909502640a428cabd08da4effd82f0c))
+
 ## 2026-08-01
 
 ### @time-provider/addon-animation-frame 0.1.0
