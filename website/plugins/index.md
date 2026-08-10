@@ -4,14 +4,14 @@ A plugin adapts one date library to the `ITimeProvider` pipeline. Install
 `@time-provider/core` plus exactly one plugin — the one matching the date
 type your codebase already uses.
 
-| Plugin                                               | Date type                | Local timezone support          | Peer dependency                    |
-| ---------------------------------------------------- | ------------------------ | ------------------------------- | ---------------------------------- |
-| [`plugin-native`](/plugins/native)                   | `Date`                   | UTC-only                        | none (built into JS)               |
-| [`plugin-dayjs`](/plugins/dayjs)                     | `dayjs.Dayjs`            | ✓ (via `dayjs/plugin/timezone`) | `dayjs`                            |
-| [`plugin-luxon`](/plugins/luxon)                     | `DateTime` (Luxon)       | ✓                               | `luxon`                            |
-| [`plugin-moment`](/plugins/moment)                   | `moment.Moment`          | UTC-only                        | `moment`                           |
-| [`plugin-moment-timezone`](/plugins/moment-timezone) | `moment.Moment`          | ✓ (via `moment-timezone`)       | `moment`, `moment-timezone`        |
-| [`plugin-temporal`](/plugins/temporal)               | `Temporal.ZonedDateTime` | ✓                               | none (assumes a global `Temporal`) |
+| Plugin                                               | Date type                | Local timezone support          | Peer dependency                    | npm                                                                        |
+| ---------------------------------------------------- | ------------------------ | ------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| [`plugin-native`](/plugins/native)                   | `Date`                   | UTC-only                        | none (built into JS)               | [npm](https://www.npmjs.com/package/@time-provider/plugin-native)          |
+| [`plugin-dayjs`](/plugins/dayjs)                     | `dayjs.Dayjs`            | ✓ (via `dayjs/plugin/timezone`) | `dayjs`                            | [npm](https://www.npmjs.com/package/@time-provider/plugin-dayjs)           |
+| [`plugin-luxon`](/plugins/luxon)                     | `DateTime` (Luxon)       | ✓                               | `luxon`                            | [npm](https://www.npmjs.com/package/@time-provider/plugin-luxon)           |
+| [`plugin-moment`](/plugins/moment)                   | `moment.Moment`          | UTC-only                        | `moment`                           | [npm](https://www.npmjs.com/package/@time-provider/plugin-moment)          |
+| [`plugin-moment-timezone`](/plugins/moment-timezone) | `moment.Moment`          | ✓ (via `moment-timezone`)       | `moment`, `moment-timezone`        | [npm](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone) |
+| [`plugin-temporal`](/plugins/temporal)               | `Temporal.ZonedDateTime` | ✓                               | none (assumes a global `Temporal`) | [npm](https://www.npmjs.com/package/@time-provider/plugin-temporal)        |
 
 Every plugin exports a ready-to-use singleton named `plugin` — from two
 entry points, mirroring `@time-provider/core`'s own split (see

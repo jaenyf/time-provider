@@ -81,7 +81,7 @@ methods don't exist on the type, rather than throwing at runtime. See
 (or before picking a deterministic strategy), extends the resulting
 Time-Provider with an extra property beyond `clock`/`parser`/`scheduler`/
 `performance` — e.g. `.animation` from
-[`@time-provider/addon-animation-frame`](/guide/addons). A plugin only ever
+[`@time-provider/addon-animation-frame`](/addons/). A plugin only ever
 bridges a date library in; an addon adds new surface area to what
 `.create()` returns.
 

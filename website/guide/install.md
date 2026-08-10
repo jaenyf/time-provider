@@ -28,7 +28,7 @@ strategies used in tests. See [Mental Model](/guide/mental-model) for why
 they're split, and [Quick Start](/guide/quick-start) for both in use.
 
 Want to extend a Time-Provider with extra functionality instead of a new
-date library? See [Addons](/guide/addons) — e.g.
+date library? See [Addons](/addons/) — e.g.
 [`@time-provider/addon-animation-frame`](https://www.npmjs.com/package/@time-provider/addon-animation-frame).
 
 ## Requirements

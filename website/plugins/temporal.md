@@ -1,5 +1,7 @@
 # Temporal
 
+[`@time-provider/plugin-temporal`](https://www.npmjs.com/package/@time-provider/plugin-temporal)
+
 ```bash
 npm install @time-provider/core @time-provider/plugin-temporal
 ```

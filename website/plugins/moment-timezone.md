@@ -1,5 +1,7 @@
 # Moment.js + moment-timezone
 
+[`@time-provider/plugin-moment-timezone`](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
+
 ```bash
 npm install @time-provider/core @time-provider/plugin-moment-timezone
 ```
@@ -42,7 +44,7 @@ zones whose rules changed recently — Morocco's Ramadan DST shifts, for example
 or the Canadian permanent-DST proposals.
 
 This plugin resolves wall-clock times through `moment-timezone`'s data, so a
-`.withTimezone(...)` reading — and any [cron schedule](/guide/cron) built on it
+`.withTimezone(...)` reading — and any [cron schedule](/addons/cron) built on it
 — matches the rest of your `moment-timezone` code rather than the engine. Which
 version of the database is in play is therefore the one you installed, exactly
 as it is everywhere else you call `moment.tz(...)`.

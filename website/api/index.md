@@ -56,7 +56,7 @@ Chainable off `.for(plugin)`:
 - `.withTimezone(tz)` / `.withHostTimezone()` / `.withDefaultTimezone()` —
   only on a timezone-aware plugin's builder, see
   [Timezones & Local Time](/guide/timezones).
-- `.use(addon)` — compose in an addon's extra facade, see [Addons](/guide/addons).
+- `.use(addon)` — compose in an addon's extra facade, see [Addons](/addons/).
 - `.create()` — builds and returns the `ITimeProvider<TDate>` (or
   `IUtcOnlyTimeProvider<TDate>`), backed by the real system clock and native
   timers. See [ITimeProvider](/api/time-provider).

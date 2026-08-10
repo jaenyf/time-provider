@@ -1,9 +1,10 @@
 # Animation Frames
 
-`@time-provider/addon-animation-frame` adds an `.animation` facade over
+[`@time-provider/addon-animation-frame`](https://www.npmjs.com/package/@time-provider/addon-animation-frame)
+adds an `.animation` facade over
 `requestAnimationFrame`/`cancelAnimationFrame`, backed by the host's real
 display refresh on a system Time-Provider and by simulated frames on a
-deterministic one. Like every [addon](/guide/addons) it composes in with
+deterministic one. Like every [addon](/addons/) it composes in with
 `.use(addon)` and ships two entry points:
 
 ```ts

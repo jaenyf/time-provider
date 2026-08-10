@@ -1,5 +1,7 @@
 # Luxon
 
+[`@time-provider/plugin-luxon`](https://www.npmjs.com/package/@time-provider/plugin-luxon)
+
 ```bash
 npm install @time-provider/core @time-provider/plugin-luxon
 ```

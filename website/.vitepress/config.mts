@@ -57,6 +57,7 @@ export default defineConfig({
       { text: "Guide", link: "/guide/" },
       { text: "Playground", link: "/playground" },
       { text: "Plugins", link: "/plugins/" },
+      { text: "Addons", link: "/addons/" },
       { text: "API", link: "/api/" },
       {
         text: "Links",
@@ -107,10 +108,6 @@ export default defineConfig({
           { text: "Deterministic Scheduler", link: "/guide/scheduler" },
           { text: "Timezones & Local Time", link: "/guide/timezones" },
           { text: "Testing With Time-Provider", link: "/guide/testing" },
-          { text: "Addons", link: "/guide/addons" },
-          { text: "Animation Frames", link: "/guide/animation-frame" },
-          { text: "Cron Schedules", link: "/guide/cron" },
-          { text: "ETA Estimates", link: "/guide/eta" },
         ],
       },
       {
@@ -124,6 +121,16 @@ export default defineConfig({
           { text: "Moment.js + moment-timezone", link: "/plugins/moment-timezone" },
           { text: "Temporal", link: "/plugins/temporal" },
           { text: "Writing a Custom Plugin", link: "/plugins/custom" },
+        ],
+      },
+      {
+        text: "Addons (Extensions)",
+        items: [
+          { text: "Overview", link: "/addons/" },
+          { text: "Animation Frames", link: "/addons/animation-frame" },
+          { text: "Cron Schedules", link: "/addons/cron" },
+          { text: "ETA Estimates", link: "/addons/eta" },
+          { text: "Writing a Custom Addon", link: "/addons/custom" },
         ],
       },
       {

@@ -1,5 +1,7 @@
 # Day.js
 
+[`@time-provider/plugin-dayjs`](https://www.npmjs.com/package/@time-provider/plugin-dayjs)
+
 ```bash
 npm install @time-provider/core @time-provider/plugin-dayjs
 ```

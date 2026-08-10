@@ -93,7 +93,7 @@ synchronously, in-line, before `advance()` returns — see
 
 You rarely need to. At a build site, let inference do the work — it produces a
 narrower type than any annotation you could write, and it carries the extras
-composed in by any [addons](/guide/addons), which an annotation drops:
+composed in by any [addons](/addons/), which an annotation drops:
 
 ```ts
 const timeProvider = createTimeProvider

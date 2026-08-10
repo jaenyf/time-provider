@@ -58,7 +58,7 @@ features:
     details: System, Fixed, Manual, Sequential.
   - icon: 🧩
     title: Extensible via addons
-    link: guide/addons/
+    link: addons/
     details: Composes extra facades onto a Time-Provider.
 ---
 

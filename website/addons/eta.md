@@ -1,8 +1,9 @@
 # ETA Estimates
 
-`@time-provider/addon-eta` adds an `.eta` facade that estimates when a job will
+[`@time-provider/addon-eta`](https://www.npmjs.com/package/@time-provider/addon-eta)
+adds an `.eta` facade that estimates when a job will
 finish and notifies you with a snapshot as it goes. Like every
-[addon](/guide/addons) it composes in with `.use(addon)` and ships two entry
+[addon](/addons/) it composes in with `.use(addon)` and ships two entry
 points — one for a system Time-Provider, one for a deterministic one:
 
 ```ts

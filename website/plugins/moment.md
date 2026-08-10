@@ -1,5 +1,7 @@
 # Moment.js
 
+[`@time-provider/plugin-moment`](https://www.npmjs.com/package/@time-provider/plugin-moment)
+
 ```bash
 npm install @time-provider/core @time-provider/plugin-moment
 ```

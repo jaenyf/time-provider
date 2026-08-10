@@ -82,7 +82,7 @@ Six adapters ("plugins") plug in the date type your codebase already uses:
 A **plugin** bridges one date library to the `ITimeProvider` pipeline and
 adds no new functionality of its own. An **addon** extends a built
 Time-Provider with an extra facade — e.g.
-[`@time-provider/addon-animation-frame`](/guide/addons) adds an `.animation`
-property backed by the same clock strategy. See [Addons](/guide/addons).
+[`@time-provider/addon-animation-frame`](/addons/) adds an `.animation`
+property backed by the same clock strategy. See [Addons](/addons/).
 
 Next: [Install](/guide/install) · [Quick Start](/guide/quick-start) · [Try it in the Playground](/playground)

@@ -17,7 +17,7 @@ interface ITimeConverter<TDate> {
 shared Gregorian/`Intl` default — to resolve wall-clock times against your date
 library's own bundled timezone data, or to describe a non-Gregorian calendar —
 and omit it to inherit that default. It's what
-[cron schedules](/guide/cron) evaluate against, reachable on the runtime as
+[cron schedules](/addons/cron) evaluate against, reachable on the runtime as
 `calendarScheme`; ordinary consumers never see it, since it isn't on the
 `ITimeProvider` facade.
 
@@ -54,7 +54,7 @@ only disagrees about some field (e.g., timezone data) overrides only the concern
 
 The unit sizes are queried rather than assumed, which is what lets a
 non-Gregorian calendar work: `monthsPerYear()` and friends define the field
-ranges [cron](/guide/cron) validates against, and `monthNames`/`weekdayNames`
+ranges [cron](/addons/cron) validates against, and `monthNames`/`weekdayNames`
 supply the names it accepts. `TMonthName` and `TWeekdayName` default to
 `DefaultCalendarSchemeMonthName` (`"JAN"`–`"DEC"`) and
 `DefaultCalendarSchemeWeekdayName` (`"SUN"`–`"SAT"`), so the common case needs

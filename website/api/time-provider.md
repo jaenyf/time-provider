@@ -63,4 +63,4 @@ them. [IParser](/api/parser) notes the same about `ILocalOnlyParser`.
 Time-Provider with the addon's own extra property (e.g. `.animation` from
 `@time-provider/addon-animation-frame`) — `clock`, `parser`, `scheduler`,
 and `performance` are always present regardless of which addons are
-composed in. See [Addons](/guide/addons).
+composed in. See [Addons](/addons/).

@@ -1,8 +1,9 @@
 # Cron Schedules
 
-`@time-provider/addon-cron` adds a `.cron` facade that runs a callback on a
+[`@time-provider/addon-cron`](https://www.npmjs.com/package/@time-provider/addon-cron)
+adds a `.cron` facade that runs a callback on a
 schedule described by a standard 5-field cron expression, evaluated in the
-runtime's own local timezone. Like every [addon](/guide/addons), it composes in
+runtime's own local timezone. Like every [addon](/addons/), it composes in
 with `.use(addon)` and ships two entry points — one for a system
 Time-Provider, one for a deterministic one:
 
