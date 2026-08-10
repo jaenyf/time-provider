@@ -100,14 +100,14 @@ jobs:
       - run: test -f coverage/lcov.info
 
       - name: Upload coverage to Codecov
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -120,7 +120,7 @@ jobs:
           echo "count=$TESTS_COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Update tests count badge
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: schneegans/dynamic-badges-action@v1.9.0
         with:
           auth: ${{ secrets.GIST_TESTS_COUNTER_SECRET }}
