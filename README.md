@@ -32,6 +32,12 @@
  🧩 Modular & Extensible
 </div>
 
+## Disclaimer
+
+Time-Provider is currently under active development. While the project follows Semantic Versioning and may release versions beyond 1.0 before the API is considered stable, **the API should be considered unstable for the time being and may change between releases**.
+
+This disclaimer will be removed once the API has stabilized.
+
 ## Time is a dependency
 
 Code coupled to the native `Date` object, `Temporal` objects, any specific date library, or the
