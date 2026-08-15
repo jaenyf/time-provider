@@ -28,37 +28,37 @@ class ManualRuntime extends BaseManualRuntime<Date> {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: Date, years: number): Date {
-    const day = time.getDate();
-    time.setDate(1);
-    time.setFullYear(time.getFullYear() + years);
-    time.setDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
+    const day = time.getUTCDate();
+    time.setUTCDate(1);
+    time.setUTCFullYear(time.getUTCFullYear() + years);
+    time.setUTCDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
     return time;
   }
   protected advanceMonths(time: Date, months: number): Date {
-    const day = time.getDate();
-    time.setDate(1);
-    time.setMonth(time.getMonth() + months);
-    time.setDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
+    const day = time.getUTCDate();
+    time.setUTCDate(1);
+    time.setUTCMonth(time.getUTCMonth() + months);
+    time.setUTCDate(Math.min(day, RuntimeHelper.daysInMonth(time)));
     return time;
   }
   protected advanceDays(time: Date, days: number): Date {
-    time.setDate(time.getDate() + days);
+    time.setUTCDate(time.getUTCDate() + days);
     return time;
   }
   protected advanceHours(time: Date, hours: number): Date {
-    time.setHours(time.getHours() + hours);
+    time.setUTCHours(time.getUTCHours() + hours);
     return time;
   }
   protected advanceMinutes(time: Date, minutes: number): Date {
-    time.setMinutes(time.getMinutes() + minutes);
+    time.setUTCMinutes(time.getUTCMinutes() + minutes);
     return time;
   }
   protected advanceSeconds(time: Date, seconds: number): Date {
-    time.setSeconds(time.getSeconds() + seconds);
+    time.setUTCSeconds(time.getUTCSeconds() + seconds);
     return time;
   }
   protected advanceMilliseconds(time: Date, milliseconds: number): Date {
-    time.setMilliseconds(time.getMilliseconds() + milliseconds);
+    time.setUTCMilliseconds(time.getUTCMilliseconds() + milliseconds);
     return time;
   }
 }
