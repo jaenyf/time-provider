@@ -29,7 +29,7 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       clean: true,
       reportsDirectory: "coverage",
-      exclude: ["index.ts", "**/test-shared/**", "**/dist/**", "polyfills.ts"],
+      exclude: ["index.ts", "**/test-shared/**", "**/test-e2e/**", "**/dist/**", "polyfills.ts"],
       thresholds: {
         lines: 100,
         functions: 100,
