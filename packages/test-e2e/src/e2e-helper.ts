@@ -17,6 +17,11 @@ import type { WithCronApi } from "../../addon-cron/dist/index.d.mts";
 import type { WithAnimationFrameApi } from "../../addon-animation-frame/dist/index.d.mts";
 import { addon as systemAfapi } from "../../addon-animation-frame/dist/index.mjs";
 import { addon as deterministicAfapi } from "../../addon-animation-frame/dist/deterministic.mjs";
+import { addon as systemCompat } from "../../addon-compat/dist/index.mjs";
+import {
+  addon as deterministicCompat,
+  type WithCompatApi,
+} from "../../addon-compat/dist/deterministic.mjs";
 import { addon as systemCron } from "../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../addon-eta/dist/index.mjs";
@@ -33,6 +38,7 @@ export class E2eHelper {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
       .use(systemAfapi)
+      .use(systemCompat)
       .use(systemCron)
       .use(systemEta);
 
@@ -40,6 +46,7 @@ export class E2eHelper {
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
+      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta);
 
@@ -77,6 +84,7 @@ export class E2eHelper {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
       .use(systemAfapi)
+      .use(systemCompat)
       .use(systemCron)
       .use(systemEta);
 
@@ -84,6 +92,7 @@ export class E2eHelper {
       .for(deterministicPlugin)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
+      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta);
 
@@ -122,7 +131,11 @@ export class E2eHelper {
   }
 
   private static testTimeProvider<TDate>(
-    timeProvider: ITimeProvider<TDate> & WithAnimationFrameApi & WithCronApi & WithEtaApi,
+    timeProvider: ITimeProvider<TDate> &
+      WithAnimationFrameApi &
+      WithCompatApi &
+      WithCronApi &
+      WithEtaApi,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -134,12 +147,17 @@ export class E2eHelper {
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
+    E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
     E2eHelper.testAddonEta(timeProvider);
   }
 
   private static testUtcOnlyTimeProvider<TDate>(
-    timeProvider: IUtcOnlyTimeProvider<TDate> & WithAnimationFrameApi & WithCronApi & WithEtaApi,
+    timeProvider: IUtcOnlyTimeProvider<TDate> &
+      WithAnimationFrameApi &
+      WithCompatApi &
+      WithCronApi &
+      WithEtaApi,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -151,6 +169,7 @@ export class E2eHelper {
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
+    E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
     E2eHelper.testAddonEta(timeProvider);
   }
@@ -252,6 +271,22 @@ export class E2eHelper {
         timeProvider.animation.requestAnimationFrame(() => {}),
       ),
     ).not.toThrow();
+  }
+
+  private static testAddonCompat<TDate>(
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi,
+  ) {
+    expect(() => {
+      timeProvider.compat.timers.clearInterval(timeProvider.compat.timers.setInterval(() => {}));
+    }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.timers.clearRecurring(
+        timeProvider.compat.timers.setRecurring(() => false),
+      );
+    }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.timers.clearTimeout(timeProvider.compat.timers.setTimeout(() => {}));
+    }).not.toThrow("Method not implemented.");
   }
 
   private static testAddonCron<TDate>(

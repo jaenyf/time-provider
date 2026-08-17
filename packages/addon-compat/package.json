@@ -1,0 +1,69 @@
+{
+  "name": "@time-provider/addon-compat",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Time-Provider : Compatibility addon ~ Your single time interface for all your JavaScript / TypeScript projects.",
+  "keywords": [
+    "clock",
+    "cron",
+    "date",
+    "dependency injection",
+    "dependency inversion principle",
+    "deterministic",
+    "dip",
+    "fake",
+    "fake timers",
+    "fixed",
+    "frozen",
+    "injection",
+    "job",
+    "job scheduler",
+    "manual",
+    "provider",
+    "running",
+    "schedule",
+    "scheduler",
+    "sequential",
+    "solid",
+    "solid principles",
+    "system",
+    "time",
+    "timers"
+  ],
+  "homepage": "https://jaenyf.github.io/time-provider/",
+  "bugs": {
+    "url": "https://github.com/jaenyf/time-provider/issues"
+  },
+  "license": "MIT",
+  "author": "jaenyf",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaenyf/time-provider.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./deterministic": "./dist/deterministic.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "check": "vp check",
+    "prepublishOnly": "vp run build",
+    "release": "npm stage publish --provenance"
+  },
+  "devDependencies": {
+    "@time-provider/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@time-provider/core": "^2.0.0"
+  }
+}
