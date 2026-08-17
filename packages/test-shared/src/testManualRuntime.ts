@@ -214,6 +214,42 @@ export function testManualRuntime<TDate>(
           expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2024-02-28T00:00:00.000Z"));
         });
       });
+
+      describe("issue#147", () => {
+        describe("self-rescheduling timeout chains", () => {
+          test("fires once per delay across a single large advance(), not once total", () => {
+            const sut = createSUT(); // 2026-01-01T00:00:00.000Z
+            let fireCount = 0;
+            const delay = 100;
+            function tick() {
+              ++fireCount;
+              sut.scheduler.setTimeout(tick, delay);
+            }
+            sut.scheduler.setTimeout(tick, delay);
+
+            sut.advance({ seconds: 1 }); // 1000ms at 100ms/tick
+
+            expect(fireCount).toBe(10);
+          });
+
+          test("gives the same total fire count whether advanced in one jump or several smaller ones", () => {
+            const sut = createSUT(); // 2026-01-01T00:00:00.000Z
+            let fireCount = 0;
+            const delay = 100;
+            function tick() {
+              ++fireCount;
+              sut.scheduler.setTimeout(tick, delay);
+            }
+            sut.scheduler.setTimeout(tick, delay);
+
+            for (let i = 0; i < 5; i++) {
+              sut.advance({ milliseconds: 200 });
+            }
+
+            expect(fireCount).toBe(10);
+          });
+        });
+      });
     });
 
     describe("scheduler", () => {
