@@ -58,6 +58,11 @@ class DueHeap {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
 
+  /** The `runAt` of the earliest pending entry, or `undefined` if the queue is empty. */
+  peekRunAt(): number | undefined {
+    return this._entries.length > 0 ? this._entries[0].runAt : undefined;
+  }
+
   registerTimeout(runAt: number, callback: () => void): TimeoutEntry {
     const entry: TimeoutEntry = {
       runAt,
@@ -372,6 +377,11 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     this.#dueQueue.drainDue(nowTimestamp);
   }
 
+  /** The `runAt` of the earliest pending due entry, or `undefined` if none is scheduled. */
+  protected peekNextDueTimestamp(): number | undefined {
+    return this.#dueQueue.peekRunAt();
+  }
+
   //#region setTimeout
   /**
    * Schedules `callback` on this runtime's deterministic clock. See {@link IScheduler} for when
@@ -557,7 +567,9 @@ export abstract class BaseManualRuntime<TDate>
    * returns, per {@link IScheduler}.
    */
   advance(advanceConfiguration: IAdvanceOptions): IManualRuntime<TDate> {
-    let time = this.utcNow();
+    // Pure read: getting a TDate to feed the calendar-arithmetic helpers below must not itself
+    // drain the due queue (this.utcNow() would, uselessly, since nothing is newly due yet).
+    let time = this.convertToUtcDateImpl(this.timestampNow());
 
     if (advanceConfiguration.years) {
       time = this.advanceYears(time, advanceConfiguration.years);
@@ -581,9 +593,21 @@ export abstract class BaseManualRuntime<TDate>
       time = this.advanceMilliseconds(time, advanceConfiguration.milliseconds);
     }
 
+    const targetTimestamp = this.convertToEpochTimestampImpl(time);
+
+    // Walk due entries one at a time rather than jumping straight to targetTimestamp first: a
+    // callback that reschedules itself (e.g. a requestAnimationFrame-style self-rescheduling
+    // setTimeout) reads timestampNow() when it re-registers, so it must see the clock at *its
+    // own* due time, not already at the final target - otherwise its new entry always lands
+    // past the target and the whole chain fires only once per advance(), however large the gap.
+    let nextDue = this.peekNextDueTimestamp();
+    while (nextDue !== undefined && nextDue <= targetTimestamp) {
+      this._sequentialTimestamps[0] = nextDue;
+      this.mayRunDueCallbacks(nextDue);
+      nextDue = this.peekNextDueTimestamp();
+    }
+
     this.setDeterminedTime(time);
-    const now = this.timestampNow();
-    this.mayRunDueCallbacks(now);
     return this;
   }
 

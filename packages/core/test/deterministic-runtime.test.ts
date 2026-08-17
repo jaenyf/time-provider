@@ -120,6 +120,64 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
   });
 });
 
+describe("issue#147", () => {
+  describe("BaseManualRuntime advance() with self-rescheduling due entries", () => {
+    /*
+     * A callback that re-registers itself via scheduler.setTimeout when it runs. A self-rescheduling entry's
+     * new registration can't cap the whole chain to exactly one fire per advance() call, however large the jump.
+     */
+    function selfReschedulingChain(
+      sut: FakeManualRuntime,
+      delay: number,
+    ): { fireCount: () => number } {
+      let fires = 0;
+      function tick() {
+        fires++;
+        sut.scheduler.setTimeout(tick, delay);
+      }
+      sut.scheduler.setTimeout(tick, delay);
+      return { fireCount: () => fires };
+    }
+
+    test("fires once per delay across a single large advance(), not once total", () => {
+      const sut = new FakeManualRuntime(0);
+      const delay = 1000 / 60;
+      const chain = selfReschedulingChain(sut, delay);
+
+      sut.advance({ milliseconds: 1000 });
+
+      expect(chain.fireCount()).toBe(60);
+    });
+
+    test("gives the same total fire count whether advanced in one jump or several smaller ones", () => {
+      const sut = new FakeManualRuntime(0);
+      const delay = 1000 / 60;
+      const chain = selfReschedulingChain(sut, delay);
+
+      for (let i = 0; i < 5; i++) sut.advance({ milliseconds: 200 });
+
+      expect(chain.fireCount()).toBe(60);
+    });
+
+    test("still lands exactly on the requested target when nothing is due", () => {
+      const sut = new FakeManualRuntime(0);
+      sut.advance({ milliseconds: 1000 });
+      expect(sut.timestampNow()).toBe(1000);
+    });
+
+    test("a plain setInterval is unaffected (control case)", () => {
+      const sut = new FakeManualRuntime(0);
+      let fires = 0;
+      const delay = 1000 / 60;
+      sut.scheduler.setInterval(() => fires++, delay);
+
+      sut.advance({ milliseconds: 1000 });
+
+      expect(fires).toBe(60);
+    });
+  });
+});
+
 describe("BaseManualRuntime drainDue exception handling", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -163,10 +221,9 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
       expect(intervalFires).toBe(1);
       expect(otherFired).toBe(false);
+      expect(sut.timestampNow()).toBe(10);
 
-      // Nothing was lost: the interval's next tick (already re-armed for 20) and the still-due
-      // timeout at 15 are both still pending, and draining resumes on the next call.
-      expect(() => sut.advance({})).toThrow(error);
+      expect(() => sut.advance({ milliseconds: 15 })).toThrow(error);
       expect(intervalFires).toBe(2);
       expect(otherFired).toBe(true);
     });
@@ -186,9 +243,9 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
       expect(recurringFires).toBe(1);
       expect(otherFired).toBe(false);
+      expect(sut.timestampNow()).toBe(10);
 
-      // The recurring schedule never re-armed, so draining what's left only runs the timeout.
-      expect(() => sut.advance({})).not.toThrow();
+      expect(() => sut.advance({ milliseconds: 15 })).not.toThrow();
       expect(recurringFires).toBe(1);
       expect(otherFired).toBe(true);
     });
