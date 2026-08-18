@@ -1,6 +1,12 @@
 import { expect, test, describe } from "vite-plus/test";
-import type { DueHandle, IClock, TimezoneDefinition } from "@time-provider/core";
-import { testScheduler } from "./helpers/testScheduler.ts";
+import {
+  type ITimerHandle,
+  type IClock,
+  type TimezoneDefinition,
+  toDuration,
+  asap,
+} from "@time-provider/core";
+import { testTimers } from "./helpers/testScheduler.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -133,15 +139,15 @@ export function testSequentialRuntime<TDate>(
       );
     });
 
-    describe("scheduler", () => {
-      testScheduler(() => createSUT().scheduler);
+    describe("timers", () => {
+      testTimers(() => createSUT().timers);
       describe("additionnal", () => {
-        describe("setTimeout", () => {
+        describe("once", () => {
           test("can be called without specified delay", () => {
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
-            sut.setTimeout(callback);
+            sut.once(asap(), callback);
             sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
@@ -153,8 +159,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(callbackA, futureDelay);
-              sut.setTimeout(callbackB, futureDelay);
+              sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(true);
@@ -172,8 +178,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(callbackA, futureDelay * 2);
-              sut.setTimeout(callbackB, futureDelay * 2);
+              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
+              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
@@ -191,10 +197,10 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
-              const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
-              sut.clearTimeout(timeoutHandleA);
-              sut.clearTimeout(timeoutHandleB);
+              const timeoutHandleA = sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
+              const timeoutHandleB = sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+              timeoutHandleA.dispose();
+              timeoutHandleB.dispose();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -208,8 +214,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(callbackA, futureDelay);
-              sut.setTimeout(callbackB, futureDelay);
+              sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(true);
@@ -227,8 +233,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setTimeout(callbackA, futureDelay * 2);
-              sut.setTimeout(callbackB, futureDelay * 2);
+              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
+              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
@@ -246,10 +252,10 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
-              const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
-              sut.clearTimeout(timeoutHandleA);
-              sut.clearTimeout(timeoutHandleB);
+              const timeoutHandleA = sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
+              const timeoutHandleB = sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+              timeoutHandleA.dispose();
+              timeoutHandleB.dispose();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -260,9 +266,9 @@ export function testSequentialRuntime<TDate>(
               const sut = createSUT();
               let callbackBCalled = false;
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleB = sut.setTimeout(callbackB, 20);
-              const callbackA = () => sut.clearTimeout(timeoutHandleB);
-              sut.setTimeout(callbackA, 10);
+              const timeoutHandleB = sut.once(toDuration({ milliseconds: 20 }), callbackB);
+              const callbackA = () => timeoutHandleB.dispose();
+              sut.once(toDuration({ milliseconds: 10 }), callbackA);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackBCalled).toBe(false);
@@ -270,12 +276,12 @@ export function testSequentialRuntime<TDate>(
           });
         });
 
-        describe("setInterval", () => {
+        describe("every", () => {
           test("can be called without specified delay", () => {
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 1000]);
             let callbackCalled = false;
             const callback = () => (callbackCalled = true);
-            sut.setInterval(callback);
+            sut.every(asap(), callback);
             sut.clock.utcNow();
             expect(callbackCalled).toBe(true);
           });
@@ -287,8 +293,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(true);
@@ -306,8 +312,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay * 2);
-              sut.setInterval(callbackB, futureDelay * 2);
+              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
@@ -325,10 +331,16 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
-              const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
-              sut.clearInterval(timeoutHandleA);
-              sut.clearInterval(timeoutHandleB);
+              const timeoutHandleA = sut.every(
+                toDuration({ milliseconds: futureDelay }),
+                callbackA,
+              );
+              const timeoutHandleB = sut.every(
+                toDuration({ milliseconds: futureDelay }),
+                callbackB,
+              );
+              timeoutHandleA.dispose();
+              timeoutHandleB.dispose();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -345,8 +357,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -366,8 +378,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               (sut.clock as IClock<TDate>).localNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -384,8 +396,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(true);
@@ -403,8 +415,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay * 2);
-              sut.setInterval(callbackB, futureDelay * 2);
+              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
@@ -422,10 +434,16 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
-              const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
-              sut.clearInterval(timeoutHandleA);
-              sut.clearInterval(timeoutHandleB);
+              const timeoutHandleA = sut.every(
+                toDuration({ milliseconds: futureDelay }),
+                callbackA,
+              );
+              const timeoutHandleB = sut.every(
+                toDuration({ milliseconds: futureDelay }),
+                callbackB,
+              );
+              timeoutHandleA.dispose();
+              timeoutHandleB.dispose();
               sut.clock.utcNow();
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -442,8 +460,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               sut.clock.utcNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -463,8 +481,8 @@ export function testSequentialRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.setInterval(callbackA, futureDelay);
-              sut.setInterval(callbackB, futureDelay);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
               sut.clock.utcNow();
               callbackACalled = false;
               callbackBCalled = false;
@@ -481,9 +499,9 @@ export function testSequentialRuntime<TDate>(
                 expectedRetries * 1000,
               ]);
               let retries = 0;
-              sut.scheduler.setInterval(() => {
+              sut.timers.every(toDuration({ milliseconds: 1000 }), () => {
                 retries++;
-              }, 1000);
+              });
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(retries).toBe(expectedRetries);
@@ -497,9 +515,9 @@ export function testSequentialRuntime<TDate>(
                 expectedRetries * 1000,
               ]);
               let retries = 0;
-              sut.scheduler.setInterval(() => {
+              sut.timers.every(toDuration({ milliseconds: 1000 }), () => {
                 retries++;
-              }, 1000);
+              });
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(retries).toBe(expectedRetries);
@@ -511,12 +529,12 @@ export function testSequentialRuntime<TDate>(
               () => {
                 const sut = createSUT();
                 let buffer: string = "";
-                sut.scheduler.setInterval(() => {
+                sut.timers.every(toDuration({ milliseconds: 100 }), () => {
                   buffer += "A";
-                }, 100);
-                sut.scheduler.setInterval(() => {
+                });
+                sut.timers.every(toDuration({ milliseconds: 150 }), () => {
                   buffer += "B";
-                }, 150);
+                });
                 (sut.clock as IClock<TDate>).localNow();
                 (sut.clock as IClock<TDate>).localNow();
                 expect(buffer).toBe("ABABAABABAABABAA");
@@ -525,12 +543,12 @@ export function testSequentialRuntime<TDate>(
             test("scatter callbacks run in a timely fashion instead of running them multiple time individually (utcNow)", () => {
               const sut = createSUT();
               let buffer: string = "";
-              sut.scheduler.setInterval(() => {
+              sut.timers.every(toDuration({ milliseconds: 100 }), () => {
                 buffer += "A";
-              }, 100);
-              sut.scheduler.setInterval(() => {
+              });
+              sut.timers.every(toDuration({ milliseconds: 150 }), () => {
                 buffer += "B";
-              }, 150);
+              });
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(buffer).toBe("ABABAABABAABABAA");
@@ -543,9 +561,9 @@ export function testSequentialRuntime<TDate>(
                 const sut = createSUT();
                 let callbackBCallCount = 0;
                 const callbackB = () => callbackBCallCount++;
-                const intervalHandleB = sut.setInterval(callbackB, 20);
-                const callbackA = () => sut.clearInterval(intervalHandleB);
-                sut.setInterval(callbackA, 10);
+                const intervalHandleB = sut.every(toDuration({ milliseconds: 20 }), callbackB);
+                const callbackA = () => intervalHandleB.dispose();
+                sut.every(toDuration({ milliseconds: 10 }), callbackA);
                 (sut.clock as IClock<TDate>).localNow();
                 (sut.clock as IClock<TDate>).localNow();
                 expect(callbackBCallCount).toBe(0);
@@ -555,9 +573,9 @@ export function testSequentialRuntime<TDate>(
               const sut = createSUT();
               let callbackBCallCount = 0;
               const callbackB = () => callbackBCallCount++;
-              const intervalHandleB = sut.setInterval(callbackB, 20);
-              const callbackA = () => sut.clearInterval(intervalHandleB);
-              sut.setInterval(callbackA, 10);
+              const intervalHandleB = sut.every(toDuration({ milliseconds: 20 }), callbackB);
+              const callbackA = () => intervalHandleB.dispose();
+              sut.every(toDuration({ milliseconds: 10 }), callbackA);
               sut.clock.utcNow();
               sut.clock.utcNow();
               expect(callbackBCallCount).toBe(0);
@@ -569,8 +587,12 @@ export function testSequentialRuntime<TDate>(
               const sut = createSUT();
               const otherRuntime = createSUT();
               let callbackCalled = false;
-              const handle = sut.setTimeout(() => (callbackCalled = true), 10);
-              otherRuntime.clearTimeout(handle);
+              const handle = sut.once(
+                toDuration({ milliseconds: 10 }),
+                () => (callbackCalled = true),
+              );
+              //@ts-ignore : wrong type
+              otherRuntime.clearTimer(handle);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callbackCalled).toBe(true);
@@ -580,8 +602,12 @@ export function testSequentialRuntime<TDate>(
             const sut = createSUT();
             const otherRuntime = createSUT();
             let callbackCalled = false;
-            const handle = sut.setTimeout(() => (callbackCalled = true), 10);
-            otherRuntime.clearTimeout(handle);
+            const handle = sut.once(
+              toDuration({ milliseconds: 10 }),
+              () => (callbackCalled = true),
+            );
+            //@ts-ignore : wrong type
+            otherRuntime.clearTimer(handle);
             sut.utcNow();
             sut.utcNow();
             expect(callbackCalled).toBe(true);
@@ -589,8 +615,8 @@ export function testSequentialRuntime<TDate>(
           test("does not corrupt heap ordering when a short-delay interval is registered while another is pending (utcNow)", () => {
             const sut = createSUT();
             const order: string[] = [];
-            sut.setInterval(() => order.push("A"), 500);
-            sut.setInterval(() => order.push("B"), 300);
+            sut.every(toDuration({ milliseconds: 500 }), () => order.push("A"));
+            sut.every(toDuration({ milliseconds: 300 }), () => order.push("B"));
             sut.utcNow();
             sut.utcNow();
             expect(order.join(",")).toBe("B,A,B,B,A");
@@ -600,8 +626,8 @@ export function testSequentialRuntime<TDate>(
             () => {
               const sut = createSUT();
               const order: string[] = [];
-              sut.setInterval(() => order.push("A"), 500);
-              sut.setInterval(() => order.push("B"), 300);
+              sut.every(toDuration({ milliseconds: 500 }), () => order.push("A"));
+              sut.every(toDuration({ milliseconds: 300 }), () => order.push("B"));
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(order.join(",")).toBe("B,A,B,B,A");
@@ -611,13 +637,13 @@ export function testSequentialRuntime<TDate>(
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 100, 199]);
             let fireCount = 0;
             let reentered = false;
-            sut.setInterval(() => {
+            sut.every(toDuration({ milliseconds: 100 }), () => {
               fireCount++;
               if (!reentered) {
                 reentered = true;
                 sut.utcNow();
               }
-            }, 100);
+            });
             sut.utcNow();
             sut.utcNow();
             expect(fireCount).toBe(1);
@@ -628,13 +654,13 @@ export function testSequentialRuntime<TDate>(
               const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 100, 199]);
               let fireCount = 0;
               let reentered = false;
-              sut.setInterval(() => {
+              sut.every(toDuration({ milliseconds: 100 }), () => {
                 fireCount++;
                 if (!reentered) {
                   reentered = true;
                   (sut.clock as IClock<TDate>).localNow();
                 }
-              }, 100);
+              });
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(fireCount).toBe(1);
@@ -644,14 +670,14 @@ export function testSequentialRuntime<TDate>(
             const sut = createSUT();
             const order: string[] = [];
             let reentered = false;
-            sut.setInterval(() => {
+            sut.every(toDuration({ milliseconds: 300 }), () => {
               order.push("A");
               if (!reentered) {
                 reentered = true;
                 sut.utcNow();
               }
-            }, 300);
-            sut.setInterval(() => order.push("B"), 300);
+            });
+            sut.every(toDuration({ milliseconds: 300 }), () => order.push("B"));
             sut.utcNow();
             sut.utcNow();
             expect(order.join(",")).toBe("A,B,A,B,A,B,A,B,A,B,A,B");
@@ -662,14 +688,14 @@ export function testSequentialRuntime<TDate>(
               const sut = createSUT();
               const order: string[] = [];
               let reentered = false;
-              sut.setInterval(() => {
+              sut.every(toDuration({ milliseconds: 300 }), () => {
                 order.push("A");
                 if (!reentered) {
                   reentered = true;
                   (sut.clock as IClock<TDate>).localNow();
                 }
-              }, 300);
-              sut.setInterval(() => order.push("B"), 300);
+              });
+              sut.every(toDuration({ milliseconds: 300 }), () => order.push("B"));
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(order.join(",")).toBe("A,B,A,B,A,B,A,B,A,B,A,B");
@@ -679,8 +705,9 @@ export function testSequentialRuntime<TDate>(
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
             const otherRuntime = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
             let callCount = 0;
-            const handle = sut.setInterval(() => callCount++, 10);
-            otherRuntime.clearInterval(handle);
+            const handle = sut.every(toDuration({ milliseconds: 10 }), () => callCount++);
+            //@ts-ignore: wrong type
+            otherRuntime.clearTimer(handle);
             sut.utcNow();
             sut.utcNow();
             expect(callCount).toBe(2);
@@ -691,8 +718,9 @@ export function testSequentialRuntime<TDate>(
               const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
               const otherRuntime = createSequentialRuntime("Pacific/Kiritimati", [0, 25, 50]);
               let callCount = 0;
-              const handle = sut.setInterval(() => callCount++, 10);
-              otherRuntime.clearInterval(handle);
+              const handle = sut.every(toDuration({ milliseconds: 10 }), () => callCount++);
+              //@ts-ignore: wrong type
+              otherRuntime.clearTimer(handle);
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(callCount).toBe(2);
@@ -704,17 +732,19 @@ export function testSequentialRuntime<TDate>(
           test("compaction discards timeout entries once it is triggered (utcNow)", () => {
             const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
             let fireCount = 0;
-            const handles: DueHandle[] = [];
+            const handles: ITimerHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(sut.setTimeout(() => fireCount++, compactionThreshold + i));
+              handles.push(
+                sut.once(toDuration({ milliseconds: compactionThreshold + i }), () => fireCount++),
+              );
             }
             //clear the half of registered callbacks
             for (let i = 0; i < handles.length; i += 2) {
-              sut.clearTimeout(handles[i]);
+              handles[i].dispose();
             }
             // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
-            sut.setTimeout(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.once(toDuration({ milliseconds: compactionThreshold * 2 - 2 }), () => fireCount++);
             //advance time
             sut.utcNow();
             sut.utcNow();
@@ -723,17 +753,19 @@ export function testSequentialRuntime<TDate>(
           test("compaction discards interval entries once it is triggered (utcNow)", () => {
             const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
             let fireCount = 0;
-            const handles: DueHandle[] = [];
+            const handles: ITimerHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(sut.setInterval(() => fireCount++, compactionThreshold + i));
+              handles.push(
+                sut.every(toDuration({ milliseconds: compactionThreshold + i }), () => fireCount++),
+              );
             }
             //clear the half of registered callbacks
             for (let i = 0; i < handles.length; i += 2) {
-              sut.clearInterval(handles[i]);
+              handles[i].dispose();
             }
             // the following setInterval call triggers compaction
-            sut.setInterval(() => fireCount++, compactionThreshold * 2 - 2);
+            sut.every(toDuration({ milliseconds: compactionThreshold * 2 - 2 }), () => fireCount++);
             //advance time
             sut.utcNow();
             sut.utcNow();
@@ -742,14 +774,14 @@ export function testSequentialRuntime<TDate>(
           test("clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher (utcNow)", () => {
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 61]);
             const order: string[] = [];
-            sut.setTimeout(() => order.push("1"), 1);
-            sut.setTimeout(() => order.push("5"), 5);
-            sut.setTimeout(() => order.push("2"), 2);
-            const toClear = sut.setTimeout(() => order.push("50"), 50);
-            sut.setTimeout(() => order.push("60"), 60);
-            sut.setTimeout(() => order.push("3"), 3);
-            sut.setTimeout(() => order.push("4"), 4);
-            sut.clearTimeout(toClear);
+            sut.once(toDuration({ milliseconds: 1 }), () => order.push("1"));
+            sut.once(toDuration({ milliseconds: 5 }), () => order.push("5"));
+            sut.once(toDuration({ milliseconds: 2 }), () => order.push("2"));
+            const toClear = sut.once(toDuration({ milliseconds: 50 }), () => order.push("50"));
+            sut.once(toDuration({ milliseconds: 60 }), () => order.push("60"));
+            sut.once(toDuration({ milliseconds: 3 }), () => order.push("3"));
+            sut.once(toDuration({ milliseconds: 4 }), () => order.push("4"));
+            toClear.dispose();
             sut.utcNow();
             sut.utcNow();
             expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);
@@ -759,14 +791,14 @@ export function testSequentialRuntime<TDate>(
             () => {
               const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 61]);
               const order: string[] = [];
-              sut.setTimeout(() => order.push("1"), 1);
-              sut.setTimeout(() => order.push("5"), 5);
-              sut.setTimeout(() => order.push("2"), 2);
-              const toClear = sut.setTimeout(() => order.push("50"), 50);
-              sut.setTimeout(() => order.push("60"), 60);
-              sut.setTimeout(() => order.push("3"), 3);
-              sut.setTimeout(() => order.push("4"), 4);
-              sut.clearTimeout(toClear);
+              sut.once(toDuration({ milliseconds: 1 }), () => order.push("1"));
+              sut.once(toDuration({ milliseconds: 5 }), () => order.push("5"));
+              sut.once(toDuration({ milliseconds: 2 }), () => order.push("2"));
+              const toClear = sut.once(toDuration({ milliseconds: 50 }), () => order.push("50"));
+              sut.once(toDuration({ milliseconds: 60 }), () => order.push("60"));
+              sut.once(toDuration({ milliseconds: 3 }), () => order.push("3"));
+              sut.once(toDuration({ milliseconds: 4 }), () => order.push("4"));
+              toClear.dispose();
               (sut.clock as IClock<TDate>).localNow();
               (sut.clock as IClock<TDate>).localNow();
               expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);

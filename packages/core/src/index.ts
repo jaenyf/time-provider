@@ -6,6 +6,8 @@ export type {
   DefaultCalendarSchemeWeekdayName,
 } from "./calendar/default-calendar-scheme-names.ts";
 export type {
+  DurationMilliseconds,
+  EpochMilliseconds,
   TimezoneDefinition,
   IClock,
   IAdvanceOptions,
@@ -25,13 +27,14 @@ export type {
   ITimeConverter,
   IRuntime,
   IUtcOnlyRuntime,
-  IScheduler,
-  DueHandle,
+  ITimers,
+  ITimerHandle,
   TimerKind,
   CalendarSchemeFields,
   ComposableCalendarSchemeFields,
   ICalendarScheme,
 } from "./types/types.ts";
+export * from "./helpers/branded-types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";
 export { TimeInputValidator } from "./runtimes/runtime-base.ts";

@@ -1,3 +1,5 @@
+import type { DurationMilliseconds, EpochMilliseconds } from "@time-provider/core";
+
 /**
  * How the estimated completion rate is derived from reported progress:
  * - `"complete"` - averaged over the entire tracked history, from the start. Simple and stable,
@@ -117,12 +119,12 @@ export interface IStagedEtaProgressSnapshot extends IEtaEstimate {
  */
 export interface IEtaDurationSnapshot {
   readonly status: EtaStatus;
-  readonly startTime: number;
-  readonly elapsedMilliseconds: number;
+  readonly startTime: EpochMilliseconds;
+  readonly elapsedMilliseconds: DurationMilliseconds;
   /** `undefined` only once `status` is `"abandoned"`. */
-  readonly eta?: number;
+  readonly eta?: EpochMilliseconds;
   /** `undefined` only once `status` is `"abandoned"`. */
-  readonly remainingMilliseconds?: number;
+  readonly remainingMilliseconds?: DurationMilliseconds;
 }
 
 /**

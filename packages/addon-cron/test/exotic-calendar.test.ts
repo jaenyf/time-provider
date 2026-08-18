@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
-import type {
-  CalendarSchemeFields,
-  ComposableCalendarSchemeFields,
-  ICalendarScheme,
-  TimezoneDefinition,
+import {
+  toInstant,
+  type CalendarSchemeFields,
+  type ComposableCalendarSchemeFields,
+  type EpochMilliseconds,
+  type ICalendarScheme,
+  type TimezoneDefinition,
 } from "@time-provider/core";
 import { computeNextOccurrence, parseCronExpression, parseCronSpec } from "../src/cron-parser.ts";
 
@@ -70,8 +72,8 @@ class ExoticCalendarScheme implements ICalendarScheme<number, ExoticMonthName, E
   readonly monthNames: readonly ExoticMonthName[] = EXOTIC_MONTH_NAMES;
   readonly weekdayNames: readonly ExoticWeekdayName[] = EXOTIC_WEEKDAY_NAMES;
 
-  toTimestamp(date: number): number {
-    return date;
+  toTimestamp(milliseconds: number): EpochMilliseconds {
+    return toInstant({ milliseconds: milliseconds });
   }
   fromTimestamp(timestampMs: number): number {
     return timestampMs;

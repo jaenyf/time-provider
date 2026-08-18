@@ -4,13 +4,13 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
 } from "@time-provider/core/deterministic";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 
 class FixedRuntime extends BaseFixedRuntime<Temporal.ZonedDateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
-    fixedTime: string | number | Temporal.ZonedDateTime,
+    fixedTime: string | EpochMilliseconds | number | Temporal.ZonedDateTime,
   ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
@@ -19,7 +19,7 @@ class FixedRuntime extends BaseFixedRuntime<Temporal.ZonedDateTime> {
 class SequentialRuntime extends BaseSequentialRuntime<Temporal.ZonedDateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | Temporal.ZonedDateTime)[],
+    sequentialTimes: (string | EpochMilliseconds | number | Temporal.ZonedDateTime)[],
   ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
   }
@@ -28,7 +28,7 @@ class SequentialRuntime extends BaseSequentialRuntime<Temporal.ZonedDateTime> {
 class ManualRuntime extends BaseManualRuntime<Temporal.ZonedDateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
-    fixedTime: string | number | Temporal.ZonedDateTime,
+    fixedTime: string | EpochMilliseconds | number | Temporal.ZonedDateTime,
   ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }

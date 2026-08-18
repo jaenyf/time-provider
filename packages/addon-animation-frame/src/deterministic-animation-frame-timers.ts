@@ -1,20 +1,20 @@
-import type { DueHandle, IScheduler } from "@time-provider/core";
+import { toDuration, type ITimerHandle, type ITimers } from "@time-provider/core";
 import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
 /**
- * Implements {@link IAnimationFrameApi} on top of a deterministic runtime's {@link IScheduler},
+ * Implements {@link IAnimationFrameApi} on top of a deterministic runtime's {@link IDeterministicRuntime},
  * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
  */
-export class DeterministicAnimationFrameScheduler implements IAnimationFrameApi {
+export class DeterministicAnimationFrameTimers implements IAnimationFrameApi {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
-  #scheduler: IScheduler;
+  #timers: ITimers;
 
   /**
-   * @param scheduler the deterministic runtime's scheduler used to simulate frame callbacks.
+   * @param timers the deterministic runtime's scheduler used to simulate frame callbacks.
    */
-  constructor(scheduler: IScheduler) {
-    this.#scheduler = scheduler;
+  constructor(timers: ITimers) {
+    this.#timers = timers;
   }
 
   /**
@@ -37,12 +37,12 @@ export class DeterministicAnimationFrameScheduler implements IAnimationFrameApi 
   }
 
   requestAnimationFrame(callback: () => void): AnimationFrameHandle {
-    return this.#scheduler.setTimeout(
+    return this.#timers.once(
+      toDuration({ milliseconds: this.#hostFrameDurationMs }),
       callback,
-      this.#hostFrameDurationMs,
     ) as unknown as AnimationFrameHandle;
   }
   cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    this.#scheduler.clearTimeout(handle as unknown as DueHandle);
+    (handle as unknown as ITimerHandle).dispose();
   }
 }

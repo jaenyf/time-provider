@@ -1,5 +1,8 @@
+import { asap, asEpoch, toInstant } from "../helpers/branded-types.ts";
 import type { BaseDeterministicRuntime } from "../runtimes/deterministic-runtime.ts";
 import type {
+  DurationMilliseconds,
+  EpochMilliseconds,
   IPerformance,
   IPerformanceEntry,
   IPerformanceMark,
@@ -8,6 +11,7 @@ import type {
   IPerformanceMeasureOptions,
   PerformanceEntryType,
 } from "../types/types.ts";
+import { epochArithmetic } from "../helpers/branded-types.ts";
 
 class PerformanceError extends DOMException {
   /*
@@ -19,10 +23,12 @@ class PerformanceError extends DOMException {
  * A deterministic performance class
  */
 export class DeterministicPerformance<TDate> implements IPerformance {
-  private static uninitializedTimeOrigin = Number.MAX_VALUE;
+  private static uninitializedTimeOrigin: EpochMilliseconds = toInstant({
+    milliseconds: Number.MAX_VALUE,
+  });
 
   #runtime!: BaseDeterministicRuntime<TDate>;
-  #timeOrigin: number = DeterministicPerformance.uninitializedTimeOrigin;
+  #timeOrigin: EpochMilliseconds = DeterministicPerformance.uninitializedTimeOrigin;
   #entries: IPerformanceEntry[] = [];
   #initialized: boolean = false;
 
@@ -40,23 +46,23 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     }
   }
 
-  private assertAndGetTimeOrigin(): number {
-    let timeOrigine = this.#timeOrigin;
-    if (timeOrigine != DeterministicPerformance.uninitializedTimeOrigin) {
-      return timeOrigine;
+  private assertAndGetTimeOrigin(): EpochMilliseconds {
+    let timeOrigin = this.#timeOrigin;
+    if (timeOrigin != DeterministicPerformance.uninitializedTimeOrigin) {
+      return timeOrigin;
     }
 
-    timeOrigine = this.#runtime.timestampNow();
-    this.#timeOrigin = timeOrigine;
-    return timeOrigine;
+    timeOrigin = this.#runtime.timestampNow();
+    this.#timeOrigin = timeOrigin;
+    return timeOrigin;
   }
 
-  now(): number {
+  now(): DurationMilliseconds {
     this.assertInitialization();
-    return this.#runtime.timestampNow() - this.assertAndGetTimeOrigin();
+    return epochArithmetic.substract(this.#runtime.timestampNow(), this.assertAndGetTimeOrigin());
   }
 
-  get timeOrigin(): number {
+  get timeOrigin(): EpochMilliseconds {
     this.assertInitialization();
     return this.assertAndGetTimeOrigin();
   }
@@ -82,8 +88,8 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     const entry: IPerformanceMark = {
       name,
       entryType: "mark",
-      startTime: options?.startTime ?? this.now(),
-      duration: 0,
+      startTime: options?.startTime ?? toInstant({ milliseconds: this.now() as number }),
+      duration: asap(),
     };
 
     this.#entries.push(entry);
@@ -96,8 +102,8 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
   ): IPerformanceMeasure => {
     this.assertInitialization();
-    let startTime = 0;
-    let endTime = this.now();
+    let startTime: EpochMilliseconds = asEpoch();
+    let endTime: EpochMilliseconds = toInstant({ milliseconds: this.now() as number });
 
     if (typeof startMarkOrOptions === "string") {
       const startMark = this.#findMark(startMarkOrOptions);
@@ -154,9 +160,9 @@ export class DeterministicPerformance<TDate> implements IPerformance {
 
       if (options.duration !== undefined) {
         if (options.start !== undefined) {
-          endTime = startTime + options.duration;
+          endTime = epochArithmetic.addDuration(startTime, options.duration);
         } else {
-          startTime = endTime - options.duration;
+          startTime = epochArithmetic.substractDuration(endTime, options.duration);
         }
       }
     }
@@ -165,7 +171,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       name,
       entryType: "measure",
       startTime,
-      duration: endTime - startTime,
+      duration: epochArithmetic.substract(endTime, startTime),
     };
 
     this.#entries.push(entry);

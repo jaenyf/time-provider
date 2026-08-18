@@ -1,7 +1,13 @@
 import { describe, test, expect } from "vite-plus/test";
-import type { IPerformance, IScheduler } from "@time-provider/core";
+import {
+  asEpoch,
+  toDuration,
+  toInstant,
+  type IPerformance,
+  type ITimers,
+} from "@time-provider/core";
 
-type PerformanceTestSUT<TDate> = IScheduler & {
+type PerformanceTestSUT<TDate> = ITimers & {
   performance: IPerformance;
   clock: { utcNow(): TDate };
 };
@@ -36,7 +42,7 @@ export function testPerformance<TDate>(
     test("does not fire a pending timeout", () => {
       const sut = createCleanSUT();
       let callbackCalled = false;
-      sut.setTimeout(() => (callbackCalled = true), 10);
+      sut.once(toDuration({ milliseconds: 10 }), () => (callbackCalled = true));
       sut.performance.now();
       sut.performance.mark("m");
       sut.performance.measure("measure", "m");
@@ -46,7 +52,7 @@ export function testPerformance<TDate>(
     test("does not fire a pending interval", () => {
       const sut = createCleanSUT();
       let callbackCalled = false;
-      sut.setInterval(() => (callbackCalled = true), 10);
+      sut.every(toDuration({ milliseconds: 10 }), () => (callbackCalled = true));
       sut.performance.now();
       sut.performance.mark("m");
       sut.performance.measure("measure", "m");
@@ -89,7 +95,7 @@ export function testPerformance<TDate>(
 
     test("uses an explicit startTime when given", () => {
       const sut = createCleanSUT();
-      const mark = sut.performance.mark("a", { startTime: 12345 });
+      const mark = sut.performance.mark("a", { startTime: toInstant({ milliseconds: 12345 }) });
       expect(mark.startTime).toBe(12345);
     });
   });
@@ -224,15 +230,18 @@ export function testPerformance<TDate>(
 
     test("computes the duration between two numeric bounds", () => {
       const sut = createCleanSUT();
-      const measure = sut.performance.measure("m", { start: 10, end: 25 });
+      const measure = sut.performance.measure("m", {
+        start: toInstant({ milliseconds: 10 }),
+        end: toInstant({ milliseconds: 25 }),
+      });
       expect(measure.startTime).toBe(10);
       expect(measure.duration).toBe(15);
     });
 
     test("resolves start/end options by mark name", () => {
       const sut = createCleanSUT();
-      sut.performance.mark("a", { startTime: 5 });
-      sut.performance.mark("b", { startTime: 20 });
+      sut.performance.mark("a", { startTime: toInstant({ milliseconds: 5 }) });
+      sut.performance.mark("b", { startTime: toInstant({ milliseconds: 20 }) });
       const measure = sut.performance.measure("a-to-b", { start: "a", end: "b" });
       expect(measure.startTime).toBe(5);
       expect(measure.duration).toBe(15);
@@ -240,33 +249,43 @@ export function testPerformance<TDate>(
 
     test("throws when options.start names a mark that does not exist", () => {
       const sut = createCleanSUT();
-      expect(() => sut.performance.measure("m", { start: "missing", end: 0 })).toThrow();
+      expect(() => sut.performance.measure("m", { start: "missing", end: asEpoch() })).toThrow();
     });
 
     test("throws when options.end names a mark that does not exist", () => {
       const sut = createCleanSUT();
-      expect(() => sut.performance.measure("m", { start: 0, end: "missing" })).toThrow();
+      expect(() => sut.performance.measure("m", { start: asEpoch(), end: "missing" })).toThrow();
     });
 
     test("computes end from start + duration", () => {
       const sut = createCleanSUT();
-      const measure = sut.performance.measure("m", { start: 10, duration: 5 });
+      const measure = sut.performance.measure("m", {
+        start: toInstant({ milliseconds: 10 }),
+        duration: toDuration({ milliseconds: 5 }),
+      });
       expect(measure.startTime).toBe(10);
       expect(measure.duration).toBe(5);
     });
 
     test("computes start from end - duration", () => {
       const sut = createCleanSUT();
-      const measure = sut.performance.measure("m", { end: 100, duration: 5 });
+      const measure = sut.performance.measure("m", {
+        end: toInstant({ milliseconds: 100 }),
+        duration: toDuration({ milliseconds: 5 }),
+      });
       expect(measure.startTime).toBe(95);
       expect(measure.duration).toBe(5);
     });
 
     test("throws when start, end and duration are all given", () => {
       const sut = createCleanSUT();
-      expect(() => sut.performance.measure("m", { start: 0, end: 10, duration: 10 })).toThrow(
-        TypeError,
-      );
+      expect(() =>
+        sut.performance.measure("m", {
+          start: asEpoch(),
+          end: toInstant({ milliseconds: 10 }),
+          duration: toDuration({ milliseconds: 10 }),
+        }),
+      ).toThrow(TypeError);
     });
 
     if (excludeNodeSpecificBehavior) {

@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   DefaultCalendarScheme,
-  type DueHandle,
+  type ITimerHandle,
   type ITimeConverter,
-  type IScheduler,
+  type ITimers,
   type IRuntime,
+  toInstant,
 } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
@@ -13,7 +14,7 @@ import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.t
 type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
 
 const identityConverter: ITimeConverter<number> = {
-  convertToTimestamp: (time) => Number(time),
+  convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };
@@ -33,29 +34,25 @@ function fakeSystemRuntime(
   recurring: { callback: () => number | false; initialDelay?: number }[];
 } {
   const recurring: { callback: () => number | false; initialDelay?: number }[] = [];
-  const scheduler: IScheduler = {
-    setTimeout() {
+  const timers: ITimers = {
+    once() {
       throw new Error("not used by the cron addon");
     },
-    clearTimeout() {
+    every() {
       throw new Error("not used by the cron addon");
     },
-    setInterval() {
-      throw new Error("not used by the cron addon");
-    },
-    clearInterval() {
-      throw new Error("not used by the cron addon");
-    },
-    setRecurring(callback, initialDelay) {
+    recurring(callback, initialDelay) {
       recurring.push({ callback, initialDelay });
-      return {} as DueHandle;
+      return {} as ITimerHandle;
     },
-    clearRecurring() {},
+    wait() {
+      throw new Error("not used by the cron addon");
+    },
   };
   const clock =
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };
   return {
-    runtime: { scheduler, clock, calendarScheme: defaultCalendarScheme } as unknown as FakeRuntime,
+    runtime: { timers, clock, calendarScheme: defaultCalendarScheme } as unknown as FakeRuntime,
     recurring,
   };
 }

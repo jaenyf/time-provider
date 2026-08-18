@@ -4,17 +4,23 @@ import {
   BaseSequentialRuntime,
   BaseUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 
 class FixedRuntime extends BaseFixedRuntime<Date> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | Date) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | Date,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
 }
 
 class SequentialRuntime extends BaseSequentialRuntime<Date> {
-  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | Date)[]) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    sequentialTimes: (string | EpochMilliseconds | number | Date)[],
+  ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
   }
 }
@@ -24,7 +30,10 @@ class ManualRuntime extends BaseManualRuntime<Date> {
     All advance* methods in this class mutate and return the same `time` instance rather than cloning it.
     This is safe because they are called with a `Date` freshly produced for that single call.
   */
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | Date) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | Date,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: Date, years: number): Date {

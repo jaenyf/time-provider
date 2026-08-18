@@ -4,24 +4,33 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
 } from "@time-provider/core/deterministic";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 import { DateTime } from "luxon";
 
 class FixedRuntime extends BaseFixedRuntime<DateTime> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | DateTime,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
 }
 
 class SequentialRuntime extends BaseSequentialRuntime<DateTime> {
-  constructor(localTimezone: TimezoneDefinition, sequentialTimes: (string | number | DateTime)[]) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    sequentialTimes: (string | EpochMilliseconds | number | DateTime)[],
+  ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
   }
 }
 
 class ManualRuntime extends BaseManualRuntime<DateTime> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | DateTime) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | DateTime,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: DateTime<boolean>, years: number): DateTime<boolean> {

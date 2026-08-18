@@ -7,13 +7,27 @@ import type {
   DefaultCalendarSchemeMonthName,
   DefaultCalendarSchemeWeekdayName,
 } from "../calendar/default-calendar-scheme-names.ts";
+import type { TimerHandle } from "../runtimes/timer-handle.ts";
+
+//#region General branded types
+type Brand<T, B extends string> = T & { readonly __brand: B };
+export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
+export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+//#endregion
+
+//#region Disposable
+interface IDisposable {
+  dispose(): void;
+  get isDisposed(): boolean;
+}
+//#endregion
 
 //#region Performance
 // ---------------------------------------------------------------------------
 // Performance
 // ---------------------------------------------------------------------------
 
-interface IPerformanceProvider {
+interface IWithPerformance {
   /**
    * Get the current configured performance API.
    */
@@ -50,11 +64,11 @@ export interface IPerformanceEntry {
   /**
    * The timestamp, relative to {@link IPerformance.timeOrigin}, at which the entry starts.
    */
-  readonly startTime: number;
+  readonly startTime: EpochMilliseconds;
   /**
    * The duration of the entry, in milliseconds. Always `0` for a mark.
    */
-  readonly duration: number;
+  readonly duration: DurationMilliseconds;
 }
 
 /**
@@ -77,7 +91,7 @@ export interface IPerformanceMarkOptions {
    *
    * If omitted, the current performance timestamp is used.
    */
-  startTime?: number;
+  startTime?: EpochMilliseconds;
 
   /**
    * Arbitrary metadata associated with the mark.
@@ -93,7 +107,7 @@ export interface IPerformanceMeasureOptions {
    * - a mark name
    * - an explicit performance timestamp
    */
-  start?: string | number;
+  start?: string | EpochMilliseconds;
 
   /**
    * The end point of the measurement.
@@ -102,12 +116,12 @@ export interface IPerformanceMeasureOptions {
    * - a mark name
    * - an explicit performance timestamp
    */
-  end?: string | number;
+  end?: string | EpochMilliseconds;
 
   /**
    * Duration to use instead of calculating from start/end.
    */
-  duration?: number;
+  duration?: DurationMilliseconds;
 
   /**
    * Arbitrary metadata associated with the measure.
@@ -123,12 +137,12 @@ export interface IPerformance {
    * Returns the current high-resolution timestamp in milliseconds
    * relative to timeOrigin.
    */
-  now(): number;
+  now(): DurationMilliseconds;
 
   /**
    * The Unix timestamp at which this performance timeline started.
    */
-  readonly timeOrigin: number;
+  readonly timeOrigin: EpochMilliseconds;
 
   /**
    * Returns all performance entries.
@@ -217,12 +231,12 @@ interface IAdvanceable<TSelf> {
    * If a scheduler backed by this clock has pending `setTimeout`/
    * `setInterval` callbacks, any of them that become due as a result are run
    * synchronously, in-line, before `advance()` returns - see
-   * {@link IScheduler} for details on this execution model.
+   * {@link ITimers} for details on this execution model.
    */
   advance(advanceOptions: IAdvanceOptions): TSelf;
 }
 
-interface IClockProvider<TClock> {
+interface IWithClock<TClock> {
   /**
    * Get the current configured clock
    */
@@ -240,7 +254,7 @@ interface ITimestampClock {
    * {@link IUtcOnlyClock.utcNow}/{@link ILocalOnlyClock.localNow} are the reads that do.
    * Use this instead when "now" is only needed to compute something (e.g. a delay), not to observe the passage of time.
    */
-  timestampNow(): number;
+  timestampNow(): EpochMilliseconds;
 }
 
 /**
@@ -349,9 +363,9 @@ export interface ICalendarScheme<
   TWeekdayName extends string = DefaultCalendarSchemeWeekdayName,
 > {
   /** Converts `date` to epoch milliseconds - same as {@link ITimeConverter.convertToTimestamp}. */
-  toTimestamp(date: TDate): number;
+  toTimestamp(date: TDate): EpochMilliseconds;
   /** Converts epoch milliseconds to a `TDate` - same as {@link ITimeConverter.convertToUtcDate}. */
-  fromTimestamp(timestampMs: number): TDate;
+  fromTimestamp(timestampMs: EpochMilliseconds): TDate;
   /** Number of minutes in an hour for this calendar's timekeeping - `60` for Gregorian. */
   minutesPerHour(): number;
   /** Number of hours in a day for this calendar's timekeeping - `24` for Gregorian. */
@@ -397,7 +411,7 @@ export interface ICalendarScheme<
 // Parser
 // ---------------------------------------------------------------------------
 
-interface IParserProvider<TParser> {
+interface IWithParser<TParser> {
   /**
    * Get the current configured parser
    */
@@ -459,23 +473,29 @@ export type TimerKind =
   | typeof TIMER_KIND_RECURRING;
 
 /**
- * Opaque handle returned by {@link IScheduler.setTimeout}, {@link IScheduler.setInterval} and
- * {@link IScheduler.setRecurring}. Pass it back to the matching `clear*` method to cancel it -
- * `kind` is for introspection/debugging only, not meant to be branched on by consumers.
+ * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
+ * {@link ITimers.recurring}).
  */
-export interface DueHandle {
+export interface ITimerHandle extends IDisposable {
   readonly kind: TimerKind;
 }
 
 /**
- * Schedules and cancels timeouts/intervals.
+ * Additionnal options to create a timer.
+ */
+export interface ITimerOptions {
+  signal?: AbortSignal;
+}
+
+/**
+ * Schedules timers.
  *
  * Execution model depends on the clock strategy backing this scheduler:
- * - On a **system** clock, callbacks run asynchronously via the real, native
+ * - On a **system** clock, timer callbacks run asynchronously via the real, native
  *   timers, exactly like in production code.
  * - On a **manual** or **sequential** clock, callbacks run synchronously,
  *   in-line, as soon as they become due - as a direct side effect of
- *   {@link IScheduler.setTimeout}/{@link IScheduler.setInterval} itself
+ *   {@link ITimers.setTimeout}/{@link ITimers.setInterval} itself
  *   (e.g. a delay of `0` or a negative value is already due when scheduled),
  *   or of any call that moves the clock forward (`advance()`,
  *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
@@ -489,66 +509,33 @@ export interface DueHandle {
  * triggering call in a Node-like environment, and is logged via `console.error` and swallowed in a
  * browser-like one.
  */
-export interface IScheduler {
-  /**
-   * Schedules `callback` to run once, `millisecondsDelay` milliseconds from
-   * now (0 if omitted or negative).
-   *
-   * When it runs depends on the clock strategy: asynchronously via real native timers on a system
-   * clock, synchronously and in-line the moment it becomes due on a manual/sequential clock, and
-   * never on a fixed clock (time never advances there). See {@link IScheduler} for the full model.
-   */
-  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
-  /**
-   * Cancels a pending timeout scheduled via {@link IScheduler.setTimeout}.
-   * A no-op if it already ran or was already cleared.
-   */
-  clearTimeout(handle: DueHandle): void;
-  /**
-   * Schedules `callback` to run repeatedly, every `millisecondsDelay`
-   * milliseconds (0 if omitted or negative). No interval ever repeats faster
-   * than once per millisecond: a system one clamps `millisecondsDelay` to 1
-   * up front, and a deterministic one accepts 0 - firing immediately, since
-   * it is already due - then re-arms every 1 millisecond, matching what a
-   * native interval does with a delay of 0.
-   *
-   * When each run happens depends on the clock strategy: asynchronously via real native timers on
-   * a system clock, synchronously and in-line as each run becomes due on a manual/sequential clock
-   * (so an interval whose delay is shorter than an `advance()` re-fires as many times as fit), and
-   * never on a fixed clock. See {@link IScheduler} for the full model.
-   */
-  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
-  /**
-   * Cancels a pending interval scheduled via {@link IScheduler.setInterval}.
-   * A no-op if it was already cleared.
-   */
-  clearInterval(handle: DueHandle): void;
-  /**
-   * Schedules `callback` to run once, `initialDelay` milliseconds from now (0 if omitted or
-   * negative), then again after whatever delay `callback` itself returns - typically computed
-   * from state the run itself just updated (a counter, remaining time, ...). Return `false` to
-   * stop recurring; any other falsy value (e.g. `0`) still schedules a run - `0` milliseconds
-   * from the previous one on a system clock, and `1` on a deterministic one, which never re-arms
-   * faster than once per millisecond.
-   *
-   * When each run happens depends on the clock strategy, exactly as for
-   * {@link IScheduler.setTimeout}: asynchronously via real native timers on a system clock,
-   * synchronously and in-line as each run becomes due on a manual/sequential clock, and never on a
-   * fixed clock. See {@link IScheduler} for the full model.
-   */
-  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
-  /**
-   * Cancels a pending recurring schedule started via {@link IScheduler.setRecurring}. A no-op if
-   * it already stopped (`callback` returned `false`) or was already cleared.
-   */
-  clearRecurring(handle: DueHandle): void;
+export interface ITimers {
+  /** One-shot timer. */
+  once(delay: DurationMilliseconds, callback: () => void, options?: ITimerOptions): ITimerHandle;
+
+  /** A "promise” variant of the `once` one-shot. */
+  wait(delay: DurationMilliseconds, options?: ITimerOptions): Promise<void>;
+
+  /** Fixed-interval timer. */
+  every(delay: DurationMilliseconds, callback: () => void, options?: ITimerOptions): ITimerHandle;
+
+  /** Dynamic recurrence: The callback determines the next interval; `false` stops it. */
+  recurring(
+    callback: () => DurationMilliseconds | false,
+    initialDelay?: DurationMilliseconds,
+    options?: ITimerOptions,
+  ): ITimerHandle;
 }
 
-interface ISchedulerProvider {
+interface IWithTimers {
   /**
    * Get the current configured scheduler
    */
-  get scheduler(): IScheduler;
+  get timers(): ITimers;
+}
+
+interface IClearTimers<TDate> {
+  clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
 }
 
 //#endregion
@@ -565,15 +552,15 @@ export interface ITimeConverter<TDate> {
   /**
    * Converts `time` to epoch milliseconds.
    */
-  convertToTimestamp(time: string | number | TDate): number;
+  convertToTimestamp(time: string | EpochMilliseconds | number | TDate): EpochMilliseconds;
   /**
    * Converts `time` to a `TDate` instance expressed in UTC.
    */
-  convertToUtcDate(time: string | number | TDate): TDate;
+  convertToUtcDate(time: string | EpochMilliseconds | TDate): TDate;
   /**
    * Converts `time` to a `TDate` instance expressed in the given local `timezone`.
    */
-  convertToLocalDate(timezone: TimezoneDefinition, time: string | number | TDate): TDate;
+  convertToLocalDate(timezone: TimezoneDefinition, time: string | EpochMilliseconds | TDate): TDate;
   /**
    * This plugin's own {@link ICalendarScheme}, when it diverges from (or supports an operation
    * the) shared Gregorian/`Intl` default (can't). Omit to inherit that default.
@@ -591,7 +578,7 @@ export interface ITimeConverter<TDate> {
  * full type safety from here, while an ordinary consumer holding an {@link ITimeProvider} never
  * sees it on `clock`.
  */
-export interface ICalendarSchemeProvider<TDate> {
+export interface IWithCalendarScheme<TDate> {
   /** This runtime's calendar scheme - see {@link ICalendarScheme}. */
   get calendarScheme(): ICalendarScheme<TDate>;
 }
@@ -601,22 +588,24 @@ export interface ICalendarSchemeProvider<TDate> {
  */
 export interface IRuntime<TDate>
   extends
-    IScheduler,
+    ITimers,
+    IClearTimers<TDate>,
     IClock<TDate>,
     IParser<TDate>,
     ITimeProvider<TDate>,
-    ICalendarSchemeProvider<TDate> {}
+    IWithCalendarScheme<TDate> {}
 
 /**
  * A runtime backed by an UTC only clock.
  */
 export interface IUtcOnlyRuntime<TDate>
   extends
-    IScheduler,
+    ITimers,
+    IClearTimers<TDate>,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyTimeProvider<TDate>,
-    ICalendarSchemeProvider<TDate> {}
+    IWithCalendarScheme<TDate> {}
 
 /**
  * A runtime backed by a manual clock.
@@ -624,12 +613,13 @@ export interface IUtcOnlyRuntime<TDate>
 export interface IManualRuntime<TDate>
   extends
     IManualClock<TDate>,
-    IClockProvider<IManualClock<TDate>>,
-    IScheduler,
+    IWithClock<IManualClock<TDate>>,
+    ITimers,
+    IClearTimers<TDate>,
     IClock<TDate>,
     IParser<TDate>,
     IManualTimeProvider<TDate>,
-    ICalendarSchemeProvider<TDate> {}
+    IWithCalendarScheme<TDate> {}
 
 /**
  * A runtime backed by an UTC only manual clock.
@@ -637,12 +627,13 @@ export interface IManualRuntime<TDate>
 export interface IUtcOnlyManualRuntime<TDate>
   extends
     IUtcOnlyManualClock<TDate>,
-    IClockProvider<IUtcOnlyManualClock<TDate>>,
-    IScheduler,
+    IWithClock<IUtcOnlyManualClock<TDate>>,
+    ITimers,
+    IClearTimers<TDate>,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
-    ICalendarSchemeProvider<TDate> {}
+    IWithCalendarScheme<TDate> {}
 //#endregion
 
 //#region Time provider facades
@@ -655,31 +646,27 @@ export interface IUtcOnlyManualRuntime<TDate>
  * `performance`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
-  extends
-    IClockProvider<IClock<TDate>>,
-    ISchedulerProvider,
-    IParserProvider<IParser<TDate>>,
-    IPerformanceProvider {}
+  extends IWithClock<IClock<TDate>>, IWithTimers, IWithParser<IParser<TDate>>, IWithPerformance {}
 
 /**
  * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
  */
 export interface IUtcOnlyTimeProvider<TDate>
   extends
-    IClockProvider<IUtcOnlyClock<TDate>>,
-    ISchedulerProvider,
-    IParserProvider<IUtcOnlyParser<TDate>>,
-    IPerformanceProvider {}
+    IWithClock<IUtcOnlyClock<TDate>>,
+    IWithTimers,
+    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithPerformance {}
 
 /**
  * The public facade of a Time-Provider backed by a manual (advanceable), timezone-aware clock.
  */
 export interface IManualTimeProvider<TDate>
   extends
-    IClockProvider<IManualClock<TDate>>,
-    ISchedulerProvider,
-    IParserProvider<IParser<TDate>>,
-    IPerformanceProvider {}
+    IWithClock<IManualClock<TDate>>,
+    IWithTimers,
+    IWithParser<IParser<TDate>>,
+    IWithPerformance {}
 
 /**
  * The public facade of a Time-Provider backed by a manual (advanceable), timezone-naive
@@ -687,10 +674,10 @@ export interface IManualTimeProvider<TDate>
  */
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
-    IClockProvider<IUtcOnlyManualClock<TDate>>,
-    ISchedulerProvider,
-    IParserProvider<IUtcOnlyParser<TDate>>,
-    IPerformanceProvider {}
+    IWithClock<IUtcOnlyManualClock<TDate>>,
+    IWithTimers,
+    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithPerformance {}
 //#endregion
 
 //#region Plugins
@@ -742,14 +729,14 @@ export interface IDeterministicPlugin<TDate> {
    */
   createManualRuntime(
     localTimezone: TimezoneDefinition,
-    initialTime: string | number | TDate,
+    initialTime: string | EpochMilliseconds | number | TDate,
   ): IManualRuntime<TDate>;
   /**
    * Create a runtime for fixed time and scheduler
    */
   createFixedRuntime(
     localTimezone: TimezoneDefinition,
-    initialTime: string | number | TDate,
+    initialTime: string | EpochMilliseconds | number | TDate,
   ): IRuntime<TDate>;
   /**
    * Create a runtime for sequential time and scheduler.
@@ -758,7 +745,7 @@ export interface IDeterministicPlugin<TDate> {
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | TDate)[],
+    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
   ): IRuntime<TDate>;
 }
 
@@ -774,16 +761,22 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
   /**
    * Create a runtime for manual time and scheduler
    */
-  createManualRuntime(initialTime: string | number | TDate): IUtcOnlyManualRuntime<TDate>;
+  createManualRuntime(
+    initialTime: string | EpochMilliseconds | number | TDate,
+  ): IUtcOnlyManualRuntime<TDate>;
   /**
    * Create a runtime for fixed time and scheduler
    */
-  createFixedRuntime(initialTime: string | number | TDate): IUtcOnlyRuntime<TDate>;
+  createFixedRuntime(
+    initialTime: string | EpochMilliseconds | number | TDate,
+  ): IUtcOnlyRuntime<TDate>;
   /**
    * Create a runtime for sequential time and scheduler.
    *
    * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
    */
-  createSequentialRuntime(sequentialTimes: (string | number | TDate)[]): IUtcOnlyRuntime<TDate>;
+  createSequentialRuntime(
+    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+  ): IUtcOnlyRuntime<TDate>;
 }
 //#endregion

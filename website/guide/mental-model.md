@@ -12,7 +12,7 @@ Plugin (adapter)
 ```
 
 A `Runtime` is a single object that implements `IClock`, `IParser`, and
-`IScheduler` at once — `ITimeProvider.clock`/`.parser`/`.scheduler` all
+`ITimers` at once — `ITimeProvider.clock`/`.parser`/`.timers` all
 return that same instance wearing three different interface hats. The four
 runtime kinds (system, fixed, manual, sequential) share this shape and
 differ only in where the current timestamp comes from and, for manual, how

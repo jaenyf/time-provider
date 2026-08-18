@@ -1,5 +1,14 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, IScheduler } from "@time-provider/core";
+import {
+  toDuration,
+  toInstant,
+  type ITimerHandle,
+  type EpochMilliseconds,
+  type ITimers,
+  type DurationMilliseconds,
+  asEpoch,
+  asap,
+} from "@time-provider/core";
 import { EtaTrackBuilder } from "../src/eta-tracker.ts";
 import type {
   IEtaDurationSnapshot,
@@ -9,66 +18,70 @@ import type {
 } from "../src/types.ts";
 
 /*
- * Every tracker in this addon only ever touches IScheduler.setInterval/clearInterval, so a
+ * Every tracker in this addon only ever touches ITimers.every, so a
  * minimal fake capturing those calls is enough - no real runtime needed.
  */
-function fakeScheduler(): {
-  scheduler: IScheduler;
-  intervals: { callback: () => void; delay: number | undefined; handle: DueHandle }[];
-  cleared: DueHandle[];
+function fakeTimers(): {
+  timers: ITimers;
+  intervals: { callback: () => void; delay: number | undefined; handle: ITimerHandle }[];
+  cleared: ITimerHandle[];
 } {
-  const intervals: { callback: () => void; delay: number | undefined; handle: DueHandle }[] = [];
-  const cleared: DueHandle[] = [];
+  const intervals: { callback: () => void; delay: number | undefined; handle: ITimerHandle }[] = [];
+  const cleared: ITimerHandle[] = [];
   let issued = 0;
   return {
     intervals,
     cleared,
-    scheduler: {
-      setTimeout() {
+    timers: {
+      once() {
         throw new Error("not used by the eta addon");
       },
-      clearTimeout() {
-        throw new Error("not used by the eta addon");
-      },
-      setInterval(callback, millisecondsDelay) {
-        const handle = { kind: 1, id: issued++ } as unknown as DueHandle;
+      every(millisecondsDelay, callback) {
+        const handle = {
+          kind: 1,
+          id: issued++,
+          isDisposed: false,
+          dispose: () => {
+            cleared.push(handle);
+          },
+        } as ITimerHandle;
         intervals.push({ callback, delay: millisecondsDelay, handle });
         return handle;
       },
-      clearInterval(handle) {
-        cleared.push(handle);
-      },
-      setRecurring() {
+      recurring() {
         throw new Error("not used by the eta addon");
       },
-      clearRecurring() {
+      wait() {
         throw new Error("not used by the eta addon");
       },
     },
   };
 }
 
-function clock(startAt = 0): { now: () => number; set: (value: number) => void } {
+function clock(startAt = asEpoch()): {
+  now: () => EpochMilliseconds;
+  set: (value: EpochMilliseconds) => void;
+} {
   let value = startAt;
   return { now: () => value, set: (v) => (value = v) };
 }
 
 describe("EtaTrackBuilder.withKnownTotal", () => {
   test("rejects a negative total", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() => sut.withKnownTotal(-1)).toThrow(/Invalid ETA configuration/);
   });
 
   test("accepts a zero total", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() => sut.withKnownTotal(0)).not.toThrow();
   });
 
   test("arms a single-stage schedule", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut.withKnownTotal(100).start(() => {});
     expect(intervals).toHaveLength(1);
   });
@@ -76,14 +89,14 @@ describe("EtaTrackBuilder.withKnownTotal", () => {
 
 describe("EtaTrackBuilder.withStages", () => {
   test("rejects an empty stage list", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() => sut.withStages([])).toThrow(/Invalid ETA configuration/);
   });
 
   test("rejects a negative stage weight", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() =>
       sut.withStages([
         { weight: -1, total: 10 },
@@ -93,8 +106,8 @@ describe("EtaTrackBuilder.withStages", () => {
   });
 
   test("rejects stages that all have a zero weight", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() =>
       sut.withStages([
         { weight: 0, total: 10 },
@@ -104,8 +117,8 @@ describe("EtaTrackBuilder.withStages", () => {
   });
 
   test("accepts a zero-weight stage alongside at least one positive-weight stage", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     expect(() =>
       sut.withStages([
         { weight: 0, total: 10 },
@@ -115,9 +128,9 @@ describe("EtaTrackBuilder.withStages", () => {
   });
 
   test("normalizes weights by their sum, not by requiring them to already sum to 1", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const time = clock(0);
-    const sut = new EtaTrackBuilder(scheduler, time.now);
+    const { timers, intervals } = fakeTimers();
+    const time = clock(asEpoch());
+    const sut = new EtaTrackBuilder(timers, time.now);
     let latest: IStagedEtaProgressSnapshot | undefined;
     const tracker = sut
       .withStages([
@@ -135,29 +148,31 @@ describe("EtaTrackBuilder.withStages", () => {
 
 describe("EtaTrackBuilder.withEstimatedDuration", () => {
   test("rejects a negative duration", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
-    expect(() => sut.withEstimatedDuration(-1)).toThrow(/Invalid ETA configuration/);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
+    expect(() => sut.withEstimatedDuration(-1 as DurationMilliseconds)).toThrow(
+      /Invalid ETA configuration/,
+    );
   });
 
   test("accepts a zero duration", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
-    expect(() => sut.withEstimatedDuration(0)).not.toThrow();
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
+    expect(() => sut.withEstimatedDuration(asap())).not.toThrow();
   });
 });
 
 describe("ProgressEtaTracker", () => {
   test("arms setInterval with the configured notification interval, defaulting to 1000ms", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut.withKnownTotal(100).start(() => {});
     expect(intervals[0]!.delay).toBe(1000);
   });
 
   test("withNotificationInterval overrides the default", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut
       .withKnownTotal(100)
       .withNotificationInterval(250)
@@ -166,8 +181,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("withNotificationInterval clamps a negative value to 0", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut
       .withKnownTotal(100)
       .withNotificationInterval(-500)
@@ -176,43 +191,43 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("withNotificationInterval/withAlgorithm are chainable and return the same builder", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     const builder = sut.withKnownTotal(100);
     expect(builder.withNotificationInterval(500)).toBe(builder);
     expect(builder.withAlgorithm("complete")).toBe(builder);
   });
 
   test("withAlgorithm selects which rate algorithm estimates the completion rate", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const time = clock(0);
+    const { timers, intervals } = fakeTimers();
+    const time = clock(asEpoch());
 
     // "complete" averages the whole history, so a slow start still drags a later burst down.
-    const completeSut = new EtaTrackBuilder(scheduler, time.now);
+    const completeSut = new EtaTrackBuilder(timers, time.now);
     let completeSnapshot: IEtaProgressSnapshot | undefined;
     const completeTracker = completeSut
       .withKnownTotal(100)
       .withAlgorithm("complete")
       .start((s) => (completeSnapshot = s));
-    time.set(20_000);
+    time.set(toInstant({ milliseconds: 20_000 }));
     completeTracker.progressTo(20); // an early burst: 0.2/ms in isolation
-    time.set(40_000);
+    time.set(toInstant({ milliseconds: 40_000 }));
     completeTracker.progressTo(90); // then a much slower stretch
     intervals[intervals.length - 1]!.callback();
     const completeRate = completeSnapshot!.rate!;
 
     // "windowed" only looks at the last 10s, so the early burst falls out of its window.
-    const { scheduler: scheduler2, intervals: intervals2 } = fakeScheduler();
-    const time2 = clock(0);
-    const windowedSut = new EtaTrackBuilder(scheduler2, time2.now);
+    const { timers: timers2, intervals: intervals2 } = fakeTimers();
+    const time2 = clock(asEpoch());
+    const windowedSut = new EtaTrackBuilder(timers2, time2.now);
     let windowedSnapshot: IEtaProgressSnapshot | undefined;
     const windowedTracker = windowedSut
       .withKnownTotal(100)
       .withAlgorithm("windowed")
       .start((s) => (windowedSnapshot = s));
-    time2.set(20_000);
+    time2.set(toInstant({ milliseconds: 20_000 }));
     windowedTracker.progressTo(20);
-    time2.set(40_000);
+    time2.set(toInstant({ milliseconds: 40_000 }));
     windowedTracker.progressTo(90);
     intervals2[intervals2.length - 1]!.callback();
     const windowedRate = windowedSnapshot!.rate!;
@@ -221,8 +236,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("progress() adds a chunk to the amount of work completed", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let latest: IEtaProgressSnapshot | undefined;
     const tracker = sut.withKnownTotal(100).start((s) => (latest = s));
     tracker.progress(10);
@@ -232,8 +247,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("progressTo() replaces the amount of work completed outright", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let latest: IEtaProgressSnapshot | undefined;
     const tracker = sut.withKnownTotal(100).start((s) => (latest = s));
     tracker.progress(50);
@@ -243,8 +258,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("progress()/progressTo() never notify by themselves - only the interval tick does", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let notifications = 0;
     const tracker = sut.withKnownTotal(100).start(() => notifications++);
     tracker.progress(10);
@@ -253,8 +268,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("each interval tick notifies once, with status in-progress", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     const snapshots: IEtaProgressSnapshot[] = [];
     sut.withKnownTotal(100).start((s) => snapshots.push(s));
     intervals[0]!.callback();
@@ -264,8 +279,8 @@ describe("ProgressEtaTracker", () => {
   });
 
   test("a zero-total stage always reads as fully done, regardless of what's reported", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let latest: IEtaProgressSnapshot | undefined;
     const tracker = sut.withKnownTotal(0).start((s) => (latest = s));
     tracker.progress(0);
@@ -278,8 +293,8 @@ describe("ProgressEtaTracker", () => {
     test("throws when called on the last (or only) stage", () => {
       // withKnownTotal's tracker is typed as IProgressEtaTracker (no nextStage), but it's backed
       // by the same concrete class as withStages's - see ProgressEtaTracker's doc comment.
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       const tracker = sut.withKnownTotal(100).start(() => {}) as unknown as {
         nextStage(): void;
       };
@@ -287,8 +302,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("resets progress to 0 against the new stage", () => {
-      const { scheduler, intervals } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers, intervals } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let latest: IStagedEtaProgressSnapshot | undefined;
       const tracker = sut
         .withStages([
@@ -305,8 +320,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("throws once the stage advanced by a prior nextStage() call is the last one", () => {
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       const tracker = sut
         .withStages([
           { weight: 1, total: 10 },
@@ -322,9 +337,9 @@ describe("ProgressEtaTracker", () => {
       // transition *before* folding its weight into completedWeight - doing it the other way
       // round double-counts the finishing stage's contribution in the recorded sample, which
       // silently doubles the resulting rate (and therefore halves the estimated remaining time).
-      const { scheduler, intervals } = fakeScheduler();
-      const time = clock(0);
-      const sut = new EtaTrackBuilder(scheduler, time.now);
+      const { timers, intervals } = fakeTimers();
+      const time = clock(asEpoch());
+      const sut = new EtaTrackBuilder(timers, time.now);
       let latest: IStagedEtaProgressSnapshot | undefined;
       const tracker = sut
         .withStages([
@@ -335,7 +350,7 @@ describe("ProgressEtaTracker", () => {
         .start((s) => (latest = s));
 
       tracker.progressTo(10); // stage 0 fully done, at t=0
-      time.set(1000);
+      time.set(toInstant({ milliseconds: 1000 }));
       tracker.nextStage(); // transition recorded at t=1000: overall must read as 0.5, not 1.0
 
       intervals[0]!.callback();
@@ -347,8 +362,8 @@ describe("ProgressEtaTracker", () => {
 
   describe("done()", () => {
     test("snaps to 100% even if less was actually reported", () => {
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let latest: IEtaProgressSnapshot | undefined;
       const tracker = sut.withKnownTotal(100).start((s) => (latest = s));
       tracker.progressTo(30);
@@ -361,8 +376,8 @@ describe("ProgressEtaTracker", () => {
     test("snaps currentStageIndex to the last stage, regardless of which stage was current", () => {
       // Regression test: done() must move currentStageIndex to the last stage - otherwise the
       // final snapshot reports an earlier stage index while the job as a whole reads 100% done.
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let latest: IStagedEtaProgressSnapshot | undefined;
       const tracker = sut
         .withStages([
@@ -378,8 +393,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("clears the interval and sends exactly one final notification", () => {
-      const { scheduler, intervals, cleared } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers, intervals, cleared } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let notifications = 0;
       const tracker = sut.withKnownTotal(100).start(() => notifications++);
       tracker.done();
@@ -388,8 +403,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("is idempotent - calling done() again is a no-op", () => {
-      const { scheduler, cleared } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers, cleared } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let notifications = 0;
       const tracker = sut.withKnownTotal(100).start(() => notifications++);
       tracker.done();
@@ -399,8 +414,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("calling abandon() after done() is also a no-op", () => {
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let notifications = 0;
       let latest: IEtaProgressSnapshot | undefined;
       const tracker = sut.withKnownTotal(100).start((s) => {
@@ -416,8 +431,8 @@ describe("ProgressEtaTracker", () => {
 
   describe("abandon()", () => {
     test("reports the last known state as-is, without snapping to 100%", () => {
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let latest: IEtaProgressSnapshot | undefined;
       const tracker = sut.withKnownTotal(100).start((s) => (latest = s));
       tracker.progressTo(37);
@@ -428,16 +443,16 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("forces eta/remainingMilliseconds to undefined on the final snapshot, but keeps rate", () => {
-      const { scheduler, intervals } = fakeScheduler();
-      const time = clock(0);
-      const sut = new EtaTrackBuilder(scheduler, time.now);
+      const { timers, intervals } = fakeTimers();
+      const time = clock(asEpoch());
+      const sut = new EtaTrackBuilder(timers, time.now);
       let latest: IEtaProgressSnapshot | undefined;
       const tracker = sut
         .withKnownTotal(100)
         .withAlgorithm("complete")
         .start((s) => (latest = s));
       tracker.progressTo(10);
-      time.set(1000);
+      time.set(toInstant({ milliseconds: 1000 }));
       intervals[0]!.callback();
       tracker.progressTo(50);
       tracker.abandon();
@@ -449,8 +464,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("clears the interval and sends exactly one final notification", () => {
-      const { scheduler, intervals, cleared } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers, intervals, cleared } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let notifications = 0;
       const tracker = sut.withKnownTotal(100).start(() => notifications++);
       tracker.abandon();
@@ -459,8 +474,8 @@ describe("ProgressEtaTracker", () => {
     });
 
     test("is idempotent - calling abandon() again is a no-op", () => {
-      const { scheduler } = fakeScheduler();
-      const sut = new EtaTrackBuilder(scheduler, () => 0);
+      const { timers } = fakeTimers();
+      const sut = new EtaTrackBuilder(timers, () => asEpoch());
       let notifications = 0;
       const tracker = sut.withKnownTotal(100).start(() => notifications++);
       tracker.abandon();
@@ -472,46 +487,46 @@ describe("ProgressEtaTracker", () => {
 
 describe("DurationEtaTracker", () => {
   test("arms setInterval with the configured notification interval, defaulting to 1000ms", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
-    sut.withEstimatedDuration(5000).start(() => {});
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
+    sut.withEstimatedDuration(toDuration({ milliseconds: 5000 })).start(() => {});
     expect(intervals[0]!.delay).toBe(1000);
   });
 
   test("withNotificationInterval overrides the default", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut
-      .withEstimatedDuration(5000)
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
       .withNotificationInterval(200)
       .start(() => {});
     expect(intervals[0]!.delay).toBe(200);
   });
 
   test("withNotificationInterval clamps a negative value to 0", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     sut
-      .withEstimatedDuration(5000)
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
       .withNotificationInterval(-1)
       .start(() => {});
     expect(intervals[0]!.delay).toBe(0);
   });
 
   test("withNotificationInterval is chainable and returns the same builder", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
-    const builder = sut.withEstimatedDuration(5000);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
+    const builder = sut.withEstimatedDuration(toDuration({ milliseconds: 5000 }));
     expect(builder.withNotificationInterval(500)).toBe(builder);
   });
 
   test("eta is fixed at startTime + expectedDurationMilliseconds from the very first tick", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const time = clock(1000);
-    const sut = new EtaTrackBuilder(scheduler, time.now);
+    const { timers, intervals } = fakeTimers();
+    const time = clock(toInstant({ milliseconds: 1000 }));
+    const sut = new EtaTrackBuilder(timers, time.now);
     let latest: IEtaDurationSnapshot | undefined;
-    sut.withEstimatedDuration(5000).start((s) => (latest = s));
-    time.set(2000);
+    sut.withEstimatedDuration(toDuration({ milliseconds: 5000 })).start((s) => (latest = s));
+    time.set(toInstant({ milliseconds: 2000 }));
     intervals[0]!.callback();
     expect(latest!.status).toBe("in-progress");
     expect(latest!.startTime).toBe(1000);
@@ -521,25 +536,27 @@ describe("DurationEtaTracker", () => {
   });
 
   test("eta stays fixed across multiple ticks", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const time = clock(0);
-    const sut = new EtaTrackBuilder(scheduler, time.now);
+    const { timers, intervals } = fakeTimers();
+    const time = clock(asEpoch());
+    const sut = new EtaTrackBuilder(timers, time.now);
     const etas: (number | undefined)[] = [];
-    sut.withEstimatedDuration(5000).start((s) => etas.push(s.eta));
-    time.set(1000);
+    sut.withEstimatedDuration(toDuration({ milliseconds: 5000 })).start((s) => etas.push(s.eta));
+    time.set(toInstant({ milliseconds: 1000 }));
     intervals[0]!.callback();
-    time.set(2000);
+    time.set(toInstant({ milliseconds: 2000 }));
     intervals[0]!.callback();
     expect(etas).toEqual([5000, 5000]);
   });
 
   test("done() snaps eta to the completion time, with a zero remainingMilliseconds", () => {
-    const { scheduler } = fakeScheduler();
-    const time = clock(0);
-    const sut = new EtaTrackBuilder(scheduler, time.now);
+    const { timers } = fakeTimers();
+    const time = clock(asEpoch());
+    const sut = new EtaTrackBuilder(timers, time.now);
     let latest: IEtaDurationSnapshot | undefined;
-    const tracker = sut.withEstimatedDuration(5000).start((s) => (latest = s));
-    time.set(2000); // finished early
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start((s) => (latest = s));
+    time.set(toInstant({ milliseconds: 2000 })); // finished early
     tracker.done();
     expect(latest!.status).toBe("done");
     expect(latest!.eta).toBe(2000);
@@ -547,30 +564,36 @@ describe("DurationEtaTracker", () => {
   });
 
   test("done() clears the interval and sends exactly one final notification", () => {
-    const { scheduler, intervals, cleared } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals, cleared } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let notifications = 0;
-    const tracker = sut.withEstimatedDuration(5000).start(() => notifications++);
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start(() => notifications++);
     tracker.done();
     expect(cleared).toEqual([intervals[0]!.handle]);
     expect(notifications).toBe(1);
   });
 
   test("done() is idempotent", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let notifications = 0;
-    const tracker = sut.withEstimatedDuration(5000).start(() => notifications++);
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start(() => notifications++);
     tracker.done();
     tracker.done();
     expect(notifications).toBe(1);
   });
 
   test("abandon() forces eta/remainingMilliseconds to undefined - nothing left to estimate", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let latest: IEtaDurationSnapshot | undefined;
-    const tracker = sut.withEstimatedDuration(5000).start((s) => (latest = s));
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start((s) => (latest = s));
     tracker.abandon();
     expect(latest!.status).toBe("abandoned");
     expect(latest!.eta).toBeUndefined();
@@ -578,20 +601,24 @@ describe("DurationEtaTracker", () => {
   });
 
   test("abandon() clears the interval and sends exactly one final notification", () => {
-    const { scheduler, intervals, cleared } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers, intervals, cleared } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let notifications = 0;
-    const tracker = sut.withEstimatedDuration(5000).start(() => notifications++);
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start(() => notifications++);
     tracker.abandon();
     expect(cleared).toEqual([intervals[0]!.handle]);
     expect(notifications).toBe(1);
   });
 
   test("abandon() is idempotent, including after done()", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaTrackBuilder(scheduler, () => 0);
+    const { timers } = fakeTimers();
+    const sut = new EtaTrackBuilder(timers, () => asEpoch());
     let notifications = 0;
-    const tracker = sut.withEstimatedDuration(5000).start(() => notifications++);
+    const tracker = sut
+      .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
+      .start(() => notifications++);
     tracker.done();
     tracker.abandon();
     expect(notifications).toBe(1);
@@ -603,8 +630,8 @@ describe("DurationEtaTracker", () => {
  * that backs withStages's IStagedProgressEtaTracker - see ProgressEtaTracker's doc comment.
  */
 test("withKnownTotal's tracker structurally satisfies IProgressEtaTracker", () => {
-  const { scheduler } = fakeScheduler();
-  const sut = new EtaTrackBuilder(scheduler, () => 0);
+  const { timers } = fakeTimers();
+  const sut = new EtaTrackBuilder(timers, () => asEpoch());
   const tracker: IProgressEtaTracker = sut.withKnownTotal(100).start(() => {});
   expect(typeof tracker.progress).toBe("function");
   expect(typeof tracker.progressTo).toBe("function");

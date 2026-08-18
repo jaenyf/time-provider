@@ -4,12 +4,15 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
 } from "@time-provider/core/deterministic";
-import type { TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 import dayjs from "dayjs";
 
 class FixedRuntime extends BaseFixedRuntime<dayjs.Dayjs> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | dayjs.Dayjs) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | dayjs.Dayjs,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
 }
@@ -17,14 +20,17 @@ class FixedRuntime extends BaseFixedRuntime<dayjs.Dayjs> {
 class SequentialRuntime extends BaseSequentialRuntime<dayjs.Dayjs> {
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | dayjs.Dayjs)[],
+    sequentialTimes: (string | EpochMilliseconds | number | dayjs.Dayjs)[],
   ) {
     super(localTimezone, sequentialTimes, RuntimeHelper);
   }
 }
 
 class ManualRuntime extends BaseManualRuntime<dayjs.Dayjs> {
-  constructor(localTimezone: TimezoneDefinition, fixedTime: string | number | dayjs.Dayjs) {
+  constructor(
+    localTimezone: TimezoneDefinition,
+    fixedTime: string | EpochMilliseconds | number | dayjs.Dayjs,
+  ) {
     super(localTimezone, fixedTime, RuntimeHelper);
   }
   protected advanceYears(time: dayjs.Dayjs, years: number): dayjs.Dayjs {

@@ -1,32 +1,28 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, IScheduler } from "@time-provider/core";
+import { asEpoch, toInstant, type ITimerHandle, type ITimers } from "@time-provider/core";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 import { EtaTrackBuilder } from "../src/eta-tracker.ts";
 import type { IEtaDurationSnapshot } from "../src/types.ts";
 
 function fakeScheduler(): {
-  scheduler: IScheduler;
+  timers: ITimers;
   intervals: { callback: () => void; delay: number | undefined }[];
 } {
   const intervals: { callback: () => void; delay: number | undefined }[] = [];
   return {
     intervals,
-    scheduler: {
-      setTimeout() {
+    timers: {
+      once() {
         throw new Error("not used by the eta addon");
       },
-      clearTimeout() {
-        throw new Error("not used by the eta addon");
-      },
-      setInterval(callback, millisecondsDelay) {
+      every(millisecondsDelay, callback) {
         intervals.push({ callback, delay: millisecondsDelay });
-        return {} as DueHandle;
+        return {} as ITimerHandle;
       },
-      clearInterval() {},
-      setRecurring() {
+      recurring() {
         throw new Error("not used by the eta addon");
       },
-      clearRecurring() {
+      wait() {
         throw new Error("not used by the eta addon");
       },
     },
@@ -35,14 +31,14 @@ function fakeScheduler(): {
 
 describe("EtaScheduler", () => {
   test("estimate() returns an EtaTrackBuilder", () => {
-    const { scheduler } = fakeScheduler();
-    const sut = new EtaScheduler(scheduler, () => 0);
+    const { timers } = fakeScheduler();
+    const sut = new EtaScheduler(timers, () => asEpoch());
     expect(sut.estimate()).toBeInstanceOf(EtaTrackBuilder);
   });
 
   test("wires the builder to its own scheduler", () => {
-    const { scheduler, intervals } = fakeScheduler();
-    const sut = new EtaScheduler(scheduler, () => 0);
+    const { timers, intervals } = fakeScheduler();
+    const sut = new EtaScheduler(timers, () => asEpoch());
     sut
       .estimate()
       .withEstimatedDuration(1000)
@@ -51,9 +47,9 @@ describe("EtaScheduler", () => {
   });
 
   test("wires the builder to its own (live) timestampNow, read fresh on every estimate()", () => {
-    const { scheduler, intervals } = fakeScheduler();
+    const { timers, intervals } = fakeScheduler();
     let now = 42;
-    const sut = new EtaScheduler(scheduler, () => now);
+    const sut = new EtaScheduler(timers, () => toInstant({ milliseconds: now }));
     const first: IEtaDurationSnapshot[] = [];
     sut
       .estimate()

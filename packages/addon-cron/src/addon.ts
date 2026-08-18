@@ -12,7 +12,7 @@ function createAddon<TDate>(): IDeterministicAddon<TDate, WithCronApi> {
         runtime,
         "cron",
         new CronScheduler(
-          runtime.scheduler,
+          runtime.timers,
           () => runtime.clock.timestampNow(),
           timezone,
           runtime.calendarScheme,

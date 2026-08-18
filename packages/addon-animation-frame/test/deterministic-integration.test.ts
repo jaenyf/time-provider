@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { BaseManualRuntime } from "@time-provider/core/deterministic";
+import { BaseManualRuntime, toInstant } from "@time-provider/core/deterministic";
 import type { ITimeConverter } from "@time-provider/core";
 import { addon, createAddon } from "../src/deterministic.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
@@ -12,7 +12,7 @@ import type { WithAnimationFrameApi } from "../src/types.ts";
  * engine underneath it to be exercised at all.
  */
 const identityConverter: ITimeConverter<number> = {
-  convertToTimestamp: (time) => Number(time),
+  convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };

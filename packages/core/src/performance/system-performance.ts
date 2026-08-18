@@ -1,4 +1,6 @@
+import { toDuration, toInstant } from "../helpers/branded-types.ts";
 import type {
+  EpochMilliseconds,
   IPerformance,
   IPerformanceEntry,
   IPerformanceMark,
@@ -12,20 +14,20 @@ import type {
  * Pass-through for the system performance API
  */
 export class SystemPerformance implements IPerformance {
-  now = () => performance.now();
-  get timeOrigin(): number {
-    return performance.timeOrigin;
+  now = () => toDuration({ milliseconds: performance.now() });
+  get timeOrigin(): EpochMilliseconds {
+    return toInstant({ milliseconds: performance.timeOrigin });
   }
-  getEntries = () => performance.getEntries() as IPerformanceEntry[];
+  getEntries = () => performance.getEntries() as unknown as IPerformanceEntry[];
   getEntriesByName = (
     name: string,
     entryType?: PerformanceEntryType,
   ): readonly IPerformanceEntry[] =>
-    performance.getEntriesByName(name, entryType) as IPerformanceEntry[];
+    performance.getEntriesByName(name, entryType) as unknown as IPerformanceEntry[];
   getEntriesByType = (entryType: PerformanceEntryType): readonly IPerformanceEntry[] =>
-    performance.getEntriesByType(entryType) as IPerformanceEntry[];
+    performance.getEntriesByType(entryType) as unknown as IPerformanceEntry[];
   mark = (name: string, options?: IPerformanceMarkOptions): IPerformanceMark =>
-    performance.mark(name, options) as IPerformanceMark;
+    performance.mark(name, options) as unknown as IPerformanceMark;
   measure = (
     name: string,
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
@@ -33,7 +35,7 @@ export class SystemPerformance implements IPerformance {
     performance.measure(
       name,
       startMarkOrOptions as Parameters<typeof performance.measure>[1],
-    ) as IPerformanceMeasure;
+    ) as unknown as IPerformanceMeasure;
   clearMarks = (name?: string): void => performance.clearMarks(name);
   clearMeasures = (name?: string): void => performance.clearMeasures(name);
 }

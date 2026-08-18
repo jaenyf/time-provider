@@ -1,7 +1,6 @@
-# Deterministic Scheduler
+# Deterministic Timers
 
-`IScheduler` exposes the familiar `setTimeout`/`clearTimeout`/`setInterval`/
-`clearInterval` shape, but when each callback runs depends entirely on the
+`ITimers` exposes the `once`/`every`/`wait`/`recurring` shape, but when each callback runs depends entirely on the
 clock strategy backing it:
 
 - **System** — callbacks run asynchronously, via real native timers, exactly
@@ -21,9 +20,9 @@ This is what makes manual/sequential tests deterministic without `await`,
 call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
-`setRecurring` (see [IScheduler](/api/scheduler)) shares a heap with
-`setTimeout`/`setInterval`, so it fires in the same true chronological order
-as the other two. A due `setRecurring` entry is pulled out of the heap
+`recurring` (see [ITimers](/api/timers)) shares a heap with
+`once`/`every`, so it fires in the same true chronological order
+as the other two. A due `recurring` entry is pulled out of the heap
 before its run happens, and only reinserted afterward if the run's return
 value is actually rearming it. That's what keeps it safe for the run to
 itself schedule new work (on a manual/sequential clock, that reentrantly
@@ -32,7 +31,7 @@ while its own fate is still being decided.
 
 ## Implementation notes
 
-Internally, `setTimeout`/`setInterval` insert into a binary heap ordered by
+Internally, `once`/`every` insert into a binary heap ordered by
 due time, then check only the heap's root for firing immediately — not the
 whole pending set, since nothing already pending can have newly become due
 from an insert alone. Advancing time drains the heap from the root for as

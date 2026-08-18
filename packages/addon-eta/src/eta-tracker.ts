@@ -1,4 +1,10 @@
-import type { DueHandle, IScheduler } from "@time-provider/core";
+import {
+  type ITimerHandle,
+  type DurationMilliseconds,
+  type EpochMilliseconds,
+  type ITimers,
+  epochArithmetic,
+} from "@time-provider/core";
 import { createRateEstimator, type IRateEstimator } from "./rate-estimator.ts";
 import { EtaDurationSnapshot, StagedEtaProgressSnapshot } from "./eta-snapshot.ts";
 import type {
@@ -16,7 +22,8 @@ import type {
   IProgressEtaTracker,
 } from "./types.ts";
 
-const DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS = 1000;
+const DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS: DurationMilliseconds =
+  1000 as DurationMilliseconds;
 const DEFAULT_ALGORITHM: EtaRateAlgorithm = "windowed";
 
 function throwInvalidEtaConfig(reason: string): never {
@@ -56,34 +63,32 @@ function stageFraction(stage: NormalizedStage, completed: number): number {
  * exposed through two narrower public types depending on which entry point built it.
  */
 class ProgressEtaTracker implements IStagedProgressEtaTracker {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timestampNow: () => EpochMilliseconds;
   #stages: readonly NormalizedStage[];
   #notify: (snapshot: IStagedEtaProgressSnapshot) => void;
-  #startTime: number;
+  #startTime: EpochMilliseconds;
   #currentStageIndex = 0;
   #stageCompleted = 0;
   #completedWeight = 0;
   #status: "in-progress" | "done" | "abandoned" = "in-progress";
   #rateEstimator: IRateEstimator;
-  #dueHandle: DueHandle;
+  #timerHandle: ITimerHandle;
 
   constructor(
-    scheduler: IScheduler,
-    timestampNow: () => number,
+    timers: ITimers,
+    timestampNow: () => EpochMilliseconds,
     stages: readonly NormalizedStage[],
-    notificationIntervalMilliseconds: number,
+    notificationIntervalMilliseconds: DurationMilliseconds,
     algorithm: EtaRateAlgorithm,
     notify: (snapshot: IStagedEtaProgressSnapshot) => void,
   ) {
-    this.#scheduler = scheduler;
     this.#timestampNow = timestampNow;
     this.#stages = stages;
     this.#notify = notify;
     this.#startTime = timestampNow();
     this.#rateEstimator = createRateEstimator(algorithm);
     this.#rateEstimator.addSample(this.#startTime, 0);
-    this.#dueHandle = scheduler.setInterval(() => this.#tick(), notificationIntervalMilliseconds);
+    this.#timerHandle = timers.every(notificationIntervalMilliseconds, () => this.#tick());
   }
 
   #overallFraction(): number {
@@ -125,7 +130,7 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
       return;
     }
     this.#status = status;
-    this.#scheduler.clearInterval(this.#dueHandle);
+    this.#timerHandle.dispose();
     this.#notify(this.#buildSnapshot(status));
   }
 
@@ -170,24 +175,25 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
 }
 
 class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgressEtaTrackBuilder {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timers: ITimers;
+  #timestampNow: () => EpochMilliseconds;
   #stages: readonly NormalizedStage[];
   #notificationIntervalMilliseconds = DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS;
   #algorithm: EtaRateAlgorithm = DEFAULT_ALGORITHM;
 
   constructor(
-    scheduler: IScheduler,
-    timestampNow: () => number,
+    timers: ITimers,
+    timestampNow: () => EpochMilliseconds,
     stages: readonly NormalizedStage[],
   ) {
-    this.#scheduler = scheduler;
+    this.#timers = timers;
     this.#timestampNow = timestampNow;
     this.#stages = stages;
   }
 
-  withNotificationInterval(milliseconds: number): this {
-    this.#notificationIntervalMilliseconds = milliseconds < 0 ? 0 : milliseconds;
+  withNotificationInterval(milliseconds: DurationMilliseconds): this {
+    this.#notificationIntervalMilliseconds =
+      milliseconds < 0 ? (0 as DurationMilliseconds) : milliseconds;
     return this;
   }
 
@@ -200,7 +206,7 @@ class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgre
   start(notify: (snapshot: IStagedEtaProgressSnapshot) => void): IStagedProgressEtaTracker;
   start(notify: (snapshot: never) => void): IStagedProgressEtaTracker {
     return new ProgressEtaTracker(
-      this.#scheduler,
+      this.#timers,
       this.#timestampNow,
       this.#stages,
       this.#notificationIntervalMilliseconds,
@@ -211,32 +217,28 @@ class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgre
 }
 
 class DurationEtaTracker implements IDurationEtaTracker {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timestampNow: () => EpochMilliseconds;
   #notify: (snapshot: IEtaDurationSnapshot) => void;
-  #startTime: number;
-  #eta: number;
+  #startTime: EpochMilliseconds;
+  #eta: EpochMilliseconds;
   #status: "in-progress" | "done" | "abandoned" = "in-progress";
-  #dueHandle: DueHandle;
+  #timerHandle: ITimerHandle;
 
   constructor(
-    scheduler: IScheduler,
-    timestampNow: () => number,
-    expectedDurationMilliseconds: number,
-    notificationIntervalMilliseconds: number,
+    timers: ITimers,
+    timestampNow: () => EpochMilliseconds,
+    expectedDurationMilliseconds: DurationMilliseconds,
+    notificationIntervalMilliseconds: DurationMilliseconds,
     notify: (snapshot: IEtaDurationSnapshot) => void,
   ) {
-    this.#scheduler = scheduler;
     this.#timestampNow = timestampNow;
     this.#notify = notify;
     this.#startTime = timestampNow();
-    this.#eta = this.#startTime + expectedDurationMilliseconds;
-    this.#dueHandle = scheduler.setInterval(
-      () =>
-        this.#notify(
-          new EtaDurationSnapshot("in-progress", this.#startTime, timestampNow(), this.#eta),
-        ),
-      notificationIntervalMilliseconds,
+    this.#eta = epochArithmetic.addDuration(this.#startTime, expectedDurationMilliseconds);
+    this.#timerHandle = timers.every(notificationIntervalMilliseconds, () =>
+      this.#notify(
+        new EtaDurationSnapshot("in-progress", this.#startTime, timestampNow(), this.#eta),
+      ),
     );
   }
 
@@ -245,7 +247,8 @@ class DurationEtaTracker implements IDurationEtaTracker {
       return;
     }
     this.#status = status;
-    this.#scheduler.clearInterval(this.#dueHandle);
+    this.#timerHandle.dispose();
+
     const now = this.#timestampNow();
     const eta = status === "done" ? now : undefined;
     this.#notify(new EtaDurationSnapshot(status, this.#startTime, now, eta));
@@ -261,29 +264,30 @@ class DurationEtaTracker implements IDurationEtaTracker {
 }
 
 class DurationEtaTrackBuilder implements IDurationEtaTrackBuilder {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
-  #expectedDurationMilliseconds: number;
+  #timers: ITimers;
+  #timestampNow: () => EpochMilliseconds;
+  #expectedDurationMilliseconds: DurationMilliseconds;
   #notificationIntervalMilliseconds = DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS;
 
   constructor(
-    scheduler: IScheduler,
-    timestampNow: () => number,
-    expectedDurationMilliseconds: number,
+    timers: ITimers,
+    timestampNow: () => EpochMilliseconds,
+    expectedDurationMilliseconds: DurationMilliseconds,
   ) {
-    this.#scheduler = scheduler;
+    this.#timers = timers;
     this.#timestampNow = timestampNow;
     this.#expectedDurationMilliseconds = expectedDurationMilliseconds;
   }
 
-  withNotificationInterval(milliseconds: number): this {
-    this.#notificationIntervalMilliseconds = milliseconds < 0 ? 0 : milliseconds;
+  withNotificationInterval(milliseconds: DurationMilliseconds): this {
+    this.#notificationIntervalMilliseconds =
+      milliseconds < 0 ? (0 as DurationMilliseconds) : milliseconds;
     return this;
   }
 
   start(notify: (snapshot: IEtaDurationSnapshot) => void): IDurationEtaTracker {
     return new DurationEtaTracker(
-      this.#scheduler,
+      this.#timers,
       this.#timestampNow,
       this.#expectedDurationMilliseconds,
       this.#notificationIntervalMilliseconds,
@@ -293,11 +297,11 @@ class DurationEtaTrackBuilder implements IDurationEtaTrackBuilder {
 }
 
 export class EtaTrackBuilder implements IEtaTrackBuilder {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timers: ITimers;
+  #timestampNow: () => EpochMilliseconds;
 
-  constructor(scheduler: IScheduler, timestampNow: () => number) {
-    this.#scheduler = scheduler;
+  constructor(timers: ITimers, timestampNow: () => EpochMilliseconds) {
+    this.#timers = timers;
     this.#timestampNow = timestampNow;
   }
 
@@ -305,25 +309,23 @@ export class EtaTrackBuilder implements IEtaTrackBuilder {
     if (!(total >= 0)) {
       throwInvalidEtaConfig(`total must be >= 0 (was ${total})`);
     }
-    return new ProgressEtaTrackBuilder(this.#scheduler, this.#timestampNow, [{ weight: 1, total }]);
+    return new ProgressEtaTrackBuilder(this.#timers, this.#timestampNow, [{ weight: 1, total }]);
   }
 
   withStages(stages: readonly IEtaStage[]): IStagedProgressEtaTrackBuilder {
-    return new ProgressEtaTrackBuilder(
-      this.#scheduler,
-      this.#timestampNow,
-      normalizeStages(stages),
-    );
+    return new ProgressEtaTrackBuilder(this.#timers, this.#timestampNow, normalizeStages(stages));
   }
 
-  withEstimatedDuration(expectedDurationMilliseconds: number): IDurationEtaTrackBuilder {
+  withEstimatedDuration(
+    expectedDurationMilliseconds: DurationMilliseconds,
+  ): IDurationEtaTrackBuilder {
     if (!(expectedDurationMilliseconds >= 0)) {
       throwInvalidEtaConfig(
         `expectedDurationMilliseconds must be >= 0 (was ${expectedDurationMilliseconds})`,
       );
     }
     return new DurationEtaTrackBuilder(
-      this.#scheduler,
+      this.#timers,
       this.#timestampNow,
       expectedDurationMilliseconds,
     );

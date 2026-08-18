@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { DefaultCalendarScheme, type ITimeConverter } from "@time-provider/core";
+import { DefaultCalendarScheme, toInstant, type ITimeConverter } from "@time-provider/core";
 import {
   computeNextOccurrence,
   cronExpressionToSpec,
@@ -14,7 +14,7 @@ import {
  * pre-TDate-generic Gregorian/Intl behavior these tests were originally written against.
  */
 const identityConverter: ITimeConverter<number> = {
-  convertToTimestamp: (time) => Number(time),
+  convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };

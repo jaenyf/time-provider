@@ -4,14 +4,14 @@
 interface ITimeProvider<TDate> {
   get clock(): IClock<TDate>;
   get parser(): IParser<TDate>;
-  get scheduler(): IScheduler;
+  get timers(): ITimers;
   get performance(): IPerformance;
 }
 
 interface IUtcOnlyTimeProvider<TDate> {
   get clock(): IUtcOnlyClock<TDate>;
   get parser(): IUtcOnlyParser<TDate>;
-  get scheduler(): IScheduler;
+  get timers(): ITimers;
   get performance(): IPerformance;
 }
 ```

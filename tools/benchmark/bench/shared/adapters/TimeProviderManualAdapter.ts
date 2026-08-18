@@ -1,15 +1,16 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider } from "@time-provider/core/deterministic";
+import { createTimeProvider, DurationMilliseconds } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
+import { toDuration } from "@time-provider/core";
 
 export class TimeProviderManualAdapter implements ITimerAdapter {
   readonly name = "time-provider (manual)";
   readonly #delays: AdvanceDelayQueue;
   #runtime!: {
-    scheduler: {
-      setTimeout(callback: () => void, ms: number): unknown;
-      setInterval(callback: () => void, ms: number): unknown;
+    timers: {
+      once(ms: DurationMilliseconds, callback: () => void): unknown;
+      every(ms: DurationMilliseconds, callback: () => void): unknown;
     };
     clock: { utcNow(): unknown; advance(config: { milliseconds: number }): unknown };
   };
@@ -30,10 +31,10 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     return this.#runtime.clock.utcNow();
   }
   setTimeout(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.setTimeout(callback, delayMs);
+    this.#runtime.timers.once(toDuration({ milliseconds: delayMs }), callback);
   }
   setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.setInterval(callback, delayMs);
+    this.#runtime.timers.every(toDuration({ milliseconds: delayMs }), callback);
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });

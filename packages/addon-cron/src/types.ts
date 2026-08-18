@@ -1,4 +1,4 @@
-import type { DueHandle } from "@time-provider/core";
+import type { ITimerHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
@@ -32,7 +32,7 @@ export interface ICronApi<
    * day-of-week`), e.g. `"0 9 * * MON-FRI"` or `"*\/15 8-18 * * *"`.
    * @throws if `expression` is malformed.
    */
-  schedule(expression: string, callback: () => void): DueHandle;
+  schedule(expression: string, callback: () => void): ITimerHandle;
   /**
    * Schedules `callback` to run every time `spec` next matches, in the runtime's local timezone
    * (`"Etc/UTC"` for a UTC-only runtime). A JSON-friendly alternative to the cron expression
@@ -41,10 +41,10 @@ export interface ICronApi<
    * this form.
    * @throws if `spec` is malformed.
    */
-  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): DueHandle;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): ITimerHandle;
   /**
    * Cancels a schedule previously created via {@link ICronApi.schedule}. A no-op if it was
    * already cancelled.
    */
-  unschedule(handle: DueHandle): void;
+  unschedule(handle: ITimerHandle): void;
 }

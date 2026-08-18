@@ -1,6 +1,22 @@
-import { describe, expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseSystemRuntime, DefaultCalendarScheme, TimeInputValidator } from "@time-provider/core";
-import type { ICalendarScheme, ITimeConverter } from "@time-provider/core";
+import type { EpochMilliseconds, ICalendarScheme, ITimeConverter } from "@time-provider/core";
+import { asEpoch, toDuration } from "../src/helpers/branded-types.ts";
+
+class FakeRuntime extends BaseSystemRuntime<unknown> {
+  constructor(converter: ITimeConverter<unknown>) {
+    super("Etc/UTC", converter);
+  }
+  timestampNow(): EpochMilliseconds {
+    return asEpoch();
+  }
+  localNow(): unknown {
+    return 0;
+  }
+  utcNow(): unknown {
+    return 0;
+  }
+}
 
 describe("TimeInputValidator", () => {
   describe("assertValid", () => {
@@ -18,24 +34,9 @@ describe("TimeInputValidator", () => {
 });
 
 describe("BaseRuntime calendar", () => {
-  class FakeRuntime extends BaseSystemRuntime<unknown> {
-    constructor(converter: ITimeConverter<unknown>) {
-      super("Etc/UTC", converter);
-    }
-    timestampNow(): number {
-      return 0;
-    }
-    localNow(): unknown {
-      return 0;
-    }
-    utcNow(): unknown {
-      return 0;
-    }
-  }
-
   test("falls back to the shared default when the converter doesn't provide one", () => {
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => 0,
+      convertToTimestamp: () => asEpoch(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -46,7 +47,7 @@ describe("BaseRuntime calendar", () => {
 
   test("resolves the adapter once, so every read returns the same instance", () => {
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => 0,
+      convertToTimestamp: () => asEpoch(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -58,7 +59,7 @@ describe("BaseRuntime calendar", () => {
     // The fallback belongs to the runtime, not the converter - converters are typically shared
     // static classes, so a runtime must not mutate one just by being constructed.
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => 0,
+      convertToTimestamp: () => asEpoch(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -68,17 +69,51 @@ describe("BaseRuntime calendar", () => {
 
   test("returns the converter's own calendar scheme when it provides one", () => {
     const custom: ICalendarScheme<unknown> = new DefaultCalendarScheme({
-      convertToTimestamp: () => 0,
+      convertToTimestamp: () => asEpoch(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     });
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => 0,
+      convertToTimestamp: () => asEpoch(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
       calendarScheme: custom,
     };
     const sut = new FakeRuntime(converter);
     expect(sut.calendarScheme).toBe(custom);
+  });
+});
+
+describe("BaseRuntime Timers wait", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  test("aze", async () => {
+    const converter: ITimeConverter<unknown> = {
+      convertToTimestamp: () => asEpoch(),
+      convertToUtcDate: (time) => time,
+      convertToLocalDate: (_timezone, time) => time,
+    };
+    const sut = new FakeRuntime(converter);
+
+    const waitPromise = sut.wait(toDuration({ milliseconds: 1000 }));
+
+    await vi.advanceTimersByTimeAsync(999);
+
+    // The promise is still pending.
+    let resolved = false;
+    void waitPromise.then(() => {
+      resolved = true;
+    });
+
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(waitPromise).resolves.toBeUndefined();
   });
 });

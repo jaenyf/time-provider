@@ -1,6 +1,8 @@
 import {
   BaseSystemRuntime,
   BaseUtcOnlySystemPlugin,
+  toInstant,
+  type EpochMilliseconds,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
@@ -15,8 +17,8 @@ class SystemRuntime extends BaseSystemRuntime<Date> {
   utcNow(): Date {
     return new Date();
   }
-  timestampNow(): number {
-    return Date.now();
+  timestampNow(): EpochMilliseconds {
+    return toInstant({ milliseconds: Date.now() });
   }
 }
 

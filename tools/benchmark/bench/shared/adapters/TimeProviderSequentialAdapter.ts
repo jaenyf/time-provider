@@ -8,9 +8,9 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   readonly #delays: AdvanceDelayQueue;
   readonly #plannedTimestamps: number[];
   #runtime!: {
-    scheduler: {
-      setTimeout(callback: () => void, ms: number): unknown;
-      setInterval(callback: () => void, ms: number): unknown;
+    timers: {
+      once(ms: number, callback: () => void): unknown;
+      every(ms: number, callback: () => void): unknown;
     };
     clock: { utcNow(): unknown };
   };
@@ -44,10 +44,10 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     return this.#runtime.clock.utcNow();
   }
   setTimeout(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.setTimeout(callback, delayMs);
+    this.#runtime.timers.once(delayMs, callback);
   }
   setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.setInterval(callback, delayMs);
+    this.#runtime.timers.every(delayMs, callback);
   }
   advance(): void {
     this.#delays.next();
