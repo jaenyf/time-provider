@@ -1,6 +1,8 @@
+import { toInstant } from "../helpers/branded-types.ts";
 import type {
   CalendarSchemeFields,
   ComposableCalendarSchemeFields,
+  EpochMilliseconds,
   ICalendarScheme,
   ITimeConverter,
   TimezoneDefinition,
@@ -39,10 +41,10 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     this.#converter = converter;
   }
 
-  toTimestamp(date: TDate): number {
+  toTimestamp(date: TDate): EpochMilliseconds {
     return this.#converter.convertToTimestamp(date);
   }
-  fromTimestamp(timestampMs: number): TDate {
+  fromTimestamp(timestampMs: EpochMilliseconds): TDate {
     return this.#converter.convertToUtcDate(timestampMs);
   }
   minutesPerHour(): number {
@@ -135,13 +137,13 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
    * - if *both* do, it's a "fall back" overlap (`fields` occurs twice) - resolves to the earlier of
    *   the two, the first time it's valid.
    */
-  static #composeAt(fields: ComposableCalendarSchemeFields, timezone: string): number {
+  static #composeAt(fields: ComposableCalendarSchemeFields, timezone: string): EpochMilliseconds {
     const target = DefaultCalendarScheme.#fieldsAsUtcMs(fields);
     const offsetBefore = DefaultCalendarScheme.#offsetAt(target - ONE_DAY_MS, timezone);
     const offsetAfter = DefaultCalendarScheme.#offsetAt(target + ONE_DAY_MS, timezone);
 
     if (offsetBefore === offsetAfter) {
-      return target - offsetBefore;
+      return toInstant({ milliseconds: target - offsetBefore });
     }
 
     const candidateBefore = target - offsetBefore;
@@ -156,13 +158,16 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     );
 
     if (roundTripsBefore && !roundTripsAfter) {
-      return candidateBefore;
+      return toInstant({ milliseconds: candidateBefore });
     }
     if (roundTripsAfter && !roundTripsBefore) {
-      return candidateAfter;
+      return toInstant({ milliseconds: candidateAfter });
     }
-    return roundTripsBefore && roundTripsAfter
-      ? Math.min(candidateBefore, candidateAfter) // fall-back overlap: the earlier of the two.
-      : Math.max(candidateBefore, candidateAfter); // spring-forward gap: past the gap.
+    return toInstant({
+      milliseconds:
+        roundTripsBefore && roundTripsAfter
+          ? Math.min(candidateBefore, candidateAfter) // fall-back overlap: the earlier of the two.
+          : Math.max(candidateBefore, candidateAfter),
+    }); // spring-forward gap: past the gap.
   }
 }

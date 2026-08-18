@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseManualRuntime } from "@time-provider/core/deterministic";
-import type { DueHandle, ITimeConverter } from "@time-provider/core";
+import { BaseManualRuntime, toDuration } from "@time-provider/core/deterministic";
+import type { ITimerHandle, ITimeConverter } from "@time-provider/core";
+import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
-  convertToTimestamp: (time) => Number(time),
+  convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };
@@ -59,8 +60,8 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 
       const sut = new FakeManualRuntime(0);
       const fired: number[] = [];
-      const handles: DueHandle[] = uniqueDelays.map((delay) =>
-        sut.scheduler.setTimeout(() => fired.push(delay), delay),
+      const handles: ITimerHandle[] = uniqueDelays.map((delay) =>
+        sut.timers.once(toDuration({ milliseconds: delay }), () => fired.push(delay)),
       );
 
       // Cancel roughly a third of them, scattered across the whole insertion order (and so
@@ -69,7 +70,7 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
         .map((_, i) => i)
         .filter((_i) => Math.floor(random() * 3) === 0);
       for (const i of cancelledIndices) {
-        sut.scheduler.clearTimeout(handles[i]);
+        handles[i].dispose();
       }
 
       sut.advance({ milliseconds: 20000 });
@@ -85,14 +86,14 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
   test("clearing the current root while other entries remain re-seats the heap from a leaf", () => {
     const sut = new FakeManualRuntime(0);
     const fired: string[] = [];
-    const root = sut.scheduler.setTimeout(() => fired.push("a"), 1);
-    sut.scheduler.setTimeout(() => fired.push("b"), 100);
-    sut.scheduler.setTimeout(() => fired.push("c"), 50);
+    const root = sut.timers.once(toDuration({ milliseconds: 1 }), () => fired.push("a"));
+    sut.timers.once(toDuration({ milliseconds: 100 }), () => fired.push("b"));
+    sut.timers.once(toDuration({ milliseconds: 50 }), () => fired.push("c"));
 
     // "a" is the earliest-due entry (heap root) at the moment it's cleared, with two other
     // entries still pending - unlike clearing a non-root entry, there's no parent to compare
     // the replacement against here.
-    sut.scheduler.clearTimeout(root);
+    root.dispose();
 
     sut.advance({ milliseconds: 100 });
     expect(fired).toEqual(["c", "b"]);
@@ -101,19 +102,20 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
   test("clearing the root when other entries share its runAt exercises the siftDown tie-break", () => {
     const sut = new FakeManualRuntime(0);
     const fired: number[] = [];
-    const makeTimeout = (id: number) => sut.scheduler.setTimeout(() => fired.push(id), 100);
+    const makeTimeout = (id: number) =>
+      sut.timers.once(toDuration({ milliseconds: 100 }), () => fired.push(id));
 
     const root = makeTimeout(0);
     const toClear = makeTimeout(1);
     makeTimeout(2);
     makeTimeout(3);
-    sut.scheduler.clearTimeout(toClear);
+    toClear.dispose();
     makeTimeout(10);
     makeTimeout(11);
     // "0" is still the root (smallest seq among entries sharing runAt 100) when cleared, with
     // several same-runAt siblings left - the resulting re-seat has to compare same-runAt
     // children by seq to find which one moves up.
-    sut.scheduler.clearTimeout(root);
+    root.dispose();
 
     sut.advance({ milliseconds: 100 });
     expect(fired).toEqual([2, 3, 10, 11]);
@@ -133,9 +135,9 @@ describe("issue#147", () => {
       let fires = 0;
       function tick() {
         fires++;
-        sut.scheduler.setTimeout(tick, delay);
+        sut.timers.once(toDuration({ milliseconds: delay }), tick);
       }
-      sut.scheduler.setTimeout(tick, delay);
+      sut.timers.once(toDuration({ milliseconds: delay }), tick);
       return { fireCount: () => fires };
     }
 
@@ -169,7 +171,7 @@ describe("issue#147", () => {
       const sut = new FakeManualRuntime(0);
       let fires = 0;
       const delay = 1000 / 60;
-      sut.scheduler.setInterval(() => fires++, delay);
+      sut.timers.every(toDuration({ milliseconds: delay }), () => fires++);
 
       sut.advance({ milliseconds: 1000 });
 
@@ -195,10 +197,10 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setTimeout(() => {
+      sut.timers.once(toDuration({ milliseconds: 10 }), () => {
         throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 20);
+      });
+      sut.timers.once(toDuration({ milliseconds: 20 }), () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 20 })).toThrow(error);
       expect(otherFired).toBe(false);
@@ -210,11 +212,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let intervalFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setInterval(() => {
+      sut.timers.every(toDuration({ milliseconds: 10 }), () => {
         intervalFires++;
         throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+      });
+      sut.timers.once(toDuration({ milliseconds: 15 }), () => (otherFired = true));
 
       // Due at 10 within this batch - throws immediately, stopping before the timeout due at 15
       // ever gets a turn.
@@ -234,11 +236,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let recurringFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setRecurring(() => {
-        recurringFires++;
-        throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+      sut.timers.recurring(
+        () => {
+          recurringFires++;
+          throw error;
+        },
+        toDuration({ milliseconds: 10 }),
+      );
+      sut.timers.once(toDuration({ milliseconds: 15 }), () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
       expect(recurringFires).toBe(1);
@@ -263,10 +268,10 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setTimeout(() => {
+      sut.timers.once(toDuration({ milliseconds: 10 }), () => {
         throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 20);
+      });
+      sut.timers.once(toDuration({ milliseconds: 20 }), () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 20 })).not.toThrow();
       expect(otherFired).toBe(true);
@@ -281,11 +286,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let intervalFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setInterval(() => {
+      sut.timers.every(toDuration({ milliseconds: 10 }), () => {
         intervalFires++;
         throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+      });
+      sut.timers.once(toDuration({ milliseconds: 15 }), () => (otherFired = true));
 
       // Due at both 10 and 20 within the advance() below - throws twice, logged each time, and
       // the whole batch (including the unrelated timeout due at 15) still runs to completion.
@@ -304,11 +309,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let recurringFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.scheduler.setRecurring(() => {
-        recurringFires++;
-        throw error;
-      }, 10);
-      sut.scheduler.setTimeout(() => (otherFired = true), 15);
+      sut.timers.recurring(
+        () => {
+          recurringFires++;
+          throw error;
+        },
+        toDuration({ milliseconds: 10 }),
+      );
+      sut.timers.once(toDuration({ milliseconds: 15 }), () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 25 })).not.toThrow();
       expect(recurringFires).toBe(1); // never re-armed after throwing once
@@ -317,28 +325,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
     });
   });
-});
 
-describe("BaseDeterministicRuntime clearDueHandle", () => {
-  test("clearInterval does not cancel a timeout scheduled with the same runtime", () => {
-    const sut = new FakeManualRuntime(0);
-    let timeoutFired = false;
-    const timeoutHandle = sut.scheduler.setTimeout(() => (timeoutFired = true), 10);
-
-    sut.scheduler.clearInterval(timeoutHandle);
-    sut.advance({ milliseconds: 10 });
-
-    expect(timeoutFired).toBe(true);
-  });
-
-  test("clearTimeout does not cancel an interval scheduled with the same runtime", () => {
-    const sut = new FakeManualRuntime(0);
-    let intervalFireCount = 0;
-    const intervalHandle = sut.scheduler.setInterval(() => intervalFireCount++, 10);
-
-    sut.scheduler.clearTimeout(intervalHandle);
-    sut.advance({ milliseconds: 10 });
-
-    expect(intervalFireCount).toBe(1);
+  describe("clearTimer", () => {
+    test("does not throw when trying to clear a undefined native handle value", () => {
+      expect(() => {
+        const sut = new FakeManualRuntime(0);
+        //@ts-ignore : wrong cast
+        sut.clearTimer({ nativeHandle: undefined } as TimerHandle<unknown, unknown>);
+      }).not.toThrow();
+    });
   });
 });

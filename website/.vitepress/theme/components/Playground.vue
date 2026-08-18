@@ -751,7 +751,7 @@ import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/determi
 import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
-// What the Scheduler panel's own dropdown offers - one entry per IScheduler method.
+// What the Scheduler panel's own dropdown offers - one entry per ITimers method.
 type SchedulerTimerKind = "timeout" | "interval" | "recurring";
 // Plus the two addon-backed panels, which register through their own facade rather than
 // `.scheduler`, but end up in the same row list so a rebuild can clear everything at once.

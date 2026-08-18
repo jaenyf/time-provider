@@ -101,5 +101,5 @@ function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
 The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemAnimationFrameScheduler` from the
 root entry point, and `DeterministicAnimationFrameScheduler` from
-`/deterministic`, which takes the runtime's `IScheduler` and exposes a readable
+`/deterministic`, which takes the runtime's `ITimers` and exposes a readable
 and writable `hostFramesRate`.

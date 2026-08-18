@@ -6,9 +6,10 @@ import {
   DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES,
 } from "../src/calendar/default-calendar-scheme-names.ts";
 import { IntlFormatterCache } from "../src/calendar/intl-formatter-cache.ts";
+import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
-  convertToTimestamp: (time) => Number(time),
+  convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
   convertToUtcDate: (time) => Number(time),
   convertToLocalDate: (_timezone, time) => Number(time),
 };
@@ -96,7 +97,7 @@ describe("DefaultCalendarScheme", () => {
 
   test("toTimestamp/fromTimestamp delegate to the converter", () => {
     expect(sut.toTimestamp(1234)).toBe(1234);
-    expect(sut.fromTimestamp(1234)).toBe(1234);
+    expect(sut.fromTimestamp(toInstant({ milliseconds: 1234 }))).toBe(1234);
   });
 
   describe("normalize", () => {

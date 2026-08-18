@@ -101,9 +101,9 @@ a schedule created after `clock.withTimezone(...)` uses the new timezone, while 
 running keeps the timezone it started with. Wall-clock times that a DST transition skips resolve
 to the first instant past the gap, and ones it repeats resolve to the earlier of the two.
 
-A cron callback is an ordinary scheduler callback, so one that throws follows the runtime's usual
-rule (see `IScheduler`): the exception propagates in a Node-like environment, and is logged in a
-browser-like one. Either way that schedule stops, exactly as a `setRecurring` callback that throws
+A cron callback is an ordinary timer callback, so one that throws follows the runtime's usual
+rule (see `ITimers`): the exception propagates in a Node-like environment, and is logged in a
+browser-like one. Either way that schedule stops, exactly as a `recurring` timer callback that throws
 does - catch inside your own callback if a failing run shouldn't end the job.
 
 ## License

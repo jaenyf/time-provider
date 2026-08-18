@@ -5,6 +5,8 @@ import type {
   IStagedEtaProgressSnapshot,
 } from "./types.ts";
 import type { IRateEstimator } from "./rate-estimator.ts";
+import type { DurationMilliseconds, EpochMilliseconds } from "@time-provider/core";
+import { epochArithmetic } from "@time-provider/core";
 
 class Lazy<T> {
   #compute: () => T;
@@ -20,26 +22,32 @@ class Lazy<T> {
   }
 }
 
-function estimateEta(now: number, remaining: number, rate: number | undefined): number | undefined {
-  return rate !== undefined && rate > 0 ? now + remaining / rate : undefined;
+function estimateEta(
+  now: EpochMilliseconds,
+  remaining: number,
+  rate: number | undefined,
+): EpochMilliseconds | undefined {
+  return rate !== undefined && rate > 0
+    ? ((now + remaining / rate) as EpochMilliseconds)
+    : undefined;
 }
 
 export class EtaProgressSnapshot implements IEtaProgressSnapshot {
   readonly status: EtaStatus;
-  readonly startTime: number;
+  readonly startTime: EpochMilliseconds;
   readonly completed: number;
   readonly total: number;
-  readonly elapsedMilliseconds: number;
+  readonly elapsedMilliseconds: DurationMilliseconds;
   #remaining: Lazy<number>;
   #percentage: Lazy<number>;
   #rate: Lazy<number | undefined>;
-  #eta: Lazy<number | undefined>;
-  #remainingMilliseconds: Lazy<number | undefined>;
+  #eta: Lazy<EpochMilliseconds | undefined>;
+  #remainingMilliseconds: Lazy<DurationMilliseconds | undefined>;
 
   constructor(
     status: EtaStatus,
-    startTime: number,
-    now: number,
+    startTime: EpochMilliseconds,
+    now: EpochMilliseconds,
     completed: number,
     total: number,
     rateEstimator: IRateEstimator | undefined,
@@ -48,7 +56,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     this.startTime = startTime;
     this.completed = completed;
     this.total = total;
-    this.elapsedMilliseconds = now - startTime;
+    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
     this.#remaining = new Lazy(() => this.total - this.completed);
     this.#percentage = new Lazy(() => (this.total > 0 ? (this.completed / this.total) * 100 : 0));
     this.#rate = new Lazy(() => rateEstimator?.estimateRate());
@@ -59,7 +67,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     );
     this.#remainingMilliseconds = new Lazy(() => {
       const eta = this.#eta.value;
-      return eta === undefined ? undefined : eta - now;
+      return eta === undefined ? undefined : epochArithmetic.substract(eta, now);
     });
   }
 
@@ -82,10 +90,10 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
 
 export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedEtaProgressSnapshot {
   readonly status: EtaStatus;
-  readonly startTime: number;
+  readonly startTime: EpochMilliseconds;
   readonly stageCompleted: number;
   readonly stageTotal: number;
-  readonly elapsedMilliseconds: number;
+  readonly elapsedMilliseconds: DurationMilliseconds;
   readonly currentStageIndex: number;
   readonly stageCount: number;
   #stageRemaining: Lazy<number>;
@@ -96,8 +104,8 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
 
   constructor(
     status: EtaStatus,
-    startTime: number,
-    now: number,
+    startTime: EpochMilliseconds,
+    now: EpochMilliseconds,
     /** This stage's own raw completed/total - see {@link IStagedEtaProgressSnapshot}. */
     stageCompleted: number,
     stageTotal: number,
@@ -111,7 +119,7 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     this.startTime = startTime;
     this.stageCompleted = stageCompleted;
     this.stageTotal = stageTotal;
-    this.elapsedMilliseconds = now - startTime;
+    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
     this.currentStageIndex = currentStageIndex;
     this.stageCount = stageCount;
     this.#stageRemaining = new Lazy(() => this.stageTotal - this.stageCompleted);
@@ -165,16 +173,22 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
 
 export class EtaDurationSnapshot implements IEtaDurationSnapshot {
   readonly status: EtaStatus;
-  readonly startTime: number;
-  readonly elapsedMilliseconds: number;
-  readonly eta?: number;
-  readonly remainingMilliseconds?: number;
+  readonly startTime: EpochMilliseconds;
+  readonly elapsedMilliseconds: DurationMilliseconds;
+  readonly eta?: EpochMilliseconds;
+  readonly remainingMilliseconds?: DurationMilliseconds;
 
-  constructor(status: EtaStatus, startTime: number, now: number, eta: number | undefined) {
+  constructor(
+    status: EtaStatus,
+    startTime: EpochMilliseconds,
+    now: EpochMilliseconds,
+    eta: EpochMilliseconds | undefined,
+  ) {
     this.status = status;
     this.startTime = startTime;
-    this.elapsedMilliseconds = now - startTime;
+    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
     this.eta = eta;
-    this.remainingMilliseconds = eta === undefined ? undefined : eta - now;
+    this.remainingMilliseconds =
+      eta === undefined ? undefined : epochArithmetic.substract(eta, now);
   }
 }

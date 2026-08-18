@@ -1,4 +1,11 @@
-import type { DueHandle, ICalendarScheme, IScheduler } from "@time-provider/core";
+import {
+  type ITimerHandle,
+  type EpochMilliseconds,
+  type ICalendarScheme,
+  type ITimers,
+  type DurationMilliseconds,
+  toDuration,
+} from "@time-provider/core";
 import {
   computeNextOccurrence,
   parseCronExpression,
@@ -10,7 +17,7 @@ import {
 import type { ICronApi } from "./types.ts";
 
 /**
- * Implements {@link ICronApi} on top of `IScheduler.setRecurring`, re-deriving the delay to the
+ * Implements {@link ICronApi} on top of `ITimers.recurring`, re-deriving the delay to the
  * next occurrence after every run. Generic over `TDate`, delegated to `adapter` for every
  * calendar/timezone computation - see {@link ICalendarScheme} - so the same implementation backs
  * every plugin, and each one's own calendar/timezone behavior (if it diverges from the shared
@@ -21,16 +28,16 @@ export class CronScheduler<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
 > implements ICronApi<TMonthName, TWeekdayName> {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timers: ITimers;
+  #timestampNow: () => EpochMilliseconds;
   #timezone: () => string;
   #calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>;
 
   /**
-   * @param scheduler the runtime's scheduler used to run due callbacks.
+   * @param timers the runtime's scheduler used to run due callbacks.
    * @param timestampNow reads the runtime's current time, in epoch milliseconds. Side-effect-free
    * by contract - see {@link ITimestampClock.timestampNow} - which is what lets `schedule()` read
-   * it once to compute the first delay and trust that `IScheduler.setRecurring` reads the same
+   * it once to compute the first delay and trust that `ITimers.recurring` reads the same
    * "now" internally to turn that delay into an absolute run time.
    * @param timezone reads the IANA timezone cron expressions are evaluated against. Called once
    * per {@link schedule} so a schedule created after `IClock.withTimezone` uses the timezone the
@@ -39,23 +46,23 @@ export class CronScheduler<
    * @param adapter the runtime's calendar scheme - see {@link ICalendarScheme}.
    */
   constructor(
-    scheduler: IScheduler,
-    timestampNow: () => number,
+    timers: ITimers,
+    timestampNow: () => EpochMilliseconds,
     timezone: () => string,
     calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>,
   ) {
-    this.#scheduler = scheduler;
+    this.#timers = timers;
     this.#timestampNow = timestampNow;
     this.#timezone = timezone;
     this.#calendarScheme = calendarScheme;
   }
 
-  schedule(expression: string, callback: () => void): DueHandle;
-  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): DueHandle;
+  schedule(expression: string, callback: () => void): ITimerHandle;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): ITimerHandle;
   schedule(
     expressionOrSpec: string | ICronSpec<TMonthName, TWeekdayName>,
     callback: () => void,
-  ): DueHandle {
+  ): ITimerHandle {
     const calendarScheme = this.#calendarScheme;
     const timezone = this.#timezone();
     const parsed =
@@ -70,27 +77,27 @@ export class CronScheduler<
       Re-querying it there would skip every occurrence between "now" and that final target.
     */
     let lastOccurrence = calendarScheme.fromTimestamp(this.#timestampNow());
-    const nextDelay = (): number => {
+    const nextDelay = (): DurationMilliseconds => {
       const next = computeNextOccurrence(parsed, lastOccurrence, timezone, calendarScheme);
       const delay = calendarScheme.toTimestamp(next) - calendarScheme.toTimestamp(lastOccurrence);
       lastOccurrence = next;
-      return delay;
+      return toDuration({ milliseconds: delay });
     };
     /*
       `callback` is invoked without a try/catch on purpose: a throwing cron callback is just a
       throwing scheduler callback, and the runtime already has one policy for those - rethrow in a
-      Node-like environment, log and carry on in a browser-like one (see IScheduler). Catching here
+      Node-like environment, log and carry on in a browser-like one (see ITimers). Catching here
       would put cron on a third path of its own, invisible to that policy. It does mean a run that
       throws stops the schedule, exactly as `setRecurring` documents; catch inside your own callback
       if a failing run should not end the job.
     */
-    return this.#scheduler.setRecurring(() => {
+    return this.#timers.recurring(() => {
       callback();
       return nextDelay();
     }, nextDelay());
   }
 
-  unschedule(handle: DueHandle): void {
-    this.#scheduler.clearRecurring(handle);
+  unschedule(handle: ITimerHandle): void {
+    handle.dispose();
   }
 }

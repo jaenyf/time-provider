@@ -1,10 +1,15 @@
-import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
+import {
+  TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { DateTime } from "luxon";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
-  static convertToTimestamp(time: string | number | DateTime<boolean>): number {
-    return RuntimeHelper.convertToUtcDate(time).toMillis();
+  static convertToTimestamp(time: string | number | DateTime<boolean>): EpochMilliseconds {
+    return toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).toMillis() });
   }
   /* @__INLINE__ */
   static convertToUtcDate(time: string | number | DateTime<boolean>): DateTime<boolean> {

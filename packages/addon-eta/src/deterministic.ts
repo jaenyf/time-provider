@@ -28,7 +28,7 @@ function createAddon<TDate>(): IDeterministicAddon<TDate, WithEtaApi> {
       return AddonHelper.extendRuntimeWithProperty(
         runtime,
         "eta",
-        new EtaScheduler(runtime.scheduler, () => runtime.clock.timestampNow()),
+        new EtaScheduler(runtime.timers, () => runtime.clock.timestampNow()),
         undefined as unknown as WithEtaApi,
       );
     },

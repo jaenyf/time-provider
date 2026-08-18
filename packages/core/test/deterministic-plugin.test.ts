@@ -2,9 +2,14 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,
-} from "@time-provider/core/deterministic";
-import type { IRuntime, IUtcOnlyRuntime, TimezoneDefinition } from "@time-provider/core";
-import type { IManualRuntime, IUtcOnlyManualRuntime } from "../src/types/types.ts";
+} from "../src/plugins/deterministic-plugin.ts";
+import type {
+  IRuntime,
+  IUtcOnlyRuntime,
+  IManualRuntime,
+  IUtcOnlyManualRuntime,
+  TimezoneDefinition,
+} from "../src/types/types.ts";
 
 class FakeRuntime {
   constructor(

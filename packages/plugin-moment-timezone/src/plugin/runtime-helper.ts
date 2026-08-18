@@ -1,5 +1,7 @@
 import {
   TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
   type ICalendarScheme,
   type TimezoneDefinition,
 } from "@time-provider/core";
@@ -18,8 +20,8 @@ export class RuntimeHelper {
   );
 
   /* @__INLINE__ */
-  static convertToTimestamp(time: string | number | moment.Moment): number {
-    return RuntimeHelper.convertToUtcDate(time).valueOf();
+  static convertToTimestamp(time: string | number | moment.Moment): EpochMilliseconds {
+    return toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).valueOf() });
   }
   /* @__INLINE__ */
   static convertToUtcDate(time: string | number | moment.Moment): moment.Moment {

@@ -2,6 +2,8 @@ export { AddonHelper } from "./addons/addon-helper.ts";
 export { DefaultCalendarScheme } from "./calendar/default-calendar-scheme.ts";
 export { CalendarSchemeFieldsHelper } from "./calendar/calendar-fields-helper.ts";
 export type {
+  DurationMilliseconds,
+  EpochMilliseconds,
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
   IManualTimeProvider,
@@ -10,6 +12,7 @@ export type {
   ComposableCalendarSchemeFields,
   ICalendarScheme,
 } from "./types/types.ts";
+export * from "./helpers/branded-types.ts";
 export {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,

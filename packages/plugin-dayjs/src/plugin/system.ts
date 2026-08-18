@@ -1,4 +1,10 @@
-import { BaseSystemPlugin, BaseSystemRuntime, type TimezoneDefinition } from "@time-provider/core";
+import {
+  BaseSystemPlugin,
+  BaseSystemRuntime,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 import dayjs from "dayjs";
 
@@ -12,8 +18,8 @@ class SystemRuntime extends BaseSystemRuntime<dayjs.Dayjs> {
   utcNow(): dayjs.Dayjs {
     return dayjs.utc();
   }
-  timestampNow(): number {
-    return dayjs().valueOf();
+  timestampNow(): EpochMilliseconds {
+    return toInstant({ milliseconds: dayjs().valueOf() });
   }
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, IScheduler } from "@time-provider/core";
-import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame.ts";
+import type { ITimerHandle, ITimers } from "@time-provider/core";
+import { DeterministicAnimationFrameTimers } from "../src/deterministic-animation-frame-timers.ts";
 
 /*
  * requestAnimationFrame/cancelAnimationFrame just delegate to setTimeout/clearTimeout
@@ -9,35 +9,46 @@ import { DeterministicAnimationFrameScheduler } from "../src/deterministic-anima
  * to check the delegation contract, not re-simulate a queue.
  */
 function fakeScheduler(): {
-  scheduler: IScheduler;
+  timers: ITimers;
   scheduled: Map<number, { callback: () => void; delayMs?: number }>;
   cleared: Set<number>;
 } {
-  const scheduled = new Map<number, { callback: () => void; delayMs?: number }>();
+  const scheduled = new Map<
+    number,
+    { callback: () => void; delayMs?: number; dispose: () => void; isDisposed: boolean }
+  >();
   const cleared = new Set<number>();
   let nextHandle = 1;
   return {
     scheduled,
     cleared,
-    scheduler: {
-      setTimeout(callback, millisecondsDelay) {
-        const handle = nextHandle++;
-        scheduled.set(handle, { callback, delayMs: millisecondsDelay });
-        return handle as unknown as DueHandle;
+    timers: {
+      once(millisecondsDelay, callback) {
+        const handle = {
+          id: nextHandle++,
+          kind: 2,
+          isDisposed: false,
+          dispose: () => {
+            cleared.add(handle.id);
+          },
+        };
+        scheduled.set((handle as unknown as { id: number }).id, {
+          callback,
+          delayMs: millisecondsDelay,
+          dispose: () => {
+            cleared.add(handle.id);
+          },
+          isDisposed: false,
+        });
+        return handle as unknown as ITimerHandle;
       },
-      clearTimeout(handle) {
-        cleared.add(handle as unknown as number);
-      },
-      setInterval() {
+      every() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
-      clearInterval() {
+      recurring() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
-      setRecurring() {
-        throw new Error("not used by DeterministicAnimationFrameScheduler");
-      },
-      clearRecurring() {
+      wait() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
     },
@@ -47,16 +58,16 @@ function fakeScheduler(): {
 describe("DeterministicAnimationFrameScheduler", () => {
   describe("hostFramesRate", () => {
     test("defaults to 60", () => {
-      const sut = new DeterministicAnimationFrameScheduler(fakeScheduler().scheduler);
+      const sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);
       expect(sut.hostFramesRate).toBe(60);
     });
     test("can be read back after being set", () => {
-      const sut = new DeterministicAnimationFrameScheduler(fakeScheduler().scheduler);
+      const sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);
       sut.hostFramesRate = 30;
       expect(sut.hostFramesRate).toBe(30);
     });
     test.each([0, -1, -100, NaN])("throws for a non-positive value (%d)", (value) => {
-      const sut = new DeterministicAnimationFrameScheduler(fakeScheduler().scheduler);
+      const sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);
       expect(() => (sut.hostFramesRate = value)).toThrow(
         `Invalid host frame rate (value was "${String(value)}")`,
       );
@@ -65,8 +76,8 @@ describe("DeterministicAnimationFrameScheduler", () => {
 
   describe("requestAnimationFrame", () => {
     test("delegates to the runtime scheduler's setTimeout with the default ~16.67ms frame duration", () => {
-      const { scheduler, scheduled } = fakeScheduler();
-      const sut = new DeterministicAnimationFrameScheduler(scheduler);
+      const { timers: scheduler, scheduled } = fakeScheduler();
+      const sut = new DeterministicAnimationFrameTimers(scheduler);
       const callback = () => {};
       sut.requestAnimationFrame(callback);
       expect(scheduled.size).toBe(1);
@@ -76,8 +87,8 @@ describe("DeterministicAnimationFrameScheduler", () => {
     });
 
     test("a configured hostFramesRate changes the scheduled delay", () => {
-      const { scheduler, scheduled } = fakeScheduler();
-      const sut = new DeterministicAnimationFrameScheduler(scheduler);
+      const { timers: scheduler, scheduled } = fakeScheduler();
+      const sut = new DeterministicAnimationFrameTimers(scheduler);
       sut.hostFramesRate = 100;
       sut.requestAnimationFrame(() => {});
       const [entry] = scheduled.values();
@@ -85,20 +96,20 @@ describe("DeterministicAnimationFrameScheduler", () => {
     });
 
     test("returns the underlying scheduler's handle", () => {
-      const { scheduler, scheduled } = fakeScheduler();
-      const sut = new DeterministicAnimationFrameScheduler(scheduler);
+      const { timers: scheduler, scheduled } = fakeScheduler();
+      const sut = new DeterministicAnimationFrameTimers(scheduler);
       const handle = sut.requestAnimationFrame(() => {});
-      expect(scheduled.has(handle as unknown as number)).toBe(true);
+      expect(scheduled.has((handle as unknown as { id: number }).id)).toBe(true);
     });
   });
 
   describe("cancelAnimationFrame", () => {
     test("delegates to the runtime scheduler's clearTimeout with the same handle", () => {
-      const { scheduler, cleared } = fakeScheduler();
-      const sut = new DeterministicAnimationFrameScheduler(scheduler);
+      const { timers: scheduler, cleared } = fakeScheduler();
+      const sut = new DeterministicAnimationFrameTimers(scheduler);
       const handle = sut.requestAnimationFrame(() => {});
       sut.cancelAnimationFrame(handle);
-      expect(cleared.has(handle as unknown as number)).toBe(true);
+      expect(cleared.has((handle as unknown as { id: number }).id)).toBe(true);
     });
   });
 });

@@ -1,4 +1,9 @@
-import type { IRuntime } from "@time-provider/core";
+import {
+  toDuration,
+  type DurationMilliseconds,
+  type IRuntime,
+  type ITimerHandle,
+} from "@time-provider/core";
 import type { DueHandle, ICompatApi, ITimers } from "./types.ts";
 
 /**
@@ -11,22 +16,25 @@ export class CompatRuntime<TDate> implements ICompatApi, ITimers {
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
-    return this.#runtime.setTimeout(callback, millisecondsDelay);
+    return this.#runtime.once(toDuration({ milliseconds: millisecondsDelay ?? 0 }), callback);
   }
-  clearTimeout(handle: DueHandle): void {
-    this.#runtime.clearTimeout(handle);
+  clearTimeout(handle: ITimerHandle): void {
+    handle.dispose();
   }
   setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
-    return this.#runtime.setInterval(callback, millisecondsDelay);
+    return this.#runtime.every(toDuration({ milliseconds: millisecondsDelay ?? 0 }), callback);
   }
-  clearInterval(handle: DueHandle): void {
-    this.#runtime.clearInterval(handle);
+  clearInterval(handle: ITimerHandle): void {
+    handle.dispose();
   }
   setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
-    return this.#runtime.setRecurring(callback, initialDelay);
+    return this.#runtime.recurring(
+      callback as () => DurationMilliseconds | false,
+      toDuration({ milliseconds: initialDelay ?? 0 }),
+    );
   }
-  clearRecurring(handle: DueHandle): void {
-    this.#runtime.clearRecurring(handle);
+  clearRecurring(handle: ITimerHandle): void {
+    handle.dispose();
   }
   get timers(): ITimers {
     return this;

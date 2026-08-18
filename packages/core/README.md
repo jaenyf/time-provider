@@ -41,22 +41,21 @@ This disclaimer will be removed once the API has stabilized.
 ## Time is a dependency
 
 Code coupled to the native `Date` object, `Temporal` objects, any specific date library, or the
-environment's scheduler (`setTimeout`, `setInterval`) has an implicit
-dependency on the system clock. That's what pushes teams toward global
+environment's timers has an implicit dependency on the system clock. That's what pushes teams toward global
 fake-timer libraries for testing - patching `Date`/timers process-wide,
 which affects unrelated code and makes tests harder to reason about.
 
 vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
-single object exposing a clock, a parser, a scheduler, and a performance API swappable per
+single object exposing a clock, a parser, timers, and a performance API swappable per
 call site.  
 Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
 
 ## Features
 
 - **Four clock strategies**: system (real time), fixed, manual (advance time explicitly), sequential (predefined instants) - same API for production and tests.
-- **Deterministic timers**: `setTimeout`/`setInterval` driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
+- **Deterministic timers**: driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
 - **Bring your own date library**: adapters for [Temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal), [Day.js](https://www.npmjs.com/package/@time-provider/plugin-dayjs), [Luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon), [Moment.js](https://www.npmjs.com/package/@time-provider/plugin-moment), [Moment.js + moment-timezone](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone), and [native `Date`](https://www.npmjs.com/package/@time-provider/plugin-native). Your code keeps working with the date type it already uses.
 - **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withTimezone(...)` plus `localNow()`/`utcNow()`.
 - **Tree-shakable**: no deterministic runtimes bundled when not imported.
@@ -91,7 +90,7 @@ class UserService {
 
 ```typescript
 // test: import the deterministic runtime
-import { createTimeProvider } from "@time-provider/core/deterministic";
+import { createTimeProvider, toDuration } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
 // create a deterministic runtime
@@ -102,7 +101,7 @@ const timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-timeProvider.scheduler.setInterval(() => retries++, 1000);
+timeProvider.timers.every(toDuration({ seconds: 1 }), () => retries++);
 timeProvider.clock.advance({ seconds: 3 });
 
 expect(retries).toBe(3);
@@ -114,7 +113,7 @@ Every time provider exposes the same four-part surface:
 interface ITimeProvider<TDate> {
   clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
   parser: IParser<TDate>; // parseToUtc, parseToLocal
-  scheduler: IScheduler; // setTimeout, setInterval, setRecurring (+ the matching clear*)
+  timers: ITimers; // once, every, recurring, wait
   performance: IPerformance; //now, getEntries, measure,...
 }
 ```
@@ -123,7 +122,7 @@ Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-p
 
 ```typescript
 interface ITimeProvider<TDate> {
-  animation: IAnimationFrameScheduler; //requestAnimationFrame, cancelAnimationFrame
+  animation: IAnimationFrameApi; //requestAnimationFrame, cancelAnimationFrame
 }
 ```
 
@@ -147,7 +146,7 @@ createTimeProvider
   .create();
 ```
 
-> **Manual and sequential clocks run synchronously.** A due `setTimeout`/`setInterval` callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
+> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
 
 ## Addons vs. Plugins
 
@@ -158,7 +157,7 @@ Within the scope of this library, these two terms refer to different concepts.
 
 ### Available addons
 
-- [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser-specific animation frame scheduling
+- [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser-specific animation frame timers
 - [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a JSON-friendlier one
 - [ETA addon](https://www.npmjs.com/package/@time-provider/addon-eta) - get the ETA (estimated time of arrival) for a task by notifying its progression
 

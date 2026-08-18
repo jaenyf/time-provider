@@ -140,7 +140,7 @@ export default defineConfig({
           { text: "ITimeProvider", link: "/api/time-provider" },
           { text: "IClock", link: "/api/clock" },
           { text: "IParser", link: "/api/parser" },
-          { text: "IScheduler", link: "/api/scheduler" },
+          { text: "ITimers", link: "/api/timers" },
           { text: "IPerformance", link: "/api/performance" },
         ],
       },

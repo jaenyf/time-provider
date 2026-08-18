@@ -1,13 +1,18 @@
-import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
+import {
+  TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import dayjs from "dayjs";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
-  static convertToTimestamp(time: string | number | dayjs.Dayjs): number {
-    return RuntimeHelper.convertToUtcDate(time).valueOf();
+  static convertToTimestamp(time: string | EpochMilliseconds | dayjs.Dayjs): EpochMilliseconds {
+    return toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).valueOf() });
   }
   /* @__INLINE__ */
-  static convertToUtcDate(time: string | number | dayjs.Dayjs): dayjs.Dayjs {
+  static convertToUtcDate(time: string | EpochMilliseconds | dayjs.Dayjs): dayjs.Dayjs {
     TimeInputValidator.assertValid(time);
     const result = dayjs(time);
     if (!result.isValid()) {
@@ -18,7 +23,7 @@ export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToLocalDate(
     timezone: TimezoneDefinition,
-    time: string | number | dayjs.Dayjs,
+    time: string | EpochMilliseconds | dayjs.Dayjs,
   ): dayjs.Dayjs {
     try {
       new Intl.DateTimeFormat(undefined, { timeZone: timezone });

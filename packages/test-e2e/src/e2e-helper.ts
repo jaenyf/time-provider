@@ -6,7 +6,7 @@ import type {
   IUtcOnlySystemPlugin,
   IUtcOnlyTimeProvider,
 } from "../../core/dist/index.d.mts";
-import { createTimeProvider as createSystemTimeProvider } from "../../core/dist/index.mjs";
+import { asap, createTimeProvider as createSystemTimeProvider } from "../../core/dist/index.mjs";
 import {
   createTimeProvider as createDeterministicTimeProvider,
   type IDeterministicPlugin,
@@ -253,13 +253,13 @@ export class E2eHelper {
     timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
   ) {
     expect(() => {
-      timeProvider.scheduler.clearInterval(timeProvider.scheduler.setInterval(() => {}));
+      timeProvider.timers.every(asap(), () => {}).dispose();
     }).not.toThrow();
     expect(() => {
-      timeProvider.scheduler.clearRecurring(timeProvider.scheduler.setRecurring(() => false));
+      timeProvider.timers.recurring(() => false).dispose();
     }).not.toThrow();
     expect(() => {
-      timeProvider.scheduler.clearTimeout(timeProvider.scheduler.setTimeout(() => {}));
+      timeProvider.timers.once(asap(), () => {}).dispose();
     }).not.toThrow();
   }
 

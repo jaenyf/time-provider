@@ -1,16 +1,21 @@
+import { toInstant } from "../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
-  DueHandle,
+  ITimerHandle,
   IAdvanceOptions,
   IManualClock,
   IManualRuntime,
   ITimeConverter,
   TimerKind,
   TimezoneDefinition,
+  DurationMilliseconds,
+  ITimerOptions,
+  EpochMilliseconds,
 } from "../types/types.ts";
 import { TIMER_KIND_INTERVAL, TIMER_KIND_RECURRING, TIMER_KIND_TIMEOUT } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
+import { TimerHandle } from "./timer-handle.ts";
 
 interface BaseDueEntry {
   runAt: number;
@@ -343,9 +348,9 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
    * Produces the timestamp for {@link timestampNow}. Unlike {@link localNowImpl}/
    * {@link utcNowImpl}, must be side-effect-free - see {@link ITimestampClock.timestampNow}.
    */
-  protected abstract timestampNowImpl(): number;
+  protected abstract timestampNowImpl(): EpochMilliseconds;
 
-  timestampNow(): number {
+  timestampNow(): EpochMilliseconds {
     return this.timestampNowImpl();
   }
   localNow(): TDate {
@@ -360,13 +365,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     if (handle === undefined || handle === null) return;
     const entry = handle as DueEntry;
     if (entry.owner !== queue || entry.kind !== kind) return;
-    queue.remove(entry);
-  }
-
-  private static clearRecurringHandle(handle: unknown, queue: DueHeap): void {
-    if (handle === undefined || handle === null) return;
-    const entry = handle as DueEntry;
-    if (entry.owner !== queue || entry.kind !== TIMER_KIND_RECURRING) return;
     entry.cancelled = true;
     queue.remove(entry);
   }
@@ -382,72 +380,38 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     return this.#dueQueue.peekRunAt();
   }
 
-  //#region setTimeout
-  /**
-   * Schedules `callback` on this runtime's deterministic clock. See {@link IScheduler} for when
-   * it actually runs.
-   */
-  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
-    let delay = millisecondsDelay;
-    if (delay === undefined || delay < 0) delay = 0;
+  //#region timers
+  clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void {
+    BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
+  }
+  once(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+    if (delay === undefined || delay < 0) delay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(now + delay, callback);
     this.mayRunDueCallbacks(now);
-    return entry;
+    return new TimerHandle(TIMER_KIND_TIMEOUT, this, entry);
   }
-  /**
-   * Cancels a pending timeout scheduled via {@link setTimeout}. A no-op if it already ran or was
-   * already cleared.
-   */
-  clearTimeout(handle: DueHandle) {
-    BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_TIMEOUT);
-  }
-  //#endregion setTimeout
 
-  //#region setInterval
-  /**
-   * Schedules `callback` to repeat on this runtime's deterministic clock. See {@link IScheduler}
-   * for when each run actually happens.
-   */
-  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
-    let delay = millisecondsDelay;
-    if (delay === undefined || delay < 0) delay = 0;
+  every(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+    if (delay === undefined || delay < 0) delay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(now + delay, delay, callback);
     this.mayRunDueCallbacks(now);
-    return entry;
+    return new TimerHandle(TIMER_KIND_INTERVAL, this, entry);
   }
-  /**
-   * Cancels a pending interval scheduled via {@link setInterval}. A no-op if it was already
-   * cleared.
-   */
-  clearInterval(handle: DueHandle) {
-    BaseDeterministicRuntime.clearDueHandle(handle, this.#dueQueue, TIMER_KIND_INTERVAL);
-  }
-  //#endregion setInterval
 
-  //#region setRecurring
-  /**
-   * Schedules `callback` to run once, `initialDelay` from now, then again after whatever delay
-   * `callback` itself returns. Returning `false` stops the schedule; see {@link IScheduler} for
-   * when each run actually happens.
-   */
-  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
-    let delay = initialDelay;
-    if (delay === undefined || delay < 0) delay = 0;
+  recurring(
+    callback: () => DurationMilliseconds | false,
+    initialDelay?: DurationMilliseconds,
+    _options?: ITimerOptions,
+  ): ITimerHandle {
+    if (initialDelay === undefined || initialDelay < 0) initialDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerRecurring(now + delay, callback);
+    const entry = this.#dueQueue.registerRecurring(now + initialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return entry;
+    return new TimerHandle(TIMER_KIND_RECURRING, this, entry);
   }
-  /**
-   * Cancels a pending recurring schedule started via {@link setRecurring}. A no-op if it already
-   * stopped (`callback` returned `false`) or was already cleared.
-   */
-  clearRecurring(handle: DueHandle): void {
-    BaseDeterministicRuntime.clearRecurringHandle(handle, this.#dueQueue);
-  }
-  //#endregion setRecurring
+  //#endregion timers
 }
 
 /**
@@ -467,7 +431,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
    */
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | number | TDate)[],
+    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, converter);
@@ -477,22 +441,28 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   localNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp);
+    return this.convertToLocalDateImpl(
+      this.localTimezone,
+      toInstant({ milliseconds: nowTimestamp }),
+    );
   }
   utcNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToUtcDateImpl(nowTimestamp);
+    return this.convertToUtcDateImpl(toInstant({ milliseconds: nowTimestamp }));
   }
   /**
    * Side-effect-free, as required by {@link ITimestampClock.timestampNow}: returns the timestamp
    * at the current position in the sequence without consuming it or running due callbacks, unlike
    * {@link localNowImpl}/{@link utcNowImpl}.
    */
-  timestampNowImpl(): number {
-    return this._sequentialTimestamps.length > 0
-      ? this._sequentialTimestamps[this.#sequentialIndex]
-      : 0;
+  timestampNowImpl(): EpochMilliseconds {
+    return toInstant({
+      milliseconds:
+        this._sequentialTimestamps.length > 0
+          ? this._sequentialTimestamps[this.#sequentialIndex]
+          : 0,
+    });
   }
 
   private consumeNextSequentialTimestamp(): number {
@@ -514,15 +484,15 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
    */
   constructor(
     localTimezone: TimezoneDefinition,
-    fixedTime: string | number | TDate,
+    fixedTime: string | EpochMilliseconds | number | TDate,
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, [fixedTime], converter);
   }
 
   /**
-   * Never runs due callbacks: on a fixed clock, time never advances, so scheduled callbacks are
-   * never due. See {@link IScheduler}.
+   * Never runs due timers callbacks: on a fixed clock, time never advances, so scheduled callbacks are
+   * never due. See {@link ITimers}.
    */
   protected override mayRunDueCallbacks(_nowTimestamp: number): void {
     /* time is frozen */
@@ -543,7 +513,7 @@ export abstract class BaseManualRuntime<TDate>
    */
   constructor(
     localTimezone: TimezoneDefinition,
-    fixedTime: string | number | TDate,
+    fixedTime: string | EpochMilliseconds | number | TDate,
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, [fixedTime], converter);
@@ -564,7 +534,7 @@ export abstract class BaseManualRuntime<TDate>
    * Moves this clock's time forward (or backward, for negative values) by the given amount,
    * applying `years`, `months`, `days`, `hours`, `minutes`, `seconds`, then `milliseconds` in
    * that fixed order - see {@link IAdvanceOptions}. Any due callbacks are run before this
-   * returns, per {@link IScheduler}.
+   * returns, per {@link ITimers}.
    */
   advance(advanceConfiguration: IAdvanceOptions): IManualRuntime<TDate> {
     // Pure read: getting a TDate to feed the calendar-arithmetic helpers below must not itself

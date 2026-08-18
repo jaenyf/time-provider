@@ -1,9 +1,9 @@
-import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
+import { TimeInputValidator, toInstant, type TimezoneDefinition } from "@time-provider/core";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
   static convertToTimestamp = (time: string | number | Date) =>
-    RuntimeHelper.convertToUtcDate(time).getTime();
+    toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).getTime() });
 
   /* @__INLINE__ */
   static convertToUtcDate = (time: string | number | Date) => {

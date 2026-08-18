@@ -2,6 +2,8 @@ import {
   BaseSystemPlugin,
   BaseSystemRuntime,
   TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
@@ -21,8 +23,8 @@ class SystemRuntime extends BaseSystemRuntime<DateTime> {
   utcNow(): DateTime<boolean> {
     return DateTime.utc();
   }
-  timestampNow(): number {
-    return DateTime.utc().toMillis();
+  timestampNow(): EpochMilliseconds {
+    return toInstant({ milliseconds: DateTime.utc().toMillis() });
   }
 }
 

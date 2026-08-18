@@ -8,7 +8,7 @@ function throwAnimationFrameApiNotSupported(): never {
  * Implements {@link IAnimationFrameApi} on top of the host's native
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
-export class SystemAnimationFrameScheduler implements IAnimationFrameApi {
+export class SystemAnimationFrameTimers implements IAnimationFrameApi {
   /**
    * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
    */

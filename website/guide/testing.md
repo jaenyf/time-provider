@@ -1,7 +1,7 @@
 # Testing With Time-Provider
 
 The pattern across all four strategies: production code depends on
-`ITimeProvider<TDate>` (or the narrower `IClock`/`IParser`/`IScheduler`
+`ITimeProvider<TDate>` (or the narrower `IClock`/`IParser`/`ITimers`
 facets), never on `Date.now()`/`setTimeout` directly. Tests construct the
 same object with a different strategy.
 

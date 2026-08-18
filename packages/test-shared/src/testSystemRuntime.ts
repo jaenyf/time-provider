@@ -1,8 +1,11 @@
-import type {
-  DueHandle,
-  ISystemPlugin,
-  IUtcOnlySystemPlugin,
-  TimezoneDefinition,
+import {
+  type ITimerHandle,
+  type ISystemPlugin,
+  type IUtcOnlySystemPlugin,
+  type TimezoneDefinition,
+  asap,
+  toDuration,
+  type DurationMilliseconds,
 } from "@time-provider/core";
 import { describe, beforeEach, vi, afterEach, test, expect } from "vite-plus/test";
 import {
@@ -43,8 +46,8 @@ export function testSystemRuntime<TDate>(
       );
     });
 
-    describe("scheduler", () => {
-      describe("setTimeout", async () => {
+    describe("timers", () => {
+      describe("once", async () => {
         beforeEach(async () => {
           vi.useFakeTimers();
         });
@@ -52,104 +55,78 @@ export function testSystemRuntime<TDate>(
           vi.useRealTimers();
         });
         test("can be called without specified delay", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setTimeout(callback);
+          sut.once(asap(), callback);
           vi.advanceTimersByTime(4);
           expect(callbackCalled).toBe(true);
         });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setTimeout(callback, immediateDelay);
+          sut.once(toDuration({ milliseconds: immediateDelay }), callback);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
         test.each([1, 20, 100])("ignore future callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setTimeout(callback, futureDelay * 2);
+          sut.once(toDuration({ milliseconds: futureDelay * 2 }), callback);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
         test.each([1, 20, 100])("ignore cleared callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackACalled = false;
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.setTimeout(callbackA, futureDelay);
-          const timeoutHandleB = sut.setTimeout(callbackB, futureDelay);
-          sut.clearTimeout(timeoutHandleA);
-          sut.clearTimeout(timeoutHandleB);
+          const timeoutHandleA = sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
+          const timeoutHandleB = sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+          timeoutHandleA.dispose();
+          timeoutHandleB.dispose();
           vi.advanceTimersByTime(futureDelay);
           expect(callbackACalled).toBe(false);
           expect(callbackBCalled).toBe(false);
         });
-        describe("issue#120", () => {
-          test.each([undefined, null])(
-            "does not throw when clearing an undefined or null handle",
-            (undefinedHandle) => {
-              const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-              expect(() => sut.clearTimeout(undefinedHandle as never)).not.toThrow();
-            },
-          );
-        });
-        test("clearing a timeout via clearInterval/clearRecurring does not cancel it", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-          let called = false;
-          const handle = sut.setTimeout(() => (called = true), 10);
-          expect(() => sut.clearInterval(handle)).not.toThrow();
-          expect(() => sut.clearRecurring(handle)).not.toThrow();
-          vi.advanceTimersByTime(10);
-          expect(called).toBe(true);
-        });
       });
 
-      describe("setInterval", async () => {
+      describe("every", async () => {
         beforeEach(async () => {
           vi.useFakeTimers();
         });
         afterEach(async () => {
           vi.useRealTimers();
         });
-        test("can be called without specified delay", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-          let callbackCalled = false;
-          const callback = () => (callbackCalled = true);
-          sut.setInterval(callback);
-          vi.advanceTimersByTime(4);
-          expect(callbackCalled).toBe(true);
-        });
         test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setInterval(callback, immediateDelay);
+          sut.every(toDuration({ milliseconds: immediateDelay }), callback);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
         test.each([1, 20, 100])("ignore future callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.setInterval(callback, futureDelay * 2);
+          sut.every(toDuration({ milliseconds: futureDelay * 2 }), callback);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
         test.each([1, 20, 100])("ignore cleared callback", async (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackACalled = false;
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.setInterval(callbackA, futureDelay);
-          const timeoutHandleB = sut.setInterval(callbackB, futureDelay);
-          sut.clearInterval(timeoutHandleA);
-          sut.clearInterval(timeoutHandleB);
+          const timeoutHandleA = sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
+          const timeoutHandleB = sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+          timeoutHandleA.dispose();
+          timeoutHandleB.dispose();
           vi.advanceTimersByTime(futureDelay);
           expect(callbackACalled).toBe(false);
           expect(callbackBCalled).toBe(false);
@@ -159,35 +136,16 @@ export function testSystemRuntime<TDate>(
           (expectedRetries: number) => {
             const sut = plugin.createSystemRuntime("Pacific/Kiritimati");
             let retries = 0;
-            sut.scheduler.setInterval(() => {
+            sut.timers.every(toDuration({ milliseconds: 1000 }), () => {
               retries++;
-            }, 1000);
+            });
             vi.advanceTimersByTime(expectedRetries * 1000);
             expect(retries).toBe(expectedRetries);
           },
         );
-        describe("issue#120", () => {
-          test.each([undefined, null])(
-            "does not throw when clearing an undefined or null handle",
-            (undefinedHandle) => {
-              const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-              expect(() => sut.clearInterval(undefinedHandle as never)).not.toThrow();
-            },
-          );
-        });
-        test("clearing an interval via clearTimeout/clearRecurring does not cancel it", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-          let callCount = 0;
-          const handle = sut.setInterval(() => callCount++, 10);
-          expect(() => sut.clearTimeout(handle)).not.toThrow();
-          expect(() => sut.clearRecurring(handle)).not.toThrow();
-          vi.advanceTimersByTime(25);
-          expect(callCount).toBe(2);
-          sut.clearInterval(handle);
-        });
       });
 
-      describe("setRecurring", async () => {
+      describe("recurring", async () => {
         beforeEach(async () => {
           vi.useFakeTimers();
         });
@@ -197,131 +155,134 @@ export function testSystemRuntime<TDate>(
         test.each([1, 20, 100])(
           "executes next callback when time advance",
           (futureDelay: number) => {
-            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
             let callbackCalled = false;
-            sut.setRecurring(() => {
-              callbackCalled = true;
-              return false;
-            }, futureDelay);
+            sut.recurring(
+              () => {
+                callbackCalled = true;
+                return false;
+              },
+              toDuration({ milliseconds: futureDelay }),
+            );
             vi.advanceTimersByTime(futureDelay);
             expect(callbackCalled).toBe(true);
           },
         );
         test.each([1, 20, 100])("ignore future callback", (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
-          sut.setRecurring(() => {
-            callbackCalled = true;
-            return false;
-          }, futureDelay * 2);
+          sut.recurring(
+            () => {
+              callbackCalled = true;
+              return false;
+            },
+            toDuration({ milliseconds: futureDelay * 2 }),
+          );
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
         test.each([1, 20, 100])("ignore cleared callback", (futureDelay: number) => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackACalled = false;
           let callbackBCalled = false;
-          const handleA = sut.setRecurring(() => {
-            callbackACalled = true;
-            return false;
-          }, futureDelay);
-          const handleB = sut.setRecurring(() => {
-            callbackBCalled = true;
-            return false;
-          }, futureDelay);
-          sut.clearRecurring(handleA);
-          sut.clearRecurring(handleB);
+          const handleA = sut.recurring(
+            () => {
+              callbackACalled = true;
+              return false;
+            },
+            toDuration({ milliseconds: futureDelay }),
+          );
+          const handleB = sut.recurring(
+            () => {
+              callbackBCalled = true;
+              return false;
+            },
+            toDuration({ milliseconds: futureDelay }),
+          );
+          handleA.dispose();
+          handleB.dispose();
           vi.advanceTimersByTime(futureDelay);
           expect(callbackACalled).toBe(false);
           expect(callbackBCalled).toBe(false);
         });
         test("stops once callback returns false, instead of continuing to recur", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let runs = 0;
-          sut.setRecurring(() => {
+          sut.recurring(() => {
             runs++;
-            return runs < 3 ? 10 : false;
-          }, 10);
+            return runs < 3 ? (10 as DurationMilliseconds) : false;
+          }, 10 as DurationMilliseconds);
           vi.advanceTimersByTime(1000);
           expect(runs).toBe(3);
         });
         test("recomputes a fresh delay before every run", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           const delays = [10, 5, 1];
           let calls = 1; // delays[0] is consumed as the initial delay below
           let runs = 0;
-          sut.setRecurring(() => {
-            runs++;
-            return calls < delays.length ? delays[calls++] : false;
-          }, delays[0]);
+          sut.recurring(
+            () => {
+              runs++;
+              return calls < delays.length ? toDuration({ milliseconds: delays[calls++] }) : false;
+            },
+            toDuration({ milliseconds: delays[0] }),
+          );
           vi.advanceTimersByTime(16);
           expect(runs).toBe(3);
         });
         describe("issue#131", () => {
           test("does not invoke recurring B if recurring A cancels it during the same time advance", () => {
-            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
             let callbackBCallCount = 0;
-            const recurringHandleB = sut.setRecurring(() => {
-              callbackBCallCount++;
-              return 20;
-            }, 20);
-            sut.setRecurring(() => {
-              sut.clearRecurring(recurringHandleB);
-              return false;
-            }, 10);
+            const recurringHandleB = sut.recurring(
+              () => {
+                callbackBCallCount++;
+                return toDuration({ milliseconds: 20 });
+              },
+              toDuration({ milliseconds: 20 }),
+            );
+            sut.recurring(
+              () => {
+                recurringHandleB.dispose();
+                return false;
+              },
+              toDuration({ milliseconds: 10 }),
+            );
             vi.advanceTimersByTime(30);
             expect(callbackBCallCount).toBe(0);
           });
           test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
-            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+            const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
             let runs = 0;
-            let handle: DueHandle;
-            handle = sut.setRecurring(() => {
+            let handle: ITimerHandle;
+            handle = sut.recurring(() => {
               runs++;
-              sut.clearRecurring(handle);
-              return 10;
-            }, 10);
+              handle.dispose();
+              return 10 as DurationMilliseconds;
+            }, 10 as DurationMilliseconds);
             vi.advanceTimersByTime(100);
             expect(runs).toBe(1);
           });
         });
-        describe("issue#120", () => {
-          test.each([undefined, null])(
-            "does not throw when clearing an undefined or null handle",
-            (undefinedHandle) => {
-              const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-              expect(() => sut.clearRecurring(undefinedHandle as never)).not.toThrow();
-            },
-          );
-        });
-        test("clearing a recurring schedule via clearTimeout/clearInterval does not cancel it", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-          let runs = 0;
-          const handle = sut.setRecurring(() => {
-            runs++;
-            return 10;
-          }, 10);
-          expect(() => sut.clearTimeout(handle)).not.toThrow();
-          expect(() => sut.clearInterval(handle)).not.toThrow();
-          vi.advanceTimersByTime(25);
-          expect(runs).toBe(2);
-          sut.clearRecurring(handle);
-        });
-        test("clearRecurring is not scoped to the runtime it's called through - native timers are process-global", () => {
-          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
-          const otherRuntime = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler;
+        test("clearing a recurring handle is not scoped to the runtime it's called through - native timers are process-global", () => {
+          const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
+          const otherRuntime = plugin.createSystemRuntime("Pacific/Kiritimati");
           let callCount = 0;
-          const handle = sut.setRecurring(() => {
-            callCount++;
-            return 10;
-          }, 10);
+          const handle = sut.recurring(
+            () => {
+              callCount++;
+              return toDuration({ milliseconds: 10 });
+            },
+            toDuration({ milliseconds: 10 }),
+          );
           /*
             Unlike the deterministic runtimes (each with its own private heap), System runtimes
             all share the one real native timer namespace - there's no per-runtime ownership to
             check, so clearing a handle through a *different* System runtime instance still
             cancels the real underlying timer, same as calling the global clearTimeout directly.
           */
-          otherRuntime.clearRecurring(handle);
+          //@ts-ignore : wrong type
+          otherRuntime.clearTimer(handle);
           vi.advanceTimersByTime(25);
           expect(callCount).toBe(0);
         });

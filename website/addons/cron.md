@@ -176,7 +176,7 @@ A plugin that ships its own scheme has it directly, as the
 [Writing a Custom Plugin](/plugins/custom).
 
 `CronScheduler` is also exported — the class implementing `.cron` on top of
-`IScheduler.setRecurring`, re-deriving the delay to the next occurrence after
+`ITimers.recurring`, re-deriving the delay to the next occurrence after
 every run. Composing the addon builds one for you; construct it directly only
 if you need a cron facade outside the addon pipeline, passing it the scheduler,
 a `timestampNow` reader, a timezone reader, and an `ICalendarScheme`.

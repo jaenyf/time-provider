@@ -1,15 +1,19 @@
 import { DefaultCalendarScheme } from "../calendar/default-calendar-scheme.ts";
 import type {
-  DueHandle,
+  ITimerHandle,
   ICalendarScheme,
   IClock,
   IParser,
   IPerformance,
   IRuntime,
-  IScheduler,
+  ITimers,
   ITimeConverter,
   TimezoneDefinition,
+  DurationMilliseconds,
+  ITimerOptions,
+  EpochMilliseconds,
 } from "../types/types.ts";
+import type { TimerHandle } from "./timer-handle.ts";
 
 export class SystemHelper {
   static getRealHostTimezone(): string {
@@ -84,7 +88,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get clock(): IClock<TDate> {
     return this;
   }
-  get scheduler(): IScheduler {
+  get timers(): ITimers {
     return this;
   }
   get parser(): IParser<TDate> {
@@ -94,12 +98,27 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#performance;
   }
 
-  abstract setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
-  abstract clearTimeout(handle: DueHandle): void;
-  abstract setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
-  abstract clearInterval(handle: DueHandle): void;
-  abstract setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
-  abstract clearRecurring(handle: DueHandle): void;
+  abstract clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
+  abstract once(
+    delay: DurationMilliseconds,
+    callback: () => void,
+    options?: ITimerOptions,
+  ): ITimerHandle;
+  abstract every(
+    delay: DurationMilliseconds,
+    callback: () => void,
+    options?: ITimerOptions,
+  ): ITimerHandle;
+  abstract recurring(
+    callback: () => DurationMilliseconds | false,
+    initialDelay?: DurationMilliseconds,
+    options?: ITimerOptions,
+  ): ITimerHandle;
+  wait(delay: DurationMilliseconds, options?: ITimerOptions): Promise<void> {
+    return new Promise((resolve) => {
+      this.once(delay, () => resolve(), options);
+    });
+  }
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();
@@ -109,7 +128,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#localTimezone;
   }
 
-  abstract timestampNow(): number;
+  abstract timestampNow(): EpochMilliseconds;
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
 
@@ -130,7 +149,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
    * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as UTC time.
    */
-  parseToUtc = (time: string | number | TDate) => {
+  parseToUtc = (time: string | EpochMilliseconds | TDate) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -147,7 +166,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
    * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as local time.
    */
-  parseToLocal = (time: string | number | TDate) => {
+  parseToLocal = (time: string | EpochMilliseconds | TDate) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -161,16 +180,18 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
       this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
     );
   };
-  protected convertToUtcDateImpl(time: string | number | TDate): TDate {
+  protected convertToUtcDateImpl(time: string | EpochMilliseconds | TDate): TDate {
     return this.#converter.convertToUtcDate(time);
   }
   protected convertToLocalDateImpl(
     timezone: TimezoneDefinition,
-    time: string | number | TDate,
+    time: string | EpochMilliseconds | TDate,
   ): TDate {
     return this.#converter.convertToLocalDate(timezone, time);
   }
-  protected convertToEpochTimestampImpl(time: string | number | TDate): number {
+  protected convertToEpochTimestampImpl(
+    time: string | EpochMilliseconds | number | TDate,
+  ): EpochMilliseconds {
     return this.#converter.convertToTimestamp(time);
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DueHandle, IRuntime, IScheduler } from "@time-provider/core";
+import type { ITimerHandle, IRuntime, ITimers } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
@@ -15,28 +15,24 @@ function fakeSystemRuntime(now: number): {
   intervals: { callback: () => void; delay: number | undefined }[];
 } {
   const intervals: { callback: () => void; delay: number | undefined }[] = [];
-  const scheduler: IScheduler = {
-    setTimeout() {
+  const timers: ITimers = {
+    once() {
       throw new Error("not used by the eta addon");
     },
-    clearTimeout() {
-      throw new Error("not used by the eta addon");
-    },
-    setInterval(callback, millisecondsDelay) {
+    every(millisecondsDelay, callback) {
       intervals.push({ callback, delay: millisecondsDelay });
-      return {} as DueHandle;
+      return {} as ITimerHandle;
     },
-    clearInterval() {},
-    setRecurring() {
+    recurring() {
       throw new Error("not used by the eta addon");
     },
-    clearRecurring() {
+    wait() {
       throw new Error("not used by the eta addon");
     },
   };
   const clock = { timestampNow: () => now };
   return {
-    runtime: { scheduler, clock } as unknown as FakeRuntime,
+    runtime: { timers, clock } as unknown as FakeRuntime,
     intervals,
   };
 }

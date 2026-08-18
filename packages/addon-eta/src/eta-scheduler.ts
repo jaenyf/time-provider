@@ -1,21 +1,21 @@
-import type { IScheduler } from "@time-provider/core";
+import type { EpochMilliseconds, ITimers } from "@time-provider/core";
 import { EtaTrackBuilder } from "./eta-tracker.ts";
 import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 
 export class EtaScheduler implements IEtaApi {
-  #scheduler: IScheduler;
-  #timestampNow: () => number;
+  #timers: ITimers;
+  #timestampNow: () => EpochMilliseconds;
 
   /**
-   * @param scheduler the runtime's scheduler used to run notification ticks.
+   * @param timers the runtime's scheduler used to run notification ticks.
    * @param timestampNow reads the runtime's current time, in epoch milliseconds.
    */
-  constructor(scheduler: IScheduler, timestampNow: () => number) {
-    this.#scheduler = scheduler;
+  constructor(timers: ITimers, timestampNow: () => EpochMilliseconds) {
+    this.#timers = timers;
     this.#timestampNow = timestampNow;
   }
 
   estimate(): IEtaTrackBuilder {
-    return new EtaTrackBuilder(this.#scheduler, this.#timestampNow);
+    return new EtaTrackBuilder(this.#timers, this.#timestampNow);
   }
 }

@@ -2,6 +2,8 @@ import {
   BaseSystemPlugin,
   BaseSystemRuntime,
   TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
   type TimezoneDefinition,
 } from "@time-provider/core";
 import moment from "moment-timezone";
@@ -20,8 +22,8 @@ class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
   utcNow(): moment.Moment {
     return moment.utc();
   }
-  timestampNow(): number {
-    return moment().valueOf();
+  timestampNow(): EpochMilliseconds {
+    return toInstant({ milliseconds: moment().valueOf() });
   }
 }
 

@@ -3,6 +3,7 @@ import { DefaultCalendarScheme } from "@time-provider/core";
 import moment from "moment-timezone";
 import { RuntimeHelper } from "../src/plugin/runtime-helper.ts";
 import { MomentTimezoneCalendarScheme } from "../src/plugin/calendar-scheme.ts";
+import { toInstant } from "@time-provider/core";
 
 const sut = RuntimeHelper.calendarScheme;
 /** What a runtime would have used before this plugin supplied its own - the host's ICU. */
@@ -14,7 +15,7 @@ const defaultCalendarScheme = new DefaultCalendarScheme(RuntimeHelper);
  * whenever one is refreshed before the other - the case this whole adapter exists for.
  */
 const DIVERGENT_ZONE = "Africa/Casablanca";
-const DIVERGENT_INSTANT = Date.UTC(2026, 10, 15, 12, 0, 0);
+const DIVERGENT_INSTANT = toInstant({ milliseconds: Date.UTC(2026, 10, 15, 12, 0, 0) });
 
 describe("MomentTimezoneCalendarScheme", () => {
   test("is the adapter the plugin's converter hands to a runtime", () => {

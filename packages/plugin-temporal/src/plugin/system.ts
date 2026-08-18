@@ -1,4 +1,10 @@
-import { BaseSystemPlugin, BaseSystemRuntime, type TimezoneDefinition } from "@time-provider/core";
+import {
+  BaseSystemPlugin,
+  BaseSystemRuntime,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 
 class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
@@ -11,8 +17,8 @@ class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
   utcNow(): Temporal.ZonedDateTime {
     return Temporal.Now.zonedDateTimeISO("UTC");
   }
-  timestampNow(): number {
-    return Temporal.Now.zonedDateTimeISO("UTC").epochMilliseconds;
+  timestampNow(): EpochMilliseconds {
+    return toInstant({ milliseconds: Temporal.Now.zonedDateTimeISO("UTC").epochMilliseconds });
   }
 }
 

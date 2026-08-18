@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vite-plus/test";
 import { DeterministicPerformance } from "../src/performance/deterministic-performance.ts";
 import type { BaseDeterministicRuntime } from "../src/runtimes/deterministic-runtime.ts";
+import { asEpoch, toDuration, toInstant } from "../src/helpers/branded-types.ts";
 
 function fakeRuntimeWithTimestamps(
   timestamps: readonly number[],
@@ -60,7 +61,7 @@ describe("DeterministicPerformance", () => {
     test("reports the specific missing options.start mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: "missing-start", end: 0 })).toThrow(
+      expect(() => sut.measure("m", { start: "missing-start", end: asEpoch() })).toThrow(
         "The performance mark 'missing-start' does not exist.",
       );
     });
@@ -68,7 +69,7 @@ describe("DeterministicPerformance", () => {
     test("reports the specific missing options.end mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: 0, end: "missing-end" })).toThrow(
+      expect(() => sut.measure("m", { start: asEpoch(), end: "missing-end" })).toThrow(
         "The performance mark 'missing-end' does not exist.",
       );
     });
@@ -76,9 +77,13 @@ describe("DeterministicPerformance", () => {
     test("reports over-determined options with the specific message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: 0, end: 10, duration: 10 })).toThrow(
-        "The performance measure options are over-determined",
-      );
+      expect(() =>
+        sut.measure("m", {
+          start: asEpoch(),
+          end: toInstant({ milliseconds: 10 }),
+          duration: toDuration({ milliseconds: 10 }),
+        }),
+      ).toThrow("The performance measure options are over-determined");
     });
 
     test("reports under-determined options with the specific message", () => {

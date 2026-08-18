@@ -1,9 +1,14 @@
-import { TimeInputValidator, type TimezoneDefinition } from "@time-provider/core";
+import {
+  TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
-  static convertToTimestamp(time: string | number | Temporal.ZonedDateTime): number {
-    return RuntimeHelper.convertToUtcDate(time).epochMilliseconds;
+  static convertToTimestamp(time: string | number | Temporal.ZonedDateTime): EpochMilliseconds {
+    return toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).epochMilliseconds });
   }
   /* @__INLINE__ */
   static convertToUtcDate(time: string | number | Temporal.ZonedDateTime): Temporal.ZonedDateTime {

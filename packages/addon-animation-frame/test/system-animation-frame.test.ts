@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
-import { SystemAnimationFrameScheduler } from "../src/system-animation-frame.ts";
+import { SystemAnimationFrameTimers } from "../src/system-animation-frame-timers.ts";
 
 describe("SystemAnimationFrameScheduler", () => {
   function removeAnimationFrameAPI() {
@@ -13,7 +13,7 @@ describe("SystemAnimationFrameScheduler", () => {
         removeAnimationFrameAPI();
       });
       test("constructor throws a clear error when missing API", () => {
-        expect(() => new SystemAnimationFrameScheduler()).toThrow(
+        expect(() => new SystemAnimationFrameTimers()).toThrow(
           "Environment does not support Animation frame API (are you in a browser?)",
         );
       });
@@ -26,7 +26,7 @@ describe("SystemAnimationFrameScheduler", () => {
           removeAnimationFrameAPI();
         });
         test("constructor throws a clear error when missing API", () => {
-          expect(() => new SystemAnimationFrameScheduler()).toThrow(
+          expect(() => new SystemAnimationFrameTimers()).toThrow(
             "Environment does not support Animation frame API (are you in a browser?)",
           );
         });
@@ -40,7 +40,7 @@ describe("SystemAnimationFrameScheduler", () => {
           removeAnimationFrameAPI();
         });
         test("constructor throws a clear error when missing API", () => {
-          expect(() => new SystemAnimationFrameScheduler()).toThrow(
+          expect(() => new SystemAnimationFrameTimers()).toThrow(
             "Environment does not support Animation frame API (are you in a browser?)",
           );
         });
@@ -72,7 +72,7 @@ describe("SystemAnimationFrameScheduler", () => {
     });
 
     test("delegates requestAnimationFrame to the native function", () => {
-      const sut = new SystemAnimationFrameScheduler();
+      const sut = new SystemAnimationFrameTimers();
       let called = false;
       sut.requestAnimationFrame(() => (called = true));
       expect(calls.size).toBe(1);
@@ -80,7 +80,7 @@ describe("SystemAnimationFrameScheduler", () => {
       expect(called).toBe(true);
     });
     test("delegates cancelAnimationFrame to the native function", () => {
-      const sut = new SystemAnimationFrameScheduler();
+      const sut = new SystemAnimationFrameTimers();
       const handle = sut.requestAnimationFrame(() => {});
       sut.cancelAnimationFrame(handle);
       expect(calls.has(handle as unknown as number)).toBe(false);
