@@ -1,3 +1,4 @@
+import { toDuration, type IDurationSpec } from "../helpers/branded-types.ts";
 import { SystemPerformance } from "../performance/system-performance.ts";
 import type {
   DurationMilliseconds,
@@ -47,49 +48,49 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     }
   }
 
-  once(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions) {
-    if (delay === undefined || delay < 0) {
-      delay = 0 as DurationMilliseconds;
+  once(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions) {
+    let msDelay = toDuration(delay);
+    if (msDelay < 0) {
+      msDelay = 0 as DurationMilliseconds;
     }
-    return new TimerHandle(TIMER_KIND_TIMEOUT, this, setTimeout(callback, delay));
+    return new TimerHandle(TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay));
   }
 
-  every(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions): ITimerHandle {
-    if (delay === undefined || delay < 1) {
-      delay = 1 as DurationMilliseconds;
+  every(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+    let msDelay = toDuration(delay);
+    if (msDelay < 1) {
+      msDelay = 1 as DurationMilliseconds;
     }
-    return new TimerHandle(TIMER_KIND_INTERVAL, this, setInterval(callback, delay));
+    return new TimerHandle(TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay));
   }
 
   recurring(
-    callback: () => DurationMilliseconds | false,
-    initialDelay?: DurationMilliseconds,
+    callback: () => IDurationSpec | false,
+    initialDelay?: IDurationSpec,
     _options?: ITimerOptions,
   ): ITimerHandle {
-    if (initialDelay === undefined || initialDelay < 0) {
-      initialDelay = 0 as DurationMilliseconds;
-    }
+    let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
 
     let handle: TimerHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
 
-    const arm = (initialDelay: number): ReturnTypeOfSetTimeout => {
+    const arm = (msInitialDelay: number): ReturnTypeOfSetTimeout => {
       const nativeHandle = setTimeout(() => {
         if (handle !== undefined && handle.isDisposed) {
           return false;
         }
         const next = callback();
         if (next !== false) {
-          arm(next < 0 ? 0 : next);
+          arm(toDuration(next));
         }
-      }, initialDelay);
+      }, msInitialDelay);
       if (handle !== undefined) {
         handle.setNativeHandle(nativeHandle);
       }
       return nativeHandle;
     };
 
-    handle = new TimerHandle(TIMER_KIND_RECURRING, this, arm(initialDelay));
+    handle = new TimerHandle(TIMER_KIND_RECURRING, this, arm(msInitialDelay));
 
     return handle;
   }

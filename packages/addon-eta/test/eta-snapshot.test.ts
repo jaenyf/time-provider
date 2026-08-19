@@ -5,7 +5,7 @@ import {
   StagedEtaProgressSnapshot,
 } from "../src/eta-snapshot.ts";
 import type { IRateEstimator } from "../src/rate-estimator.ts";
-import { asEpoch, toInstant } from "@time-provider/core";
+import { asEpochMilliseconds, toInstant } from "@time-provider/core";
 
 function fakeRateEstimator(rate: number | undefined): IRateEstimator {
   return { addSample: () => {}, estimateRate: () => rate };
@@ -29,30 +29,58 @@ describe("EtaProgressSnapshot", () => {
   });
 
   test("remaining is total minus completed", () => {
-    const sut = new EtaProgressSnapshot("in-progress", asEpoch(), asEpoch(), 30, 100, undefined);
+    const sut = new EtaProgressSnapshot(
+      "in-progress",
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
+      30,
+      100,
+      undefined,
+    );
     expect(sut.remaining).toBe(70);
   });
 
   test("percentage is completed over total, as a percentage", () => {
-    const sut = new EtaProgressSnapshot("in-progress", asEpoch(), asEpoch(), 30, 100, undefined);
+    const sut = new EtaProgressSnapshot(
+      "in-progress",
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
+      30,
+      100,
+      undefined,
+    );
     expect(sut.percentage).toBe(30);
   });
 
   test("percentage is 0 when total is 0, rather than dividing by zero", () => {
-    const sut = new EtaProgressSnapshot("in-progress", asEpoch(), asEpoch(), 0, 0, undefined);
+    const sut = new EtaProgressSnapshot(
+      "in-progress",
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
+      0,
+      0,
+      undefined,
+    );
     expect(sut.percentage).toBe(0);
   });
 
   test("rate is undefined without a rate estimator", () => {
-    const sut = new EtaProgressSnapshot("in-progress", asEpoch(), asEpoch(), 30, 100, undefined);
+    const sut = new EtaProgressSnapshot(
+      "in-progress",
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
+      30,
+      100,
+      undefined,
+    );
     expect(sut.rate).toBeUndefined();
   });
 
   test("rate comes from the rate estimator", () => {
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
-      asEpoch(),
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
       30,
       100,
       fakeRateEstimator(0.05),
@@ -63,7 +91,7 @@ describe("EtaProgressSnapshot", () => {
   test("eta is undefined when there's no rate yet", () => {
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -76,7 +104,7 @@ describe("EtaProgressSnapshot", () => {
   test("eta is undefined when the rate isn't positive", () => {
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -88,7 +116,7 @@ describe("EtaProgressSnapshot", () => {
   test("eta projects the remaining work forward at the estimated rate", () => {
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -100,7 +128,7 @@ describe("EtaProgressSnapshot", () => {
   test("remainingMilliseconds is eta expressed as a duration from now", () => {
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -112,7 +140,7 @@ describe("EtaProgressSnapshot", () => {
   test("once abandoned, rate stays available but eta/remainingMilliseconds are forced undefined", () => {
     const sut = new EtaProgressSnapshot(
       "abandoned",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -132,7 +160,7 @@ describe("EtaProgressSnapshot", () => {
     };
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -151,7 +179,7 @@ describe("EtaProgressSnapshot", () => {
     const estimator: IRateEstimator = { addSample: () => {}, estimateRate };
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -169,7 +197,7 @@ describe("EtaProgressSnapshot", () => {
     const estimator: IRateEstimator = { addSample: () => {}, estimateRate };
     const sut = new EtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       30,
       100,
@@ -185,8 +213,8 @@ describe("StagedEtaProgressSnapshot", () => {
   test("stageCompleted/stageTotal/stagePercentage are local to the current stage, not the overall job", () => {
     const sut = new StagedEtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
-      asEpoch(),
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
       /* stageCompleted */ 25,
       /* stageTotal */ 50,
       /* currentStageIndex */ 1,
@@ -203,8 +231,8 @@ describe("StagedEtaProgressSnapshot", () => {
   test("stagePercentage is 0 when the current stage's total is 0", () => {
     const sut = new StagedEtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
-      asEpoch(),
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
       0,
       0,
       0,
@@ -218,8 +246,8 @@ describe("StagedEtaProgressSnapshot", () => {
   test("currentStageIndex and stageCount are carried as given", () => {
     const sut = new StagedEtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
-      asEpoch(),
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
       0,
       10,
       2,
@@ -234,7 +262,7 @@ describe("StagedEtaProgressSnapshot", () => {
   test("rate/eta/remainingMilliseconds are overall, weighted across every stage - not stage-local", () => {
     const sut = new StagedEtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       /* stageCompleted */ 5,
       /* stageTotal */ 10, // 50% of this stage alone
@@ -252,7 +280,7 @@ describe("StagedEtaProgressSnapshot", () => {
   test("rate/eta/remainingMilliseconds are undefined once abandoned, given no rate estimator", () => {
     const sut = new StagedEtaProgressSnapshot(
       "abandoned",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       5,
       10,
@@ -269,7 +297,7 @@ describe("StagedEtaProgressSnapshot", () => {
   test("once abandoned, rate stays the last measured speed - only eta/remainingMilliseconds are forced undefined", () => {
     const sut = new StagedEtaProgressSnapshot(
       "abandoned",
-      asEpoch(),
+      asEpochMilliseconds(),
       toInstant({ milliseconds: 1000 }),
       5,
       10,
@@ -289,8 +317,8 @@ describe("StagedEtaProgressSnapshot", () => {
     // comment.
     const sut = new StagedEtaProgressSnapshot(
       "in-progress",
-      asEpoch(),
-      asEpoch(),
+      asEpochMilliseconds(),
+      asEpochMilliseconds(),
       /* stageCompleted */ 25,
       /* stageTotal */ 50,
       1,

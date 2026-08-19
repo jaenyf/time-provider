@@ -4,8 +4,6 @@ import {
   type IUtcOnlySystemPlugin,
   type TimezoneDefinition,
   asap,
-  toDuration,
-  type DurationMilliseconds,
 } from "@time-provider/core";
 import { describe, beforeEach, vi, afterEach, test, expect } from "vite-plus/test";
 import {
@@ -66,7 +64,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.once(toDuration({ milliseconds: immediateDelay }), callback);
+          sut.once({ milliseconds: immediateDelay }, callback);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
@@ -74,7 +72,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.once(toDuration({ milliseconds: futureDelay * 2 }), callback);
+          sut.once({ milliseconds: futureDelay * 2 }, callback);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
@@ -84,8 +82,8 @@ export function testSystemRuntime<TDate>(
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
-          const timeoutHandleB = sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+          const timeoutHandleA = sut.once({ milliseconds: futureDelay }, callbackA);
+          const timeoutHandleB = sut.once({ milliseconds: futureDelay }, callbackB);
           timeoutHandleA.dispose();
           timeoutHandleB.dispose();
           vi.advanceTimersByTime(futureDelay);
@@ -105,7 +103,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.every(toDuration({ milliseconds: immediateDelay }), callback);
+          sut.every({ milliseconds: immediateDelay }, callback);
           vi.advanceTimersByTime(1000);
           expect(callbackCalled).toBe(true);
         });
@@ -113,7 +111,7 @@ export function testSystemRuntime<TDate>(
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let callbackCalled = false;
           const callback = () => (callbackCalled = true);
-          sut.every(toDuration({ milliseconds: futureDelay * 2 }), callback);
+          sut.every({ milliseconds: futureDelay * 2 }, callback);
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
         });
@@ -123,8 +121,8 @@ export function testSystemRuntime<TDate>(
           const callbackA = () => (callbackACalled = true);
           let callbackBCalled = false;
           const callbackB = () => (callbackBCalled = true);
-          const timeoutHandleA = sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
-          const timeoutHandleB = sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+          const timeoutHandleA = sut.every({ milliseconds: futureDelay }, callbackA);
+          const timeoutHandleB = sut.every({ milliseconds: futureDelay }, callbackB);
           timeoutHandleA.dispose();
           timeoutHandleB.dispose();
           vi.advanceTimersByTime(futureDelay);
@@ -136,7 +134,7 @@ export function testSystemRuntime<TDate>(
           (expectedRetries: number) => {
             const sut = plugin.createSystemRuntime("Pacific/Kiritimati");
             let retries = 0;
-            sut.timers.every(toDuration({ milliseconds: 1000 }), () => {
+            sut.timers.every({ milliseconds: 1000 }, () => {
               retries++;
             });
             vi.advanceTimersByTime(expectedRetries * 1000);
@@ -162,7 +160,7 @@ export function testSystemRuntime<TDate>(
                 callbackCalled = true;
                 return false;
               },
-              toDuration({ milliseconds: futureDelay }),
+              { milliseconds: futureDelay },
             );
             vi.advanceTimersByTime(futureDelay);
             expect(callbackCalled).toBe(true);
@@ -176,7 +174,7 @@ export function testSystemRuntime<TDate>(
               callbackCalled = true;
               return false;
             },
-            toDuration({ milliseconds: futureDelay * 2 }),
+            { milliseconds: futureDelay * 2 },
           );
           vi.advanceTimersByTime(futureDelay);
           expect(callbackCalled).toBe(false);
@@ -190,14 +188,14 @@ export function testSystemRuntime<TDate>(
               callbackACalled = true;
               return false;
             },
-            toDuration({ milliseconds: futureDelay }),
+            { milliseconds: futureDelay },
           );
           const handleB = sut.recurring(
             () => {
               callbackBCalled = true;
               return false;
             },
-            toDuration({ milliseconds: futureDelay }),
+            { milliseconds: futureDelay },
           );
           handleA.dispose();
           handleB.dispose();
@@ -208,10 +206,13 @@ export function testSystemRuntime<TDate>(
         test("stops once callback returns false, instead of continuing to recur", () => {
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
           let runs = 0;
-          sut.recurring(() => {
-            runs++;
-            return runs < 3 ? (10 as DurationMilliseconds) : false;
-          }, 10 as DurationMilliseconds);
+          sut.recurring(
+            () => {
+              runs++;
+              return runs < 3 ? { milliseconds: 10 } : false;
+            },
+            { milliseconds: 10 },
+          );
           vi.advanceTimersByTime(1000);
           expect(runs).toBe(3);
         });
@@ -223,9 +224,9 @@ export function testSystemRuntime<TDate>(
           sut.recurring(
             () => {
               runs++;
-              return calls < delays.length ? toDuration({ milliseconds: delays[calls++] }) : false;
+              return calls < delays.length ? { milliseconds: delays[calls++] } : false;
             },
-            toDuration({ milliseconds: delays[0] }),
+            { milliseconds: delays[0] },
           );
           vi.advanceTimersByTime(16);
           expect(runs).toBe(3);
@@ -237,16 +238,16 @@ export function testSystemRuntime<TDate>(
             const recurringHandleB = sut.recurring(
               () => {
                 callbackBCallCount++;
-                return toDuration({ milliseconds: 20 });
+                return { milliseconds: 20 };
               },
-              toDuration({ milliseconds: 20 }),
+              { milliseconds: 20 },
             );
             sut.recurring(
               () => {
                 recurringHandleB.dispose();
                 return false;
               },
-              toDuration({ milliseconds: 10 }),
+              { milliseconds: 10 },
             );
             vi.advanceTimersByTime(30);
             expect(callbackBCallCount).toBe(0);
@@ -255,14 +256,27 @@ export function testSystemRuntime<TDate>(
             const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
             let runs = 0;
             let handle: ITimerHandle;
-            handle = sut.recurring(() => {
-              runs++;
-              handle.dispose();
-              return 10 as DurationMilliseconds;
-            }, 10 as DurationMilliseconds);
+            handle = sut.recurring(
+              () => {
+                runs++;
+                handle.dispose();
+                return { milliseconds: 10 };
+              },
+              { milliseconds: 10 },
+            );
             vi.advanceTimersByTime(100);
             expect(runs).toBe(1);
           });
+        });
+        test("fires asap when no initial delay specified", () => {
+          const sut = createSUT();
+          let runs = 0;
+          sut.recurring(() => {
+            runs++;
+            return false;
+          });
+          vi.advanceTimersByTime(100);
+          expect(runs).toBe(1);
         });
         test("clearing a recurring handle is not scoped to the runtime it's called through - native timers are process-global", () => {
           const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
@@ -271,9 +285,9 @@ export function testSystemRuntime<TDate>(
           const handle = sut.recurring(
             () => {
               callCount++;
-              return toDuration({ milliseconds: 10 });
+              return { milliseconds: 10 };
             },
-            toDuration({ milliseconds: 10 }),
+            { milliseconds: 10 },
           );
           /*
             Unlike the deterministic runtimes (each with its own private heap), System runtimes

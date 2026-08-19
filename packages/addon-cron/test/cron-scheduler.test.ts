@@ -5,7 +5,8 @@ import {
   type ITimers,
   type ITimeConverter,
   toInstant,
-  asEpoch,
+  type IDurationSpec,
+  asEpochMilliseconds,
 } from "@time-provider/core";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
@@ -28,10 +29,10 @@ const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
  */
 function faketimers(): {
   timers: ITimers;
-  recurring: { callback: () => number | false; initialDelay?: number }[];
+  recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[];
   cleared: ITimerHandle[];
 } {
-  const recurring: { callback: () => number | false; initialDelay?: number }[] = [];
+  const recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[] = [];
   const cleared: ITimerHandle[] = [];
   const handle = {
     kind: 2,
@@ -64,7 +65,7 @@ function faketimers(): {
 describe("CronScheduler", () => {
   test("schedule() parses the expression eagerly, before ever touching the timers", () => {
     const { timers, recurring } = faketimers();
-    let now = asEpoch();
+    let now = asEpochMilliseconds();
     const sut = new CronScheduler(
       timers,
       () => now,
@@ -88,7 +89,7 @@ describe("CronScheduler", () => {
     );
     sut.schedule("* * * * *", () => {});
     expect(recurring).toHaveLength(1);
-    expect(recurring[0]?.initialDelay).toBe(Date.UTC(2024, 0, 1, 10, 31, 0) - now);
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(Date.UTC(2024, 0, 1, 10, 31, 0) - now);
   });
 
   test("the recurring callback runs the user callback, then re-derives the next delay", () => {
@@ -105,7 +106,7 @@ describe("CronScheduler", () => {
 
     const nextDelay = recurring[0]?.callback();
     expect(runs).toEqual([now]);
-    expect(nextDelay).toBe(60_000);
+    expect((nextDelay as IDurationSpec).milliseconds).toBe(60_000);
   });
 
   test("re-arms are computed from the schedule's own occurrence chain, not from timestampNow() at rearm time", () => {
@@ -125,8 +126,7 @@ describe("CronScheduler", () => {
 
     now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 12, 0, 0) });
     const nextDelay = recurring[0]?.callback();
-
-    expect(nextDelay).toBe(60_000);
+    expect((nextDelay as IDurationSpec).milliseconds).toBe(60_000);
   });
 
   test("chains through several consecutive occurrences even while timestampNow() never advances (a batched drain)", () => {
@@ -140,10 +140,10 @@ describe("CronScheduler", () => {
     );
     sut.schedule("0 9,10,11 * * *", () => {});
 
-    expect(recurring[0]?.initialDelay).toBe(Date.UTC(2024, 0, 1, 9, 0, 0) - now);
-    expect(recurring[0]?.callback()).toBe(60 * 60_000); // 09:00 -> 10:00
-    expect(recurring[0]?.callback()).toBe(60 * 60_000); // 10:00 -> 11:00
-    expect(recurring[0]?.callback()).toBe(22 * 60 * 60_000); // 11:00 -> next day's 09:00
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(Date.UTC(2024, 0, 1, 9, 0, 0) - now);
+    expect((recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(60 * 60_000); // 09:00 -> 10:00
+    expect((recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(60 * 60_000); // 10:00 -> 11:00
+    expect((recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(22 * 60 * 60_000); // 11:00 -> next day's 09:00
   });
 
   test("a throwing callback propagates to the timers, rather than being caught and re-reported by cron itself", () => {
@@ -170,7 +170,7 @@ describe("CronScheduler", () => {
     const { timers, cleared } = faketimers();
     const sut = new CronScheduler(
       timers,
-      () => asEpoch(),
+      () => asEpochMilliseconds(),
       () => "Etc/UTC",
       defaultCalendarScheme,
     );
@@ -189,14 +189,14 @@ describe("CronScheduler", () => {
       defaultCalendarScheme,
     );
     sut.schedule({ minute: 30, hour: 9 }, () => {});
-    expect(recurring[0]?.initialDelay).toBe(Date.UTC(2024, 0, 1, 9, 30, 0) - now);
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(Date.UTC(2024, 0, 1, 9, 30, 0) - now);
   });
 
   test("schedule() with a spec throws the same way an invalid spec field would", () => {
     const { timers, recurring } = faketimers();
     const sut = new CronScheduler(
       timers,
-      () => asEpoch(),
+      () => asEpochMilliseconds(),
       () => "Etc/UTC",
       defaultCalendarScheme,
     );
@@ -215,7 +215,7 @@ describe("CronScheduler", () => {
     );
     sut.schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
-    expect(recurring[0]?.initialDelay).toBe(
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
     );
   });
@@ -236,11 +236,11 @@ describe("CronScheduler", () => {
       sut.schedule("0 9 * * *", () => {});
 
       const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
-      expect(recurring[0]?.initialDelay).toBe(
+      expect(recurring[0]?.initialDelay?.milliseconds).toBe(
         computeNextOccurrence(parsed, now, "Asia/Tokyo", defaultCalendarScheme) - now,
       );
       // 09:00 in Tokyo is 00:00Z, so the delay must not be the 9h a UTC reading would give.
-      expect(recurring[0]?.initialDelay).not.toBe(
+      expect(recurring[0]?.initialDelay?.milliseconds).not.toBe(
         computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
       );
     });
@@ -261,7 +261,7 @@ describe("CronScheduler", () => {
       const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
       const utcOccurrence = computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme);
       // Re-arming still walks the UTC occurrence chain this schedule started on.
-      expect(recurring[0]?.callback()).toBe(
+      expect((recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(
         computeNextOccurrence(parsed, utcOccurrence, "Etc/UTC", defaultCalendarScheme) -
           utcOccurrence,
       );

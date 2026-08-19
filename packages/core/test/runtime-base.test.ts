@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseSystemRuntime, DefaultCalendarScheme, TimeInputValidator } from "@time-provider/core";
 import type { EpochMilliseconds, ICalendarScheme, ITimeConverter } from "@time-provider/core";
-import { asEpoch, toDuration } from "../src/helpers/branded-types.ts";
+import { asEpochMilliseconds } from "../src/helpers/branded-types.ts";
 
 class FakeRuntime extends BaseSystemRuntime<unknown> {
   constructor(converter: ITimeConverter<unknown>) {
     super("Etc/UTC", converter);
   }
   timestampNow(): EpochMilliseconds {
-    return asEpoch();
+    return asEpochMilliseconds();
   }
   localNow(): unknown {
     return 0;
@@ -36,7 +36,7 @@ describe("TimeInputValidator", () => {
 describe("BaseRuntime calendar", () => {
   test("falls back to the shared default when the converter doesn't provide one", () => {
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -47,7 +47,7 @@ describe("BaseRuntime calendar", () => {
 
   test("resolves the adapter once, so every read returns the same instance", () => {
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -59,7 +59,7 @@ describe("BaseRuntime calendar", () => {
     // The fallback belongs to the runtime, not the converter - converters are typically shared
     // static classes, so a runtime must not mutate one just by being constructed.
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
@@ -69,12 +69,12 @@ describe("BaseRuntime calendar", () => {
 
   test("returns the converter's own calendar scheme when it provides one", () => {
     const custom: ICalendarScheme<unknown> = new DefaultCalendarScheme({
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     });
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
       calendarScheme: custom,
@@ -93,13 +93,13 @@ describe("BaseRuntime Timers wait", () => {
   });
   test("aze", async () => {
     const converter: ITimeConverter<unknown> = {
-      convertToTimestamp: () => asEpoch(),
+      convertToTimestamp: () => asEpochMilliseconds(),
       convertToUtcDate: (time) => time,
       convertToLocalDate: (_timezone, time) => time,
     };
     const sut = new FakeRuntime(converter);
 
-    const waitPromise = sut.wait(toDuration({ milliseconds: 1000 }));
+    const waitPromise = sut.wait({ milliseconds: 1000 });
 
     await vi.advanceTimersByTimeAsync(999);
 

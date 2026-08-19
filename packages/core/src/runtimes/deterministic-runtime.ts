@@ -1,4 +1,4 @@
-import { toInstant } from "../helpers/branded-types.ts";
+import { toInstant, type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
@@ -49,7 +49,7 @@ interface IntervalEntry extends BaseDueEntry {
 interface RecurringEntry extends BaseDueEntry {
   readonly kind: typeof TIMER_KIND_RECURRING;
   /** Return value decides the next run; `false` stops the schedule. */
-  callback: () => number | false;
+  callback: () => IDurationSpec | false;
 }
 
 type DueEntry = TimeoutEntry | IntervalEntry | RecurringEntry;
@@ -98,7 +98,7 @@ class DueHeap {
     return entry;
   }
 
-  registerRecurring(runAt: number, callback: () => number | false): RecurringEntry {
+  registerRecurring(runAt: number, callback: () => IDurationSpec | false): RecurringEntry {
     const entry: RecurringEntry = {
       runAt,
       seq: this._nextSeq++,
@@ -294,7 +294,7 @@ class DueHeap {
           }
           //#endregion inlining of DueHeap.pop
           const previousRunAt = root.runAt;
-          let next: number | false;
+          let next: IDurationSpec | false;
 
           if (rethrowTimersErrors) {
             next = root.callback();
@@ -311,7 +311,8 @@ class DueHeap {
             //#region inlining of DueHeap.nextSeq
             root.seq = this._nextSeq++;
             //#endregion inlining of DueHeap.nextSeq
-            root.runAt = previousRunAt + (next < 1 ? 1 : next);
+            let nextMs = toDuration(next);
+            root.runAt = previousRunAt + (nextMs < 1 ? 1 : nextMs);
             this._insert(root);
           }
           break;
@@ -384,30 +385,32 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void {
     BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
   }
-  once(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions): ITimerHandle {
-    if (delay === undefined || delay < 0) delay = 0 as DurationMilliseconds;
+  once(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+    let msDelay = toDuration(delay);
+    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerTimeout(now + delay, callback);
+    const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
     this.mayRunDueCallbacks(now);
     return new TimerHandle(TIMER_KIND_TIMEOUT, this, entry);
   }
 
-  every(delay: DurationMilliseconds, callback: () => void, _options?: ITimerOptions): ITimerHandle {
-    if (delay === undefined || delay < 0) delay = 0 as DurationMilliseconds;
+  every(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+    let msDelay = toDuration(delay);
+    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerInterval(now + delay, delay, callback);
+    const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
     return new TimerHandle(TIMER_KIND_INTERVAL, this, entry);
   }
 
   recurring(
-    callback: () => DurationMilliseconds | false,
-    initialDelay?: DurationMilliseconds,
+    callback: () => IDurationSpec | false,
+    initialDelay?: IDurationSpec,
     _options?: ITimerOptions,
   ): ITimerHandle {
-    if (initialDelay === undefined || initialDelay < 0) initialDelay = 0 as DurationMilliseconds;
+    let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerRecurring(now + initialDelay, callback);
+    const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
     return new TimerHandle(TIMER_KIND_RECURRING, this, entry);
   }

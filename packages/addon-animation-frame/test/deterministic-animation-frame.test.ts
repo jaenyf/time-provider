@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { ITimerHandle, ITimers } from "@time-provider/core";
+import { toDuration, type ITimerHandle, type ITimers } from "@time-provider/core";
 import { DeterministicAnimationFrameTimers } from "../src/deterministic-animation-frame-timers.ts";
 
 /*
@@ -23,7 +23,7 @@ function fakeScheduler(): {
     scheduled,
     cleared,
     timers: {
-      once(millisecondsDelay, callback) {
+      once(durationSpec, callback) {
         const handle = {
           id: nextHandle++,
           kind: 2,
@@ -34,7 +34,7 @@ function fakeScheduler(): {
         };
         scheduled.set((handle as unknown as { id: number }).id, {
           callback,
-          delayMs: millisecondsDelay,
+          delayMs: toDuration(durationSpec),
           dispose: () => {
             cleared.add(handle.id);
           },

@@ -3,8 +3,7 @@ import {
   type EpochMilliseconds,
   type ICalendarScheme,
   type ITimers,
-  type DurationMilliseconds,
-  toDuration,
+  type IDurationSpec,
 } from "@time-provider/core";
 import {
   computeNextOccurrence,
@@ -77,11 +76,11 @@ export class CronScheduler<
       Re-querying it there would skip every occurrence between "now" and that final target.
     */
     let lastOccurrence = calendarScheme.fromTimestamp(this.#timestampNow());
-    const nextDelay = (): DurationMilliseconds => {
+    const nextDelay = (): IDurationSpec => {
       const next = computeNextOccurrence(parsed, lastOccurrence, timezone, calendarScheme);
       const delay = calendarScheme.toTimestamp(next) - calendarScheme.toTimestamp(lastOccurrence);
       lastOccurrence = next;
-      return toDuration({ milliseconds: delay });
+      return { milliseconds: delay };
     };
     /*
       `callback` is invoked without a try/catch on purpose: a throwing cron callback is just a

@@ -1,4 +1,4 @@
-import { asap, asEpoch, toInstant } from "../helpers/branded-types.ts";
+import { asEpochMilliseconds, toInstant } from "../helpers/branded-types.ts";
 import type { BaseDeterministicRuntime } from "../runtimes/deterministic-runtime.ts";
 import type {
   DurationMilliseconds,
@@ -89,7 +89,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       name,
       entryType: "mark",
       startTime: options?.startTime ?? toInstant({ milliseconds: this.now() as number }),
-      duration: asap(),
+      duration: 0 as DurationMilliseconds,
     };
 
     this.#entries.push(entry);
@@ -102,7 +102,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
   ): IPerformanceMeasure => {
     this.assertInitialization();
-    let startTime: EpochMilliseconds = asEpoch();
+    let startTime: EpochMilliseconds = asEpochMilliseconds();
     let endTime: EpochMilliseconds = toInstant({ milliseconds: this.now() as number });
 
     if (typeof startMarkOrOptions === "string") {

@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { epochArithmetic, toDuration, toInstant } from "../src/helpers/branded-types.ts";
+import { asEpoch, epochArithmetic, toDuration, toInstant } from "../src/helpers/branded-types.ts";
 import type { EpochMilliseconds, DurationMilliseconds } from "../src/types/types.ts";
+
+describe("asEpoch", () => {
+  test("returns a spec with 0 milliseconds", () => {
+    expect(asEpoch().milliseconds).toBe(0);
+  });
+});
 
 describe("toInstant", () => {
   test.each([1, 2, 3])("milliseconds converts to milliseconds", (value) => {

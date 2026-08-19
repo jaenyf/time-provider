@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vite-plus/test";
 import { DeterministicPerformance } from "../src/performance/deterministic-performance.ts";
 import type { BaseDeterministicRuntime } from "../src/runtimes/deterministic-runtime.ts";
-import { asEpoch, toDuration, toInstant } from "../src/helpers/branded-types.ts";
+import { asEpochMilliseconds, toDuration, toInstant } from "../src/helpers/branded-types.ts";
 
 function fakeRuntimeWithTimestamps(
   timestamps: readonly number[],
@@ -61,15 +61,15 @@ describe("DeterministicPerformance", () => {
     test("reports the specific missing options.start mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: "missing-start", end: asEpoch() })).toThrow(
-        "The performance mark 'missing-start' does not exist.",
-      );
+      expect(() =>
+        sut.measure("m", { start: "missing-start", end: asEpochMilliseconds() }),
+      ).toThrow("The performance mark 'missing-start' does not exist.");
     });
 
     test("reports the specific missing options.end mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: asEpoch(), end: "missing-end" })).toThrow(
+      expect(() => sut.measure("m", { start: asEpochMilliseconds(), end: "missing-end" })).toThrow(
         "The performance mark 'missing-end' does not exist.",
       );
     });
@@ -79,7 +79,7 @@ describe("DeterministicPerformance", () => {
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
       expect(() =>
         sut.measure("m", {
-          start: asEpoch(),
+          start: asEpochMilliseconds(),
           end: toInstant({ milliseconds: 10 }),
           duration: toDuration({ milliseconds: 10 }),
         }),

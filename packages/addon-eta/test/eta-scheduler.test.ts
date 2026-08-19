@@ -1,5 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
-import { asEpoch, toInstant, type ITimerHandle, type ITimers } from "@time-provider/core";
+import {
+  asEpochMilliseconds,
+  toDuration,
+  toInstant,
+  type ITimerHandle,
+  type ITimers,
+} from "@time-provider/core";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 import { EtaTrackBuilder } from "../src/eta-tracker.ts";
 import type { IEtaDurationSnapshot } from "../src/types.ts";
@@ -15,8 +21,8 @@ function fakeScheduler(): {
       once() {
         throw new Error("not used by the eta addon");
       },
-      every(millisecondsDelay, callback) {
-        intervals.push({ callback, delay: millisecondsDelay });
+      every(durationSpec, callback) {
+        intervals.push({ callback, delay: toDuration(durationSpec) });
         return {} as ITimerHandle;
       },
       recurring() {
@@ -32,13 +38,13 @@ function fakeScheduler(): {
 describe("EtaScheduler", () => {
   test("estimate() returns an EtaTrackBuilder", () => {
     const { timers } = fakeScheduler();
-    const sut = new EtaScheduler(timers, () => asEpoch());
+    const sut = new EtaScheduler(timers, () => asEpochMilliseconds());
     expect(sut.estimate()).toBeInstanceOf(EtaTrackBuilder);
   });
 
   test("wires the builder to its own scheduler", () => {
     const { timers, intervals } = fakeScheduler();
-    const sut = new EtaScheduler(timers, () => asEpoch());
+    const sut = new EtaScheduler(timers, () => asEpochMilliseconds());
     sut
       .estimate()
       .withEstimatedDuration(1000)

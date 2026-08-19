@@ -90,7 +90,7 @@ class UserService {
 
 ```typescript
 // test: import the deterministic runtime
-import { createTimeProvider, toDuration } from "@time-provider/core/deterministic";
+import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
 // create a deterministic runtime
@@ -101,7 +101,7 @@ const timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-timeProvider.timers.every(toDuration({ seconds: 1 }), () => retries++);
+timeProvider.timers.every({ seconds: 1 }, () => retries++);
 timeProvider.clock.advance({ seconds: 3 });
 
 expect(retries).toBe(3);

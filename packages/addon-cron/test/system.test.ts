@@ -6,6 +6,7 @@ import {
   type ITimers,
   type IRuntime,
   toInstant,
+  type IDurationSpec,
 } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
@@ -31,9 +32,9 @@ function fakeSystemRuntime(
   timezone?: string,
 ): {
   runtime: FakeRuntime;
-  recurring: { callback: () => number | false; initialDelay?: number }[];
+  recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[];
 } {
-  const recurring: { callback: () => number | false; initialDelay?: number }[] = [];
+  const recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[] = [];
   const timers: ITimers = {
     once() {
       throw new Error("not used by the cron addon");
@@ -85,7 +86,7 @@ describe("cronAddon (system)", () => {
     addon.applyToRuntime(runtime);
     (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
-    expect(recurring[0]?.initialDelay).toBe(
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
     );
   });
@@ -96,7 +97,7 @@ describe("cronAddon (system)", () => {
     addon.applyToRuntime(runtime);
     (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
-    expect(recurring[0]?.initialDelay).toBe(
+    expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
     );
   });

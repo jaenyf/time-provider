@@ -88,7 +88,9 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
     this.#startTime = timestampNow();
     this.#rateEstimator = createRateEstimator(algorithm);
     this.#rateEstimator.addSample(this.#startTime, 0);
-    this.#timerHandle = timers.every(notificationIntervalMilliseconds, () => this.#tick());
+    this.#timerHandle = timers.every({ milliseconds: notificationIntervalMilliseconds }, () =>
+      this.#tick(),
+    );
   }
 
   #overallFraction(): number {
@@ -235,7 +237,7 @@ class DurationEtaTracker implements IDurationEtaTracker {
     this.#notify = notify;
     this.#startTime = timestampNow();
     this.#eta = epochArithmetic.addDuration(this.#startTime, expectedDurationMilliseconds);
-    this.#timerHandle = timers.every(notificationIntervalMilliseconds, () =>
+    this.#timerHandle = timers.every({ milliseconds: notificationIntervalMilliseconds }, () =>
       this.#notify(
         new EtaDurationSnapshot("in-progress", this.#startTime, timestampNow(), this.#eta),
       ),
