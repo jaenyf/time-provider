@@ -9,11 +9,11 @@ import type {
   ITimers,
   ITimeConverter,
   TimezoneDefinition,
-  DurationMilliseconds,
   ITimerOptions,
   EpochMilliseconds,
 } from "../types/types.ts";
 import type { TimerHandle } from "./timer-handle.ts";
+import { type IDurationSpec } from "../helpers/branded-types.ts";
 
 export class SystemHelper {
   static getRealHostTimezone(): string {
@@ -99,22 +99,14 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
 
   abstract clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
-  abstract once(
-    delay: DurationMilliseconds,
-    callback: () => void,
-    options?: ITimerOptions,
-  ): ITimerHandle;
-  abstract every(
-    delay: DurationMilliseconds,
-    callback: () => void,
-    options?: ITimerOptions,
-  ): ITimerHandle;
+  abstract once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  abstract every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
   abstract recurring(
-    callback: () => DurationMilliseconds | false,
-    initialDelay?: DurationMilliseconds,
+    callback: () => IDurationSpec | false,
+    initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): ITimerHandle;
-  wait(delay: DurationMilliseconds, options?: ITimerOptions): Promise<void> {
+  wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void> {
     return new Promise((resolve) => {
       this.once(delay, () => resolve(), options);
     });

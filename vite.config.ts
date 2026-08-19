@@ -26,7 +26,7 @@ export default defineConfig({
     passWithNoTests: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov"],
+      reporter: ["text", "lcov", "html-spa"],
       clean: true,
       reportsDirectory: "coverage",
       exclude: ["index.ts", "**/test-shared/**", "**/test-e2e/**", "**/dist/**", "polyfills.ts"],

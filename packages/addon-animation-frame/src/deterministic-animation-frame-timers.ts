@@ -1,4 +1,4 @@
-import { toDuration, type ITimerHandle, type ITimers } from "@time-provider/core";
+import { type ITimerHandle, type ITimers } from "@time-provider/core";
 import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
 
 /**
@@ -38,7 +38,7 @@ export class DeterministicAnimationFrameTimers implements IAnimationFrameApi {
 
   requestAnimationFrame(callback: () => void): AnimationFrameHandle {
     return this.#timers.once(
-      toDuration({ milliseconds: this.#hostFrameDurationMs }),
+      { milliseconds: this.#hostFrameDurationMs },
       callback,
     ) as unknown as AnimationFrameHandle;
   }

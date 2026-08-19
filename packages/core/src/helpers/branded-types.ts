@@ -49,9 +49,13 @@ export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
 
 /**
  * The shortest possible duration.
- * @returns the shortest possible duration as a branded DurationMilliseconds type.
+ * @returns the shortest possible duration as a IDurationSpec type.
  */
-export function asap(): DurationMilliseconds {
+export function asap(): IDurationSpec {
+  return { milliseconds: 0 };
+}
+
+export function asapMilliseconds(): DurationMilliseconds {
   return 0 as DurationMilliseconds;
 }
 
@@ -114,9 +118,13 @@ export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
 
 /**
  * Get the epoch time as a branded EpochMilliseconds type.
- * @returns epoch time as a branded EpochMilliseconds type
+ * @returns epoch time as a IEpochInstantSpec type
  */
-export function asEpoch(): EpochMilliseconds {
+export function asEpoch(): IEpochInstantSpec {
+  return { milliseconds: 0 };
+}
+
+export function asEpochMilliseconds(): EpochMilliseconds {
   return 0 as EpochMilliseconds;
 }
 

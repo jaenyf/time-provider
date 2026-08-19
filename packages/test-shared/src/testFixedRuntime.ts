@@ -1,4 +1,4 @@
-import { toDuration, type TimezoneDefinition } from "@time-provider/core";
+import { type TimezoneDefinition } from "@time-provider/core";
 import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
@@ -65,7 +65,7 @@ export function testFixedRuntime<TDate>(
           (delay: number) => {
             const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
             let timeoutCalled = false;
-            sut.timers.once(toDuration({ milliseconds: delay }), () => {
+            sut.timers.once({ milliseconds: delay }, () => {
               timeoutCalled = true;
             });
             expect(timeoutCalled).toBe(false);
@@ -76,7 +76,7 @@ export function testFixedRuntime<TDate>(
           (delay: number) => {
             const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
             let intervalCalled = false;
-            sut.timers.every(toDuration({ milliseconds: delay }), () => {
+            sut.timers.every({ milliseconds: delay }, () => {
               intervalCalled = true;
             });
             expect(intervalCalled).toBe(false);
@@ -85,7 +85,7 @@ export function testFixedRuntime<TDate>(
         test.each([1, 2, 100])("a positive-delay timeout should not fire", (delay: number) => {
           const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
           let timeoutCalled = false;
-          sut.timers.once(toDuration({ milliseconds: delay }), () => {
+          sut.timers.once({ milliseconds: delay }, () => {
             timeoutCalled = true;
           });
           expect(timeoutCalled).toBe(false);
@@ -93,7 +93,7 @@ export function testFixedRuntime<TDate>(
         test.each([1, 2, 100])("a positive-delay interval should not fire", (delay: number) => {
           const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
           let intervalCalled = false;
-          sut.timers.every(toDuration({ milliseconds: delay }), () => {
+          sut.timers.every({ milliseconds: delay }, () => {
             intervalCalled = true;
           });
           expect(intervalCalled).toBe(false);

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { ITimerHandle, IRuntime, ITimers } from "@time-provider/core";
+import { type ITimerHandle, type IRuntime, type ITimers, toDuration } from "@time-provider/core";
 import { addon } from "../src/deterministic.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
@@ -19,8 +19,8 @@ function fakeDeterministicRuntime(now: number): {
     once() {
       throw new Error("not used by the eta addon");
     },
-    every(millisecondsDelay, callback) {
-      intervals.push({ callback, delay: millisecondsDelay });
+    every(durationSpec, callback) {
+      intervals.push({ callback, delay: toDuration(durationSpec) });
       return {} as ITimerHandle;
     },
     recurring() {

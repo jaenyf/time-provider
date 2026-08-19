@@ -7,6 +7,7 @@ import type {
   DefaultCalendarSchemeMonthName,
   DefaultCalendarSchemeWeekdayName,
 } from "../calendar/default-calendar-scheme-names.ts";
+import type { IDurationSpec } from "../helpers/branded-types.ts";
 import type { TimerHandle } from "../runtimes/timer-handle.ts";
 
 //#region General branded types
@@ -511,18 +512,18 @@ export interface ITimerOptions {
  */
 export interface ITimers {
   /** One-shot timer. */
-  once(delay: DurationMilliseconds, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
 
   /** A "promise” variant of the `once` one-shot. */
-  wait(delay: DurationMilliseconds, options?: ITimerOptions): Promise<void>;
+  wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /** Fixed-interval timer. */
-  every(delay: DurationMilliseconds, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
 
   /** Dynamic recurrence: The callback determines the next interval; `false` stops it. */
   recurring(
-    callback: () => DurationMilliseconds | false,
-    initialDelay?: DurationMilliseconds,
+    callback: () => IDurationSpec | false,
+    initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): ITimerHandle;
 }

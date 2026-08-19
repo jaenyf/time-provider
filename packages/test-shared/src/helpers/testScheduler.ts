@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vite-plus/test";
-import { toDuration, type DurationMilliseconds, type ITimers } from "@time-provider/core";
+import { asap, type ITimers } from "@time-provider/core";
 
 export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = false) {
   describe("once", () => {
@@ -9,8 +9,8 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.once(toDuration({ milliseconds: immediateDelay }), callbackA);
-      sut.once(toDuration({ milliseconds: immediateDelay }), callbackB);
+      sut.once({ milliseconds: immediateDelay }, callbackA);
+      sut.once({ milliseconds: immediateDelay }, callbackB);
       expect(callbackACalled).toBe(!isTimeFrozen);
       expect(callbackBCalled).toBe(!isTimeFrozen);
     });
@@ -20,8 +20,8 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
-      sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+      sut.once({ milliseconds: futureDelay }, callbackA);
+      sut.once({ milliseconds: futureDelay }, callbackB);
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
     });
@@ -33,8 +33,8 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.every(toDuration({ milliseconds: immediateDelay }), callbackA);
-      sut.every(toDuration({ milliseconds: immediateDelay }), callbackB);
+      sut.every({ milliseconds: immediateDelay }, callbackA);
+      sut.every({ milliseconds: immediateDelay }, callbackB);
       expect(callbackACalled).toBe(!isTimeFrozen);
       expect(callbackBCalled).toBe(!isTimeFrozen);
     });
@@ -44,8 +44,8 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
       let callbackBCalled = false;
       const callbackA = () => (callbackACalled = true);
       const callbackB = () => (callbackBCalled = true);
-      sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
-      sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+      sut.every({ milliseconds: futureDelay }, callbackA);
+      sut.every({ milliseconds: futureDelay }, callbackB);
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
     });
@@ -61,14 +61,14 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
           callbackACalled = true;
           return false;
         },
-        toDuration({ milliseconds: immediateDelay }),
+        { milliseconds: immediateDelay },
       );
       sut.recurring(
         () => {
           callbackBCalled = true;
           return false;
         },
-        toDuration({ milliseconds: immediateDelay }),
+        { milliseconds: immediateDelay },
       );
       expect(callbackACalled).toBe(!isTimeFrozen);
       expect(callbackBCalled).toBe(!isTimeFrozen);
@@ -82,14 +82,14 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
           callbackACalled = true;
           return false;
         },
-        toDuration({ milliseconds: futureDelay }),
+        { milliseconds: futureDelay },
       );
       sut.recurring(
         () => {
           callbackBCalled = true;
           return false;
         },
-        toDuration({ milliseconds: futureDelay }),
+        { milliseconds: futureDelay },
       );
       expect(callbackACalled).toBe(false);
       expect(callbackBCalled).toBe(false);
@@ -102,10 +102,19 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
         // it would run zero times if 0 were mistaken for a falsy "stop"
         sut.recurring(() => {
           runs++;
-          return 0 as DurationMilliseconds;
-        }, 0 as DurationMilliseconds);
+          return asap();
+        }, asap());
         expect(runs).toBe(isTimeFrozen ? 0 : 1);
       });
+    });
+    test("fires asap when no initial delay specified", () => {
+      const sut = createSUT();
+      let runs = 0;
+      sut.recurring(() => {
+        runs++;
+        return asap();
+      });
+      expect(runs).toBe(isTimeFrozen ? 0 : 1);
     });
   });
 }

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vite-plus/test";
 import {
-  asEpoch,
+  asEpochMilliseconds,
   toDuration,
   toInstant,
   type IPerformance,
@@ -42,7 +42,7 @@ export function testPerformance<TDate>(
     test("does not fire a pending timeout", () => {
       const sut = createCleanSUT();
       let callbackCalled = false;
-      sut.once(toDuration({ milliseconds: 10 }), () => (callbackCalled = true));
+      sut.once({ milliseconds: 10 }, () => (callbackCalled = true));
       sut.performance.now();
       sut.performance.mark("m");
       sut.performance.measure("measure", "m");
@@ -52,7 +52,7 @@ export function testPerformance<TDate>(
     test("does not fire a pending interval", () => {
       const sut = createCleanSUT();
       let callbackCalled = false;
-      sut.every(toDuration({ milliseconds: 10 }), () => (callbackCalled = true));
+      sut.every({ milliseconds: 10 }, () => (callbackCalled = true));
       sut.performance.now();
       sut.performance.mark("m");
       sut.performance.measure("measure", "m");
@@ -249,12 +249,16 @@ export function testPerformance<TDate>(
 
     test("throws when options.start names a mark that does not exist", () => {
       const sut = createCleanSUT();
-      expect(() => sut.performance.measure("m", { start: "missing", end: asEpoch() })).toThrow();
+      expect(() =>
+        sut.performance.measure("m", { start: "missing", end: asEpochMilliseconds() }),
+      ).toThrow();
     });
 
     test("throws when options.end names a mark that does not exist", () => {
       const sut = createCleanSUT();
-      expect(() => sut.performance.measure("m", { start: asEpoch(), end: "missing" })).toThrow();
+      expect(() =>
+        sut.performance.measure("m", { start: asEpochMilliseconds(), end: "missing" }),
+      ).toThrow();
     });
 
     test("computes end from start + duration", () => {
@@ -281,7 +285,7 @@ export function testPerformance<TDate>(
       const sut = createCleanSUT();
       expect(() =>
         sut.performance.measure("m", {
-          start: asEpoch(),
+          start: asEpochMilliseconds(),
           end: toInstant({ milliseconds: 10 }),
           duration: toDuration({ milliseconds: 10 }),
         }),

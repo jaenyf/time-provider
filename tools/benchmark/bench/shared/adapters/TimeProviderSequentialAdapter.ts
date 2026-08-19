@@ -1,5 +1,5 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider } from "@time-provider/core/deterministic";
+import { createTimeProvider, type IDurationSpec } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
@@ -9,8 +9,8 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   readonly #plannedTimestamps: number[];
   #runtime!: {
     timers: {
-      once(ms: number, callback: () => void): unknown;
-      every(ms: number, callback: () => void): unknown;
+      once(ms: IDurationSpec, callback: () => void): unknown;
+      every(ms: IDurationSpec, callback: () => void): unknown;
     };
     clock: { utcNow(): unknown };
   };
@@ -44,10 +44,10 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     return this.#runtime.clock.utcNow();
   }
   setTimeout(callback: () => void, delayMs: number): void {
-    this.#runtime.timers.once(delayMs, callback);
+    this.#runtime.timers.once({ milliseconds: delayMs }, callback);
   }
   setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.timers.every(delayMs, callback);
+    this.#runtime.timers.every({ milliseconds: delayMs }, callback);
   }
   advance(): void {
     this.#delays.next();

@@ -14,7 +14,7 @@ import {
   testTimestampNow,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
-import { asap, toDuration, type ITimerHandle, type TimezoneDefinition } from "@time-provider/core";
+import { asap, type ITimerHandle, type TimezoneDefinition } from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
 
 export function testManualRuntime<TDate>(
@@ -161,7 +161,7 @@ export function testManualRuntime<TDate>(
             (_label, advanceConfiguration) => {
               const sut = createSUT(); // 2026-01-01T00:00:00.000Z
               let callbackCount = 0;
-              sut.timers.once(toDuration({ milliseconds: 1 }), () => {
+              sut.timers.once({ milliseconds: 1 }, () => {
                 ++callbackCount;
               });
               sut.advance(advanceConfiguration);
@@ -180,7 +180,7 @@ export function testManualRuntime<TDate>(
             (_label, advanceConfiguration) => {
               const sut = createSUT(); // 2026-01-01T00:00:00.000Z
               let callbackCount = 0;
-              sut.timers.every(toDuration({ milliseconds: 1 }), () => {
+              sut.timers.every({ milliseconds: 1 }, () => {
                 ++callbackCount;
               });
               sut.advance(advanceConfiguration);
@@ -223,9 +223,9 @@ export function testManualRuntime<TDate>(
             const delay = 100;
             function tick() {
               ++fireCount;
-              sut.timers.once(toDuration({ milliseconds: delay }), tick);
+              sut.timers.once({ milliseconds: delay }, tick);
             }
-            sut.timers.once(toDuration({ milliseconds: delay }), tick);
+            sut.timers.once({ milliseconds: delay }, tick);
 
             sut.advance({ seconds: 1 }); // 1000ms at 100ms/tick
 
@@ -238,9 +238,9 @@ export function testManualRuntime<TDate>(
             const delay = 100;
             function tick() {
               ++fireCount;
-              sut.timers.once(toDuration({ milliseconds: delay }), tick);
+              sut.timers.once({ milliseconds: delay }, tick);
             }
-            sut.timers.once(toDuration({ milliseconds: delay }), tick);
+            sut.timers.once({ milliseconds: delay }, tick);
 
             for (let i = 0; i < 5; i++) {
               sut.advance({ milliseconds: 200 });
@@ -272,8 +272,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
-              sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+              sut.once({ milliseconds: futureDelay }, callbackA);
+              sut.once({ milliseconds: futureDelay }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
@@ -287,8 +287,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
-              sut.once(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
+              sut.once({ milliseconds: futureDelay * 2 }, callbackA);
+              sut.once({ milliseconds: futureDelay * 2 }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -302,8 +302,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.once(toDuration({ milliseconds: futureDelay }), callbackA);
-              const timeoutHandleB = sut.once(toDuration({ milliseconds: futureDelay }), callbackB);
+              const timeoutHandleA = sut.once({ milliseconds: futureDelay }, callbackA);
+              const timeoutHandleB = sut.once({ milliseconds: futureDelay }, callbackB);
               timeoutHandleA.dispose();
               timeoutHandleB.dispose();
               sut.advance({ milliseconds: futureDelay });
@@ -316,9 +316,9 @@ export function testManualRuntime<TDate>(
               const sut = createSUT();
               let callbackBCalled = false;
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleB = sut.once(toDuration({ milliseconds: 20 }), callbackB);
+              const timeoutHandleB = sut.once({ milliseconds: 20 }, callbackB);
               const callbackA = () => timeoutHandleB.dispose();
-              sut.once(toDuration({ milliseconds: 10 }), callbackA);
+              sut.once({ milliseconds: 10 }, callbackA);
               sut.advance({ milliseconds: 30 });
               expect(callbackBCalled).toBe(false);
             });
@@ -341,8 +341,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+              sut.every({ milliseconds: futureDelay }, callbackA);
+              sut.every({ milliseconds: futureDelay }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(true);
               expect(callbackBCalled).toBe(true);
@@ -356,8 +356,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackA);
-              sut.every(toDuration({ milliseconds: futureDelay * 2 }), callbackB);
+              sut.every({ milliseconds: futureDelay * 2 }, callbackA);
+              sut.every({ milliseconds: futureDelay * 2 }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(false);
               expect(callbackBCalled).toBe(false);
@@ -371,14 +371,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              const timeoutHandleA = sut.every(
-                toDuration({ milliseconds: futureDelay }),
-                callbackA,
-              );
-              const timeoutHandleB = sut.every(
-                toDuration({ milliseconds: futureDelay }),
-                callbackB,
-              );
+              const timeoutHandleA = sut.every({ milliseconds: futureDelay }, callbackA);
+              const timeoutHandleB = sut.every({ milliseconds: futureDelay }, callbackB);
               timeoutHandleA.dispose();
               timeoutHandleB.dispose();
               sut.advance({ milliseconds: futureDelay });
@@ -394,8 +388,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+              sut.every({ milliseconds: futureDelay }, callbackA);
+              sut.every({ milliseconds: futureDelay }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               callbackACalled = false;
               callbackBCalled = false;
@@ -412,8 +406,8 @@ export function testManualRuntime<TDate>(
                 callbackBCalled = false;
               const callbackA = () => (callbackACalled = true);
               const callbackB = () => (callbackBCalled = true);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackA);
-              sut.every(toDuration({ milliseconds: futureDelay }), callbackB);
+              sut.every({ milliseconds: futureDelay }, callbackA);
+              sut.every({ milliseconds: futureDelay }, callbackB);
               sut.advance({ milliseconds: futureDelay });
               callbackACalled = false;
               callbackBCalled = false;
@@ -427,7 +421,7 @@ export function testManualRuntime<TDate>(
             (expectedRetries: number) => {
               const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let retries = 0;
-              sut.timers.every(toDuration({ milliseconds: 1000 }), () => {
+              sut.timers.every({ milliseconds: 1000 }, () => {
                 retries++;
               });
               sut.advance({
@@ -440,10 +434,10 @@ export function testManualRuntime<TDate>(
             test("scatter callbacks run in a timely fashion instead of running them multiple time individually", () => {
               const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let buffer: string = "";
-              sut.timers.every(toDuration({ milliseconds: 10 }), () => {
+              sut.timers.every({ milliseconds: 10 }, () => {
                 buffer += "A";
               });
-              sut.timers.every(toDuration({ milliseconds: 15 }), () => {
+              sut.timers.every({ milliseconds: 15 }, () => {
                 buffer += "B";
               });
               sut.advance({
@@ -457,9 +451,9 @@ export function testManualRuntime<TDate>(
               const sut = createSUT();
               let callbackBCallCount = 0;
               const callbackB = () => callbackBCallCount++;
-              const intervalHandleB = sut.every(toDuration({ milliseconds: 20 }), callbackB);
+              const intervalHandleB = sut.every({ milliseconds: 20 }, callbackB);
               const callbackA = () => intervalHandleB.dispose();
-              sut.every(toDuration({ milliseconds: 10 }), callbackA);
+              sut.every({ milliseconds: 10 }, callbackA);
               sut.advance({ milliseconds: 30 });
               expect(callbackBCallCount).toBe(0);
             });
@@ -467,7 +461,7 @@ export function testManualRuntime<TDate>(
           test("does not corrupt heap ordering when a zero-delay interval is registered while another is pending", () => {
             const sut = createSUT();
             const order: string[] = [];
-            sut.every(toDuration({ milliseconds: 3 }), () => order.push("A"));
+            sut.every({ milliseconds: 3 }, () => order.push("A"));
             sut.every(asap(), () => order.push("B"));
             sut.advance({ milliseconds: 5 });
             expect(order.join(",")).toBe("B,B,B,A,B,B,B");
@@ -476,7 +470,7 @@ export function testManualRuntime<TDate>(
             const sut = createSUT();
             let fireCount = 0;
             let reentered = false;
-            sut.every(toDuration({ milliseconds: 100 }), () => {
+            sut.every({ milliseconds: 100 }, () => {
               fireCount++;
               if (!reentered) {
                 reentered = true;
@@ -490,14 +484,14 @@ export function testManualRuntime<TDate>(
             const sut = createSUT();
             const order: string[] = [];
             let reentered = false;
-            sut.every(toDuration({ milliseconds: 10 }), () => {
+            sut.every({ milliseconds: 10 }, () => {
               order.push("A");
               if (!reentered) {
                 reentered = true;
                 sut.advance({ milliseconds: 1 });
               }
             });
-            sut.every(toDuration({ milliseconds: 10 }), () => order.push("B"));
+            sut.every({ milliseconds: 10 }, () => order.push("B"));
             sut.advance({ milliseconds: 41 });
             expect(order.join(",")).toBe("A,B,A,B,A,B,A,B");
           });
@@ -514,14 +508,14 @@ export function testManualRuntime<TDate>(
                   callbackACalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay }),
+                { milliseconds: futureDelay },
               );
               sut.recurring(
                 () => {
                   callbackBCalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay }),
+                { milliseconds: futureDelay },
               );
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(true);
@@ -539,14 +533,14 @@ export function testManualRuntime<TDate>(
                   callbackACalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay * 2 }),
+                { milliseconds: futureDelay * 2 },
               );
               sut.recurring(
                 () => {
                   callbackBCalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay * 2 }),
+                { milliseconds: futureDelay * 2 },
               );
               sut.advance({ milliseconds: futureDelay });
               expect(callbackACalled).toBe(false);
@@ -564,14 +558,14 @@ export function testManualRuntime<TDate>(
                   callbackACalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay }),
+                { milliseconds: futureDelay },
               );
               const handleB = sut.recurring(
                 () => {
                   callbackBCalled = true;
                   return false;
                 },
-                toDuration({ milliseconds: futureDelay }),
+                { milliseconds: futureDelay },
               );
               handleA.dispose();
               handleB.dispose();
@@ -586,9 +580,9 @@ export function testManualRuntime<TDate>(
             sut.timers.recurring(
               () => {
                 runs++;
-                return runs < 3 ? toDuration({ milliseconds: 10 }) : false;
+                return runs < 3 ? { milliseconds: 10 } : false;
               },
-              toDuration({ milliseconds: 10 }),
+              { milliseconds: 10 },
             );
             sut.advance({ milliseconds: 1000 });
             expect(runs).toBe(3);
@@ -601,11 +595,9 @@ export function testManualRuntime<TDate>(
             sut.timers.recurring(
               () => {
                 runs++;
-                return calls < delays.length
-                  ? toDuration({ milliseconds: delays[calls++] })
-                  : false;
+                return calls < delays.length ? { milliseconds: delays[calls++] } : false;
               },
-              toDuration({ milliseconds: delays[0] }),
+              { milliseconds: delays[0] },
             );
             sut.advance({ milliseconds: 16 });
             expect(runs).toBe(3);
@@ -617,16 +609,16 @@ export function testManualRuntime<TDate>(
               const recurringHandleB = sut.recurring(
                 () => {
                   callbackBCallCount++;
-                  return toDuration({ milliseconds: 20 });
+                  return { milliseconds: 20 };
                 },
-                toDuration({ milliseconds: 20 }),
+                { milliseconds: 20 },
               );
               sut.recurring(
                 () => {
                   recurringHandleB.dispose();
                   return false;
                 },
-                toDuration({ milliseconds: 10 }),
+                { milliseconds: 10 },
               );
               sut.advance({ milliseconds: 30 });
               expect(callbackBCallCount).toBe(0);
@@ -639,9 +631,9 @@ export function testManualRuntime<TDate>(
                 () => {
                   runs++;
                   handle.dispose();
-                  return toDuration({ milliseconds: 10 });
+                  return { milliseconds: 10 };
                 },
-                toDuration({ milliseconds: 10 }),
+                { milliseconds: 10 },
               );
               sut.advance({ milliseconds: 100 });
               expect(runs).toBe(1);
@@ -677,16 +669,14 @@ export function testManualRuntime<TDate>(
             const handles: ITimerHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(
-                sut.once(toDuration({ milliseconds: compactionThreshold + i }), () => fireCount++),
-              );
+              handles.push(sut.once({ milliseconds: compactionThreshold + i }, () => fireCount++));
             }
             //clear the half of registered callbacks
             for (let i = 0; i < handles.length; i += 2) {
               handles[i].dispose();
             }
             // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
-            sut.once(toDuration({ milliseconds: compactionThreshold * 2 - 2 }), () => fireCount++);
+            sut.once({ milliseconds: compactionThreshold * 2 - 2 }, () => fireCount++);
             sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
             expect(fireCount).toBe(compactionThreshold / 2);
           });
@@ -696,29 +686,27 @@ export function testManualRuntime<TDate>(
             const handles: ITimerHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(
-                sut.every(toDuration({ milliseconds: compactionThreshold + i }), () => fireCount++),
-              );
+              handles.push(sut.every({ milliseconds: compactionThreshold + i }, () => fireCount++));
             }
             //clear the half of registered callbacks
             for (let i = 0; i < handles.length; i += 2) {
               handles[i].dispose();
             }
             // the following setInterval call triggers compaction
-            sut.every(toDuration({ milliseconds: compactionThreshold * 2 - 2 }), () => fireCount++);
+            sut.every({ milliseconds: compactionThreshold * 2 - 2 }, () => fireCount++);
             sut.advance({ milliseconds: compactionThreshold * 2 - 2 });
             expect(fireCount).toBe(compactionThreshold / 2);
           });
           test("clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher", () => {
             const sut = createSUT();
             const order: string[] = [];
-            sut.once(toDuration({ milliseconds: 1 }), () => order.push("1"));
-            sut.once(toDuration({ milliseconds: 5 }), () => order.push("5"));
-            sut.once(toDuration({ milliseconds: 2 }), () => order.push("2"));
-            const toClear = sut.once(toDuration({ milliseconds: 50 }), () => order.push("50"));
-            sut.once(toDuration({ milliseconds: 60 }), () => order.push("60"));
-            sut.once(toDuration({ milliseconds: 3 }), () => order.push("3"));
-            sut.once(toDuration({ milliseconds: 4 }), () => order.push("4"));
+            sut.once({ milliseconds: 1 }, () => order.push("1"));
+            sut.once({ milliseconds: 5 }, () => order.push("5"));
+            sut.once({ milliseconds: 2 }, () => order.push("2"));
+            const toClear = sut.once({ milliseconds: 50 }, () => order.push("50"));
+            sut.once({ milliseconds: 60 }, () => order.push("60"));
+            sut.once({ milliseconds: 3 }, () => order.push("3"));
+            sut.once({ milliseconds: 4 }, () => order.push("4"));
             toClear.dispose();
             sut.advance({ milliseconds: 61 });
             sut.utcNow();
