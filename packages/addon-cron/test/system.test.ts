@@ -7,6 +7,7 @@ import {
   type IRuntime,
   toInstant,
   type IDurationSpec,
+  type IAddon,
 } from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
@@ -53,7 +54,12 @@ function fakeSystemRuntime(
   const clock =
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };
   return {
-    runtime: { timers, clock, calendarScheme: defaultCalendarScheme } as unknown as FakeRuntime,
+    runtime: {
+      timers,
+      clock,
+      calendarScheme: defaultCalendarScheme,
+      registerAddon: (_addon: IAddon) => {},
+    } as unknown as FakeRuntime,
     recurring,
   };
 }

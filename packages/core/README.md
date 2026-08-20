@@ -94,23 +94,29 @@ import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
 // create a deterministic runtime
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .asManual()
-  .withInitialTime("2026-01-01T00:00:00.000Z")
-  .create();
+{
+  using timeProvider = createTimeProvider
+    .for(plugin)
+    .asManual()
+    .withInitialTime("2026-01-01T00:00:00.000Z")
+    .create();
 
-let retries = 0;
-timeProvider.timers.every({ seconds: 1 }, () => retries++);
-timeProvider.clock.advance({ seconds: 3 });
+  let retries = 0;
+  {
+    //timers are cleared when disposing their handles
+    //here is an `every` (setInterval) call
+    using timerHandle = timeProvider.timers.every({ seconds: 1 }, () => retries++);
+    timeProvider.clock.advance({ seconds: 3 });
+  }
 
-expect(retries).toBe(3);
+  expect(retries).toBe(3);
+}
 ```
 
 Every time provider exposes the same four-part surface:
 
 ```typescript
-interface ITimeProvider<TDate> {
+interface ITimeProvider<TDate> extends IAbortable, IDisposable {
   clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
   parser: IParser<TDate>; // parseToUtc, parseToLocal
   timers: ITimers; // once, every, recurring, wait

@@ -36,6 +36,24 @@ function fakeScheduler(): {
 }
 
 describe("EtaScheduler", () => {
+  describe("dispose", () => {
+    test("explicit dispose call disposes instance", () => {
+      const { timers } = fakeScheduler();
+      const sut = new EtaScheduler(timers, () => asEpochMilliseconds());
+      sut.dispose();
+      expect(sut.isDisposed).toBe(true);
+    });
+    test("implicit dispose call disposes instance", () => {
+      const { timers } = fakeScheduler();
+      let sutRef: EtaScheduler | undefined = undefined;
+      {
+        using sut = new EtaScheduler(timers, () => asEpochMilliseconds());
+        sutRef = sut;
+      }
+      expect(sutRef.isDisposed).toBe(true);
+    });
+  });
+
   test("estimate() returns an EtaTrackBuilder", () => {
     const { timers } = fakeScheduler();
     const sut = new EtaScheduler(timers, () => asEpochMilliseconds());

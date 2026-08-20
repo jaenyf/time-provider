@@ -1,9 +1,15 @@
 import { describe, expect, test } from "vite-plus/test";
-import { type ITimerHandle, type IRuntime, type ITimers, toDuration } from "@time-provider/core";
+import {
+  type ITimerHandle,
+  type IRuntime,
+  type ITimers,
+  toDuration,
+  type IAddon,
+} from "@time-provider/core";
 import { addon } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-type FakeRuntime = IRuntime<unknown> & { eta?: unknown };
+type FakeRuntime = IRuntime<unknown> & { eta?: unknown; registerAddon(addon: IAddon): void };
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and
@@ -32,7 +38,7 @@ function fakeSystemRuntime(now: number): {
   };
   const clock = { timestampNow: () => now };
   return {
-    runtime: { timers, clock } as unknown as FakeRuntime,
+    runtime: { timers, clock, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
     intervals,
   };
 }

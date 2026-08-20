@@ -17,6 +17,7 @@ import {
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import { testAddonCronSystem } from "./helpers/testCron.ts";
+import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testSystemRuntime<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
@@ -27,6 +28,7 @@ export function testSystemRuntime<TDate>(
     plugin.supportsLocalTime ? plugin.createSystemRuntime(timezone) : plugin.createSystemRuntime();
   const createSUT = () => createSystemRuntime("Pacific/Kiritimati");
 
+  testRuntime(createSUT);
   testConstructorArgs("createSystemRuntime", createSUT);
 
   describe("system", () => {

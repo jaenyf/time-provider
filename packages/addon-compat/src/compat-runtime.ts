@@ -6,8 +6,20 @@ import type { DueHandle, ICompatApi, ITimers } from "./types.ts";
  */
 export class CompatRuntime<TDate> implements ICompatApi, ITimers {
   #runtime: IRuntime<TDate>;
+  #isDisposed: boolean;
   constructor(runtime: IRuntime<TDate>) {
     this.#runtime = runtime;
+    this.#isDisposed = false;
+  }
+
+  dispose(): void {
+    this.#isDisposed = true;
+  }
+  get isDisposed(): boolean {
+    return this.#isDisposed;
+  }
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {

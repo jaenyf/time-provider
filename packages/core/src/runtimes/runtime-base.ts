@@ -14,6 +14,7 @@ import type {
 } from "../types/types.ts";
 import type { TimerHandle } from "./timer-handle.ts";
 import { type IDurationSpec } from "../helpers/branded-types.ts";
+import type { IAddon } from "../deterministic.ts";
 
 export class SystemHelper {
   static getRealHostTimezone(): string {
@@ -66,19 +67,89 @@ export class TimeInputValidator {
  * A runtime is an orchestrator (coordinator) between a clock and a scheduler
  */
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
+  static readonly ABORTED_SIGNAL: AbortSignal = AbortSignal.abort();
   #localTimezone: TimezoneDefinition;
   #converter: ITimeConverter<TDate>;
   #performance: IPerformance;
   #calendarScheme: ICalendarScheme<TDate>;
+  #isDisposed: boolean;
+  #abortControler?: AbortController;
+  #timersHandles: Set<ITimerHandle>;
+  #appliedAddons: Set<IAddon>;
   protected constructor(
     localTimezone: TimezoneDefinition,
     converter: ITimeConverter<TDate>,
     performance: IPerformance,
   ) {
+    this.#isDisposed = false;
+    this.#abortControler = undefined;
+    this.#timersHandles = new Set<ITimerHandle>();
+    this.#appliedAddons = new Set<IAddon>();
     this.#localTimezone = localTimezone;
     this.#converter = converter;
     this.#performance = performance;
     this.#calendarScheme = converter.calendarScheme ?? new DefaultCalendarScheme(converter);
+  }
+
+  registerAddon(addon: IAddon): void {
+    this.#appliedAddons.add(addon);
+  }
+
+  protected trackHandle(handle: ITimerHandle, options?: ITimerOptions): ITimerHandle {
+    this.#timersHandles.add(handle);
+    BaseRuntime.ensureTimerDisposalOnAbort(handle, options);
+    return handle;
+  }
+
+  protected untrackHandle(handle: ITimerHandle): void {
+    this.#timersHandles.delete(handle);
+  }
+
+  get isDisposed() {
+    return this.#isDisposed;
+  }
+
+  get signal(): AbortSignal {
+    if (this.#isDisposed === true) {
+      return BaseRuntime.ABORTED_SIGNAL;
+    }
+    if (this.#abortControler === undefined) {
+      this.#abortControler = new AbortController();
+      this.#abortControler.signal.addEventListener("abort", () => {
+        this.dispose();
+      });
+    }
+    return this.#abortControler.signal;
+  }
+
+  private disposeTimersHandles(): void {
+    for (const handle of this.#timersHandles) {
+      handle.dispose();
+    }
+    this.#timersHandles.clear();
+  }
+
+  private disposeAddons(): void {
+    for (const addon of this.#appliedAddons) {
+      addon.dispose();
+    }
+    this.#appliedAddons.clear();
+  }
+
+  dispose(): void {
+    if (this.#isDisposed) {
+      return;
+    }
+    if (this.#abortControler !== undefined) {
+      this.#abortControler.abort("Time-Provider runtime is being disposed");
+    }
+    this.disposeTimersHandles();
+    this.disposeAddons();
+    this.#isDisposed = true;
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   protected get localTimezone(): TimezoneDefinition {
@@ -96,6 +167,17 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
   get performance(): IPerformance {
     return this.#performance;
+  }
+
+  protected static ensureTimerDisposalOnAbort(handle: ITimerHandle, options?: ITimerOptions) {
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        handle.dispose();
+      } else {
+        const onAbort = () => handle.dispose();
+        options.signal.addEventListener("abort", onAbort, { once: true });
+      }
+    }
   }
 
   abstract clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;

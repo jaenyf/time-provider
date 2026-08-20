@@ -1,4 +1,4 @@
-import type { ITimerHandle } from "@time-provider/core";
+import type { IAddon, ITimerHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
@@ -24,7 +24,7 @@ export type WithCronApi<
 export interface ICronApi<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
-> {
+> extends IAddon {
   /**
    * Schedules `callback` to run every time `expression` next matches, in the runtime's local
    * timezone (`"Etc/UTC"` for a UTC-only runtime).

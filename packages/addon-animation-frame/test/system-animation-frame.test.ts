@@ -12,6 +12,7 @@ describe("SystemAnimationFrameScheduler", () => {
       beforeEach(() => {
         removeAnimationFrameAPI();
       });
+
       test("constructor throws a clear error when missing API", () => {
         expect(() => new SystemAnimationFrameTimers()).toThrow(
           "Environment does not support Animation frame API (are you in a browser?)",
@@ -69,6 +70,22 @@ describe("SystemAnimationFrameScheduler", () => {
     });
     afterEach(() => {
       removeAnimationFrameAPI();
+    });
+
+    describe("dispose", () => {
+      test("explicit dispose call disposes instance", () => {
+        const sut = new SystemAnimationFrameTimers();
+        sut.dispose();
+        expect(sut.isDisposed).toBe(true);
+      });
+      test("implicit dispose call disposes instance", () => {
+        let sutRef: SystemAnimationFrameTimers | undefined = undefined;
+        {
+          using sut = new SystemAnimationFrameTimers();
+          sutRef = sut;
+        }
+        expect(sutRef.isDisposed).toBe(true);
+      });
     });
 
     test("delegates requestAnimationFrame to the native function", () => {

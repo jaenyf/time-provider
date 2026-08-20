@@ -40,6 +40,7 @@ export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";
 export { TimeInputValidator } from "./runtimes/runtime-base.ts";
 export { RuntimeBuilder, createTimeProvider } from "./builders/system-builder.ts";
 export type {
+  IAddon,
   ISystemPluggedRuntimeBuilder,
   IUtcOnlySystemPluggedRuntimeBuilder,
   IRuntimeBuilder,

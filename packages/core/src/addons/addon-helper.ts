@@ -1,3 +1,6 @@
+import type { IRuntime } from "../types/types.ts";
+import type { IAddon } from "../builders/builders.ts";
+
 /**
  * Utilities for addon authors to extend a runtime with additional, addon-specific commodities.
  */
@@ -7,26 +10,28 @@ export class AddonHelper {
    * It has to be called before the builder freezes the runtime.
    * @param runtime the runtime instance to extend.
    * @param newPropertyName the name of the property to add to `runtime`.
-   * @param newProperty the value of the new property.
+   * @param addon the value of the new property.
    * @param _typeOf unused at runtime; only carries `TProperty` so it can be inferred at the call site.
    * @returns `runtime`, typed as extended with the new property.
    */
   static extendRuntimeWithProperty<
-    TRuntime extends object,
-    TPropertyValue extends object,
-    TProperty extends object,
+    TDate,
+    TRuntime extends IRuntime<TDate>,
+    TAddon extends IAddon,
+    TAddonType extends object,
   >(
     runtime: TRuntime,
     newPropertyName: string,
-    newProperty: TPropertyValue,
-    _typeOf?: TProperty,
-  ): TRuntime & TProperty {
+    addon: TAddon,
+    _typeOf?: TAddonType,
+  ): TRuntime & TAddonType {
     Object.defineProperty(runtime, newPropertyName, {
-      value: newProperty,
+      value: addon,
       enumerable: true,
       configurable: false,
       writable: false,
     });
-    return runtime as TRuntime & TProperty;
+    runtime.registerAddon(addon);
+    return runtime as TRuntime & TAddonType;
   }
 }

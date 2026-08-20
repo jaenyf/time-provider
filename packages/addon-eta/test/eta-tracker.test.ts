@@ -44,6 +44,8 @@ function fakeTimers(): {
           dispose: () => {
             cleared.push(handle);
           },
+          [Symbol.dispose](): void {},
+          signal: new AbortController().signal,
         } as ITimerHandle;
         intervals.push({ callback, delay: toDuration(durationSpec), handle });
         return handle;

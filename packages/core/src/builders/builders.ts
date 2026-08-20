@@ -1,5 +1,6 @@
 import type {
   IDeterministicPlugin,
+  IDisposable,
   IManualTimeProvider,
   IRuntime,
   ISystemPlugin,
@@ -38,6 +39,8 @@ interface IComposeWithTimezone<TBuilder> {
    */
   withDefaultTimezone(): TBuilder;
 }
+
+export interface IAddon extends IDisposable {}
 
 /**
  * An addon that extends a system (real time) Time-Provider with extra, addon-specific

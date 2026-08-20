@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { ITimerHandle, ITimers, IRuntime } from "@time-provider/core";
+import type { ITimerHandle, ITimers, IRuntime, IAddon } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { addon, createAddon, type IAnimationFrameBuilderExtra } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameTimers } from "../src/deterministic-animation-frame-timers.ts";
@@ -36,7 +36,7 @@ function fakeDeterministicRuntime(): {
     },
   };
   return {
-    runtime: { timers: timers } as unknown as FakeRuntime,
+    runtime: { timers: timers, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
     scheduled,
   };
 }

@@ -24,6 +24,7 @@ export {
 } from "./runtimes/deterministic-runtime.ts";
 export { createDeterministicTimeProvider as createTimeProvider } from "./builders/deterministic-builder.ts";
 export type {
+  IAddon,
   IDeterministicPluggedRuntimeBuilder,
   IDeterministicAddon,
 } from "./builders/builders.ts";

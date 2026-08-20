@@ -9,12 +9,24 @@ export class DeterministicAnimationFrameTimers implements IAnimationFrameApi {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
   #timers: ITimers;
+  #isDisposed: boolean;
 
   /**
    * @param timers the deterministic runtime's scheduler used to simulate frame callbacks.
    */
   constructor(timers: ITimers) {
     this.#timers = timers;
+    this.#isDisposed = false;
+  }
+
+  dispose(): void {
+    this.#isDisposed = true;
+  }
+  get isDisposed(): boolean {
+    return this.#isDisposed;
+  }
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   /**

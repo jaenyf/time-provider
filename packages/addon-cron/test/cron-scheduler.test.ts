@@ -63,6 +63,54 @@ function faketimers(): {
 }
 
 describe("CronScheduler", () => {
+  describe("dispose", () => {
+    test("explicit dispose call disposes instance", () => {
+      const { timers } = faketimers();
+      let now = asEpochMilliseconds();
+      const sut = new CronScheduler(
+        timers,
+        () => now,
+        () => "Etc/UTC",
+        defaultCalendarScheme,
+      );
+      sut.dispose();
+      expect(sut.isDisposed).toBe(true);
+    });
+    test("implicit dispose call disposes instance", () => {
+      let sutRef:
+        | CronScheduler<
+            number,
+            | "JAN"
+            | "FEB"
+            | "MAR"
+            | "APR"
+            | "MAY"
+            | "JUN"
+            | "JUL"
+            | "AUG"
+            | "SEP"
+            | "OCT"
+            | "NOV"
+            | "DEC",
+            "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT"
+          >
+        | undefined = undefined;
+      {
+        const { timers } = faketimers();
+        let now = asEpochMilliseconds();
+        using sut = new CronScheduler(
+          timers,
+          () => now,
+          () => "Etc/UTC",
+          defaultCalendarScheme,
+        );
+
+        sutRef = sut;
+      }
+      expect(sutRef.isDisposed).toBe(true);
+    });
+  });
+
   test("schedule() parses the expression eagerly, before ever touching the timers", () => {
     const { timers, recurring } = faketimers();
     let now = asEpochMilliseconds();

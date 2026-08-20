@@ -1,4 +1,4 @@
-import type { DurationMilliseconds, EpochMilliseconds } from "@time-provider/core";
+import type { DurationMilliseconds, EpochMilliseconds, IAddon } from "@time-provider/core";
 
 /**
  * How the estimated completion rate is derived from reported progress:
@@ -266,7 +266,7 @@ export type WithEtaApi = {
  * The ETA API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.eta` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface IEtaApi {
+export interface IEtaApi extends IAddon {
   /** Starts configuring a new ETA schedule - see {@link IEtaTrackBuilder}. */
   estimate(): IEtaTrackBuilder;
 }

@@ -3,6 +3,8 @@
 // Scheduler
 // ---------------------------------------------------------------------------
 
+import type { IAddon } from "@time-provider/core";
+
 /**
  * Discriminates what a {@link DueHandle} was obtained from.
  */
@@ -124,4 +126,4 @@ export type WithCompatApi = {
  * The compat API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.compat` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface ICompatApi extends ITimersProvider {}
+export interface ICompatApi extends ITimersProvider, IAddon {}
