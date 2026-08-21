@@ -1,7 +1,7 @@
 # Fixed Clock
 
 Always returns the same instant, no matter how many times you read it, and
-never advances — so a `setTimeout`/`setInterval` registered against it is
+never advances — so a timer callback registered against it is
 never due, regardless of its delay. Built from
 `@time-provider/core/deterministic` — see [Mental Model](/guide/mental-model).
 

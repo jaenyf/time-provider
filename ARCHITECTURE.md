@@ -66,7 +66,7 @@ Plugin (adapter)
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime (plugin's system.ts/deterministic-runtimes.ts, extending a
      core Base* class from system-runtime.ts/deterministic-runtime.ts)
-  -> ITimeProvider { clock, parser, scheduler }  (core/src/runtimes/runtime-base.ts)
+  -> ITimeProvider { clock, parser, timers, performance }  (core/src/runtimes/runtime-base.ts)
 ```
 
 A `Runtime` is a single object that implements `IClock`, `IParser`, and
@@ -172,8 +172,7 @@ Those checks also ensure the core package itself is correctly tree-shaked.
 `BaseDeterministicRuntime` (`core/src/runtimes/deterministic-runtime.ts`, not
 re-exported - only `BaseFixedRuntime`/`BaseManualRuntime`/
 `BaseSequentialRuntime` are part of the public `deterministic.ts` surface)
-backs the fixed, manual, and sequential runtimes. `setTimeout`/`setInterval`
-insert into a `Map` and then check only the just-inserted handle for
+backs the fixed, manual, and sequential runtimes. Timers insert into a `Heap` and then check only the just-inserted handle for
 firing immediately (a zero or negative delay fires synchronously on
 registration) - not the whole pending set, since nothing already pending can
 have newly become due from an insert alone. Advancing time (via `advance()`

@@ -104,7 +104,6 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
   let retries = 0;
   {
     //timers are cleared when disposing their handles
-    //here is an `every` (setInterval) call
     using timerHandle = timeProvider.timers.every({ seconds: 1 }, () => retries++);
     timeProvider.clock.advance({ seconds: 3 });
   }

@@ -18,7 +18,7 @@ class UserService {
 ```
 
 `createTimeProvider.for(plugin).create()` builds a **system** clock — real
-time, real timers, exactly like calling `new Date()` and `setTimeout`
+time, real timers, exactly like calling `new Date()` and timers
 directly, just wrapped behind the `ITimeProvider` interface.
 
 ## Tests
@@ -41,14 +41,13 @@ const timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-timeProvider.scheduler.setInterval(() => retries++, 1000);
+timeProvider.timers.every({ seconds: 1 }, () => retries++);
 timeProvider.clock.advance({ seconds: 3 });
 
 expect(retries).toBe(3);
 ```
 
-Manual and sequential clocks run synchronously: a due `setTimeout`/
-`setInterval` callback fires in-line, as a direct side effect of the call
+Manual and sequential clocks run synchronously: a due timer callback fires in-line, as a direct side effect of the call
 that made it due (`advance()`, `localNow()`, `utcNow()`) — not on a real
 event-loop tick. No `await`, no fake-timer install/restore boilerplate.
 

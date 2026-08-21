@@ -2,7 +2,7 @@
 
 The pattern across all four strategies: production code depends on
 `ITimeProvider<TDate>` (or the narrower `IClock`/`IParser`/`ITimers`
-facets), never on `Date.now()`/`setTimeout` directly. Tests construct the
+facets), never on `Date.now()` or timers directly. Tests construct the
 same object with a different strategy.
 
 ```ts
@@ -11,10 +11,10 @@ class RetryJob {
 
   scheduleRetries(times: number, everyMs: number, onRetry: () => void) {
     let count = 0;
-    const handle = this.timeProvider.scheduler.setInterval(() => {
+    const handle = this.timeProvider.timers.every({ milliseconds: everyMs }, () => {
       onRetry();
-      if (++count >= times) this.timeProvider.scheduler.clearInterval(handle);
-    }, everyMs);
+      if (++count >= times) handle.dispose();
+    });
   }
 }
 
@@ -39,7 +39,7 @@ expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teard
 ## Why this beats global fake timers
 
 - **Scoped, not global.** Only the `ITimeProvider` instance you built is
-  fake — any other code touching `Date`/`setTimeout` in the same test
+  fake — any other code touching `Date` or timers in the same test
   process is unaffected.
 - **No install/restore step.** There's no `jest.useFakeTimers()` /
   `jest.useRealTimers()` pair to remember, and nothing leaks between tests

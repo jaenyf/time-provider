@@ -165,7 +165,7 @@ describe("EtaTrackBuilder.withEstimatedDuration", () => {
 });
 
 describe("ProgressEtaTracker", () => {
-  test("arms setInterval with the configured notification interval, defaulting to 1000ms", () => {
+  test("arms once timer with the configured notification interval, defaulting to 1000ms", () => {
     const { timers, intervals } = fakeTimers();
     const sut = new EtaTrackBuilder(timers, () => asEpochMilliseconds());
     sut.withKnownTotal(100).start(() => {});
@@ -488,7 +488,7 @@ describe("ProgressEtaTracker", () => {
 });
 
 describe("DurationEtaTracker", () => {
-  test("arms setInterval with the configured notification interval, defaulting to 1000ms", () => {
+  test("arms every timers with the configured notification interval, defaulting to 1000ms", () => {
     const { timers, intervals } = fakeTimers();
     const sut = new EtaTrackBuilder(timers, () => asEpochMilliseconds());
     sut.withEstimatedDuration(toDuration({ milliseconds: 5000 })).start(() => {});

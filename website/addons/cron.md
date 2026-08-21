@@ -213,10 +213,10 @@ non-existent, and both cases resolve deterministically:
 
 ## Callbacks that throw
 
-A cron callback is an ordinary scheduler callback, so a throwing one follows
-the [scheduler's](/guide/scheduler) usual rule: the exception propagates in a
+A cron callback is an ordinary timer callback, so a throwing one follows
+the [timers](/guide/timers) usual rule: the exception propagates in a
 Node-like environment and is logged in a browser-like one. Either way the
-schedule stops, exactly as a `setRecurring` callback that throws does.
+schedule stops, exactly as a `recurring` callback that throws does.
 
 If a failing run should not end the job, catch inside your own callback:
 

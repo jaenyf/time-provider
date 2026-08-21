@@ -1,6 +1,6 @@
-//#region Scheduler
+//#region Timers
 // ---------------------------------------------------------------------------
-// Scheduler
+// Timers
 // ---------------------------------------------------------------------------
 
 import type { IAddon } from "@time-provider/core";
@@ -28,7 +28,7 @@ export interface DueHandle {
 /**
  * Schedules and cancels timeouts/intervals.
  *
- * Execution model depends on the clock strategy backing this scheduler:
+ * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, callbacks run asynchronously via the real, native
  *   timers, exactly like in production code.
  * - On a **manual** or **sequential** clock, callbacks run synchronously,
@@ -39,7 +39,7 @@ export interface DueHandle {
  *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
  *   involved: a due callback has already run by the time the triggering call
  *   returns.
- * - On a **fixed** clock, time never advances, so no scheduled callback is
+ * - On a **fixed** clock, time never advances, so no timers callback is
  *   ever due - it never runs, regardless of the delay it was registered with.
  *
  * On a manual/sequential clock, a callback that throws is handled to match what a native timer
@@ -104,7 +104,7 @@ export interface ITimers {
 
 interface ITimersProvider {
   /**
-   * Get the current configured scheduler
+   * Get the current configured timers
    */
   get timers(): ITimers;
 }

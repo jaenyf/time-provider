@@ -94,7 +94,7 @@ export interface ITimers {
 }
 interface ITimersProvider {
   /**
-   * Get the current configured scheduler
+   * Get the current configured timers
    */
   get timers(): ITimers;
 }

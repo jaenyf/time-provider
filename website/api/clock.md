@@ -85,9 +85,9 @@ values); when more than one field is set, they apply to the current time in
 the fixed order `years → months → days → hours → minutes → seconds →
 milliseconds`, since combining calendar-variable fields with others can
 otherwise give a different result depending on the order. Any
-`setTimeout`/`setInterval` callback that becomes due as a result runs
+timers callback that becomes due as a result runs
 synchronously, in-line, before `advance()` returns — see
-[Deterministic Scheduler](/guide/scheduler).
+[Deterministic Timers](/guide/timers).
 
 ## Naming these types
 

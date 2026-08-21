@@ -235,8 +235,8 @@ interface IAdvanceable<TSelf> {
    * Moves this clock's time forward (or backward, using negative values) by
    * the given amount.
    *
-   * If a scheduler backed by this clock has pending `setTimeout`/
-   * `setInterval` callbacks, any of them that become due as a result are run
+   * If a scheduler backed by this clock has pending timers callbacks,
+   * any of them that become due as a result are run
    * synchronously, in-line, before `advance()` returns - see
    * {@link ITimers} for details on this execution model.
    */
@@ -463,9 +463,9 @@ interface ILocalOnlyParser<TDate> {
 export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<TDate> {}
 //#endregion
 
-//#region Scheduler
+//#region Timers
 // ---------------------------------------------------------------------------
-// Scheduler
+// Timers
 // ---------------------------------------------------------------------------
 
 /**
@@ -502,7 +502,7 @@ export interface ITimerOptions {
  *   timers, exactly like in production code.
  * - On a **manual** or **sequential** clock, callbacks run synchronously,
  *   in-line, as soon as they become due - as a direct side effect of
- *   {@link ITimers.setTimeout}/{@link ITimers.setInterval} itself
+ *   {@link ITimers.once}/{@link ITimers.every} itself
  *   (e.g. a delay of `0` or a negative value is already due when scheduled),
  *   or of any call that moves the clock forward (`advance()`,
  *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
@@ -536,7 +536,7 @@ export interface ITimers {
 
 interface IWithTimers {
   /**
-   * Get the current configured scheduler
+   * Get the current configured timers
    */
   get timers(): ITimers;
 }

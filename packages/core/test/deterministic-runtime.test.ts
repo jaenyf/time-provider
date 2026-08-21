@@ -167,7 +167,7 @@ describe("issue#147", () => {
       expect(sut.timestampNow()).toBe(1000);
     });
 
-    test("a plain setInterval is unaffected (control case)", () => {
+    test("a plain every timer call is unaffected (control case)", () => {
       const sut = new FakeManualRuntime(0);
       let fires = 0;
       const delay = 1000 / 60;
@@ -206,7 +206,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(otherFired).toBe(false);
     });
 
-    test("a throwing setInterval callback rethrows, but is still armed for its next tick since re-arming happens before the callback runs", () => {
+    test("a throwing every timer callback rethrows, but is still armed for its next tick since re-arming happens before the callback runs", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let intervalFires = 0;
@@ -279,7 +279,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
     });
 
-    test("a throwing setInterval callback still re-arms for its next tick, and doesn't block others", () => {
+    test("a throwing every timer callback still re-arms for its next tick, and doesn't block others", () => {
       stubBrowserLike();
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const sut = new FakeManualRuntime(0);

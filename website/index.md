@@ -42,7 +42,7 @@ features:
     details: Fully typed from your 1st import to your favorite date library.
   - icon: ⏱️
     title: Deterministic timers
-    link: guide/scheduler/
+    link: guide/timers/
     details: Driven by the clock strategy, not the real event loop.
   - icon: 🔌
     title: Bring your own date library

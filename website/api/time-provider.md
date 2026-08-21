@@ -19,7 +19,7 @@ interface IUtcOnlyTimeProvider<TDate> {
 The object returned by `.create()`. All four getters return the _same_
 underlying runtime instance, exposed through narrower interfaces — this is
 why swapping strategies never changes call sites: whatever depends on
-`ITimeProvider<TDate>` only ever sees `clock`, `parser`, `scheduler`, and
+`ITimeProvider<TDate>` only ever sees `clock`, `parser`, `timers`, and
 `performance`.
 
 `IUtcOnlyTimeProvider` is what you get from a UTC-only plugin (native
@@ -61,6 +61,6 @@ them. [IParser](/api/parser) notes the same about `ILocalOnlyParser`.
 
 `.use(addon)` on the builder, before `.create()`, widens the resulting
 Time-Provider with the addon's own extra property (e.g. `.animation` from
-`@time-provider/addon-animation-frame`) — `clock`, `parser`, `scheduler`,
+`@time-provider/addon-animation-frame`) — `clock`, `parser`, `timers`,
 and `performance` are always present regardless of which addons are
 composed in. See [Addons](/addons/).

@@ -203,9 +203,9 @@
             <label class="pg-input-label">
               <span>method</span>
               <select v-model="timerKind">
-                <option value="interval">setInterval</option>
-                <option value="timeout">setTimeout</option>
-                <option value="recurring">setRecurring</option>
+                <option value="interval">every</option>
+                <option value="timeout">once</option>
+                <option value="recurring">recurring</option>
               </select>
             </label>
 
@@ -490,7 +490,7 @@
           <p class="pg-note">
             A cron schedule repeats on the next minute the expression matches, in the runtime's
             local timezone (<code>Etc/UTC</code> for a UTC-only plugin), and follows the same firing
-            model as the scheduler above — asynchronously on <strong>system</strong>, in-line on
+            model as the timers above — asynchronously on <strong>system</strong>, in-line on
             <strong>manual</strong>/<strong>sequential</strong>, never on <strong>fixed</strong>.
           </p>
         </div>
@@ -752,7 +752,7 @@ import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
 // What the Scheduler panel's own dropdown offers - one entry per ITimers method.
-type SchedulerTimerKind = "timeout" | "interval" | "recurring";
+type SchedulerTimerKind = "once" | "every" | "recurring";
 // Plus the two addon-backed panels, which register through their own facade rather than
 // `.scheduler`, but end up in the same row list so a rebuild can clear everything at once.
 type TimerKind = SchedulerTimerKind | "raf" | "cron";
@@ -944,12 +944,12 @@ const advanceUnit = ref<
 >("seconds");
 
 const timerLabel = ref("Tick");
-const timerKind = ref<SchedulerTimerKind>("interval");
+const timerKind = ref<SchedulerTimerKind>("every");
 const timerDelay = ref(1000);
 
 // A recurring schedule computes its next delay from the run that just happened, so the playground
 // needs a rule for that: start at `recurringInitialDelay`, multiply by `recurringFactor` after
-// every run (factor 1 behaves exactly like setInterval), and return `false` once
+// every run (factor 1 behaves exactly like `every`), and return `false` once
 // `recurringMaxRuns` runs have happened. The run cap is mandatory rather than optional: on a
 // manual clock a single advance() drains everything already due, so an unbounded schedule with a
 // small delay would spin in-line until the browser gave up.
@@ -1159,9 +1159,9 @@ const cronRows = computed(() => timerRows.value.filter((r) => r.kind === "cron")
 
 function describeTimer(row: TimerRow): string {
   switch (row.kind) {
-    case "timeout":
+    case "once":
       return `"${row.label}" once, ${row.delayMs}ms out`;
-    case "interval":
+    case "every":
       return `"${row.label}" every ${row.delayMs}ms`;
     case "recurring":
       if (row.stopped) return `"${row.label}" stopped after ${row.runs}/${row.maxRuns} runs`;
@@ -1177,11 +1177,7 @@ function describeTimer(row: TimerRow): string {
 
 function cancelTimer(row: TimerRow) {
   const provider = timeProvider.value;
-  if (row.kind === "interval") provider.scheduler.clearInterval(row.handle);
-  else if (row.kind === "recurring") provider.scheduler.clearRecurring(row.handle);
-  else if (row.kind === "raf") provider.animation.cancelAnimationFrame(row.handle);
-  else if (row.kind === "cron") provider.cron.unschedule(row.handle);
-  else provider.scheduler.clearTimeout(row.handle);
+  row.handle.dispose();
 }
 
 function clearAllTimers() {
@@ -1191,7 +1187,7 @@ function clearAllTimers() {
 }
 
 function clearEtaTracker() {
-  // On the system strategy this stops a real, native setInterval - without this, rebuilding the
+  // On the system strategy this stops a real, native every call - without this, rebuilding the
   // provider (e.g. switching plugins) would otherwise leak it, still ticking against a runtime
   // that's no longer reachable from anywhere else.
   if (etaTracker.value) {
@@ -1343,12 +1339,12 @@ function addSchedulerTimer() {
     const delay = positiveNumber(timerDelay.value, 0);
     const callback = () => {
       pushLog(kind, `"${label}" fired (${delay}ms)`);
-      if (kind === "timeout") dropTimerRow(id);
+      if (kind === "once") dropTimerRow(id);
     };
     const handle =
-      kind === "interval"
-        ? timeProvider.value.scheduler.setInterval(callback, delay)
-        : timeProvider.value.scheduler.setTimeout(callback, delay);
+      kind === "every"
+        ? timeProvider.value.timers.every({ milliseconds: delay }, callback)
+        : timeProvider.value.timers.once({ milliseconds: delay }, callback);
 
     timerRows.value.push({ id, kind, label, delayMs: delay, handle });
     pushLog("tick", `Registered ${kind} "${label}" (${delay}ms)`);
@@ -1399,7 +1395,7 @@ function addRecurringTimer(id: number, label: string) {
     nextDelayMs: initialDelay,
     handle: null,
   });
-  const handle = timeProvider.value.scheduler.setRecurring(callback, initialDelay);
+  const handle = timeProvider.value.timers.recurring(callback, initialDelay);
   const row = timerRows.value.find((r) => r.id === id);
   if (row) row.handle = handle;
   pushLog(
