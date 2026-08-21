@@ -15,7 +15,7 @@ import { TimerHandle } from "./timer-handle.ts";
 type ReturnTypeOfSetInterval = ReturnType<typeof setInterval>;
 type ReturnTypeOfSetTimeout = ReturnType<typeof setTimeout>;
 // oxlint-disable-next-line typescript/no-duplicate-type-constituents
-type ReturnTypeOfTimer = ReturnTypeOfSetInterval | ReturnTypeOfSetTimeout;
+type ReturnTypeOfTimer = ReturnTypeOfSetInterval;
 
 /**
  * Base class for a system runtime
@@ -46,28 +46,35 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       default:
         throw new Error("Invalid operation");
     }
+    this.untrackHandle(handle);
   }
 
-  once(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions) {
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions) {
     let msDelay = toDuration(delay);
     if (msDelay < 0) {
       msDelay = 0 as DurationMilliseconds;
     }
-    return new TimerHandle(TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay));
+    return this.trackHandle(
+      new TimerHandle(TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
+      options,
+    );
   }
 
-  every(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 1) {
       msDelay = 1 as DurationMilliseconds;
     }
-    return new TimerHandle(TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay));
+    return this.trackHandle(
+      new TimerHandle(TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
+      options,
+    );
   }
 
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
-    _options?: ITimerOptions,
+    options?: ITimerOptions,
   ): ITimerHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
 
@@ -91,7 +98,6 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     };
 
     handle = new TimerHandle(TIMER_KIND_RECURRING, this, arm(msInitialDelay));
-
-    return handle;
+    return this.trackHandle(handle, options);
   }
 }

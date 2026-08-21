@@ -3,6 +3,7 @@
  * None of them cause JavaScript to be emited, so it has no effect on bundle size or tree-shaking.
  */
 
+import type { IAddon } from "../builders/builders.ts";
 import type {
   DefaultCalendarSchemeMonthName,
   DefaultCalendarSchemeWeekdayName,
@@ -16,10 +17,15 @@ export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
 //#endregion
 
-//#region Disposable
-interface IDisposable {
+//#region Disposable / Abortable
+export interface IDisposable {
   dispose(): void;
-  get isDisposed(): boolean;
+  [Symbol.dispose](): void;
+  readonly isDisposed: boolean;
+}
+
+export interface IAbortable {
+  readonly signal: AbortSignal;
 }
 //#endregion
 
@@ -477,7 +483,7 @@ export type TimerKind =
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
  */
-export interface ITimerHandle extends IDisposable {
+export interface ITimerHandle extends IDisposable, IAbortable {
   readonly kind: TimerKind;
 }
 
@@ -589,30 +595,40 @@ export interface IWithCalendarScheme<TDate> {
  */
 export interface IRuntime<TDate>
   extends
+    IDisposable,
+    IAbortable,
     ITimers,
     IClearTimers<TDate>,
     IClock<TDate>,
     IParser<TDate>,
     ITimeProvider<TDate>,
-    IWithCalendarScheme<TDate> {}
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon): void;
+}
 
 /**
  * A runtime backed by an UTC only clock.
  */
 export interface IUtcOnlyRuntime<TDate>
   extends
+    IDisposable,
+    IAbortable,
     ITimers,
     IClearTimers<TDate>,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyTimeProvider<TDate>,
-    IWithCalendarScheme<TDate> {}
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon): void;
+}
 
 /**
  * A runtime backed by a manual clock.
  */
 export interface IManualRuntime<TDate>
   extends
+    IDisposable,
+    IAbortable,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
     ITimers,
@@ -620,13 +636,17 @@ export interface IManualRuntime<TDate>
     IClock<TDate>,
     IParser<TDate>,
     IManualTimeProvider<TDate>,
-    IWithCalendarScheme<TDate> {}
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon): void;
+}
 
 /**
  * A runtime backed by an UTC only manual clock.
  */
 export interface IUtcOnlyManualRuntime<TDate>
   extends
+    IDisposable,
+    IAbortable,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
     ITimers,
@@ -634,7 +654,9 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
-    IWithCalendarScheme<TDate> {}
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon): void;
+}
 //#endregion
 
 //#region Time provider facades
@@ -647,13 +669,21 @@ export interface IUtcOnlyManualRuntime<TDate>
  * `performance`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
-  extends IWithClock<IClock<TDate>>, IWithTimers, IWithParser<IParser<TDate>>, IWithPerformance {}
+  extends
+    IDisposable,
+    IAbortable,
+    IWithClock<IClock<TDate>>,
+    IWithTimers,
+    IWithParser<IParser<TDate>>,
+    IWithPerformance {}
 
 /**
  * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
  */
 export interface IUtcOnlyTimeProvider<TDate>
   extends
+    IDisposable,
+    IAbortable,
     IWithClock<IUtcOnlyClock<TDate>>,
     IWithTimers,
     IWithParser<IUtcOnlyParser<TDate>>,
@@ -664,6 +694,8 @@ export interface IUtcOnlyTimeProvider<TDate>
  */
 export interface IManualTimeProvider<TDate>
   extends
+    IDisposable,
+    IAbortable,
     IWithClock<IManualClock<TDate>>,
     IWithTimers,
     IWithParser<IParser<TDate>>,
@@ -675,6 +707,8 @@ export interface IManualTimeProvider<TDate>
  */
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
+    IDisposable,
+    IAbortable,
     IWithClock<IUtcOnlyManualClock<TDate>>,
     IWithTimers,
     IWithParser<IUtcOnlyParser<TDate>>,

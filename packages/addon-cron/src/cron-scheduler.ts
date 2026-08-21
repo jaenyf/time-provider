@@ -31,6 +31,7 @@ export class CronScheduler<
   #timestampNow: () => EpochMilliseconds;
   #timezone: () => string;
   #calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>;
+  #isDisposed: boolean;
 
   /**
    * @param timers the runtime's scheduler used to run due callbacks.
@@ -54,6 +55,17 @@ export class CronScheduler<
     this.#timestampNow = timestampNow;
     this.#timezone = timezone;
     this.#calendarScheme = calendarScheme;
+    this.#isDisposed = false;
+  }
+
+  dispose(): void {
+    this.#isDisposed = true;
+  }
+  get isDisposed(): boolean {
+    return this.#isDisposed;
+  }
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   schedule(expression: string, callback: () => void): ITimerHandle;

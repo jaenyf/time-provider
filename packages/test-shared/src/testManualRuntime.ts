@@ -3,7 +3,7 @@ import type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
-import { testTimers } from "./helpers/testScheduler.ts";
+import { testTimers } from "./helpers/testTimers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./helpers/testHelpers.ts";
 import { asap, type ITimerHandle, type TimezoneDefinition } from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
+import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -32,6 +33,7 @@ export function testManualRuntime<TDate>(
 
   const createSUT = () => createManualRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
 
+  testRuntime(createSUT);
   testConstructorArgs(
     "createManualRuntime",
     createSUT,

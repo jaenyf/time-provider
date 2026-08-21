@@ -21,7 +21,7 @@ export function testAddonCronManual<TDate>(
 
   describe("CronScheduler integration (manual)", () => {
     test("fires every occurrence a single advance() crosses, not just the first", () => {
-      const sut = createSUT();
+      using sut = createSUT();
 
       let fires = 0;
       sut.cron.schedule("0 9-17 * * MON,FRI", () => {
@@ -35,7 +35,7 @@ export function testAddonCronManual<TDate>(
     });
 
     test("keeps firing correctly across further advances, not just the first batch", () => {
-      const sut = createSUT();
+      using sut = createSUT();
 
       let fires = 0;
       sut.cron.schedule("0 12 * * *", () => {
@@ -50,7 +50,7 @@ export function testAddonCronManual<TDate>(
     });
 
     test("unschedule() stops further occurrences mid-batch", () => {
-      const sut = createSUT();
+      using sut = createSUT();
 
       let fires = 0;
       const handle = sut.cron.schedule("0 * * * *", () => {
@@ -85,7 +85,7 @@ export function testAddonCronFixed<TDate>(
 
   describe("CronScheduler integration (fixed)", () => {
     test("never fires: a fixed clock never advances", () => {
-      const sut = createSUT();
+      using sut = createSUT();
 
       let fires = 0;
       sut.cron.schedule("* * * * *", () => {
@@ -113,7 +113,7 @@ export function testAddonCronSequential<TDate>(
 ) {
   describe("CronScheduler integration (sequential)", () => {
     test("fires every occurrence a single read crosses, not just the first", () => {
-      const sut = getBuilder()
+      using sut = getBuilder()
         .use(deterministicCronAddon)
         .asSequential()
         .withSequentialTime("2026-01-01T00:00:00.000Z") // a Thursday - the starting instant
@@ -134,7 +134,7 @@ export function testAddonCronSequential<TDate>(
     });
 
     test("keeps firing correctly across further reads, not just the first batch", () => {
-      const sut = getBuilder()
+      using sut = getBuilder()
         .use(deterministicCronAddon)
         .asSequential()
         .withSequentialTime("2026-01-01T00:00:00.000Z") // the starting instant
@@ -158,7 +158,7 @@ export function testAddonCronSequential<TDate>(
     });
 
     test("unschedule() stops further occurrences mid-batch", () => {
-      const sut = getBuilder()
+      using sut = getBuilder()
         .use(deterministicCronAddon)
         .asSequential()
         .withSequentialTime("2026-01-01T00:00:00.000Z") // the starting instant
@@ -166,7 +166,7 @@ export function testAddonCronSequential<TDate>(
         .create();
 
       let fires = 0;
-      const handle = sut.cron.schedule("0 * * * *", () => {
+      using handle = sut.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
           sut.cron.unschedule(handle);

@@ -9,6 +9,7 @@ function throwAnimationFrameApiNotSupported(): never {
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
 export class SystemAnimationFrameTimers implements IAnimationFrameApi {
+  #isDisposed: boolean;
   /**
    * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
    */
@@ -19,6 +20,17 @@ export class SystemAnimationFrameTimers implements IAnimationFrameApi {
     if (typeof cancelAnimationFrame !== "function") {
       throwAnimationFrameApiNotSupported();
     }
+    this.#isDisposed = false;
+  }
+
+  dispose(): void {
+    this.#isDisposed = true;
+  }
+  get isDisposed(): boolean {
+    return this.#isDisposed;
+  }
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   requestAnimationFrame(callback: () => void): AnimationFrameHandle {

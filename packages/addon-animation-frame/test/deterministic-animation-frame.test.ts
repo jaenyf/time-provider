@@ -56,6 +56,21 @@ function fakeScheduler(): {
 }
 
 describe("DeterministicAnimationFrameScheduler", () => {
+  describe("dispose", () => {
+    test("explicit dispose call disposes instance", () => {
+      const sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);
+      sut.dispose();
+      expect(sut.isDisposed).toBe(true);
+    });
+    test("implicit dispose call disposes instance", () => {
+      let sutRef: DeterministicAnimationFrameTimers | undefined = undefined;
+      {
+        using sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);
+        sutRef = sut;
+      }
+      expect(sutRef.isDisposed).toBe(true);
+    });
+  });
   describe("hostFramesRate", () => {
     test("defaults to 60", () => {
       const sut = new DeterministicAnimationFrameTimers(fakeScheduler().timers);

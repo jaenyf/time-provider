@@ -5,6 +5,7 @@ import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 export class EtaScheduler implements IEtaApi {
   #timers: ITimers;
   #timestampNow: () => EpochMilliseconds;
+  #isDisposed: boolean;
 
   /**
    * @param timers the runtime's scheduler used to run notification ticks.
@@ -13,6 +14,16 @@ export class EtaScheduler implements IEtaApi {
   constructor(timers: ITimers, timestampNow: () => EpochMilliseconds) {
     this.#timers = timers;
     this.#timestampNow = timestampNow;
+    this.#isDisposed = false;
+  }
+  dispose(): void {
+    this.#isDisposed = true;
+  }
+  get isDisposed(): boolean {
+    return this.#isDisposed;
+  }
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 
   estimate(): IEtaTrackBuilder {

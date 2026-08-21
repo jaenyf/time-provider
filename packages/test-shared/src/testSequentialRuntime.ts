@@ -1,6 +1,6 @@
 import { expect, test, describe } from "vite-plus/test";
 import { type ITimerHandle, type IClock, type TimezoneDefinition, asap } from "@time-provider/core";
-import { testTimers } from "./helpers/testScheduler.ts";
+import { testTimers } from "./helpers/testTimers.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -14,6 +14,7 @@ import type {
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testAddonCronSequential } from "./helpers/testCron.ts";
+import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testSequentialRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
@@ -35,6 +36,7 @@ export function testSequentialRuntime<TDate>(
       "2026-01-01T00:00:03.000Z",
     ]);
 
+  testRuntime(createSUT);
   testConstructorArgs(
     "createSequentialRuntime",
     createSUT,

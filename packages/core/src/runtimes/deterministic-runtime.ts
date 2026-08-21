@@ -384,35 +384,36 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   //#region timers
   clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void {
     BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
+    this.untrackHandle(handle);
   }
-  once(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return new TimerHandle(TIMER_KIND_TIMEOUT, this, entry);
+    return this.trackHandle(new TimerHandle(TIMER_KIND_TIMEOUT, this, entry), options);
   }
 
-  every(delay: IDurationSpec, callback: () => void, _options?: ITimerOptions): ITimerHandle {
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return new TimerHandle(TIMER_KIND_INTERVAL, this, entry);
+    return this.trackHandle(new TimerHandle(TIMER_KIND_INTERVAL, this, entry), options);
   }
 
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
-    _options?: ITimerOptions,
+    options?: ITimerOptions,
   ): ITimerHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return new TimerHandle(TIMER_KIND_RECURRING, this, entry);
+    return this.trackHandle(new TimerHandle(TIMER_KIND_RECURRING, this, entry), options);
   }
   //#endregion timers
 }

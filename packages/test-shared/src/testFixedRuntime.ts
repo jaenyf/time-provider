@@ -12,8 +12,9 @@ import {
   testTimestampNow,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
+import { testRuntime } from "./helpers/testRuntime.ts";
 import { testParser } from "./helpers/testParser.ts";
-import { testTimers } from "./helpers/testScheduler.ts";
+import { testTimers } from "./helpers/testTimers.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import { testAddonCronFixed } from "./helpers/testCron.ts";
 
@@ -40,6 +41,7 @@ export function testFixedRuntime<TDate>(
   );
 
   describe("fixed", () => {
+    testRuntime(createSUT);
     testLocalNow(plugin.supportsLocalTime, createSUT, () =>
       parseTimeToLocal("2026-01-01T14:00+14:00"),
     );

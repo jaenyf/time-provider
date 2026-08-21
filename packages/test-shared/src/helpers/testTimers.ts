@@ -1,8 +1,41 @@
 import { expect, test, describe } from "vite-plus/test";
-import { asap, type ITimers } from "@time-provider/core";
+import { asap, type ITimerHandle, type ITimers } from "@time-provider/core";
 
 export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = false) {
   describe("once", () => {
+    test("returns a disposable handle (dispose)", () => {
+      const sut = createSUT();
+      const handle = sut.once(asap(), () => false);
+      handle.dispose();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("returns a disposable handle (using)", () => {
+      const sut = createSUT();
+      let handleRef: ITimerHandle | undefined = undefined;
+      {
+        using handle = sut.once(asap(), () => false);
+        handleRef = handle;
+      }
+      expect(handleRef.isDisposed).toBe(true);
+    });
+    test("is disposed when aborted", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      const handle = sut.once(asap(), () => false, { signal: abortController.signal });
+      abortController.abort();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("creates a disposed handle when created with an aborted signal", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      abortController.abort();
+      const handle = sut.once(asap(), () => false, { signal: abortController.signal });
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("handles empty timers options", () => {
+      const sut = createSUT();
+      expect(() => sut.once(asap(), () => {}, {})).not.toThrow();
+    });
     test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
       const sut = createSUT();
       let callbackACalled = false;
@@ -27,6 +60,39 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
     });
   });
   describe("every", () => {
+    test("returns a disposable handle (dispose)", () => {
+      const sut = createSUT();
+      const handle = sut.every(asap(), () => false);
+      handle.dispose();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("returns a disposable handle (using)", () => {
+      const sut = createSUT();
+      let handleRef: ITimerHandle | undefined = undefined;
+      {
+        using handle = sut.every(asap(), () => false);
+        handleRef = handle;
+      }
+      expect(handleRef.isDisposed).toBe(true);
+    });
+    test("is disposed when aborted", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      const handle = sut.every(asap(), () => false, { signal: abortController.signal });
+      abortController.abort();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("creates a disposed handle when created with an aborted signal", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      abortController.abort();
+      const handle = sut.once(asap(), () => false, { signal: abortController.signal });
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("handles empty timers options", () => {
+      const sut = createSUT();
+      expect(() => sut.every(asap(), () => {}, {})).not.toThrow();
+    });
     test.each([0, -1, -100])("executes immediate callbacks", (immediateDelay: number) => {
       const sut = createSUT();
       let callbackACalled = false;
@@ -52,6 +118,39 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
   });
 
   describe("recurring", () => {
+    test("returns a disposable handle (dispose)", () => {
+      const sut = createSUT();
+      const handle = sut.recurring(() => false, asap());
+      handle.dispose();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("returns a disposable handle (using)", () => {
+      const sut = createSUT();
+      let handleRef: ITimerHandle | undefined = undefined;
+      {
+        using handle = sut.recurring(() => false, asap());
+        handleRef = handle;
+      }
+      expect(handleRef.isDisposed).toBe(true);
+    });
+    test("is disposed when aborted", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      const handle = sut.recurring(() => false, asap(), { signal: abortController.signal });
+      abortController.abort();
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("creates a disposed handle when created with an aborted signal", () => {
+      const sut = createSUT();
+      const abortController = new AbortController();
+      abortController.abort();
+      const handle = sut.once(asap(), () => false, { signal: abortController.signal });
+      expect(handle.isDisposed).toBe(true);
+    });
+    test("handles empty timers options", () => {
+      const sut = createSUT();
+      expect(() => sut.recurring(() => false, asap(), {})).not.toThrow();
+    });
     test.each([0, -1, -100])("executes immediate callback", (immediateDelay: number) => {
       const sut = createSUT();
       let callbackACalled = false;

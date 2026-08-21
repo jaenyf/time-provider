@@ -50,28 +50,40 @@ export class E2eHelper {
       .use(deterministicCron)
       .use(deterministicEta);
 
-    const system = systemBuilder.create();
-    const fixed = deterministicBuilder.asFixed().create();
-    const manual = deterministicBuilder.asManual().create();
-    const sequential = deterministicBuilder.asSequential().create();
+    {
+      using system = systemBuilder.create();
+      E2eHelper.testTimeProvider<TDate>(
+        system,
+        underlyingISOString,
+        underlyingStringifier,
+        underlyingToMs,
+      );
+    }
 
-    E2eHelper.testTimeProvider<TDate>(
-      system,
-      underlyingISOString,
-      underlyingStringifier,
-      underlyingToMs,
-    );
+    {
+      using fixed = deterministicBuilder.asFixed().create();
+      E2eHelper.testTimeProvider(fixed, underlyingISOString, underlyingStringifier, underlyingToMs);
+    }
 
-    E2eHelper.testTimeProvider(fixed, underlyingISOString, underlyingStringifier, underlyingToMs);
+    {
+      using manual = deterministicBuilder.asManual().create();
+      E2eHelper.testTimeProvider(
+        manual,
+        underlyingISOString,
+        underlyingStringifier,
+        underlyingToMs,
+      );
+    }
 
-    E2eHelper.testTimeProvider(manual, underlyingISOString, underlyingStringifier, underlyingToMs);
-
-    E2eHelper.testTimeProvider(
-      sequential,
-      underlyingISOString,
-      underlyingStringifier,
-      underlyingToMs,
-    );
+    {
+      using sequential = deterministicBuilder.asSequential().create();
+      E2eHelper.testTimeProvider(
+        sequential,
+        underlyingISOString,
+        underlyingStringifier,
+        underlyingToMs,
+      );
+    }
   }
 
   static e2eUtcOnlyTests<TDate>(

@@ -1,3 +1,5 @@
+import type { IAddon } from "@time-provider/core";
+
 /**
  * A handle returned by {@link IAnimationFrameApi.requestAnimationFrame}, to be passed to
  * {@link IAnimationFrameApi.cancelAnimationFrame}.
@@ -22,7 +24,7 @@ export type WithAnimationFrameApi = {
  * reachable as `timeProvider.animation` once composed via
  * `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface IAnimationFrameApi {
+export interface IAnimationFrameApi extends IAddon {
   /**
    * Schedules `callback` to run once, before the next host frame update.
    * On a system (real time) runtime this depends on the host display refresh
