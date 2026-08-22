@@ -203,8 +203,8 @@
             <label class="pg-input-label">
               <span>method</span>
               <select v-model="timerKind">
-                <option value="interval">every</option>
-                <option value="timeout">once</option>
+                <option value="every">every</option>
+                <option value="once">once</option>
                 <option value="recurring">recurring</option>
               </select>
             </label>
@@ -720,7 +720,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from "vue";
+import {
+  computed,
+  markRaw,
+  nextTick,
+  onBeforeUnmount,
+  reactive,
+  ref,
+  shallowRef,
+  watch,
+} from "vue";
 import { createTimeProvider } from "@time-provider/core";
 import { createTimeProvider as createDeterministicTimeProvider } from "@time-provider/core/deterministic";
 import { plugin as nativePlugin } from "@time-provider/plugin-native";
@@ -1176,8 +1185,11 @@ function describeTimer(row: TimerRow): string {
 }
 
 function cancelTimer(row: TimerRow) {
-  const provider = timeProvider.value;
-  row.handle.dispose();
+  try {
+    row.handle?.dispose?.();
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
 }
 
 function clearAllTimers() {
@@ -1346,7 +1358,13 @@ function addSchedulerTimer() {
         ? timeProvider.value.timers.every({ milliseconds: delay }, callback)
         : timeProvider.value.timers.once({ milliseconds: delay }, callback);
 
-    timerRows.value.push({ id, kind, label, delayMs: delay, handle });
+    timerRows.value.push({
+      id,
+      kind,
+      label,
+      delayMs: delay,
+      handle: markRaw(handle),
+    });
     pushLog("tick", `Registered ${kind} "${label}" (${delay}ms)`);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
@@ -1354,7 +1372,7 @@ function addSchedulerTimer() {
 }
 
 function addRecurringTimer(id: number, label: string) {
-  const initialDelay = positiveNumber(recurringInitialDelay.value, 0);
+  const initialDelay = { milliseconds: positiveNumber(recurringInitialDelay.value, 0) };
   const factor = positiveNumber(recurringFactor.value, 1);
   const maxRuns = Math.min(
     RECURRING_MAX_RUNS,
@@ -1362,7 +1380,7 @@ function addRecurringTimer(id: number, label: string) {
   );
 
   let delay = initialDelay;
-  const callback = (): number | false => {
+  const callback = (): { milliseconds: number } | false => {
     const row = timerRows.value.find((r) => r.id === id);
     const runs = (row?.runs ?? 0) + 1;
     if (runs >= maxRuns) {
@@ -1373,12 +1391,12 @@ function addRecurringTimer(id: number, label: string) {
       pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned false, stopped`);
       return false;
     }
-    delay = Math.round(delay * factor);
+    delay.milliseconds = Math.round(delay.milliseconds * factor);
     if (row) {
       row.runs = runs;
-      row.nextDelayMs = delay;
+      row.nextDelayMs = delay.milliseconds;
     }
-    pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned ${delay}ms`);
+    pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned ${delay.milliseconds}ms`);
     return delay;
   };
 
@@ -1389,18 +1407,18 @@ function addRecurringTimer(id: number, label: string) {
     id,
     kind: "recurring",
     label,
-    delayMs: initialDelay,
+    delayMs: initialDelay.milliseconds,
     runs: 0,
     maxRuns,
-    nextDelayMs: initialDelay,
+    nextDelayMs: initialDelay.milliseconds,
     handle: null,
   });
   const handle = timeProvider.value.timers.recurring(callback, initialDelay);
   const row = timerRows.value.find((r) => r.id === id);
-  if (row) row.handle = handle;
+  if (row) row.handle = markRaw(handle);
   pushLog(
     "tick",
-    `Registered recurring "${label}" (${initialDelay}ms, ×${factor}, ${maxRuns} runs)`,
+    `Registered recurring "${label}" (${initialDelay.milliseconds}ms, ×${factor}, ${maxRuns} runs)`,
   );
 }
 
@@ -1413,7 +1431,7 @@ function requestFrame() {
       pushLog("raf", `"${label}" frame fired`);
       dropTimerRow(id);
     });
-    timerRows.value.push({ id, kind: "raf", label, delayMs: 0, handle });
+    timerRows.value.push({ id, kind: "raf", label, delayMs: 0, handle: markRaw(handle) });
     pushLog("tick", `Requested animation frame "${label}"`);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
@@ -1433,7 +1451,14 @@ function addCronSchedule() {
       isBuilder ? cronBuilderSpec.value : expression,
       () => pushLog("cron", `"${label}" fired (${expression})`),
     );
-    timerRows.value.push({ id, kind: "cron", label, delayMs: 0, expression, handle });
+    timerRows.value.push({
+      id,
+      kind: "cron",
+      label,
+      delayMs: 0,
+      expression,
+      handle: markRaw(handle),
+    });
     pushLog("tick", `Registered cron "${label}" (${expression})`);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));

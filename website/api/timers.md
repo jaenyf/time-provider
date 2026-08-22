@@ -14,7 +14,7 @@ export interface IDurationSpec {
 
 type TimerKind = 0 | 1 | 2; // TIMER_KIND_TIMEOUT | TIMER_KIND_INTERVAL | TIMER_KIND_RECURRING
 
-interface ITimerHandle extends IAbortable, IDisposable {
+interface ITimerHandle extends IHasAbortSignal, IDisposable {
   readonly kind: TimerKind;
 }
 export interface ITimerOptions {
