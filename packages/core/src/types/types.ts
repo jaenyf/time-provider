@@ -18,14 +18,14 @@ export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
 //#endregion
 
-//#region Disposable / Abortable
+//#region Disposable / IHasAbortSignal
 export interface IDisposable {
   dispose(): void;
   [Symbol.dispose](): void;
   readonly isDisposed: boolean;
 }
 
-export interface IAbortable {
+export interface IHasAbortSignal {
   readonly signal: AbortSignal;
 }
 //#endregion
@@ -484,7 +484,7 @@ export type TimerKind =
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
  */
-export interface ITimerHandle extends IDisposable, IAbortable {
+export interface ITimerHandle extends IDisposable, IHasAbortSignal {
   readonly kind: TimerKind;
 }
 
@@ -597,7 +597,7 @@ export interface IWithCalendarScheme<TDate> {
 export interface IRuntime<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     ITimers,
     IClearTimers<TDate>,
     IClock<TDate>,
@@ -613,7 +613,7 @@ export interface IRuntime<TDate>
 export interface IUtcOnlyRuntime<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     ITimers,
     IClearTimers<TDate>,
     IUtcOnlyClock<TDate>,
@@ -629,7 +629,7 @@ export interface IUtcOnlyRuntime<TDate>
 export interface IManualRuntime<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
     ITimers,
@@ -647,7 +647,7 @@ export interface IManualRuntime<TDate>
 export interface IUtcOnlyManualRuntime<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
     ITimers,
@@ -672,7 +672,7 @@ export interface IUtcOnlyManualRuntime<TDate>
 export interface ITimeProvider<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IWithClock<IClock<TDate>>,
     IWithTimers,
     IWithParser<IParser<TDate>>,
@@ -684,7 +684,7 @@ export interface ITimeProvider<TDate>
 export interface IUtcOnlyTimeProvider<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IWithClock<IUtcOnlyClock<TDate>>,
     IWithTimers,
     IWithParser<IUtcOnlyParser<TDate>>,
@@ -696,7 +696,7 @@ export interface IUtcOnlyTimeProvider<TDate>
 export interface IManualTimeProvider<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IWithClock<IManualClock<TDate>>,
     IWithTimers,
     IWithParser<IParser<TDate>>,
@@ -709,7 +709,7 @@ export interface IManualTimeProvider<TDate>
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
     IDisposable,
-    IAbortable,
+    IHasAbortSignal,
     IWithClock<IUtcOnlyManualClock<TDate>>,
     IWithTimers,
     IWithParser<IUtcOnlyParser<TDate>>,

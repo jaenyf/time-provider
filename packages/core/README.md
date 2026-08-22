@@ -115,7 +115,7 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
 Every time provider exposes the same four-part surface:
 
 ```typescript
-interface ITimeProvider<TDate> extends IAbortable, IDisposable {
+interface ITimeProvider<TDate> extends IHasAbortSignal, IDisposable {
   clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
   parser: IParser<TDate>; // parseToUtc, parseToLocal
   timers: ITimers; // once, every, recurring, wait
