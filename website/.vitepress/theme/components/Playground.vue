@@ -203,8 +203,8 @@
             <label class="pg-input-label">
               <span>method</span>
               <select v-model="timerKind">
-                <option value="interval">every</option>
-                <option value="timeout">once</option>
+                <option value="every">every</option>
+                <option value="once">once</option>
                 <option value="recurring">recurring</option>
               </select>
             </label>
@@ -1176,8 +1176,7 @@ function describeTimer(row: TimerRow): string {
 }
 
 function cancelTimer(row: TimerRow) {
-  const provider = timeProvider.value;
-  row.handle.dispose();
+  row.handle.abort();
 }
 
 function clearAllTimers() {
@@ -1354,7 +1353,7 @@ function addSchedulerTimer() {
 }
 
 function addRecurringTimer(id: number, label: string) {
-  const initialDelay = positiveNumber(recurringInitialDelay.value, 0);
+  const initialDelay = { milliseconds: positiveNumber(recurringInitialDelay.value, 0) };
   const factor = positiveNumber(recurringFactor.value, 1);
   const maxRuns = Math.min(
     RECURRING_MAX_RUNS,
@@ -1362,7 +1361,7 @@ function addRecurringTimer(id: number, label: string) {
   );
 
   let delay = initialDelay;
-  const callback = (): number | false => {
+  const callback = (): { milliseconds: number } | false => {
     const row = timerRows.value.find((r) => r.id === id);
     const runs = (row?.runs ?? 0) + 1;
     if (runs >= maxRuns) {
@@ -1373,10 +1372,10 @@ function addRecurringTimer(id: number, label: string) {
       pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned false, stopped`);
       return false;
     }
-    delay = Math.round(delay * factor);
+    delay.milliseconds = Math.round(delay.milliseconds * factor);
     if (row) {
       row.runs = runs;
-      row.nextDelayMs = delay;
+      row.nextDelayMs = delay.milliseconds;
     }
     pushLog("recurring", `"${label}" run ${runs}/${maxRuns} → returned ${delay}ms`);
     return delay;
