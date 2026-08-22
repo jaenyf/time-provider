@@ -12,10 +12,10 @@ export interface IDurationSpec {
   days?: number;
 }
 
-type TimerKind = 0 | 1 | 2; // TIMER_KIND_TIMEOUT | TIMER_KIND_INTERVAL | TIMER_KIND_RECURRING
+type ScheduledHandleKind = 0 | 1 | 2; // SCHEDULED_TIMER_KIND_TIMEOUT | SCHEDULED_TIMER_KIND_INTERVAL | SCHEDULED_TIMER_KIND_RECURRING
 
-interface ITimerHandle extends IHasAbortSignal, IDisposable {
-  readonly kind: TimerKind;
+interface IScheduledHandle extends IHasAbortSignal, IDisposable {
+  readonly kind: ScheduledHandleKind;
 }
 export interface ITimerOptions {
   /** External cancellation */
@@ -24,20 +24,20 @@ export interface ITimerOptions {
 
 interface ITimers {
   /** One-shot timer. */
-  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /** A "promise” variant of the `once` one-shot. */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /** Fixed-interval timer. */
-  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /** Dynamic-interval timer. The callback itself determines the next interval; `false` stops it. */
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
-  ): ITimerHandle;
+  ): IScheduledHandle;
 }
 ```
 
@@ -46,7 +46,7 @@ one exception: `every` calls can't repeat faster than once per millisecond. A sy
 deterministic one accepts `0` — firing immediately, since it is already due
 — then re-arms every `1` millisecond, matching what a native interval does
 with a delay of `0`.  
-_Note: to clear a timer, call `dispose` on the `ITimerHandle` returned by the corresponding timer method._
+_Note: to clear a timer, call `dispose` on the `IScheduledHandle` returned by the corresponding timer method._
 
 **When each callback actually runs depends on the clock strategy backing
 it** — see [Deterministic Timers](/guide/timers) for the full

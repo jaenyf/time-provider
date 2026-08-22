@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  type ITimerHandle,
+  type IScheduledHandle,
   type IRuntime,
   type ITimers,
   toDuration,
@@ -27,7 +27,7 @@ function fakeDeterministicRuntime(now: number): {
     },
     every(durationSpec, callback) {
       intervals.push({ callback, delay: toDuration(durationSpec) });
-      return {} as ITimerHandle;
+      return {} as IScheduledHandle;
     },
     recurring() {
       throw new Error("not used by the eta addon");

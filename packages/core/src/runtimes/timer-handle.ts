@@ -1,13 +1,13 @@
-import { type IRuntime, type ITimerHandle, type TimerKind } from "../types/types.ts";
+import { type IRuntime, type IScheduledHandle, type ScheduledHandleKind } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 
-export class TimerHandle<TDate, TNativeHandle> implements ITimerHandle {
-  #kind: TimerKind;
+export class TimerHandle<TDate, TNativeHandle> implements IScheduledHandle {
+  #kind: ScheduledHandleKind;
   #owner: IRuntime<TDate>;
   #nativeHandle: TNativeHandle | undefined;
   #disposed: boolean;
   #abortControler?: AbortController;
-  constructor(kind: TimerKind, owner: IRuntime<TDate>, nativeHandle: TNativeHandle) {
+  constructor(kind: ScheduledHandleKind, owner: IRuntime<TDate>, nativeHandle: TNativeHandle) {
     this.#kind = kind;
     this.#owner = owner;
     this.#nativeHandle = nativeHandle;
@@ -15,7 +15,7 @@ export class TimerHandle<TDate, TNativeHandle> implements ITimerHandle {
     this.#abortControler = undefined;
   }
 
-  get kind(): TimerKind {
+  get kind(): ScheduledHandleKind {
     return this.#kind;
   }
 

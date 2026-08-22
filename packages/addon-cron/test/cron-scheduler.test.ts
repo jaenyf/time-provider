@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   DefaultCalendarScheme,
-  type ITimerHandle,
+  type IScheduledHandle,
   type ITimers,
   type ITimeConverter,
   toInstant,
@@ -30,17 +30,17 @@ const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
 function faketimers(): {
   timers: ITimers;
   recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[];
-  cleared: ITimerHandle[];
+  cleared: IScheduledHandle[];
 } {
   const recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[] = [];
-  const cleared: ITimerHandle[] = [];
+  const cleared: IScheduledHandle[] = [];
   const handle = {
     kind: 2,
     isDisposed: false,
     dispose: () => {
       cleared.push(handle);
     },
-  } as unknown as ITimerHandle;
+  } as unknown as IScheduledHandle;
   return {
     recurring,
     cleared,

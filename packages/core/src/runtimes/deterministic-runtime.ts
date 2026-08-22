@@ -2,18 +2,22 @@ import { toInstant, type IDurationSpec, toDuration } from "../helpers/branded-ty
 import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
-  ITimerHandle,
+  IScheduledHandle,
   IAdvanceOptions,
   IManualClock,
   IManualRuntime,
   ITimeConverter,
-  TimerKind,
+  ScheduledHandleKind,
   TimezoneDefinition,
   DurationMilliseconds,
   ITimerOptions,
   EpochMilliseconds,
 } from "../types/types.ts";
-import { TIMER_KIND_INTERVAL, TIMER_KIND_RECURRING, TIMER_KIND_TIMEOUT } from "../types/types.ts";
+import {
+  SCHEDULED_TIMER_KIND_INTERVAL,
+  SCHEDULED_TIMER_KIND_RECURRING,
+  SCHEDULED_TIMER_KIND_TIMEOUT,
+} from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 import { TimerHandle } from "./timer-handle.ts";
 
@@ -37,17 +41,17 @@ interface BaseDueEntry {
 }
 
 interface TimeoutEntry extends BaseDueEntry {
-  readonly kind: typeof TIMER_KIND_TIMEOUT;
+  readonly kind: typeof SCHEDULED_TIMER_KIND_TIMEOUT;
   callback: () => void;
 }
 
 interface IntervalEntry extends BaseDueEntry {
-  readonly kind: typeof TIMER_KIND_INTERVAL;
+  readonly kind: typeof SCHEDULED_TIMER_KIND_INTERVAL;
   callback: () => void;
 }
 
 interface RecurringEntry extends BaseDueEntry {
-  readonly kind: typeof TIMER_KIND_RECURRING;
+  readonly kind: typeof SCHEDULED_TIMER_KIND_RECURRING;
   /** Return value decides the next run; `false` stops the schedule. */
   callback: () => IDurationSpec | false;
 }
@@ -75,7 +79,7 @@ class DueHeap {
       heapIndex: -1,
       delay: 0,
       cancelled: false,
-      kind: TIMER_KIND_TIMEOUT,
+      kind: SCHEDULED_TIMER_KIND_TIMEOUT,
       callback,
       owner: this,
     };
@@ -90,7 +94,7 @@ class DueHeap {
       heapIndex: -1,
       delay,
       cancelled: false,
-      kind: TIMER_KIND_INTERVAL,
+      kind: SCHEDULED_TIMER_KIND_INTERVAL,
       callback,
       owner: this,
     };
@@ -105,7 +109,7 @@ class DueHeap {
       heapIndex: -1,
       delay: 0,
       cancelled: false,
-      kind: TIMER_KIND_RECURRING,
+      kind: SCHEDULED_TIMER_KIND_RECURRING,
       callback,
       owner: this,
     };
@@ -238,7 +242,7 @@ class DueHeap {
       if (root.runAt > now) break;
 
       switch (root.kind) {
-        case TIMER_KIND_TIMEOUT: {
+        case SCHEDULED_TIMER_KIND_TIMEOUT: {
           //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
           //#region inlining of DueHeap.pop
           root.heapIndex = -1;
@@ -262,7 +266,7 @@ class DueHeap {
 
           break;
         }
-        case TIMER_KIND_INTERVAL: {
+        case SCHEDULED_TIMER_KIND_INTERVAL: {
           const callback = root.callback;
           //#region inlining of DueHeap.nextSeq
           root.seq = this._nextSeq++;
@@ -282,7 +286,7 @@ class DueHeap {
           }
           break;
         }
-        case TIMER_KIND_RECURRING: {
+        case SCHEDULED_TIMER_KIND_RECURRING: {
           //#region inlining of DueHeap.pop
           root.heapIndex = -1;
           const lastIndex = entries.length - 1;
@@ -362,7 +366,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
 
   //#region heap management
-  private static clearDueHandle(handle: unknown, queue: DueHeap, kind: TimerKind): void {
+  private static clearDueHandle(handle: unknown, queue: DueHeap, kind: ScheduledHandleKind): void {
     if (handle === undefined || handle === null) return;
     const entry = handle as DueEntry;
     if (entry.owner !== queue || entry.kind !== kind) return;
@@ -386,34 +390,34 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
     this.untrackHandle(handle);
   }
-  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(TIMER_KIND_TIMEOUT, this, entry), options);
+    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, entry), options);
   }
 
-  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(TIMER_KIND_INTERVAL, this, entry), options);
+    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, entry), options);
   }
 
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
-  ): ITimerHandle {
+  ): IScheduledHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(TIMER_KIND_RECURRING, this, entry), options);
+    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_RECURRING, this, entry), options);
   }
   //#endregion timers
 }

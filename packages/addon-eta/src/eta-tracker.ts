@@ -1,5 +1,5 @@
 import {
-  type ITimerHandle,
+  type IScheduledHandle,
   type DurationMilliseconds,
   type EpochMilliseconds,
   type ITimers,
@@ -72,7 +72,7 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
   #completedWeight = 0;
   #status: "in-progress" | "done" | "abandoned" = "in-progress";
   #rateEstimator: IRateEstimator;
-  #timerHandle: ITimerHandle;
+  #timerHandle: IScheduledHandle;
 
   constructor(
     timers: ITimers,
@@ -224,7 +224,7 @@ class DurationEtaTracker implements IDurationEtaTracker {
   #startTime: EpochMilliseconds;
   #eta: EpochMilliseconds;
   #status: "in-progress" | "done" | "abandoned" = "in-progress";
-  #timerHandle: ITimerHandle;
+  #timerHandle: IScheduledHandle;
 
   constructor(
     timers: ITimers,

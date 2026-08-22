@@ -1,5 +1,5 @@
 import {
-  type ITimerHandle,
+  type IScheduledHandle,
   type EpochMilliseconds,
   type ICalendarScheme,
   type ITimers,
@@ -68,12 +68,12 @@ export class CronScheduler<
     this.dispose();
   }
 
-  schedule(expression: string, callback: () => void): ITimerHandle;
-  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): ITimerHandle;
+  schedule(expression: string, callback: () => void): IScheduledHandle;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): IScheduledHandle;
   schedule(
     expressionOrSpec: string | ICronSpec<TMonthName, TWeekdayName>,
     callback: () => void,
-  ): ITimerHandle {
+  ): IScheduledHandle {
     const calendarScheme = this.#calendarScheme;
     const timezone = this.#timezone();
     const parsed =
@@ -108,7 +108,7 @@ export class CronScheduler<
     }, nextDelay());
   }
 
-  unschedule(handle: ITimerHandle): void {
+  unschedule(handle: IScheduledHandle): void {
     handle.dispose();
   }
 }

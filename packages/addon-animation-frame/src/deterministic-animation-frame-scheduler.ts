@@ -1,4 +1,4 @@
-import { type ITimerHandle, type ITimers } from "@time-provider/core";
+import { type IScheduledHandle, type ITimers } from "@time-provider/core";
 import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
 
 /**
@@ -55,6 +55,6 @@ export class DeterministicAnimationFrameScheduler implements IAnimationFrameSche
     ) as unknown as AnimationFrameHandle;
   }
   cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    (handle as unknown as ITimerHandle).dispose();
+    (handle as unknown as IScheduledHandle).dispose();
   }
 }

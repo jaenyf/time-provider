@@ -1,4 +1,4 @@
-import { type IRuntime, type ITimerHandle } from "@time-provider/core";
+import { type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { DueHandle, ICompatApi, ITimers } from "./types.ts";
 
 /**
@@ -25,13 +25,13 @@ export class CompatRuntime<TDate> implements ICompatApi, ITimers {
   setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
     return this.#runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
-  clearTimeout(handle: ITimerHandle): void {
+  clearTimeout(handle: IScheduledHandle): void {
     handle.dispose();
   }
   setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
     return this.#runtime.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
-  clearInterval(handle: ITimerHandle): void {
+  clearInterval(handle: IScheduledHandle): void {
     handle.dispose();
   }
   setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
@@ -46,7 +46,7 @@ export class CompatRuntime<TDate> implements ICompatApi, ITimers {
       { milliseconds: initialDelay ?? 0 },
     );
   }
-  clearRecurring(handle: ITimerHandle): void {
+  clearRecurring(handle: IScheduledHandle): void {
     handle.dispose();
   }
   get timers(): ITimers {

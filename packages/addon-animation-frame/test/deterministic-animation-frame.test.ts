@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { toDuration, type ITimerHandle, type ITimers } from "@time-provider/core";
+import { toDuration, type IScheduledHandle, type ITimers } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
 /*
@@ -40,7 +40,7 @@ function fakeScheduler(): {
           },
           isDisposed: false,
         });
-        return handle as unknown as ITimerHandle;
+        return handle as unknown as IScheduledHandle;
       },
       every() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");

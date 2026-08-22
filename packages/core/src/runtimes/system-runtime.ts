@@ -4,11 +4,15 @@ import type {
   DurationMilliseconds,
   EpochMilliseconds,
   ITimeConverter,
-  ITimerHandle,
+  IScheduledHandle,
   ITimerOptions,
   TimezoneDefinition,
 } from "../types/types.ts";
-import { TIMER_KIND_INTERVAL, TIMER_KIND_RECURRING, TIMER_KIND_TIMEOUT } from "../types/types.ts";
+import {
+  SCHEDULED_TIMER_KIND_INTERVAL,
+  SCHEDULED_TIMER_KIND_RECURRING,
+  SCHEDULED_TIMER_KIND_TIMEOUT,
+} from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 import { TimerHandle } from "./timer-handle.ts";
 
@@ -34,13 +38,13 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     handle: TimerHandle<TDate, TNativeHandle>,
   ): void {
     switch (handle.kind) {
-      case TIMER_KIND_INTERVAL:
+      case SCHEDULED_TIMER_KIND_INTERVAL:
         clearInterval(handle.nativeHandle);
         break;
-      case TIMER_KIND_RECURRING:
+      case SCHEDULED_TIMER_KIND_RECURRING:
         clearTimeout(handle.nativeHandle);
         break;
-      case TIMER_KIND_TIMEOUT:
+      case SCHEDULED_TIMER_KIND_TIMEOUT:
         clearTimeout(handle.nativeHandle);
         break;
       default:
@@ -55,18 +59,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       msDelay = 0 as DurationMilliseconds;
     }
     return this.trackHandle(
-      new TimerHandle(TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
+      new TimerHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
       options,
     );
   }
 
-  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle {
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 1) {
       msDelay = 1 as DurationMilliseconds;
     }
     return this.trackHandle(
-      new TimerHandle(TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
+      new TimerHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
       options,
     );
   }
@@ -75,7 +79,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
-  ): ITimerHandle {
+  ): IScheduledHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
 
     let handle: TimerHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
@@ -97,7 +101,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       return nativeHandle;
     };
 
-    handle = new TimerHandle(TIMER_KIND_RECURRING, this, arm(msInitialDelay));
+    handle = new TimerHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
     return this.trackHandle(handle, options);
   }
 }

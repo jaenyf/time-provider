@@ -3,7 +3,7 @@ import {
   asEpochMilliseconds,
   toDuration,
   toInstant,
-  type ITimerHandle,
+  type IScheduledHandle,
   type ITimers,
 } from "@time-provider/core";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
@@ -23,7 +23,7 @@ function fakeScheduler(): {
       },
       every(durationSpec, callback) {
         intervals.push({ callback, delay: toDuration(durationSpec) });
-        return {} as ITimerHandle;
+        return {} as IScheduledHandle;
       },
       recurring() {
         throw new Error("not used by the eta addon");

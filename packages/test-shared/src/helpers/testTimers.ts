@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vite-plus/test";
-import { asap, type ITimerHandle, type ITimers } from "@time-provider/core";
+import { asap, type IScheduledHandle, type ITimers } from "@time-provider/core";
 
 export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = false) {
   describe("once", () => {
@@ -11,7 +11,7 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
     });
     test("returns a disposable handle (using)", () => {
       const sut = createSUT();
-      let handleRef: ITimerHandle | undefined = undefined;
+      let handleRef: IScheduledHandle | undefined = undefined;
       {
         using handle = sut.once(asap(), () => false);
         handleRef = handle;
@@ -68,7 +68,7 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
     });
     test("returns a disposable handle (using)", () => {
       const sut = createSUT();
-      let handleRef: ITimerHandle | undefined = undefined;
+      let handleRef: IScheduledHandle | undefined = undefined;
       {
         using handle = sut.every(asap(), () => false);
         handleRef = handle;
@@ -126,7 +126,7 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
     });
     test("returns a disposable handle (using)", () => {
       const sut = createSUT();
-      let handleRef: ITimerHandle | undefined = undefined;
+      let handleRef: IScheduledHandle | undefined = undefined;
       {
         using handle = sut.recurring(() => false, asap());
         handleRef = handle;

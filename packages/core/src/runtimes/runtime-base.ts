@@ -1,6 +1,6 @@
 import { DefaultCalendarScheme } from "../calendar/default-calendar-scheme.ts";
 import type {
-  ITimerHandle,
+  IScheduledHandle,
   ICalendarScheme,
   IClock,
   IParser,
@@ -74,7 +74,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #calendarScheme: ICalendarScheme<TDate>;
   #isDisposed: boolean;
   #abortControler?: AbortController;
-  #timersHandles: Set<ITimerHandle>;
+  #timersHandles: Set<IScheduledHandle>;
   #appliedAddons: Set<IAddon>;
   protected constructor(
     localTimezone: TimezoneDefinition,
@@ -83,7 +83,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   ) {
     this.#isDisposed = false;
     this.#abortControler = undefined;
-    this.#timersHandles = new Set<ITimerHandle>();
+    this.#timersHandles = new Set<IScheduledHandle>();
     this.#appliedAddons = new Set<IAddon>();
     this.#localTimezone = localTimezone;
     this.#converter = converter;
@@ -95,13 +95,13 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     this.#appliedAddons.add(addon);
   }
 
-  protected trackHandle(handle: ITimerHandle, options?: ITimerOptions): ITimerHandle {
+  protected trackHandle(handle: IScheduledHandle, options?: ITimerOptions): IScheduledHandle {
     this.#timersHandles.add(handle);
     BaseRuntime.ensureTimerDisposalOnAbort(handle, options);
     return handle;
   }
 
-  protected untrackHandle(handle: ITimerHandle): void {
+  protected untrackHandle(handle: IScheduledHandle): void {
     this.#timersHandles.delete(handle);
   }
 
@@ -169,7 +169,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#performance;
   }
 
-  protected static ensureTimerDisposalOnAbort(handle: ITimerHandle, options?: ITimerOptions) {
+  protected static ensureTimerDisposalOnAbort(handle: IScheduledHandle, options?: ITimerOptions) {
     if (options?.signal) {
       if (options.signal.aborted) {
         handle.dispose();
@@ -181,13 +181,21 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
 
   abstract clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
-  abstract once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
-  abstract every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  abstract once(
+    delay: IDurationSpec,
+    callback: () => void,
+    options?: ITimerOptions,
+  ): IScheduledHandle;
+  abstract every(
+    delay: IDurationSpec,
+    callback: () => void,
+    options?: ITimerOptions,
+  ): IScheduledHandle;
   abstract recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
-  ): ITimerHandle;
+  ): IScheduledHandle;
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void> {
     return new Promise((resolve) => {
       this.once(delay, () => resolve(), options);

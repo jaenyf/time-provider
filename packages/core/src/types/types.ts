@@ -470,22 +470,22 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 // ---------------------------------------------------------------------------
 
 /**
- * Discriminates what a {@link ITimerHandle} was obtained from.
+ * Discriminates what a {@link IScheduledHandle} was obtained from.
  */
-export const TIMER_KIND_TIMEOUT = 0;
-export const TIMER_KIND_INTERVAL = 1;
-export const TIMER_KIND_RECURRING = 2;
-export type TimerKind =
-  | typeof TIMER_KIND_TIMEOUT
-  | typeof TIMER_KIND_INTERVAL
-  | typeof TIMER_KIND_RECURRING;
+export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
+export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
+export const SCHEDULED_TIMER_KIND_RECURRING = 2;
+export type ScheduledHandleKind =
+  | typeof SCHEDULED_TIMER_KIND_TIMEOUT
+  | typeof SCHEDULED_TIMER_KIND_INTERVAL
+  | typeof SCHEDULED_TIMER_KIND_RECURRING;
 
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
  */
-export interface ITimerHandle extends IDisposable, IHasAbortSignal {
-  readonly kind: TimerKind;
+export interface IScheduledHandle extends IDisposable, IHasAbortSignal {
+  readonly kind: ScheduledHandleKind;
 }
 
 /**
@@ -519,20 +519,20 @@ export interface ITimerOptions {
  */
 export interface ITimers {
   /** One-shot timer. */
-  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /** A "promise” variant of the `once` one-shot. */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /** Fixed-interval timer. */
-  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): ITimerHandle;
+  every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /** Dynamic recurrence: The callback determines the next interval; `false` stops it. */
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
-  ): ITimerHandle;
+  ): IScheduledHandle;
 }
 
 interface IWithTimers {

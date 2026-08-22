@@ -14,7 +14,7 @@ import {
   testTimestampNow,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
-import { asap, type ITimerHandle, type TimezoneDefinition } from "@time-provider/core";
+import { asap, type IScheduledHandle, type TimezoneDefinition } from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
@@ -628,7 +628,7 @@ export function testManualRuntime<TDate>(
             test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
               const sut = createSUT();
               let runs = 0;
-              let handle: ITimerHandle;
+              let handle: IScheduledHandle;
               handle = sut.recurring(
                 () => {
                   runs++;
@@ -668,7 +668,7 @@ export function testManualRuntime<TDate>(
           test("compaction discards timeout entries once it is triggered", () => {
             const sut = createSUT();
             let fireCount = 0;
-            const handles: ITimerHandle[] = [];
+            const handles: IScheduledHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.once({ milliseconds: compactionThreshold + i }, () => fireCount++));
@@ -685,7 +685,7 @@ export function testManualRuntime<TDate>(
           test("compaction discards interval entries once it is triggered", () => {
             const sut = createSUT();
             let fireCount = 0;
-            const handles: ITimerHandle[] = [];
+            const handles: IScheduledHandle[] = [];
             const thresholdBeforeCompaction = compactionThreshold - 1;
             for (let i = 0; i < thresholdBeforeCompaction; i++) {
               handles.push(sut.every({ milliseconds: compactionThreshold + i }, () => fireCount++));

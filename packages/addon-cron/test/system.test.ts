@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   DefaultCalendarScheme,
-  type ITimerHandle,
+  type IScheduledHandle,
   type ITimeConverter,
   type ITimers,
   type IRuntime,
@@ -45,7 +45,7 @@ function fakeSystemRuntime(
     },
     recurring(callback, initialDelay) {
       recurring.push({ callback, initialDelay });
-      return {} as ITimerHandle;
+      return {} as IScheduledHandle;
     },
     wait() {
       throw new Error("not used by the cron addon");

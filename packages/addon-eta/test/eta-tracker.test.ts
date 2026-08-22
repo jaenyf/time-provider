@@ -2,7 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   toDuration,
   toInstant,
-  type ITimerHandle,
+  type IScheduledHandle,
   type EpochMilliseconds,
   type ITimers,
   type DurationMilliseconds,
@@ -23,11 +23,12 @@ import type {
  */
 function fakeTimers(): {
   timers: ITimers;
-  intervals: { callback: () => void; delay: number | undefined; handle: ITimerHandle }[];
-  cleared: ITimerHandle[];
+  intervals: { callback: () => void; delay: number | undefined; handle: IScheduledHandle }[];
+  cleared: IScheduledHandle[];
 } {
-  const intervals: { callback: () => void; delay: number | undefined; handle: ITimerHandle }[] = [];
-  const cleared: ITimerHandle[] = [];
+  const intervals: { callback: () => void; delay: number | undefined; handle: IScheduledHandle }[] =
+    [];
+  const cleared: IScheduledHandle[] = [];
   let issued = 0;
   return {
     intervals,
@@ -46,7 +47,7 @@ function fakeTimers(): {
           },
           [Symbol.dispose](): void {},
           signal: new AbortController().signal,
-        } as ITimerHandle;
+        } as IScheduledHandle;
         intervals.push({ callback, delay: toDuration(durationSpec), handle });
         return handle;
       },
