@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.3.0...plugin-moment-timezone-v0.4.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.2.0...plugin-moment-timezone-v0.3.0) (2026-08-10)
 
 
