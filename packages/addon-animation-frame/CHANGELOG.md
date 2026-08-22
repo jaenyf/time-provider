@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.2.0...addon-animation-frame-v0.3.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+
+### Bug Fixes
+
+* **core:** issue[#147](https://github.com/jaenyf/time-provider/issues/147) ([#149](https://github.com/jaenyf/time-provider/issues/149)) ([47a2c0a](https://github.com/jaenyf/time-provider/commit/47a2c0a260f35a879dde3185a7f6daa2ded96512))
+
 ## [0.2.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.1.0...addon-animation-frame-v0.2.0) (2026-08-10)
 
 

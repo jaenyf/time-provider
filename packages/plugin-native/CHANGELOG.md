@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/jaenyf/time-provider/compare/plugin-native-v0.4.1...plugin-native-v0.5.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+
+### Bug Fixes
+
+* **core:** issue [#144](https://github.com/jaenyf/time-provider/issues/144) ([#145](https://github.com/jaenyf/time-provider/issues/145)) ([b1f9b0e](https://github.com/jaenyf/time-provider/commit/b1f9b0e4ff12ae0b156d9672fb4a3ad7932dcdfe))
+
 ## [0.4.1](https://github.com/jaenyf/time-provider/compare/plugin-native-v0.4.0...plugin-native-v0.4.1) (2026-08-10)
 
 
