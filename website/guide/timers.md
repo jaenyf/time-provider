@@ -4,12 +4,12 @@
 clock strategy backing it:
 
 - **System** — callbacks run asynchronously, via real native timers, exactly
-  like calling `setTimeout`/`setInterval` directly.
+  like calling native timers directly.
 - **Manual** or **sequential** — callbacks run **synchronously, in-line**,
   as soon as they become due: either as a direct side effect of
-  `setTimeout`/`setInterval` itself (a delay of `0` or negative is already
+  native times themself (a delay of `0` or negative is already
   due when scheduled), or of any call that moves the clock forward
-  (`advance()`, `clock.localNow()`, `clock.utcNow()`). There is no event
+  (`advance()` for manual runtimes, or `clock.localNow()` and `clock.utcNow()` for sequential runtimes only). There is no event
   loop tick involved — a due callback has already run by the time the
   triggering call returns.
 - **Fixed** — time never advances, so a scheduled callback is never due; it

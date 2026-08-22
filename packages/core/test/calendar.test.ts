@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
-import { CalendarSchemeFieldsHelper, DefaultCalendarScheme } from "@time-provider/core";
-import type { CalendarSchemeFields, ITimeConverter } from "@time-provider/core";
+import { CalendarSchemeFieldsHelper } from "../src/calendar/calendar-fields-helper.ts";
+import { DefaultCalendarScheme } from "../src/calendar/default-calendar-scheme.ts";
+import type { CalendarSchemeFields, ITimeConverter } from "../src/types/types.ts";
 import {
   DEFAULT_CALENDAR_SCHEME_MONTH_NAMES,
   DEFAULT_CALENDAR_SCHEME_WEEKDAY_NAMES,

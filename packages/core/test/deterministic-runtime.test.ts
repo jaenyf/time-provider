@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseManualRuntime } from "@time-provider/core/deterministic";
-import type { ITimerHandle, ITimeConverter } from "@time-provider/core";
+import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
+import type { ITimerHandle, ITimeConverter } from "../src/types/types.ts";
 import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
@@ -125,8 +125,8 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 describe("issue#147", () => {
   describe("BaseManualRuntime advance() with self-rescheduling due entries", () => {
     /*
-     * A callback that re-registers itself via scheduler.setTimeout when it runs. A self-rescheduling entry's
-     * new registration can't cap the whole chain to exactly one fire per advance() call, however large the jump.
+     * A callback that re-arm itself via another timer programming when it runs.
+     * A self-rearming entry's new registration can't cap the whole chain to exactly one fire per advance() call, however large the jump.
      */
     function selfReschedulingChain(
       sut: FakeManualRuntime,
@@ -167,7 +167,7 @@ describe("issue#147", () => {
       expect(sut.timestampNow()).toBe(1000);
     });
 
-    test("a plain setInterval is unaffected (control case)", () => {
+    test("a plain every timer call is unaffected (control case)", () => {
       const sut = new FakeManualRuntime(0);
       let fires = 0;
       const delay = 1000 / 60;
@@ -206,7 +206,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(otherFired).toBe(false);
     });
 
-    test("a throwing setInterval callback rethrows, but is still armed for its next tick since re-arming happens before the callback runs", () => {
+    test("a throwing every timer callback rethrows, but is still armed for its next tick since re-arming happens before the callback runs", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let intervalFires = 0;
@@ -279,7 +279,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
     });
 
-    test("a throwing setInterval callback still re-arms for its next tick, and doesn't block others", () => {
+    test("a throwing every timer callback still re-arms for its next tick, and doesn't block others", () => {
       stubBrowserLike();
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const sut = new FakeManualRuntime(0);

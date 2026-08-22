@@ -1,18 +1,18 @@
 import { type ITimerHandle, type ITimers } from "@time-provider/core";
-import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
+import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
 
 /**
- * Implements {@link IAnimationFrameApi} on top of a deterministic runtime's {@link IDeterministicRuntime},
+ * Implements {@link IAnimationFrameScheduler} on top of a deterministic runtime's {@link IDeterministicRuntime},
  * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
  */
-export class DeterministicAnimationFrameTimers implements IAnimationFrameApi {
+export class DeterministicAnimationFrameScheduler implements IAnimationFrameScheduler {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
   #timers: ITimers;
   #isDisposed: boolean;
 
   /**
-   * @param timers the deterministic runtime's scheduler used to simulate frame callbacks.
+   * @param timers the deterministic runtime's timers used to simulate frame callbacks.
    */
   constructor(timers: ITimers) {
     this.#timers = timers;

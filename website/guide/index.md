@@ -1,7 +1,7 @@
 # What is Time-Provider
 
 Code coupled to the native `Date` object, `Temporal` objects, a specific date
-library, or the environment's scheduler (`setTimeout`, `setInterval`) has an
+library, or the environment's timers has an
 implicit dependency on the system clock. That's what pushes teams toward
 global fake-timer libraries for testing — patching `Date`/timers
 process-wide, which affects unrelated code and makes tests harder to reason
@@ -9,7 +9,7 @@ about.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object — an `ITimeProvider` — exposing a **clock**, a **parser**, a
-**scheduler**, and a **performance** API, swappable per call site.
+**timers**, and a **performance** API, swappable per call site.
 
 ```ts
 interface ITimeProvider<TDate> {

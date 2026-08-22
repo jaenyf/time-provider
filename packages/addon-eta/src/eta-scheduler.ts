@@ -8,7 +8,7 @@ export class EtaScheduler implements IEtaApi {
   #isDisposed: boolean;
 
   /**
-   * @param timers the runtime's scheduler used to run notification ticks.
+   * @param timers the runtime's timers used to run notification ticks.
    * @param timestampNow reads the runtime's current time, in epoch milliseconds.
    */
   constructor(timers: ITimers, timestampNow: () => EpochMilliseconds) {

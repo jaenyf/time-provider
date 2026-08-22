@@ -8,7 +8,7 @@ Plugin (adapter)
   -> createTimeProvider.for(plugin)     a PluggedRuntimeBuilder
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime
-  -> ITimeProvider { clock, parser, scheduler, performance }
+  -> ITimeProvider { clock, parser, timers, performance }
 ```
 
 A `Runtime` is a single object that implements `IClock`, `IParser`, and
@@ -79,7 +79,7 @@ methods don't exist on the type, rather than throwing at runtime. See
 
 `.use(addon)`, available on either entry point's builder before `.create()`
 (or before picking a deterministic strategy), extends the resulting
-Time-Provider with an extra property beyond `clock`/`parser`/`scheduler`/
+Time-Provider with an extra property beyond `clock`/`parser`/`timers`/
 `performance` — e.g. `.animation` from
 [`@time-provider/addon-animation-frame`](/addons/). A plugin only ever
 bridges a date library in; an addon adds new surface area to what

@@ -197,7 +197,7 @@ export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = fal
       test("0 is a real delay, not the stop signal - only false stops it", () => {
         const sut = createSUT();
         let runs = 0;
-        // an ever-repeating 0 delay still runs (like an immediate setTimeout/setInterval would);
+        // an ever-repeating 0 delay still runs (like an immediate once/every would);
         // it would run zero times if 0 were mistaken for a falsy "stop"
         sut.recurring(() => {
           runs++;

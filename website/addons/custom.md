@@ -69,7 +69,7 @@ narrower `ITimeProvider` facade a consumer holds. That's what gives it typed
 access to everything a runtime carries beyond the four public facades — the
 [cron addon](/addons/cron) reads `runtime.calendarScheme` this way, which is
 how the same cron syntax describes whatever calendar the plugin uses. Both
-cron and [ETA](/addons/eta) also build on `runtime.scheduler`, which is what
+cron and [ETA](/addons/eta) also build on `runtime.timers`, which is what
 makes their callbacks follow the [clock strategy](/guide/clock-strategies)
 instead of the real event loop.
 
@@ -90,7 +90,7 @@ half (see [Mental Model](/guide/mental-model)) — `ISystemAddon` imported from
 
 The two halves only need separate implementations when the behavior differs. An
 addon that reads time with `runtime.clock.timestampNow()` and
-schedules on `runtime.scheduler` already follows the clock strategy, so it can
+schedules on `runtime.timers` already follows the clock strategy, so it can
 write the factory once and re-export the same singleton under both types — the
 shape `@time-provider/addon-cron` and `@time-provider/addon-eta` use:
 

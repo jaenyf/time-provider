@@ -738,7 +738,7 @@ export function testSequentialRuntime<TDate>(
             for (let i = 0; i < handles.length; i += 2) {
               handles[i].dispose();
             }
-            // the following setInterval call triggers compaction
+            // the following every call triggers compaction
             sut.every({ milliseconds: compactionThreshold * 2 - 2 }, () => fireCount++);
             //advance time
             sut.utcNow();

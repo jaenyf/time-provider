@@ -1,14 +1,17 @@
 # IPerformance
 
 ```ts
+type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
+type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+
 type PerformanceEntryType =
   "mark" | "measure" | "resource" | "dns" | "function" | "gc" | "http" | "http2" | "net" | "node";
 
 interface IPerformanceEntry {
   readonly name: string;
   readonly entryType: PerformanceEntryType;
-  readonly startTime: number;
-  readonly duration: number;
+  readonly startTime: EpochMilliseconds;
+  readonly duration: DurationMilliseconds;
 }
 
 interface IPerformanceMark extends IPerformanceEntry {
@@ -20,20 +23,20 @@ interface IPerformanceMeasure extends IPerformanceEntry {
 }
 
 interface IPerformanceMarkOptions {
-  startTime?: number;
+  startTime?: EpochMilliseconds;
   detail?: unknown;
 }
 
 interface IPerformanceMeasureOptions {
-  start?: string | number;
-  end?: string | number;
-  duration?: number;
+  start?: string | EpochMilliseconds;
+  end?: string | EpochMilliseconds;
+  duration?: DurationMilliseconds;
   detail?: unknown;
 }
 
 interface IPerformance {
-  now(): number;
-  readonly timeOrigin: number;
+  now(): DurationMilliseconds;
+  readonly timeOrigin: EpochMilliseconds;
   getEntries(): readonly IPerformanceEntry[];
   getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];
   getEntriesByType(entryType: PerformanceEntryType): readonly IPerformanceEntry[];
@@ -75,7 +78,7 @@ measure.duration; // milliseconds between the "start" mark and now
 
 ## Backed by the clock strategy
 
-Like `clock` and `scheduler`, `performance` is driven by whichever strategy
+Like `clock` and `timers`, `performance` is driven by whichever strategy
 built the Time-Provider:
 
 - **System** — every method passes straight through to the host's real

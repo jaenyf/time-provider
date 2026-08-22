@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseSystemRuntime, DefaultCalendarScheme, TimeInputValidator } from "@time-provider/core";
-import type { EpochMilliseconds, ICalendarScheme, ITimeConverter } from "@time-provider/core";
+import { DefaultCalendarScheme } from "../src/calendar/default-calendar-scheme.ts";
+import { TimeInputValidator } from "../src/runtimes/runtime-base.ts";
+import { BaseSystemRuntime } from "../src/runtimes/system-runtime.ts";
+import type { EpochMilliseconds, ICalendarScheme, ITimeConverter } from "../src/types/types.ts";
 import { asEpochMilliseconds } from "../src/helpers/branded-types.ts";
 
 class FakeRuntime extends BaseSystemRuntime<unknown> {

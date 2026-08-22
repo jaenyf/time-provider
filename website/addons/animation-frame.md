@@ -60,7 +60,7 @@ chains directly off `.use(addon)`, before you pick a strategy. It defaults to
 
 ## Where the API isn't available
 
-The system addon constructs its scheduler eagerly and **throws** if the host has
+The system addon constructs its timer eagerly and **throws** if the host has
 no `requestAnimationFrame`/`cancelAnimationFrame` — plain Node.js, for instance.
 That surfaces at `.create()`, not at the first frame request. The deterministic
 addon never touches the host API, so it works everywhere, which is what makes
@@ -83,13 +83,13 @@ const slow = createAddon().withHostFramesRate(24);
 ## The types
 
 Inference covers ordinary use. If you need to write a type down, the addon
-exports `AnimationFrameHandle`, `IAnimationFrameScheduler` (the `.animation`
+exports `AnimationFrameHandle`, `IAnimationFrameApi` (the `.animation`
 facade), and `WithAnimationFrameApi` for naming a Time-Provider with this addon
 composed in:
 
 ```ts
 import type {
-  IAnimationFrameScheduler,
+  IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "@time-provider/addon-animation-frame";
 

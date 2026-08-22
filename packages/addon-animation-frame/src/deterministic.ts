@@ -1,14 +1,14 @@
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { AddonHelper } from "@time-provider/core";
-import { DeterministicAnimationFrameTimers } from "./deterministic-animation-frame-timers.ts";
+import { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
 import { type WithAnimationFrameApi } from "./types.ts";
 
 export type {
   AnimationFrameHandle,
-  IAnimationFrameApi as IAnimationFrameScheduler,
+  IAnimationFrameScheduler as IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "./types.ts";
-export { DeterministicAnimationFrameTimers as DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-timers.ts";
+export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
 
 /**
  * Extra builder method contributed by the deterministic animation-frame addon when composed via
@@ -35,7 +35,7 @@ export function createAddon<TDate>(): IDeterministicAddon<TDate, WithAnimationFr
   let hostFramesRate: number | undefined;
   return {
     applyToRuntime(runtime) {
-      const scheduler = new DeterministicAnimationFrameTimers(runtime.timers);
+      const scheduler = new DeterministicAnimationFrameScheduler(runtime.timers);
       if (hostFramesRate !== undefined) {
         scheduler.hostFramesRate = hostFramesRate;
       }

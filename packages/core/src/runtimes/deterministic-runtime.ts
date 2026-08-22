@@ -495,7 +495,7 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
   }
 
   /**
-   * Never runs due timers callbacks: on a fixed clock, time never advances, so scheduled callbacks are
+   * Never runs due timer callbacks: on a fixed clock, time never advances, so scheduled callbacks are
    * never due. See {@link ITimers}.
    */
   protected override mayRunDueCallbacks(_nowTimestamp: number): void {

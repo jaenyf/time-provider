@@ -2,7 +2,7 @@
 
 Every strategy produces the same `ITimeProvider<TDate>` shape — only how
 `clock.utcNow()`/`clock.localNow()` computes "now", and whether the
-scheduler's timers fire synchronously, changes. System comes from
+provider's timers fire synchronously, changes. System comes from
 `createTimeProvider.for(plugin)` in `@time-provider/core`; Fixed, Manual,
 and Sequential come from the same call in `@time-provider/core/deterministic`
 — see [Mental Model](/guide/mental-model) for why they're split.

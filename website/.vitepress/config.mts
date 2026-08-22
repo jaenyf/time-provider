@@ -105,7 +105,7 @@ export default defineConfig({
       {
         text: "Concepts",
         items: [
-          { text: "Deterministic Scheduler", link: "/guide/scheduler" },
+          { text: "Deterministic Scheduler", link: "/guide/timers" },
           { text: "Timezones & Local Time", link: "/guide/timezones" },
           { text: "Testing With Time-Provider", link: "/guide/testing" },
         ],

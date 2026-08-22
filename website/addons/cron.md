@@ -178,7 +178,7 @@ A plugin that ships its own scheme has it directly, as the
 `CronScheduler` is also exported — the class implementing `.cron` on top of
 `ITimers.recurring`, re-deriving the delay to the next occurrence after
 every run. Composing the addon builds one for you; construct it directly only
-if you need a cron facade outside the addon pipeline, passing it the scheduler,
+if you need a cron facade outside the addon pipeline, passing it the timers,
 a `timestampNow` reader, a timezone reader, and an `ICalendarScheme`.
 
 The `.cron` property itself is typed `ICronApi`, and `WithCronApi` names a
@@ -213,10 +213,10 @@ non-existent, and both cases resolve deterministically:
 
 ## Callbacks that throw
 
-A cron callback is an ordinary scheduler callback, so a throwing one follows
-the [scheduler's](/guide/scheduler) usual rule: the exception propagates in a
+A cron callback is an ordinary timer callback, so a throwing one follows
+the [timers](/guide/timers) usual rule: the exception propagates in a
 Node-like environment and is logged in a browser-like one. Either way the
-schedule stops, exactly as a `setRecurring` callback that throws does.
+schedule stops, exactly as a `recurring` callback that throws does.
 
 If a failing run should not end the job, catch inside your own callback:
 

@@ -34,7 +34,7 @@ export class CronScheduler<
   #isDisposed: boolean;
 
   /**
-   * @param timers the runtime's scheduler used to run due callbacks.
+   * @param timers the runtime's timers used to run due callbacks.
    * @param timestampNow reads the runtime's current time, in epoch milliseconds. Side-effect-free
    * by contract - see {@link ITimestampClock.timestampNow} - which is what lets `schedule()` read
    * it once to compute the first delay and trust that `ITimers.recurring` reads the same

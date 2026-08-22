@@ -2,8 +2,8 @@
 
 Built by `.create()` from `@time-provider/core` — the default, production
 entry point. `clock.utcNow()` and `clock.localNow()` return the real current
-time, and `scheduler.setTimeout`/`setInterval` run on the real, native
-timers, exactly as if you'd called them directly.
+time, and `timers` methods (`once`, `every`, `recurring`, `wait`) run on the real, native
+timers.
 
 ```ts
 import { createTimeProvider } from "@time-provider/core";
@@ -12,7 +12,7 @@ import { plugin } from "@time-provider/plugin-native";
 const timeProvider = createTimeProvider.for(plugin).create();
 
 timeProvider.clock.utcNow(); // real "now", as a Date
-timeProvider.scheduler.setTimeout(() => console.log("fired"), 1000); // fires ~1s later, for real
+timeProvider.timers.once({ seconds: 1 }, () => console.log("fired")); // fires ~1s later, for real
 ```
 
 This is what production code should be constructed with. Everywhere else in

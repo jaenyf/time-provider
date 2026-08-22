@@ -17,7 +17,7 @@ timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
 ```
 
 `timeProvider` above is still a plain `ITimeProvider<Date>` — `clock`,
-`parser`, `scheduler`, `performance` — plus whatever the addon adds, here an
+`parser`, `timers`, `performance` — plus whatever the addon adds, here an
 `.animation` facade exposing `requestAnimationFrame`/`cancelAnimationFrame`.
 
 | Addon                                              | Property     | Adds                                                                                       | Contributed type        | npm                                                                       |
@@ -71,8 +71,8 @@ timeProvider.clock.advance({ milliseconds: 20 }); // simulated frame duration el
 ```
 
 `@time-provider/addon-cron` and `@time-provider/addon-eta` behave the same on
-both sides — they read time through `clock.timestampNow()` and schedule on
-`timeProvider.scheduler`, so the clock strategy already decides when their
+both sides — they read time through `clock.timestampNow()` and program timers on
+`timeProvider.timers`, so the clock strategy already decides when their
 callbacks run. `@time-provider/addon-animation-frame` is the one that differs:
 the system half calls the host's `requestAnimationFrame`, the
 deterministic half simulates frames against the runtime's own clock.
