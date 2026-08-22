@@ -12,7 +12,8 @@ import type { IDurationSpec } from "../helpers/branded-types.ts";
 import type { TimerHandle } from "../runtimes/timer-handle.ts";
 
 //#region General branded types
-type Brand<T, B extends string> = T & { readonly __brand: B };
+declare const __brand: unique symbol;
+type Brand<T, B> = T & { readonly [__brand]: B };
 export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
 //#endregion
@@ -235,7 +236,7 @@ interface IAdvanceable<TSelf> {
    * Moves this clock's time forward (or backward, using negative values) by
    * the given amount.
    *
-   * If a scheduler backed by this clock has pending timers callbacks,
+   * If timers backed by this clock has pending timer callbacks,
    * any of them that become due as a result are run
    * synchronously, in-line, before `advance()` returns - see
    * {@link ITimers} for details on this execution model.
@@ -469,7 +470,7 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 // ---------------------------------------------------------------------------
 
 /**
- * Discriminates what a {@link DueHandle} was obtained from.
+ * Discriminates what a {@link ITimerHandle} was obtained from.
  */
 export const TIMER_KIND_TIMEOUT = 0;
 export const TIMER_KIND_INTERVAL = 1;
