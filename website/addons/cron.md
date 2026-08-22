@@ -20,7 +20,7 @@ const timeProvider = createTimeProvider
 
 const handle = timeProvider.cron.schedule("0 9 * * MON-FRI", () => console.log("Good morning!"));
 
-timeProvider.cron.unschedule(handle);
+handle.dispose();
 ```
 
 `withTimezone(...)` needs a timezone-aware plugin, hence `plugin-dayjs` above

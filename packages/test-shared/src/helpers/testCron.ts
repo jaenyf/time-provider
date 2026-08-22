@@ -49,14 +49,14 @@ export function testAddonCronManual<TDate>(
       expect(fires).toBe(5); // + 2026-01-04, -05 at noon
     });
 
-    test("unschedule() stops further occurrences mid-batch", () => {
+    test("disposing scheduled handle stops further occurrences mid-batch", () => {
       using sut = createSUT();
 
       let fires = 0;
       const handle = sut.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
-          sut.cron.unschedule(handle);
+          handle.dispose();
         }
       });
 
@@ -157,7 +157,7 @@ export function testAddonCronSequential<TDate>(
       expect(fires).toBe(5); // + 2026-01-04, -05 at noon
     });
 
-    test("unschedule() stops further occurrences mid-batch", () => {
+    test("disposing scheduled handle stops further occurrences mid-batch", () => {
       using sut = getBuilder()
         .use(deterministicCronAddon)
         .asSequential()
@@ -169,7 +169,7 @@ export function testAddonCronSequential<TDate>(
       using handle = sut.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
-          sut.cron.unschedule(handle);
+          handle.dispose();
         }
       });
 
@@ -228,14 +228,14 @@ export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRunti
       expect(fires).toBe(5); // + 2026-01-04, -05 at noon
     });
 
-    test("unschedule() stops further occurrences mid-batch", () => {
+    test("disposing scheduled handle stops further occurrences mid-batch", () => {
       const sut = createSUT();
 
       let fires = 0;
       const handle = sut.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
-          sut.cron.unschedule(handle);
+          handle.dispose();
         }
       });
 

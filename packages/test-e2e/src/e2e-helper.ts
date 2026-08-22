@@ -305,8 +305,8 @@ export class E2eHelper {
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCronApi,
   ) {
     expect(
-      timeProvider.cron.unschedule(
-        timeProvider.cron.schedule(
+      timeProvider.cron
+        .schedule(
           {
             month: { from: "JAN", to: "FEB" },
             dayOfMonth: "12",
@@ -315,8 +315,8 @@ export class E2eHelper {
             minute: { from: "3", to: "4" },
           },
           () => {},
-        ),
-      ),
+        )
+        .dispose(),
     );
   }
 

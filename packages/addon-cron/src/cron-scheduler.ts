@@ -59,6 +59,7 @@ export class CronScheduler<
   }
 
   dispose(): void {
+    //no need to dispose any ScheduledHandle here as they are tracked by the runtime being disposed
     this.#isDisposed = true;
   }
   get isDisposed(): boolean {
@@ -106,9 +107,5 @@ export class CronScheduler<
       callback();
       return nextDelay();
     }, nextDelay());
-  }
-
-  unschedule(handle: IScheduledHandle): void {
-    handle.dispose();
   }
 }

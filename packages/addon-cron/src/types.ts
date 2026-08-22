@@ -42,9 +42,4 @@ export interface ICronApi<
    * @throws if `spec` is malformed.
    */
   schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): IScheduledHandle;
-  /**
-   * Cancels a schedule previously created via {@link ICronApi.schedule}. A no-op if it was
-   * already cancelled.
-   */
-  unschedule(handle: IScheduledHandle): void;
 }

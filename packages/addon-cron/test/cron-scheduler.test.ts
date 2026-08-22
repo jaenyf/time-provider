@@ -214,7 +214,7 @@ describe("CronScheduler", () => {
     expect(() => recurring[0]?.callback()).toThrow(error);
   });
 
-  test("unschedule() delegates to the runtime timers's clearRecurring with the same handle", () => {
+  test("disposing scheduled handle delegates to the runtime timers's clearRecurring with the same handle", () => {
     const { timers, cleared } = faketimers();
     const sut = new CronScheduler(
       timers,
@@ -223,7 +223,7 @@ describe("CronScheduler", () => {
       defaultCalendarScheme,
     );
     const handle = sut.schedule("* * * * *", () => {});
-    sut.unschedule(handle);
+    handle.dispose();
     expect(cleared).toEqual([handle]);
   });
 
