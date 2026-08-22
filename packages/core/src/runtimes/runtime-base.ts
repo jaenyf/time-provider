@@ -64,7 +64,7 @@ export class TimeInputValidator {
 
 /**
  * Base class for all runtime classes
- * A runtime is an orchestrator (coordinator) between a clock and a scheduler
+ * A runtime is an orchestrator (coordinator) between a clock and the timers
  */
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   static readonly ABORTED_SIGNAL: AbortSignal = AbortSignal.abort();

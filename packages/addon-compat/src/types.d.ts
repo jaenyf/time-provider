@@ -19,7 +19,7 @@ export interface DueHandle {
 /**
  * Schedules and cancels timeouts/intervals.
  *
- * Execution model depends on the clock strategy backing this scheduler:
+ * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, callbacks run asynchronously via the real, native
  *   timers, exactly like in production code.
  * - On a **manual** or **sequential** clock, callbacks run synchronously,

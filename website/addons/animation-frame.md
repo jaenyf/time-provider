@@ -89,7 +89,7 @@ composed in:
 
 ```ts
 import type {
-  IAnimationFrameScheduler,
+  IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "@time-provider/addon-animation-frame";
 

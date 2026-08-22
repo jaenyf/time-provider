@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseManualRuntime } from "@time-provider/core/deterministic";
-import type { ITimerHandle, ITimeConverter } from "@time-provider/core";
+import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
+import type { ITimerHandle, ITimeConverter } from "../src/types/types.ts";
 import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
@@ -125,8 +125,8 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 describe("issue#147", () => {
   describe("BaseManualRuntime advance() with self-rescheduling due entries", () => {
     /*
-     * A callback that re-registers itself via scheduler.setTimeout when it runs. A self-rescheduling entry's
-     * new registration can't cap the whole chain to exactly one fire per advance() call, however large the jump.
+     * A callback that re-arm itself via another timer programming when it runs.
+     * A self-rearming entry's new registration can't cap the whole chain to exactly one fire per advance() call, however large the jump.
      */
     function selfReschedulingChain(
       sut: FakeManualRuntime,

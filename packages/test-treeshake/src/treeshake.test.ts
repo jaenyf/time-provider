@@ -45,8 +45,8 @@ const ANIMATION_ADDON_MARKERS = [
  * into a system entry point and a deterministic entry point - each should
  * only ever pull in its own scheduler class, never the other's.
  */
-const SYSTEM_ANIMATION_MARKER = "SystemAnimationFrameTimers";
-const DETERMINISTIC_ANIMATION_MARKER = "DeterministicAnimationFrameTimers";
+const SYSTEM_ANIMATION_MARKER = "SystemAnimationFrameScheduler";
+const DETERMINISTIC_ANIMATION_MARKER = "DeterministicAnimationFrameScheduler";
 
 /*
  * Same story for @time-provider/addon-cron: never imported by core or by any plugin, so a bundle

@@ -9,7 +9,7 @@ about.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object — an `ITimeProvider` — exposing a **clock**, a **parser**, a
-**scheduler**, and a **performance** API, swappable per call site.
+**timers**, and a **performance** API, swappable per call site.
 
 ```ts
 interface ITimeProvider<TDate> {

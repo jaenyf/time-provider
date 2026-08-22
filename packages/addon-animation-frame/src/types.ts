@@ -1,22 +1,22 @@
 import type { IAddon } from "@time-provider/core";
 
 /**
- * A handle returned by {@link IAnimationFrameApi.requestAnimationFrame}, to be passed to
- * {@link IAnimationFrameApi.cancelAnimationFrame}.
+ * A handle returned by {@link IAnimationFrameScheduler.requestAnimationFrame}, to be passed to
+ * {@link IAnimationFrameScheduler.cancelAnimationFrame}.
  */
 export type AnimationFrameHandle = ReturnType<typeof requestAnimationFrame>;
 
 /**
  * The shape this addon adds to a composed Time-Provider: an `animation` property exposing
- * {@link IAnimationFrameApi}.
+ * {@link IAnimationFrameScheduler}.
  */
 export type WithAnimationFrameApi = {
   /**
    * Schedules work to run before the next host frame update, via `requestAnimationFrame`/
    * `cancelAnimationFrame` - the host's real frames on a system runtime, frames simulated against
-   * this runtime's own clock on a deterministic one. See {@link IAnimationFrameApi}.
+   * this runtime's own clock on a deterministic one. See {@link IAnimationFrameScheduler}.
    */
-  animation: IAnimationFrameApi;
+  animation: IAnimationFrameScheduler;
 };
 
 /**
@@ -24,7 +24,7 @@ export type WithAnimationFrameApi = {
  * reachable as `timeProvider.animation` once composed via
  * `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface IAnimationFrameApi extends IAddon {
+export interface IAnimationFrameScheduler extends IAddon {
   /**
    * Schedules `callback` to run once, before the next host frame update.
    * On a system (real time) runtime this depends on the host display refresh
@@ -39,7 +39,7 @@ export interface IAnimationFrameApi extends IAddon {
   requestAnimationFrame(callback: () => void): AnimationFrameHandle;
   /**
    * Cancels an animation frame request previously scheduled via
-   * {@link IAnimationFrameApi.requestAnimationFrame}. A no-op if it
+   * {@link IAnimationFrameScheduler.requestAnimationFrame}. A no-op if it
    * already ran or was already cancelled.
    */
   cancelAnimationFrame(handle: AnimationFrameHandle): void;

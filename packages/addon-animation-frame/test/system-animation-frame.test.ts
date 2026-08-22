@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
-import { SystemAnimationFrameTimers } from "../src/system-animation-frame-timers.ts";
+import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
 
 describe("SystemAnimationFrameScheduler", () => {
   function removeAnimationFrameAPI() {
@@ -14,7 +14,7 @@ describe("SystemAnimationFrameScheduler", () => {
       });
 
       test("constructor throws a clear error when missing API", () => {
-        expect(() => new SystemAnimationFrameTimers()).toThrow(
+        expect(() => new SystemAnimationFrameScheduler()).toThrow(
           "Environment does not support Animation frame API (are you in a browser?)",
         );
       });
@@ -27,7 +27,7 @@ describe("SystemAnimationFrameScheduler", () => {
           removeAnimationFrameAPI();
         });
         test("constructor throws a clear error when missing API", () => {
-          expect(() => new SystemAnimationFrameTimers()).toThrow(
+          expect(() => new SystemAnimationFrameScheduler()).toThrow(
             "Environment does not support Animation frame API (are you in a browser?)",
           );
         });
@@ -41,7 +41,7 @@ describe("SystemAnimationFrameScheduler", () => {
           removeAnimationFrameAPI();
         });
         test("constructor throws a clear error when missing API", () => {
-          expect(() => new SystemAnimationFrameTimers()).toThrow(
+          expect(() => new SystemAnimationFrameScheduler()).toThrow(
             "Environment does not support Animation frame API (are you in a browser?)",
           );
         });
@@ -74,14 +74,14 @@ describe("SystemAnimationFrameScheduler", () => {
 
     describe("dispose", () => {
       test("explicit dispose call disposes instance", () => {
-        const sut = new SystemAnimationFrameTimers();
+        const sut = new SystemAnimationFrameScheduler();
         sut.dispose();
         expect(sut.isDisposed).toBe(true);
       });
       test("implicit dispose call disposes instance", () => {
-        let sutRef: SystemAnimationFrameTimers | undefined = undefined;
+        let sutRef: SystemAnimationFrameScheduler | undefined = undefined;
         {
-          using sut = new SystemAnimationFrameTimers();
+          using sut = new SystemAnimationFrameScheduler();
           sutRef = sut;
         }
         expect(sutRef.isDisposed).toBe(true);
@@ -89,7 +89,7 @@ describe("SystemAnimationFrameScheduler", () => {
     });
 
     test("delegates requestAnimationFrame to the native function", () => {
-      const sut = new SystemAnimationFrameTimers();
+      const sut = new SystemAnimationFrameScheduler();
       let called = false;
       sut.requestAnimationFrame(() => (called = true));
       expect(calls.size).toBe(1);
@@ -97,7 +97,7 @@ describe("SystemAnimationFrameScheduler", () => {
       expect(called).toBe(true);
     });
     test("delegates cancelAnimationFrame to the native function", () => {
-      const sut = new SystemAnimationFrameTimers();
+      const sut = new SystemAnimationFrameScheduler();
       const handle = sut.requestAnimationFrame(() => {});
       sut.cancelAnimationFrame(handle);
       expect(calls.has(handle as unknown as number)).toBe(false);

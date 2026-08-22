@@ -30,7 +30,7 @@ applied to the current time in that fixed order — this matters because
 combining calendar-variable elements (`years`, `months`) with others can
 give a different result depending on application order.
 
-If a scheduler backed by this clock has pending timers, any that become due
+If timers backed by this clock have pending timer callbacks, any that become due
 as a result of `advance()` run **synchronously, in-line**, before
 `advance()` returns — see [Deterministic Timers](/guide/timers). A
 repeating interval whose delay is smaller than the elapsed advance re-fires

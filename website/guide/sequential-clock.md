@@ -6,7 +6,7 @@ Holds a predefined list of instants, provided via one or more
 Each call to `clock.utcNow()` / `clock.localNow()` **consumes the next
 instant in the list** (once only the last one remains, it keeps returning
 that one) — unlike the manual clock, reading time here is itself what
-advances it, and any due timers callbacks run
+advances it, and any due timer callbacks run
 synchronously in-line as a side effect of that same read.
 
 _Note: If the sequence to step through is empty, the resulting clock stays at the Unix epoch._

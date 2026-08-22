@@ -169,6 +169,14 @@ Those checks also ensure the core package itself is correctly tree-shaked.
 
 ## Scheduling
 
+### Timers
+
+Timers provide low-level time-based callback primitives. They arm callbacks for execution after a delay, repeatedly at an interval, or according to a callback-defined sequence of delays.
+
+### Schedulers
+
+Schedulers build higher-level execution policies on top of such primitives. A scheduler determines which work should execute and when according to domain-specific rules, such as cron expressions, ETA progression, or animation-frame opportunities.
+
 `BaseDeterministicRuntime` (`core/src/runtimes/deterministic-runtime.ts`, not
 re-exported - only `BaseFixedRuntime`/`BaseManualRuntime`/
 `BaseSequentialRuntime` are part of the public `deterministic.ts` surface)

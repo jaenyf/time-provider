@@ -1,13 +1,13 @@
 import { AddonHelper, type ISystemAddon } from "@time-provider/core";
 import { type WithAnimationFrameApi } from "./types.ts";
-import { SystemAnimationFrameTimers } from "./system-animation-frame-timers.ts";
+import { SystemAnimationFrameScheduler } from "./system-animation-frame-scheduler.ts";
 
 export type {
   AnimationFrameHandle,
-  IAnimationFrameApi as IAnimationFrameScheduler,
+  IAnimationFrameScheduler as IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "./types.ts";
-export { SystemAnimationFrameTimers as SystemAnimationFrameScheduler } from "./system-animation-frame-timers.ts";
+export { SystemAnimationFrameScheduler } from "./system-animation-frame-scheduler.ts";
 
 function createAddon<TDate>(): ISystemAddon<TDate, WithAnimationFrameApi> {
   return {
@@ -15,7 +15,7 @@ function createAddon<TDate>(): ISystemAddon<TDate, WithAnimationFrameApi> {
       return AddonHelper.extendRuntimeWithProperty(
         runtime,
         "animation",
-        new SystemAnimationFrameTimers(),
+        new SystemAnimationFrameScheduler(),
         undefined as unknown as WithAnimationFrameApi,
       );
     },

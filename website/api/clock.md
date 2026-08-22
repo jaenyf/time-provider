@@ -1,8 +1,10 @@
 # IClock
 
 ```ts
+type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+
 interface ITimestampClock {
-  timestampNow(): number;
+  timestampNow(): EpochMilliseconds;
 }
 
 interface IUtcOnlyClock<TDate> extends ITimestampClock {
@@ -29,7 +31,7 @@ one down, derive it — see [Naming these types](#naming-these-types).
 
 - **`utcNow()`** — the current instant, in UTC, as the plugin's `TDate`.
   Always available. On a sequential clock this read is what consumes the next
-  queued instant, and may run due scheduler callbacks as a side effect.
+  queued instant, and may run due timer callbacks as a side effect.
 - **`localNow()`** — the current instant, rendered in the clock's
   configured local timezone. Only on timezone-aware plugins (`IClock`, not
   `IUtcOnlyClock`) — see [Timezones & Local Time](/guide/timezones). If no
@@ -96,7 +98,7 @@ narrower type than any annotation you could write, and it carries the extras
 composed in by any [addons](/addons/), which an annotation drops:
 
 ```ts
-const timeProvider = createTimeProvider
+using timeProvider = createTimeProvider
   .for(plugin)
   .use(addon)
   .asManual()

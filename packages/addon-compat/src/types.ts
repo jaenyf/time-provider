@@ -39,7 +39,7 @@ export interface DueHandle {
  *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
  *   involved: a due callback has already run by the time the triggering call
  *   returns.
- * - On a **fixed** clock, time never advances, so no timers callback is
+ * - On a **fixed** clock, time never advances, so no timer callback is
  *   ever due - it never runs, regardless of the delay it was registered with.
  *
  * On a manual/sequential clock, a callback that throws is handled to match what a native timer

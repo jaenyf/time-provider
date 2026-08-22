@@ -236,7 +236,7 @@ interface IAdvanceable<TSelf> {
    * Moves this clock's time forward (or backward, using negative values) by
    * the given amount.
    *
-   * If timers backed by this clock has pending timer callbacks,
+   * If timers backed by this clock have pending timer callbacks,
    * any of them that become due as a result are run
    * synchronously, in-line, before `advance()` returns - see
    * {@link ITimers} for details on this execution model.
@@ -258,7 +258,7 @@ interface ITimestampClock {
   /**
    * Returns the current time stamp.
    * Note: This operation is guaranteed to be side effects free.
-   * On sequential clock, it does not consume the next queued value, and never runs due scheduler callbacks.
+   * On sequential clock, it does not consume the next queued value, and never runs due timer callbacks.
    * {@link IUtcOnlyClock.utcNow}/{@link ILocalOnlyClock.localNow} are the reads that do.
    * Use this instead when "now" is only needed to compute something (e.g. a delay), not to observe the passage of time.
    */
@@ -271,7 +271,7 @@ interface ITimestampClock {
 interface IUtcOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now in UTC.
-   * Note: On a sequential clock, this read also makes time advance and may run due scheduler callbacks.
+   * Note: On a sequential clock, this read also makes time advance and may run due timer callbacks.
    * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
    */
   utcNow(): TDate;
@@ -280,8 +280,8 @@ interface IUtcOnlyClock<TDate> extends ITimestampClock {
 interface ILocalOnlyClock<TDate> extends ITimestampClock {
   /**
    * Returns the time as of now for the local timezone of the runtime.
-   * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwhich timezone).
-   * Note: On a sequential clock, this read also makes time advance and may run due scheduler callbacks.
+   * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwich timezone).
+   * Note: On a sequential clock, this read also makes time advance and may run due timer callbacks.
    * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
    */
   localNow(): TDate;
@@ -352,7 +352,7 @@ export type ComposableCalendarSchemeFields = Omit<CalendarSchemeFields, "weekday
  * system and timezone data instead of assuming Gregorian/`Intl`. Optional on
  * {@link ITimeConverter}: a plugin only implements it to diverge from the shared default (e.g. to
  * honor its own bundled timezone data) or to support an operation the default can't. When a
- * plugin doesn't provide one, {@link IUtcOnlyClock.calendar} falls back to that default.
+ * plugin doesn't provide one, {@link IWithCalendarScheme.calendarScheme} falls back to that default.
  *
  * Nothing here assumes a specific calendar system: the unit sizes are all queried rather than
  * assumed (a calendar with 36 months of 10 days, or a day of 10 hours, is describable), and the
@@ -496,20 +496,20 @@ export interface ITimerOptions {
 }
 
 /**
- * Schedules timers.
+ * Program timers.
  *
- * Execution model depends on the clock strategy backing this scheduler:
+ * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, timer callbacks run asynchronously via the real, native
  *   timers, exactly like in production code.
  * - On a **manual** or **sequential** clock, callbacks run synchronously,
  *   in-line, as soon as they become due - as a direct side effect of
  *   {@link ITimers.once}/{@link ITimers.every} itself
- *   (e.g. a delay of `0` or a negative value is already due when scheduled),
+ *   (e.g. a delay of `0` or a negative value is already due when armed),
  *   or of any call that moves the clock forward (`advance()`,
  *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
  *   involved: a due callback has already run by the time the triggering call
  *   returns.
- * - On a **fixed** clock, time never advances, so no scheduled callback is
+ * - On a **fixed** clock, time never advances, so no timer callback is
  *   ever due - it never runs, regardless of the delay it was registered with.
  *
  * On a manual/sequential clock, a callback that throws is handled to match what a native timer
@@ -666,7 +666,7 @@ export interface IUtcOnlyManualRuntime<TDate>
 // ---------------------------------------------------------------------------
 
 /**
- * The public facade of a Time-Provider: exposes its `clock`, `scheduler`, `parser`, and
+ * The public facade of a Time-Provider: exposes its `clock`, `timers`, `parser`, and
  * `performance`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
@@ -731,7 +731,7 @@ export interface ISystemPlugin<TDate> {
    */
   readonly supportsLocalTime: true;
   /**
-   * Create a runtime for system time and scheduler
+   * Create a runtime for system time and timers
    */
   createSystemRuntime(localTimezone: TimezoneDefinition): IRuntime<TDate>;
 }
@@ -746,7 +746,7 @@ export interface IUtcOnlySystemPlugin<TDate> {
    */
   readonly supportsLocalTime: false;
   /**
-   * Create a UTC only runtime for system time and scheduler
+   * Create a UTC only runtime for system time and timers
    */
   createSystemRuntime(): IUtcOnlyRuntime<TDate>;
 }
@@ -761,21 +761,21 @@ export interface IDeterministicPlugin<TDate> {
    */
   readonly supportsLocalTime: true;
   /**
-   * Create a runtime for manual time and scheduler
+   * Create a runtime for manual time and timers
    */
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IManualRuntime<TDate>;
   /**
-   * Create a runtime for fixed time and scheduler
+   * Create a runtime for fixed time.
    */
   createFixedRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IRuntime<TDate>;
   /**
-   * Create a runtime for sequential time and scheduler.
+   * Create a runtime for sequential time and timers.
    *
    * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
    */
@@ -795,19 +795,19 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    */
   readonly supportsLocalTime: false;
   /**
-   * Create a runtime for manual time and scheduler
+   * Create a runtime for manual time and timers.
    */
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IUtcOnlyManualRuntime<TDate>;
   /**
-   * Create a runtime for fixed time and scheduler
+   * Create a runtime for fixed time and timers.
    */
   createFixedRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IUtcOnlyRuntime<TDate>;
   /**
-   * Create a runtime for sequential time and scheduler.
+   * Create a runtime for sequential time and timers.
    *
    * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
    */

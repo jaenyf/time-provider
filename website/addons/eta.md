@@ -24,7 +24,7 @@ response.on("data", (chunk) => download.progress(chunk.length));
 response.on("end", () => download.done());
 ```
 
-Because notifications run on the Time-Provider's own scheduler, a deterministic
+Because notifications run on the Time-Provider's own timers, a deterministic
 runtime replays a whole job's reporting without waiting for anything:
 
 ```ts
@@ -174,8 +174,8 @@ the chosen algorithm has enough samples to estimate anything.
 
 ## Timing comes from the runtime
 
-`.eta` reads time through `clock.timestampNow()` and schedules its ticks on
-`timeProvider.scheduler`, which has two consequences worth knowing.
+`.eta` reads time through `clock.timestampNow()` and programs its ticks on
+`timeProvider.timers`, which has two consequences worth knowing.
 
 Notifications follow the [clock strategy](/guide/clock-strategies) like any
 other timer — real intervals on a system clock, in-line during `advance()` on a

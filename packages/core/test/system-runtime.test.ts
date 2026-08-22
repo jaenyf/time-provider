@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseSystemRuntime } from "@time-provider/core";
+import { BaseSystemRuntime } from "../src/runtimes/system-runtime.ts";
 import { type EpochMilliseconds, type ITimeConverter } from "../src/types/types.ts";
 import { TimerHandle } from "../src/runtimes/timer-handle.ts";
 

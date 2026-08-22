@@ -1,14 +1,14 @@
-import type { AnimationFrameHandle, IAnimationFrameApi } from "./types.ts";
+import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
 }
 
 /**
- * Implements {@link IAnimationFrameApi} on top of the host's native
+ * Implements {@link IAnimationFrameScheduler} on top of the host's native
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
-export class SystemAnimationFrameTimers implements IAnimationFrameApi {
+export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
   #isDisposed: boolean;
   /**
    * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
