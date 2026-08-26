@@ -1,15 +1,21 @@
-import { type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { DueHandle, ICompatApi, ITimers } from "./types.ts";
+import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
+import type { ICompatApi, ITimers, WithCompatApi } from "./types.ts";
 
 /**
  * Implements {@link ICompatApi} that performs underlying calls to core.
  */
-export class CompatRuntime<TDate> implements ICompatApi, ITimers {
-  #runtime: IRuntime<TDate>;
+export class CompatRuntime<TDate>
+  extends AddonBase<TDate>
+  implements ICompatApi<TDate>, ITimers, WithCompatApi<TDate>
+{
   #isDisposed: boolean;
-  constructor(runtime: IRuntime<TDate>) {
-    this.#runtime = runtime;
+  constructor() {
+    super();
     this.#isDisposed = false;
+  }
+
+  get compat(): ICompatApi<TDate> {
+    return this;
   }
 
   dispose(): void {
@@ -22,20 +28,28 @@ export class CompatRuntime<TDate> implements ICompatApi, ITimers {
     this.dispose();
   }
 
-  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle {
-    return this.#runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
+  applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+    AddonHelper.extendRuntimeWithProperty(runtime, "compat", this);
+  }
+
+  clone(): this {
+    return new CompatRuntime() as this;
+  }
+
+  setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
+    return this.runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearTimeout(handle: IScheduledHandle): void {
     handle.dispose();
   }
-  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle {
-    return this.#runtime.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
+  setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
+    return this.runtime.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearInterval(handle: IScheduledHandle): void {
     handle.dispose();
   }
-  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle {
-    return this.#runtime.recurring(
+  setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle {
+    return this.runtime.recurring(
       () => {
         const result = callback();
         if (result === false) {

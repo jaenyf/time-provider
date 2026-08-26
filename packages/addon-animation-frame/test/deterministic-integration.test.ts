@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { BaseManualRuntime, toInstant } from "@time-provider/core/deterministic";
 import type { ITimeConverter } from "@time-provider/core";
-import { addon, createAddon } from "../src/deterministic.ts";
+import { addon as addonClass, DeterministicAnimationFrameScheduler } from "../src/deterministic.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
+
+const addon = new addonClass();
 
 /*
  * A real manual runtime (same shape as core's own FakeManualRuntime test double), not the
@@ -44,9 +46,10 @@ class RealManualRuntime extends BaseManualRuntime<number> {
   }
 }
 
-function createAnimatedRuntime(): RealManualRuntime & WithAnimationFrameApi {
+function createAnimatedRuntime(): RealManualRuntime & WithAnimationFrameApi<unknown> {
   const runtime = new RealManualRuntime(0);
-  return addon.applyToRuntime(runtime);
+  addon.applyToRuntime(runtime);
+  return runtime as RealManualRuntime & WithAnimationFrameApi<unknown>;
 }
 
 describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
@@ -55,9 +58,9 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     let frameCount = 0;
     function loop() {
       frameCount++;
-      timeProvider.animation.requestAnimationFrame(loop);
+      timeProvider.animation.scheduleFrame(loop);
     }
-    timeProvider.animation.requestAnimationFrame(loop);
+    timeProvider.animation.scheduleFrame(loop);
 
     timeProvider.advance({ milliseconds: 1000 }); // ~60 frames at the default 60fps
 
@@ -69,9 +72,9 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     let frameCount = 0;
     function loop() {
       frameCount++;
-      timeProvider.animation.requestAnimationFrame(loop);
+      timeProvider.animation.scheduleFrame(loop);
     }
-    timeProvider.animation.requestAnimationFrame(loop);
+    timeProvider.animation.scheduleFrame(loop);
 
     for (let i = 0; i < 5; i++) {
       timeProvider.advance({ milliseconds: 200 });
@@ -82,13 +85,14 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
 
   test("respects a configured hostFramesRate for the frame count, not just the scheduled delay", () => {
     const runtime = new RealManualRuntime(0);
-    const configured = createAddon().withHostFramesRate(90).applyToRuntime(runtime);
+    const configured = new DeterministicAnimationFrameScheduler().withHostFramesRate(90);
+    configured.applyToRuntime(runtime);
     let frameCount = 0;
     function loop() {
       frameCount++;
-      configured.animation.requestAnimationFrame(loop);
+      configured.animation.scheduleFrame(loop);
     }
-    configured.animation.requestAnimationFrame(loop);
+    configured.animation.scheduleFrame(loop);
 
     configured.advance({ milliseconds: 1000 }); // ~90 frames at 90fps
 

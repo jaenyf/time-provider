@@ -1,6 +1,4 @@
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import { addon as sharedAddon } from "./addon.ts";
-import type { WithCronApi } from "./types.ts";
+import { CronScheduler } from "./cron-scheduler.ts";
 
 export type { ICronApi, WithCronApi } from "./types.ts";
 export { CronScheduler } from "./cron-scheduler.ts";
@@ -24,5 +22,6 @@ export type {
   NumericString,
 } from "./cron-parser.ts";
 
-export const addon: IDeterministicAddon<unknown, WithCronApi> = sharedAddon;
+//export const addon = sharedAddon;
+export const addon = CronScheduler;
 export default addon;

@@ -23,7 +23,7 @@ type AnyDeterministicPlugin<TDate> =
   | IUtcOnlyDeterministicPlugin<TDate>;
 
 function applyAddons<TDate>(
-  addons: readonly IDeterministicAddon<TDate, unknown>[],
+  addons: readonly IDeterministicAddon<TDate>[],
   runtime: IRuntime<TDate>,
 ): void {
   for (const addon of addons) {
@@ -36,12 +36,12 @@ class FixedRuntimeBuilder<TDate>
   implements IFixedRuntimeBuilder<TDate>
 {
   #fixedDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate>[],
   ) {
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
@@ -66,12 +66,12 @@ class ManualRuntimeBuilder<TDate>
   implements IManualRuntimeBuilder<TDate>
 {
   #initialDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate>[],
   ) {
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
@@ -97,12 +97,12 @@ class SequentialRuntimeBuilder<TDate>
   implements ISequentialRuntimeBuilder<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addons: readonly IDeterministicAddon<TDate>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addons: readonly IDeterministicAddon<TDate>[],
   ) {
     super(plugin, localTimezone);
     this.#addons = addons;
@@ -129,18 +129,18 @@ class DeterministicPluggedRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
   implements IDeterministicPluggedRuntimeBuilder<TDate>
 {
-  #addons: IDeterministicAddon<TDate, unknown>[] = [];
+  #addons: IDeterministicAddon<TDate>[] = [];
 
   constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
   use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: IDeterministicAddon<TDate, TAddonExtra> & TBuilderExtra,
+    addon: IDeterministicAddon<TDate> & TBuilderExtra,
   ): IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
     const instance = addon.clone();
     BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
-    this.#addons.push(instance as IDeterministicAddon<TDate, unknown>);
+    this.#addons.push(instance as IDeterministicAddon<TDate>);
     BaseRuntimeBuilder.spliceAddonExtras(this, instance);
     return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> &
       TBuilderExtra;

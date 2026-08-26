@@ -3,7 +3,7 @@ import { AddonHelper, IAddon, IRuntime } from "@time-provider/core";
 
 describe("AddonHelper", () => {
   function createFakeRuntime(): IRuntime<unknown> {
-    return { registerAddon: (_addon: IAddon) => {} } as IRuntime<unknown>;
+    return { registerAddon: (_addon: IAddon<unknown>) => {} } as IRuntime<unknown>;
   }
 
   describe("extendRuntimeWithProperty", () => {
@@ -11,7 +11,7 @@ describe("AddonHelper", () => {
       const original = createFakeRuntime();
       const runtime = AddonHelper.extendRuntimeWithProperty(original, "extra", {
         value: 1,
-      } as unknown as IAddon);
+      } as unknown as IAddon<unknown>);
       expect(runtime).toBe(original);
       expect((runtime as unknown as { extra: unknown }).extra).toEqual({ value: 1 });
     });
@@ -19,21 +19,21 @@ describe("AddonHelper", () => {
     test("defines the property as enumerable", () => {
       const runtime = AddonHelper.extendRuntimeWithProperty(createFakeRuntime(), "extra", {
         value: 1,
-      } as unknown as IAddon);
+      } as unknown as IAddon<unknown>);
       expect(Object.keys(runtime)).toContain("extra");
     });
 
     test("defines the property as non-configurable", () => {
       const runtime = AddonHelper.extendRuntimeWithProperty(createFakeRuntime(), "extra", {
         value: 1,
-      } as unknown as IAddon);
+      } as unknown as IAddon<unknown>);
       expect(() => Object.defineProperty(runtime, "extra", { value: { value: 2 } })).toThrow();
     });
 
     test("defines the property as non-writable", () => {
       const runtime = AddonHelper.extendRuntimeWithProperty(createFakeRuntime(), "extra", {
         value: 1,
-      } as unknown as IAddon) as unknown as {
+      } as unknown as IAddon<unknown>) as unknown as {
         extra: unknown;
       };
       expect(() => {

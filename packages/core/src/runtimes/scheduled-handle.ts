@@ -1,7 +1,7 @@
 import { type IRuntime, type IScheduledHandle, type ScheduledHandleKind } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 
-export class TimerHandle<TDate, TNativeHandle> implements IScheduledHandle {
+export class ScheduledHandle<TDate, TNativeHandle> implements IScheduledHandle {
   #kind: ScheduledHandleKind;
   #owner: IRuntime<TDate>;
   #nativeHandle: TNativeHandle | undefined;

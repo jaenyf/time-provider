@@ -12,7 +12,7 @@ import type {
   ITimerOptions,
   EpochMilliseconds,
 } from "../types/types.ts";
-import type { TimerHandle } from "./timer-handle.ts";
+import type { ScheduledHandle } from "./scheduled-handle.ts";
 import { type IDurationSpec } from "../helpers/branded-types.ts";
 import type { IAddon } from "../deterministic.ts";
 
@@ -75,7 +75,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #isDisposed: boolean;
   #abortControler?: AbortController;
   #timersHandles: Set<IScheduledHandle>;
-  #appliedAddons: Set<IAddon>;
+  #appliedAddons: Set<IAddon<TDate>>;
   protected constructor(
     localTimezone: TimezoneDefinition,
     converter: ITimeConverter<TDate>,
@@ -84,14 +84,14 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     this.#isDisposed = false;
     this.#abortControler = undefined;
     this.#timersHandles = new Set<IScheduledHandle>();
-    this.#appliedAddons = new Set<IAddon>();
+    this.#appliedAddons = new Set<IAddon<TDate>>();
     this.#localTimezone = localTimezone;
     this.#converter = converter;
     this.#performance = performance;
     this.#calendarScheme = converter.calendarScheme ?? new DefaultCalendarScheme(converter);
   }
 
-  registerAddon(addon: IAddon): void {
+  registerAddon(addon: IAddon<TDate>): void {
     this.#appliedAddons.add(addon);
   }
 
@@ -180,7 +180,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     }
   }
 
-  abstract clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
+  abstract clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
   abstract once(
     delay: IDurationSpec,
     callback: () => void,

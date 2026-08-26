@@ -14,7 +14,7 @@ import {
   SCHEDULED_TIMER_KIND_TIMEOUT,
 } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
-import { TimerHandle } from "./timer-handle.ts";
+import { ScheduledHandle } from "./scheduled-handle.ts";
 
 type ReturnTypeOfSetInterval = ReturnType<typeof setInterval>;
 type ReturnTypeOfSetTimeout = ReturnType<typeof setTimeout>;
@@ -33,9 +33,9 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     super(localTimezone, converter, new SystemPerformance());
   }
 
-  clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
+  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
   clearTimer<TNativeHandle extends ReturnTypeOfTimer>(
-    handle: TimerHandle<TDate, TNativeHandle>,
+    handle: ScheduledHandle<TDate, TNativeHandle>,
   ): void {
     switch (handle.kind) {
       case SCHEDULED_TIMER_KIND_INTERVAL:
@@ -59,7 +59,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       msDelay = 0 as DurationMilliseconds;
     }
     return this.trackHandle(
-      new TimerHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
+      new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
       options,
     );
   }
@@ -70,7 +70,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       msDelay = 1 as DurationMilliseconds;
     }
     return this.trackHandle(
-      new TimerHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
+      new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
       options,
     );
   }
@@ -82,7 +82,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   ): IScheduledHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
 
-    let handle: TimerHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
+    let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
 
     const arm = (msInitialDelay: number): ReturnTypeOfSetTimeout => {
@@ -101,7 +101,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       return nativeHandle;
     };
 
-    handle = new TimerHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
+    handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
     return this.trackHandle(handle, options);
   }
 }

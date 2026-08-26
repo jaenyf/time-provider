@@ -7,6 +7,7 @@ import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
  * Gregorian ones every plugin shipped today uses.
  */
 export type WithCronApi<
+  TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
 > = {
@@ -14,7 +15,7 @@ export type WithCronApi<
    * Schedules and cancels callbacks running on cron schedules, evaluated in this runtime's own
    * local timezone (`"Etc/UTC"` on a UTC-only runtime) - see {@link ICronApi}.
    */
-  cron: ICronApi<TMonthName, TWeekdayName>;
+  cron: ICronApi<TDate, TMonthName, TWeekdayName>;
 };
 
 /**
@@ -22,9 +23,11 @@ export type WithCronApi<
  * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 export interface ICronApi<
+  TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
-> extends IAddon {
+>
+  extends IAddon<TDate>, WithCronApi<TDate, TMonthName, TWeekdayName> {
   /**
    * Schedules `callback` to run every time `expression` next matches, in the runtime's local
    * timezone (`"Etc/UTC"` for a UTC-only runtime).

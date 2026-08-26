@@ -12,6 +12,7 @@ import type {
   IUtcOnlySystemPluggedRuntimeBuilder,
 } from "./builders.ts";
 import { BaseRuntimeBuilder } from "./builder-base.ts";
+import { AddonHelper } from "../addons/addon-helper.ts";
 
 type AnySystemPlugin<TDate> = ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>;
 
@@ -19,20 +20,20 @@ class SystemPluggedRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnySystemPlugin<TDate>>
   implements ISystemPluggedRuntimeBuilder<TDate>
 {
-  #addons: ISystemAddon<TDate, unknown>[] = [];
+  #addons: ISystemAddon<TDate>[] = [];
 
   constructor(plugin: AnySystemPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
-    const instance = addon.clone();
+  use<TAddon, TBuilderExtra = unknown>(
+    Ctor: new () => TAddon,
+  ): ISystemPluggedRuntimeBuilder<TDate, TAddon> & TBuilderExtra {
+    const instance = AddonHelper.createAddon(Ctor);
     BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
-    this.#addons.push(instance as ISystemAddon<TDate, unknown>);
+    this.#addons.push(instance as ISystemAddon<TDate>);
     BaseRuntimeBuilder.spliceAddonExtras(this, instance);
-    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra;
+    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddon> & TBuilderExtra;
   }
 
   create(): ITimeProvider<TDate> {

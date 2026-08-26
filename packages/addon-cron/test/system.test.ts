@@ -9,9 +9,11 @@ import {
   type IDurationSpec,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/index.ts";
+import { addon as AddonCtor } from "../src/index.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
+
+const addon = new AddonCtor();
 
 type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
 
@@ -58,7 +60,7 @@ function fakeSystemRuntime(
       timers,
       clock,
       calendarScheme: defaultCalendarScheme,
-      registerAddon: (_addon: IAddon) => {},
+      registerAddon: (_addon: IAddon<unknown>) => {},
     } as unknown as FakeRuntime,
     recurring,
   };

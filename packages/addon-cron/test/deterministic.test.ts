@@ -9,9 +9,11 @@ import {
   type IDurationSpec,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/deterministic.ts";
+import { addon as addonClass } from "../src/deterministic.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
+
+const addon = new addonClass();
 
 type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
 
@@ -58,7 +60,7 @@ function fakeDeterministicRuntime(
       timers,
       clock,
       calendarScheme: defaultCalendarScheme,
-      registerAddon: (_addon: IAddon) => {},
+      registerAddon: (_addon: IAddon<unknown>) => {},
     } as unknown as FakeRuntime,
     recurring,
   };

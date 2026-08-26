@@ -1,6 +1,4 @@
-import { AddonHelper, type ISystemAddon } from "@time-provider/core";
 import { EtaScheduler } from "./eta-scheduler.ts";
-import type { WithEtaApi } from "./types.ts";
 
 export type {
   EtaRateAlgorithm,
@@ -21,22 +19,9 @@ export type {
 } from "./types.ts";
 export { EtaScheduler } from "./eta-scheduler.ts";
 
-function createAddon<TDate>(): ISystemAddon<TDate, WithEtaApi> {
-  return {
-    applyToRuntime(runtime) {
-      return AddonHelper.extendRuntimeWithProperty(
-        runtime,
-        "eta",
-        new EtaScheduler(runtime.timers, () => runtime.clock.timestampNow()),
-        undefined as unknown as WithEtaApi,
-      );
-    },
-    clone(): ISystemAddon<TDate, WithEtaApi> {
-      return createAddon<TDate>();
-    },
-  };
-}
-
 /** The ETA estimation addon for a system (real time) Time-Provider. */
-export const addon: ISystemAddon<unknown, WithEtaApi> = createAddon();
+// export const addon = function <TDate>() {
+//   return new EtaScheduler<TDate>();
+// };
+export const addon = EtaScheduler;
 export default addon;

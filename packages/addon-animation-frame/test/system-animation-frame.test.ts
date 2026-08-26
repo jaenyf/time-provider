@@ -79,7 +79,7 @@ describe("SystemAnimationFrameScheduler", () => {
         expect(sut.isDisposed).toBe(true);
       });
       test("implicit dispose call disposes instance", () => {
-        let sutRef: SystemAnimationFrameScheduler | undefined = undefined;
+        let sutRef: SystemAnimationFrameScheduler<unknown> | undefined = undefined;
         {
           using sut = new SystemAnimationFrameScheduler();
           sutRef = sut;
@@ -91,15 +91,15 @@ describe("SystemAnimationFrameScheduler", () => {
     test("delegates requestAnimationFrame to the native function", () => {
       const sut = new SystemAnimationFrameScheduler();
       let called = false;
-      sut.requestAnimationFrame(() => (called = true));
+      sut.scheduleFrame(() => (called = true));
       expect(calls.size).toBe(1);
       [...calls.values()][0]?.();
       expect(called).toBe(true);
     });
-    test("delegates cancelAnimationFrame to the native function", () => {
+    test("disposing handle delegates cancelAnimationFrame to the native function", () => {
       const sut = new SystemAnimationFrameScheduler();
-      const handle = sut.requestAnimationFrame(() => {});
-      sut.cancelAnimationFrame(handle);
+      const handle = sut.scheduleFrame(() => {});
+      sut.dispose();
       expect(calls.has(handle as unknown as number)).toBe(false);
     });
   });

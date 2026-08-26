@@ -40,37 +40,29 @@ interface IComposeWithTimezone<TBuilder> {
   withDefaultTimezone(): TBuilder;
 }
 
-export interface IAddon extends IDisposable {}
+export interface IAddon<TDate> extends IDisposable {
+  get runtime(): IRuntime<TDate>;
+  /**
+   * Extends a system runtime.
+   */
+  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): void;
+  /**
+   * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
+   */
+  clone(): IAddon<TDate>;
+}
 
 /**
  * An addon that extends a system (real time) Time-Provider with extra, addon-specific
  * commodities (`TExtra`).
  */
-export interface ISystemAddon<TDate, TExtra> {
-  /**
-   * Extends a system runtime.
-   */
-  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): TRuntime & TExtra;
-  /**
-   * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
-   */
-  clone(): ISystemAddon<TDate, TExtra>;
-}
+export interface ISystemAddon<TDate> extends IAddon<TDate> {}
 
 /**
  * An addon that extends a deterministic (manual/fixed/sequential) Time-Provider with extra,
  * addon-specific commodities (`TExtra`).
  */
-export interface IDeterministicAddon<TDate, TExtra> {
-  /**
-   * Extends a deterministic runtime.
-   */
-  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): TRuntime & TExtra;
-  /**
-   * Clone an addon instance in order to prevent shared/singleton setup leaking in other addon instances.
-   */
-  clone(): IDeterministicAddon<TDate, TExtra>;
-}
+export interface IDeterministicAddon<TDate> extends IAddon<TDate> {}
 
 /**
  * Start the setup of a manual/fixed/sequential Time-Provider, on top of whatever `TFixed`/
@@ -189,9 +181,9 @@ export interface ISystemPluggedRuntimeBuilder<TDate, TExtra = unknown>
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & TAddonExtra> & TBuilderExtra;
+  use<TAddon, TBuilderExtra = unknown>(
+    Addon: new () => TAddon & TBuilderExtra,
+  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & TAddon> & TAddon & TBuilderExtra;
 }
 
 /**
@@ -206,9 +198,9 @@ export interface IUtcOnlySystemPluggedRuntimeBuilder<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & TAddonExtra> & TBuilderExtra;
+  use<TAddon, TBuilderExtra = unknown>(
+    Addon: new () => TAddon & TBuilderExtra,
+  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & TAddon> & TAddon & TBuilderExtra;
 }
 
 /**
@@ -228,9 +220,9 @@ export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: IDeterministicAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddonExtra> & TBuilderExtra;
+  use<TAddon, TBuilderExtra = unknown>(
+    Addon: new () => TAddon & TBuilderExtra,
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddon> & TAddon & TBuilderExtra;
 }
 
 /**
@@ -250,9 +242,9 @@ export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addon the addon to compose with.
    */
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: IDeterministicAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddonExtra> & TBuilderExtra;
+  use<TAddon, TBuilderExtra = unknown>(
+    Addon: new () => TAddon & TBuilderExtra,
+  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddon> & TAddon & TBuilderExtra;
 }
 
 /**

@@ -19,7 +19,7 @@ import {
   SCHEDULED_TIMER_KIND_TIMEOUT,
 } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
-import { TimerHandle } from "./timer-handle.ts";
+import { ScheduledHandle } from "./scheduled-handle.ts";
 
 interface BaseDueEntry {
   runAt: number;
@@ -386,7 +386,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
 
   //#region timers
-  clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void {
+  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void {
     BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
     this.untrackHandle(handle);
   }
@@ -396,7 +396,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, entry), options);
+    return this.trackHandle(
+      new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, entry),
+      options,
+    );
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
@@ -405,7 +408,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, entry), options);
+    return this.trackHandle(
+      new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, entry),
+      options,
+    );
   }
 
   recurring(
@@ -417,7 +423,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(new TimerHandle(SCHEDULED_TIMER_KIND_RECURRING, this, entry), options);
+    return this.trackHandle(
+      new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, entry),
+      options,
+    );
   }
   //#endregion timers
 }

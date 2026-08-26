@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { IAddon, IRuntime } from "@time-provider/core";
-import { addon } from "../src/index.ts";
+import { addon as addonClass } from "../src/index.ts";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
 import "./polyfills.ts";
+
+const addon = new addonClass();
 
 type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
 
@@ -13,7 +15,9 @@ type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
  * anything else on the fake runtime.
  */
 function fakeSystemRuntime(): FakeRuntime {
-  return { registerAddon: (_addon: IAddon) => {} } as FakeRuntime;
+  return {
+    registerAddon: (_addon: IAddon<unknown>) => {},
+  } as FakeRuntime;
 }
 
 describe("animationFrameAddon (system)", () => {

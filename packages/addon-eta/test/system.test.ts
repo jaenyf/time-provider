@@ -6,10 +6,15 @@ import {
   toDuration,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/index.ts";
+import { addon as addonClass } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-type FakeRuntime = IRuntime<unknown> & { eta?: unknown; registerAddon(addon: IAddon): void };
+const addon = new addonClass();
+
+type FakeRuntime = IRuntime<unknown> & {
+  eta?: unknown;
+  registerAddon(addon: IAddon<unknown>): void;
+};
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and
@@ -38,7 +43,11 @@ function fakeSystemRuntime(now: number): {
   };
   const clock = { timestampNow: () => now };
   return {
-    runtime: { timers, clock, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
+    runtime: {
+      timers,
+      clock,
+      registerAddon: (_addon: IAddon<unknown>) => {},
+    } as unknown as FakeRuntime,
     intervals,
   };
 }
@@ -62,7 +71,7 @@ describe("etaAddon (system)", () => {
     const { runtime, intervals } = fakeSystemRuntime(1000);
     addon.applyToRuntime(runtime);
     const snapshots: { startTime: number }[] = [];
-    (runtime.eta as EtaScheduler)
+    (runtime.eta as EtaScheduler<unknown>)
       .estimate()
       .withEstimatedDuration(5000)
       .start((s) => snapshots.push(s));
