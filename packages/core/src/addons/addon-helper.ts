@@ -11,20 +11,13 @@ export class AddonHelper {
    * @param runtime the runtime instance to extend.
    * @param newPropertyName the name of the property to add to `runtime`.
    * @param addon the value of the new property.
-   * @param _typeOf unused at runtime; only carries `TProperty` so it can be inferred at the call site.
    * @returns `runtime`, typed as extended with the new property.
    */
-  static extendRuntimeWithProperty<
-    TDate,
-    TRuntime extends IRuntime<TDate>,
-    TAddon extends IAddon,
-    TAddonType extends object,
-  >(
-    runtime: TRuntime,
+  static extendRuntimeWithProperty<TDate, TAddonType>(
+    runtime: IRuntime<TDate>,
     newPropertyName: string,
-    addon: TAddon,
-    _typeOf?: TAddonType,
-  ): TRuntime & TAddonType {
+    addon: IAddon<TDate>,
+  ): IRuntime<TDate> & TAddonType {
     Object.defineProperty(runtime, newPropertyName, {
       value: addon,
       enumerable: true,
@@ -32,6 +25,6 @@ export class AddonHelper {
       writable: false,
     });
     runtime.registerAddon(addon);
-    return runtime as TRuntime & TAddonType;
+    return runtime as IRuntime<TDate> & TAddonType;
   }
 }

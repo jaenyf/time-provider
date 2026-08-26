@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseSystemRuntime } from "../src/runtimes/system-runtime.ts";
 import { type EpochMilliseconds, type ITimeConverter } from "../src/types/types.ts";
-import { TimerHandle } from "../src/runtimes/timer-handle.ts";
+import { ScheduledHandle } from "../src/runtimes/scheduled-handle.ts";
 
 const noopConverter: ITimeConverter<unknown> = {
   convertToTimestamp: () => 0 as EpochMilliseconds,
@@ -150,7 +150,7 @@ describe("BaseSystemRuntime", () => {
         kind: wrongKind,
         nativeHandle: undefined,
         isDisposed: false,
-      } as TimerHandle<unknown, unknown>;
+      } as ScheduledHandle<unknown, unknown>;
       expect(() => {
         //@ts-ignore : wrong cast
         sut.clearTimer(handleWithWrongKind as TimerHandle<unknown, unknown>);

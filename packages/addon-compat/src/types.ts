@@ -3,27 +3,7 @@
 // Timers
 // ---------------------------------------------------------------------------
 
-import type { IAddon } from "@time-provider/core";
-
-/**
- * Discriminates what a {@link DueHandle} was obtained from.
- */
-export const TIMER_KIND_TIMEOUT = 0;
-export const TIMER_KIND_INTERVAL = 1;
-export const TIMER_KIND_RECURRING = 2;
-export type TimerKind =
-  | typeof TIMER_KIND_TIMEOUT
-  | typeof TIMER_KIND_INTERVAL
-  | typeof TIMER_KIND_RECURRING;
-
-/**
- * Opaque handle returned by {@link ITimers.setTimeout}, {@link ITimers.setInterval} and
- * {@link ITimers.setRecurring}. Pass it back to the matching `clear*` method to cancel it -
- * `kind` is for introspection/debugging only, not meant to be branched on by consumers.
- */
-export interface DueHandle {
-  readonly kind: TimerKind;
-}
+import type { IAddon, IScheduledHandle } from "@time-provider/core";
 
 /**
  * Schedules and cancels timeouts/intervals.
@@ -56,12 +36,12 @@ export interface ITimers {
    * clock, synchronously and in-line the moment it becomes due on a manual/sequential clock, and
    * never on a fixed clock (time never advances there). See {@link ITimers} for the full model.
    */
-  setTimeout(callback: () => void, millisecondsDelay?: number): DueHandle;
+  setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle;
   /**
    * Cancels a pending timeout scheduled via {@link ITimers.setTimeout}.
    * A no-op if it already ran or was already cleared.
    */
-  clearTimeout(handle: DueHandle): void;
+  clearTimeout(handle: IScheduledHandle): void;
   /**
    * Schedules `callback` to run repeatedly, every `millisecondsDelay`
    * milliseconds (0 if omitted or negative). No interval ever repeats faster
@@ -75,12 +55,12 @@ export interface ITimers {
    * (so an interval whose delay is shorter than an `advance()` re-fires as many times as fit), and
    * never on a fixed clock. See {@link ITimers} for the full model.
    */
-  setInterval(callback: () => void, millisecondsDelay?: number): DueHandle;
+  setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle;
   /**
    * Cancels a pending interval scheduled via {@link ITimers.setInterval}.
    * A no-op if it was already cleared.
    */
-  clearInterval(handle: DueHandle): void;
+  clearInterval(handle: IScheduledHandle): void;
   /**
    * Schedules `callback` to run once, `initialDelay` milliseconds from now (0 if omitted or
    * negative), then again after whatever delay `callback` itself returns - typically computed
@@ -94,12 +74,12 @@ export interface ITimers {
    * synchronously and in-line as each run becomes due on a manual/sequential clock, and never on a
    * fixed clock. See {@link ITimers} for the full model.
    */
-  setRecurring(callback: () => number | false, initialDelay?: number): DueHandle;
+  setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle;
   /**
    * Cancels a pending recurring schedule started via {@link ITimers.setRecurring}. A no-op if
    * it already stopped (`callback` returned `false`) or was already cleared.
    */
-  clearRecurring(handle: DueHandle): void;
+  clearRecurring(handle: IScheduledHandle): void;
 }
 
 interface ITimersProvider {
@@ -115,15 +95,15 @@ interface ITimersProvider {
  * The shape this addon adds to a composed Time-Provider: a `compat` property exposing
  * {@link ICompatApi}.
  */
-export type WithCompatApi = {
+export type WithCompatApi<TDate> = {
   /**
    * Provides low-level styles signatures methods - see {@link ICompatApi}.
    */
-  compat: ICompatApi;
+  compat: ICompatApi<TDate>;
 };
 
 /**
  * The compat API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.compat` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface ICompatApi extends ITimersProvider, IAddon {}
+export interface ICompatApi<TDate> extends ITimersProvider, IAddon<TDate>, WithCompatApi<TDate> {}

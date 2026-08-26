@@ -9,7 +9,7 @@ import type {
   DefaultCalendarSchemeWeekdayName,
 } from "../calendar/default-calendar-scheme-names.ts";
 import type { IDurationSpec } from "../helpers/branded-types.ts";
-import type { TimerHandle } from "../runtimes/timer-handle.ts";
+import type { ScheduledHandle } from "../runtimes/scheduled-handle.ts";
 
 //#region General branded types
 declare const __brand: unique symbol;
@@ -412,6 +412,12 @@ export interface ICalendarScheme<
   compose(fields: ComposableCalendarSchemeFields, timezone: TimezoneDefinition): TDate;
 }
 
+export interface IDefaultCalendarScheme<TDate> extends ICalendarScheme<
+  TDate,
+  DefaultCalendarSchemeMonthName,
+  DefaultCalendarSchemeWeekdayName
+> {}
+
 //#endregion
 
 //#region Parser
@@ -475,10 +481,12 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
 export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
 export const SCHEDULED_TIMER_KIND_RECURRING = 2;
+export const SCHEDULED_ANIMATION_KIND_FRAME = 3;
 export type ScheduledHandleKind =
   | typeof SCHEDULED_TIMER_KIND_TIMEOUT
   | typeof SCHEDULED_TIMER_KIND_INTERVAL
-  | typeof SCHEDULED_TIMER_KIND_RECURRING;
+  | typeof SCHEDULED_TIMER_KIND_RECURRING
+  | typeof SCHEDULED_ANIMATION_KIND_FRAME;
 
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
@@ -543,7 +551,7 @@ interface IWithTimers {
 }
 
 interface IClearTimers<TDate> {
-  clearTimer<TNativeHandle>(handle: TimerHandle<TDate, TNativeHandle>): void;
+  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
 }
 
 //#endregion
@@ -604,7 +612,7 @@ export interface IRuntime<TDate>
     IParser<TDate>,
     ITimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
-  registerAddon(addon: IAddon): void;
+  registerAddon(addon: IAddon<TDate>): void;
 }
 
 /**
@@ -620,7 +628,7 @@ export interface IUtcOnlyRuntime<TDate>
     IUtcOnlyParser<TDate>,
     IUtcOnlyTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
-  registerAddon(addon: IAddon): void;
+  registerAddon(addon: IAddon<TDate>): void;
 }
 
 /**
@@ -638,7 +646,7 @@ export interface IManualRuntime<TDate>
     IParser<TDate>,
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
-  registerAddon(addon: IAddon): void;
+  registerAddon(addon: IAddon<TDate>): void;
 }
 
 /**
@@ -656,7 +664,7 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyParser<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
-  registerAddon(addon: IAddon): void;
+  registerAddon(addon: IAddon<TDate>): void;
 }
 //#endregion
 

@@ -21,7 +21,7 @@ import { addon as systemCompat } from "../../addon-compat/dist/index.mjs";
 import {
   addon as deterministicCompat,
   type WithCompatApi,
-} from "../../addon-compat/dist/deterministic.mjs";
+} from "../../addon-compat/dist/index.mjs";
 import { addon as systemCron } from "../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../addon-eta/dist/index.mjs";
@@ -144,10 +144,10 @@ export class E2eHelper {
 
   private static testTimeProvider<TDate>(
     timeProvider: ITimeProvider<TDate> &
-      WithAnimationFrameApi &
-      WithCompatApi &
-      WithCronApi &
-      WithEtaApi,
+      WithAnimationFrameApi<TDate> &
+      WithCompatApi<TDate> &
+      WithCronApi<TDate> &
+      WithEtaApi<TDate>,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -166,10 +166,10 @@ export class E2eHelper {
 
   private static testUtcOnlyTimeProvider<TDate>(
     timeProvider: IUtcOnlyTimeProvider<TDate> &
-      WithAnimationFrameApi &
-      WithCompatApi &
-      WithCronApi &
-      WithEtaApi,
+      WithAnimationFrameApi<TDate> &
+      WithCompatApi<TDate> &
+      WithCronApi<TDate> &
+      WithEtaApi<TDate>,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -276,17 +276,14 @@ export class E2eHelper {
   }
 
   private static testAddonAnimation<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithAnimationFrameApi,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) &
+      WithAnimationFrameApi<TDate>,
   ) {
-    expect(() =>
-      timeProvider.animation.cancelAnimationFrame(
-        timeProvider.animation.requestAnimationFrame(() => {}),
-      ),
-    ).not.toThrow();
+    expect(() => timeProvider.animation.scheduleFrame(() => {}).dispose()).not.toThrow();
   }
 
   private static testAddonCompat<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi<TDate>,
   ) {
     expect(() => {
       timeProvider.compat.timers.clearInterval(timeProvider.compat.timers.setInterval(() => {}));
@@ -302,7 +299,7 @@ export class E2eHelper {
   }
 
   private static testAddonCron<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCronApi,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCronApi<TDate>,
   ) {
     expect(
       timeProvider.cron
@@ -321,7 +318,7 @@ export class E2eHelper {
   }
 
   private static testAddonEta<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithEtaApi,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithEtaApi<TDate>,
   ) {
     expect(() => {
       const eta = timeProvider.eta

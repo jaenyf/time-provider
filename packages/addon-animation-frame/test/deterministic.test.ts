@@ -1,9 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { IScheduledHandle, ITimers, IRuntime, IAddon } from "@time-provider/core";
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import { addon, createAddon, type IAnimationFrameBuilderExtra } from "../src/deterministic.ts";
+import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
-import type { WithAnimationFrameApi } from "../src/types.ts";
 
 type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
 
@@ -36,7 +34,10 @@ function fakeDeterministicRuntime(): {
     },
   };
   return {
-    runtime: { timers: timers, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
+    runtime: {
+      timers: timers,
+      registerAddon: (_addon: IAddon<unknown>) => {},
+    } as unknown as FakeRuntime,
     scheduled,
   };
 }
@@ -44,37 +45,37 @@ function fakeDeterministicRuntime(): {
 describe("animationFrameAddon (deterministic)", () => {
   test("applyToRuntime defines .animation with a DeterministicAnimationFrameScheduler", () => {
     const { runtime } = fakeDeterministicRuntime();
-    addon.applyToRuntime(runtime);
+    addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.animation).toBeInstanceOf(DeterministicAnimationFrameScheduler);
   });
 
   test("applyToRuntime wires .animation to the runtime's own scheduler", () => {
     const { runtime, scheduled } = fakeDeterministicRuntime();
-    addon.applyToRuntime(runtime);
-    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler;
-    scheduler.requestAnimationFrame(() => {});
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler<unknown>;
+    scheduler.scheduleFrame(() => {});
     expect(scheduled.size).toBe(1);
   });
 
   test("withHostFramesRate configures the deterministic scheduler's frame rate", () => {
-    const instance = createAddon().withHostFramesRate(100);
+    const instance = addonBuilderFactory().withHostFramesRate(100).create();
     const { runtime } = fakeDeterministicRuntime();
     instance.applyToRuntime(runtime);
-    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler;
+    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler<unknown>;
     expect(scheduler.hostFramesRate).toBe(100);
   });
 
-  test("withHostFramesRate returns the same addon instance, for chaining", () => {
-    const instance = createAddon();
-    expect(instance.withHostFramesRate(100)).toBe(instance);
+  test("withHostFramesRate returns the same builder, for chaining", () => {
+    const builder = addonBuilderFactory();
+    expect(builder.withHostFramesRate(100)).toBe(builder);
   });
 
   test.each([90, 120])(
-    "createAnimationFrameAddon() returns an independent instance each call - configuring one never affects another",
+    "addon() returns an independent builder each call - configuring one never affects another",
     (fps: number) => {
       const defaultFps = 60;
-      const configured = createAddon().withHostFramesRate(fps);
-      const untouched = createAddon();
+      const configured = addonBuilderFactory().withHostFramesRate(fps).create();
+      const untouched = addonBuilderFactory().create();
 
       const configuredRuntime = fakeDeterministicRuntime().runtime;
       configured.applyToRuntime(configuredRuntime);
@@ -82,59 +83,35 @@ describe("animationFrameAddon (deterministic)", () => {
       untouched.applyToRuntime(untouchedRuntime);
 
       expect(
-        (configuredRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+        (configuredRuntime.animation as DeterministicAnimationFrameScheduler<unknown>)
+          .hostFramesRate,
       ).toBe(fps);
       expect(
-        (untouchedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
+        (untouchedRuntime.animation as DeterministicAnimationFrameScheduler<unknown>)
+          .hostFramesRate,
       ).toBe(defaultFps);
     },
   );
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
+  test.each([90, 120])(
+    "create() returns an independent scheduler each call from the same configured builder",
+    (fps: number) => {
+      const builder = addonBuilderFactory().withHostFramesRate(fps);
+      const first = builder.create();
+      const second = builder.create();
+      expect(first).not.toBe(second);
 
-    test("returns a distinct addon that still applies a SystemAnimationFrameScheduler", () => {
-      const cloned = addon.clone() as IDeterministicAddon<unknown, WithAnimationFrameApi> &
-        IAnimationFrameBuilderExtra;
-      const runtime = fakeDeterministicRuntime().runtime;
-      cloned.applyToRuntime(runtime);
-      expect(runtime.animation).toBeInstanceOf(DeterministicAnimationFrameScheduler);
-    });
+      const firstRuntime = fakeDeterministicRuntime().runtime;
+      first.applyToRuntime(firstRuntime);
+      const secondRuntime = fakeDeterministicRuntime().runtime;
+      second.applyToRuntime(secondRuntime);
 
-    test.each([90, 120])("copy an existing host frames rate", (fps: number) => {
-      const original = addon.clone() as IDeterministicAddon<unknown, WithAnimationFrameApi> &
-        IAnimationFrameBuilderExtra;
-      original.withHostFramesRate(fps);
-      const runtime = fakeDeterministicRuntime().runtime;
-      original.clone().applyToRuntime(runtime);
-      expect((runtime.animation as DeterministicAnimationFrameScheduler).hostFramesRate).toEqual(
-        fps,
-      );
-    });
-
-    test.each([90, 120])(
-      "configuring a clone via withHostFramesRate never affects the shared addon it was cloned from",
-      (fps: number) => {
-        const defaultFps = 60;
-        const clone = addon.clone() as IDeterministicAddon<unknown, unknown> & {
-          withHostFramesRate(rate: number): unknown;
-        };
-        clone.withHostFramesRate(fps);
-
-        const clonedRuntime = fakeDeterministicRuntime().runtime;
-        clone.applyToRuntime(clonedRuntime);
-        const sharedRuntime = fakeDeterministicRuntime().runtime;
-        addon.applyToRuntime(sharedRuntime);
-
-        expect(
-          (clonedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
-        ).toBe(fps);
-        expect(
-          (sharedRuntime.animation as DeterministicAnimationFrameScheduler).hostFramesRate,
-        ).toBe(defaultFps);
-      },
-    );
-  });
+      expect(
+        (firstRuntime.animation as DeterministicAnimationFrameScheduler<unknown>).hostFramesRate,
+      ).toBe(fps);
+      expect(
+        (secondRuntime.animation as DeterministicAnimationFrameScheduler<unknown>).hostFramesRate,
+      ).toBe(fps);
+    },
+  );
 });

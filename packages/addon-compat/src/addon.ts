@@ -1,22 +1,18 @@
-import { AddonHelper } from "@time-provider/core";
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import type { WithCompatApi } from "./types.ts";
+import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import { CompatRuntime } from "./compat-runtime.ts";
 
-function createAddon<TDate>(): IDeterministicAddon<TDate, WithCompatApi> {
-  return {
-    applyToRuntime(runtime) {
-      return AddonHelper.extendRuntimeWithProperty(
-        runtime,
-        "compat",
-        new CompatRuntime(runtime),
-        undefined as unknown as WithCompatApi,
-      );
-    },
-    clone(): IDeterministicAddon<TDate, WithCompatApi> {
-      return createAddon<TDate>();
-    },
-  };
+class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatRuntime<TDate>> {
+  create(): CompatRuntime<TDate> {
+    return new CompatRuntime<TDate>();
+  }
 }
 
-export const addon = createAddon();
+/**
+ * The compat addon-builder for a Time-Provider. Compose it with
+ * `createTimeProvider.for(plugin).use(addon)` to add a `compat` property.
+ * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
+ * `AddonBuilderFactory` in `@time-provider/core`.
+ */
+export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CompatRuntime<TDate>> {
+  return new CompatAddonBuilder<TDate>(typeHint);
+}

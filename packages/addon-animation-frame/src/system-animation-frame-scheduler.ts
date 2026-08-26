@@ -1,4 +1,12 @@
-import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
+import {
+  AddonBase,
+  ScheduledHandle,
+  type IScheduledHandle,
+  SCHEDULED_ANIMATION_KIND_FRAME,
+  type IRuntime,
+  AddonHelper,
+} from "@time-provider/core";
+import type { IAnimationFrameScheduler, WithAnimationFrameApi } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
@@ -8,12 +16,16 @@ function throwAnimationFrameApiNotSupported(): never {
  * Implements {@link IAnimationFrameScheduler} on top of the host's native
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
-export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
+export class SystemAnimationFrameScheduler<TDate>
+  extends AddonBase<TDate>
+  implements IAnimationFrameScheduler<TDate>, WithAnimationFrameApi<TDate>
+{
   #isDisposed: boolean;
   /**
    * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
    */
   constructor() {
+    super();
     if (typeof requestAnimationFrame !== "function") {
       throwAnimationFrameApiNotSupported();
     }
@@ -21,6 +33,10 @@ export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
       throwAnimationFrameApiNotSupported();
     }
     this.#isDisposed = false;
+  }
+
+  get animation(): IAnimationFrameScheduler<TDate> {
+    return this;
   }
 
   dispose(): void {
@@ -33,10 +49,15 @@ export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
     this.dispose();
   }
 
-  requestAnimationFrame(callback: () => void): AnimationFrameHandle {
-    return requestAnimationFrame(callback);
+  applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+    AddonHelper.extendRuntimeWithProperty(runtime, "animation", this);
   }
-  cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    cancelAnimationFrame(handle);
+
+  scheduleFrame(callback: () => void): IScheduledHandle {
+    return new ScheduledHandle(
+      SCHEDULED_ANIMATION_KIND_FRAME,
+      this.runtime,
+      requestAnimationFrame(callback),
+    );
   }
 }

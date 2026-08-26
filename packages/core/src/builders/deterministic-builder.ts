@@ -8,6 +8,8 @@ import type {
   TimezoneDefinition,
 } from "../types/types.ts";
 import type {
+  AddonBuilderFactory,
+  IAddonBuilder,
   IDeterministicPluggedRuntimeBuilder,
   IDeterministicRuntimeBuilder,
   IFixedRuntimeBuilder,
@@ -22,12 +24,12 @@ type AnyDeterministicPlugin<TDate> =
   | IDeterministicPlugin<TDate>
   | IUtcOnlyDeterministicPlugin<TDate>;
 
-function applyAddons<TDate>(
-  addons: readonly IDeterministicAddon<TDate, unknown>[],
+function applyAddonBuilders<TDate>(
+  addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[],
   runtime: IRuntime<TDate>,
 ): void {
-  for (const addon of addons) {
-    addon.applyToRuntime(runtime);
+  for (const addonBuilder of addonBuilders) {
+    addonBuilder.create().applyToRuntime(runtime);
   }
 }
 
@@ -36,16 +38,16 @@ class FixedRuntimeBuilder<TDate>
   implements IFixedRuntimeBuilder<TDate>
 {
   #fixedDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[],
   ) {
     super(plugin, localTimezone);
     this.#fixedDateTime = undefined;
-    this.#addons = addons;
+    this.#addonBuilders = addonBuilders;
   }
   withFixedTime(initialDateTime: string | number | TDate): IFixedRuntimeBuilder<TDate> {
     this.#fixedDateTime = initialDateTime;
@@ -56,7 +58,7 @@ class FixedRuntimeBuilder<TDate>
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
       : (this.plugin.createFixedRuntime(initialTime) as unknown as IRuntime<TDate>);
-    applyAddons(this.#addons, runtime);
+    applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }
 }
@@ -66,16 +68,16 @@ class ManualRuntimeBuilder<TDate>
   implements IManualRuntimeBuilder<TDate>
 {
   #initialDateTime?: string | number | TDate;
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[],
   ) {
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
-    this.#addons = addons;
+    this.#addonBuilders = addonBuilders;
   }
 
   withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate> {
@@ -87,7 +89,7 @@ class ManualRuntimeBuilder<TDate>
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
       : (this.plugin.createManualRuntime(initialTime) as unknown as IManualRuntime<TDate>);
-    applyAddons(this.#addons, runtime);
+    applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }
 }
@@ -97,15 +99,15 @@ class SequentialRuntimeBuilder<TDate>
   implements ISequentialRuntimeBuilder<TDate>
 {
   #sequentialTimes: (string | number | TDate)[] = [];
-  #addons: readonly IDeterministicAddon<TDate, unknown>[];
+  #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
     plugin: AnyDeterministicPlugin<TDate>,
     localTimezone: TimezoneDefinition,
-    addons: readonly IDeterministicAddon<TDate, unknown>[],
+    addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[],
   ) {
     super(plugin, localTimezone);
-    this.#addons = addons;
+    this.#addonBuilders = addonBuilders;
   }
 
   withSequentialTime(
@@ -120,7 +122,7 @@ class SequentialRuntimeBuilder<TDate>
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
       : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as IRuntime<TDate>);
-    applyAddons(this.#addons, runtime);
+    applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }
 }
@@ -129,32 +131,35 @@ class DeterministicPluggedRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
   implements IDeterministicPluggedRuntimeBuilder<TDate>
 {
-  #addons: IDeterministicAddon<TDate, unknown>[] = [];
+  #addonBuilders: IAddonBuilder<IDeterministicAddon<TDate>>[] = [];
 
   constructor(plugin: AnyDeterministicPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: IDeterministicAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
-    const instance = addon.clone();
-    BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
-    this.#addons.push(instance as IDeterministicAddon<TDate, unknown>);
-    BaseRuntimeBuilder.spliceAddonExtras(this, instance);
-    return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddonExtra> &
-      TBuilderExtra;
+  use<TAddon extends IDeterministicAddon<TDate>>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TAddon> {
+    const addonBuilder: IAddonBuilder<IDeterministicAddon<TDate>> = addonBuilderFactory();
+    BaseRuntimeBuilder.assertNoAddonCollision(this, addonBuilder);
+    this.#addonBuilders.push(addonBuilder);
+    BaseRuntimeBuilder.spliceAddonExtras(this, addonBuilder);
+    return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddon>;
   }
 
   asManual(): IManualRuntimeBuilder<TDate> {
-    return Object.freeze(new ManualRuntimeBuilder(this.plugin, this.localTimezone, this.#addons));
+    return Object.freeze(
+      new ManualRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
+    );
   }
   asFixed(): IFixedRuntimeBuilder<TDate> {
-    return Object.freeze(new FixedRuntimeBuilder(this.plugin, this.localTimezone, this.#addons));
+    return Object.freeze(
+      new FixedRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
+    );
   }
   asSequential(): ISequentialRuntimeBuilder<TDate> {
     return Object.freeze(
-      new SequentialRuntimeBuilder(this.plugin, this.localTimezone, this.#addons),
+      new SequentialRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
     );
   }
 }

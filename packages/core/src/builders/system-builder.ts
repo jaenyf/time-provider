@@ -6,6 +6,8 @@ import type {
   TimezoneDefinition,
 } from "../types/types.ts";
 import type {
+  AddonBuilderFactory,
+  IAddonBuilder,
   ISystemPluggedRuntimeBuilder,
   ISystemAddon,
   IRuntimeBuilder,
@@ -19,28 +21,28 @@ class SystemPluggedRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnySystemPlugin<TDate>>
   implements ISystemPluggedRuntimeBuilder<TDate>
 {
-  #addons: ISystemAddon<TDate, unknown>[] = [];
+  #addonBuilders: IAddonBuilder<ISystemAddon<TDate>>[] = [];
 
   constructor(plugin: AnySystemPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
-  use<TAddonExtra, TBuilderExtra = unknown>(
-    addon: ISystemAddon<TDate, TAddonExtra> & TBuilderExtra,
-  ): ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra {
-    const instance = addon.clone();
-    BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
-    this.#addons.push(instance as ISystemAddon<TDate, unknown>);
-    BaseRuntimeBuilder.spliceAddonExtras(this, instance);
-    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddonExtra> & TBuilderExtra;
+  use<TAddon extends ISystemAddon<TDate>>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
+  ): ISystemPluggedRuntimeBuilder<TDate, TAddon> {
+    const addonBuilder: IAddonBuilder<ISystemAddon<TDate>> = addonBuilderFactory();
+    BaseRuntimeBuilder.assertNoAddonCollision(this, addonBuilder);
+    this.#addonBuilders.push(addonBuilder);
+    BaseRuntimeBuilder.spliceAddonExtras(this, addonBuilder);
+    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddon>;
   }
 
   create(): ITimeProvider<TDate> {
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSystemRuntime(this.localTimezone)
       : (this.plugin.createSystemRuntime() as unknown as IRuntime<TDate>);
-    for (const addon of this.#addons) {
-      addon.applyToRuntime(runtime);
+    for (const addonBuilder of this.#addonBuilders) {
+      addonBuilder.create().applyToRuntime(runtime);
     }
     return Object.freeze(runtime);
   }

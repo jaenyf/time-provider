@@ -6,10 +6,15 @@ import {
   toDuration,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/deterministic.ts";
+import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-type FakeRuntime = IRuntime<unknown> & { eta?: unknown; registerAddon(addon: IAddon): void };
+const addon = addonBuilderFactory().create();
+
+type FakeRuntime = IRuntime<unknown> & {
+  eta?: unknown;
+  registerAddon(addon: IAddon<unknown>): void;
+};
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and
@@ -38,7 +43,11 @@ function fakeDeterministicRuntime(now: number): {
   };
   const clock = { timestampNow: () => now };
   return {
-    runtime: { timers, clock, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
+    runtime: {
+      timers,
+      clock,
+      registerAddon: (_addon: IAddon<unknown>) => {},
+    } as unknown as FakeRuntime,
     intervals,
   };
 }
@@ -62,7 +71,7 @@ describe("etaAddon (deterministic)", () => {
     const { runtime, intervals } = fakeDeterministicRuntime(2000);
     addon.applyToRuntime(runtime);
     const snapshots: { startTime: number }[] = [];
-    (runtime.eta as EtaScheduler)
+    (runtime.eta as EtaScheduler<unknown>)
       .estimate()
       .withEstimatedDuration(5000)
       .start((s) => snapshots.push(s));
@@ -71,16 +80,12 @@ describe("etaAddon (deterministic)", () => {
     expect(snapshots[0]!.startTime).toBe(2000);
   });
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
-
-    test("returns a distinct addon that still applies an EtaScheduler", () => {
-      const cloned = addon.clone();
-      const { runtime } = fakeDeterministicRuntime(0);
-      cloned.applyToRuntime(runtime);
-      expect(runtime.eta).toBeInstanceOf(EtaScheduler);
-    });
+  test("addon() returns an independent builder each call", () => {
+    const first = addonBuilderFactory().create();
+    const second = addonBuilderFactory().create();
+    expect(first).not.toBe(second);
+    const { runtime } = fakeDeterministicRuntime(0);
+    second.applyToRuntime(runtime);
+    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
   });
 });

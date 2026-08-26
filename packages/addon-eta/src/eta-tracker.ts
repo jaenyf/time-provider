@@ -2,8 +2,8 @@ import {
   type IScheduledHandle,
   type DurationMilliseconds,
   type EpochMilliseconds,
-  type ITimers,
   epochArithmetic,
+  type IRuntime,
 } from "@time-provider/core";
 import { createRateEstimator, type IRateEstimator } from "./rate-estimator.ts";
 import { EtaDurationSnapshot, StagedEtaProgressSnapshot } from "./eta-snapshot.ts";
@@ -62,8 +62,8 @@ function stageFraction(stage: NormalizedStage, completed: number): number {
  * {@link IStagedProgressEtaTrackBuilder}/{@link IStagedProgressEtaTracker} - one implementation,
  * exposed through two narrower public types depending on which entry point built it.
  */
-class ProgressEtaTracker implements IStagedProgressEtaTracker {
-  #timestampNow: () => EpochMilliseconds;
+class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
+  #runtime: IRuntime<TDate>;
   #stages: readonly NormalizedStage[];
   #notify: (snapshot: IStagedEtaProgressSnapshot) => void;
   #startTime: EpochMilliseconds;
@@ -75,21 +75,21 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
   #timerHandle: IScheduledHandle;
 
   constructor(
-    timers: ITimers,
-    timestampNow: () => EpochMilliseconds,
+    runtime: IRuntime<TDate>,
     stages: readonly NormalizedStage[],
     notificationIntervalMilliseconds: DurationMilliseconds,
     algorithm: EtaRateAlgorithm,
     notify: (snapshot: IStagedEtaProgressSnapshot) => void,
   ) {
-    this.#timestampNow = timestampNow;
+    this.#runtime = runtime;
     this.#stages = stages;
     this.#notify = notify;
-    this.#startTime = timestampNow();
+    this.#startTime = this.#runtime.clock.timestampNow();
     this.#rateEstimator = createRateEstimator(algorithm);
     this.#rateEstimator.addSample(this.#startTime, 0);
-    this.#timerHandle = timers.every({ milliseconds: notificationIntervalMilliseconds }, () =>
-      this.#tick(),
+    this.#timerHandle = this.#runtime.timers.every(
+      { milliseconds: notificationIntervalMilliseconds },
+      () => this.#tick(),
     );
   }
 
@@ -105,7 +105,7 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
   }
 
   #buildSnapshot(status: "in-progress" | "done" | "abandoned"): StagedEtaProgressSnapshot {
-    const now = this.#timestampNow();
+    const now = this.#runtime.clock.timestampNow();
     return new StagedEtaProgressSnapshot(
       status,
       this.#startTime,
@@ -124,7 +124,7 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
   }
 
   #recordSample(): void {
-    this.#rateEstimator.addSample(this.#timestampNow(), this.#overallFraction());
+    this.#rateEstimator.addSample(this.#runtime.clock.timestampNow(), this.#overallFraction());
   }
 
   #terminate(status: "done" | "abandoned"): void {
@@ -176,20 +176,16 @@ class ProgressEtaTracker implements IStagedProgressEtaTracker {
   }
 }
 
-class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgressEtaTrackBuilder {
-  #timers: ITimers;
-  #timestampNow: () => EpochMilliseconds;
+class ProgressEtaTrackBuilder<TDate>
+  implements IProgressEtaTrackBuilder, IStagedProgressEtaTrackBuilder
+{
+  #runtime: IRuntime<TDate>;
   #stages: readonly NormalizedStage[];
   #notificationIntervalMilliseconds = DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS;
   #algorithm: EtaRateAlgorithm = DEFAULT_ALGORITHM;
 
-  constructor(
-    timers: ITimers,
-    timestampNow: () => EpochMilliseconds,
-    stages: readonly NormalizedStage[],
-  ) {
-    this.#timers = timers;
-    this.#timestampNow = timestampNow;
+  constructor(runtime: IRuntime<TDate>, stages: readonly NormalizedStage[]) {
+    this.#runtime = runtime;
     this.#stages = stages;
   }
 
@@ -208,8 +204,7 @@ class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgre
   start(notify: (snapshot: IStagedEtaProgressSnapshot) => void): IStagedProgressEtaTracker;
   start(notify: (snapshot: never) => void): IStagedProgressEtaTracker {
     return new ProgressEtaTracker(
-      this.#timers,
-      this.#timestampNow,
+      this.#runtime,
       this.#stages,
       this.#notificationIntervalMilliseconds,
       this.#algorithm,
@@ -218,8 +213,8 @@ class ProgressEtaTrackBuilder implements IProgressEtaTrackBuilder, IStagedProgre
   }
 }
 
-class DurationEtaTracker implements IDurationEtaTracker {
-  #timestampNow: () => EpochMilliseconds;
+class DurationEtaTracker<TDate> implements IDurationEtaTracker {
+  #runtime: IRuntime<TDate>;
   #notify: (snapshot: IEtaDurationSnapshot) => void;
   #startTime: EpochMilliseconds;
   #eta: EpochMilliseconds;
@@ -227,20 +222,26 @@ class DurationEtaTracker implements IDurationEtaTracker {
   #timerHandle: IScheduledHandle;
 
   constructor(
-    timers: ITimers,
-    timestampNow: () => EpochMilliseconds,
+    runtime: IRuntime<TDate>,
     expectedDurationMilliseconds: DurationMilliseconds,
     notificationIntervalMilliseconds: DurationMilliseconds,
     notify: (snapshot: IEtaDurationSnapshot) => void,
   ) {
-    this.#timestampNow = timestampNow;
+    this.#runtime = runtime;
     this.#notify = notify;
-    this.#startTime = timestampNow();
+    this.#startTime = this.#runtime.clock.timestampNow();
     this.#eta = epochArithmetic.addDuration(this.#startTime, expectedDurationMilliseconds);
-    this.#timerHandle = timers.every({ milliseconds: notificationIntervalMilliseconds }, () =>
-      this.#notify(
-        new EtaDurationSnapshot("in-progress", this.#startTime, timestampNow(), this.#eta),
-      ),
+    this.#timerHandle = this.#runtime.timers.every(
+      { milliseconds: notificationIntervalMilliseconds },
+      () =>
+        this.#notify(
+          new EtaDurationSnapshot(
+            "in-progress",
+            this.#startTime,
+            this.#runtime.timestampNow(),
+            this.#eta,
+          ),
+        ),
     );
   }
 
@@ -251,7 +252,7 @@ class DurationEtaTracker implements IDurationEtaTracker {
     this.#status = status;
     this.#timerHandle.dispose();
 
-    const now = this.#timestampNow();
+    const now = this.#runtime.clock.timestampNow();
     const eta = status === "done" ? now : undefined;
     this.#notify(new EtaDurationSnapshot(status, this.#startTime, now, eta));
   }
@@ -265,19 +266,13 @@ class DurationEtaTracker implements IDurationEtaTracker {
   }
 }
 
-class DurationEtaTrackBuilder implements IDurationEtaTrackBuilder {
-  #timers: ITimers;
-  #timestampNow: () => EpochMilliseconds;
+class DurationEtaTrackBuilder<TDate> implements IDurationEtaTrackBuilder {
+  #runtime: IRuntime<TDate>;
   #expectedDurationMilliseconds: DurationMilliseconds;
   #notificationIntervalMilliseconds = DEFAULT_NOTIFICATION_INTERVAL_MILLISECONDS;
 
-  constructor(
-    timers: ITimers,
-    timestampNow: () => EpochMilliseconds,
-    expectedDurationMilliseconds: DurationMilliseconds,
-  ) {
-    this.#timers = timers;
-    this.#timestampNow = timestampNow;
+  constructor(runtime: IRuntime<TDate>, expectedDurationMilliseconds: DurationMilliseconds) {
+    this.#runtime = runtime;
     this.#expectedDurationMilliseconds = expectedDurationMilliseconds;
   }
 
@@ -289,8 +284,7 @@ class DurationEtaTrackBuilder implements IDurationEtaTrackBuilder {
 
   start(notify: (snapshot: IEtaDurationSnapshot) => void): IDurationEtaTracker {
     return new DurationEtaTracker(
-      this.#timers,
-      this.#timestampNow,
+      this.#runtime,
       this.#expectedDurationMilliseconds,
       this.#notificationIntervalMilliseconds,
       notify,
@@ -298,24 +292,22 @@ class DurationEtaTrackBuilder implements IDurationEtaTrackBuilder {
   }
 }
 
-export class EtaTrackBuilder implements IEtaTrackBuilder {
-  #timers: ITimers;
-  #timestampNow: () => EpochMilliseconds;
+export class EtaTrackBuilder<TDate> implements IEtaTrackBuilder {
+  #runtime: IRuntime<TDate>;
 
-  constructor(timers: ITimers, timestampNow: () => EpochMilliseconds) {
-    this.#timers = timers;
-    this.#timestampNow = timestampNow;
+  constructor(runtime: IRuntime<TDate>) {
+    this.#runtime = runtime;
   }
 
   withKnownTotal(total: number): IProgressEtaTrackBuilder {
     if (!(total >= 0)) {
       throwInvalidEtaConfig(`total must be >= 0 (was ${total})`);
     }
-    return new ProgressEtaTrackBuilder(this.#timers, this.#timestampNow, [{ weight: 1, total }]);
+    return new ProgressEtaTrackBuilder(this.#runtime, [{ weight: 1, total }]);
   }
 
   withStages(stages: readonly IEtaStage[]): IStagedProgressEtaTrackBuilder {
-    return new ProgressEtaTrackBuilder(this.#timers, this.#timestampNow, normalizeStages(stages));
+    return new ProgressEtaTrackBuilder(this.#runtime, normalizeStages(stages));
   }
 
   withEstimatedDuration(
@@ -326,10 +318,6 @@ export class EtaTrackBuilder implements IEtaTrackBuilder {
         `expectedDurationMilliseconds must be >= 0 (was ${expectedDurationMilliseconds})`,
       );
     }
-    return new DurationEtaTrackBuilder(
-      this.#timers,
-      this.#timestampNow,
-      expectedDurationMilliseconds,
-    );
+    return new DurationEtaTrackBuilder(this.#runtime, expectedDurationMilliseconds);
   }
 }
