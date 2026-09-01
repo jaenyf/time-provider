@@ -50,6 +50,7 @@ export { ScheduledHandle } from "./runtimes/scheduled-handle.ts";
 export { RuntimeBuilder, createTimeProvider } from "./builders/system-builder.ts";
 export type {
   IAddon,
+  IAddonBuilder,
   ISystemPluggedRuntimeBuilder,
   IUtcOnlySystemPluggedRuntimeBuilder,
   IRuntimeBuilder,

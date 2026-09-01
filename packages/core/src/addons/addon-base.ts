@@ -23,7 +23,6 @@ export abstract class AddonBase<TDate> implements IAddon<TDate> {
   }
 
   protected abstract applyToRuntimeImpl(runtime: IRuntime<TDate>): void;
-  abstract clone(): this;
 
   abstract dispose(): void;
   abstract isDisposed: boolean;

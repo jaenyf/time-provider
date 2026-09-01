@@ -6,10 +6,10 @@ import {
   toDuration,
   type IAddon,
 } from "@time-provider/core";
-import { addon as addonClass } from "../src/index.ts";
+import { addon } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-const addon = new addonClass();
+const etaAddon = addon().create();
 
 type FakeRuntime = IRuntime<unknown> & {
   eta?: unknown;
@@ -55,13 +55,13 @@ function fakeSystemRuntime(now: number): {
 describe("etaAddon (system)", () => {
   test("applyToRuntime defines .eta with an EtaScheduler", () => {
     const { runtime } = fakeSystemRuntime(0);
-    addon.applyToRuntime(runtime);
+    etaAddon.applyToRuntime(runtime);
     expect(runtime.eta).toBeInstanceOf(EtaScheduler);
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
     const { runtime } = fakeSystemRuntime(0);
-    addon.applyToRuntime(runtime);
+    etaAddon.applyToRuntime(runtime);
     const descriptor = Object.getOwnPropertyDescriptor(runtime, "eta");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
@@ -69,7 +69,7 @@ describe("etaAddon (system)", () => {
 
   test("wires .eta to the runtime's own scheduler and clock", () => {
     const { runtime, intervals } = fakeSystemRuntime(1000);
-    addon.applyToRuntime(runtime);
+    etaAddon.applyToRuntime(runtime);
     const snapshots: { startTime: number }[] = [];
     (runtime.eta as EtaScheduler<unknown>)
       .estimate()
@@ -80,16 +80,12 @@ describe("etaAddon (system)", () => {
     expect(snapshots[0]!.startTime).toBe(1000);
   });
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
-
-    test("returns a distinct addon that still applies an EtaScheduler", () => {
-      const cloned = addon.clone();
-      const { runtime } = fakeSystemRuntime(0);
-      cloned.applyToRuntime(runtime);
-      expect(runtime.eta).toBeInstanceOf(EtaScheduler);
-    });
+  test("addon() returns an independent builder each call", () => {
+    const first = addon().create();
+    const second = addon().create();
+    expect(first).not.toBe(second);
+    const { runtime } = fakeSystemRuntime(0);
+    second.applyToRuntime(runtime);
+    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
   });
 });

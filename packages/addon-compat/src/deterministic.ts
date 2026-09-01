@@ -1,8 +1,4 @@
-import { CompatRuntime } from "./compat-runtime.ts";
+import { addon } from "./addon.ts";
 
-export type { ICompatApi, WithCompatApi } from "./types.ts";
-export { CompatRuntime } from "./compat-runtime.ts";
-
-//export const addon = sharedAddon;
-export const addon = CompatRuntime;
+export { addon };
 export default addon;

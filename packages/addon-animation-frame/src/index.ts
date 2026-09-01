@@ -1,4 +1,4 @@
-import { SystemAnimationFrameScheduler } from "./system-animation-frame-scheduler.ts";
+import { addon } from "./addon.ts";
 
 export type {
   IAnimationFrameScheduler as IAnimationFrameApi,
@@ -6,10 +6,5 @@ export type {
 } from "./types.ts";
 export { SystemAnimationFrameScheduler } from "./system-animation-frame-scheduler.ts";
 
-/** The animation-frame addon for a system (real time) Time-Provider. */
-// export const addon = function <TDate>() {
-//   return new SystemAnimationFrameScheduler<TDate>();
-// };
-
-export const addon = SystemAnimationFrameScheduler;
+export { addon };
 export default addon;

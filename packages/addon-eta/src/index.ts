@@ -1,4 +1,4 @@
-import { EtaScheduler } from "./eta-scheduler.ts";
+import { addon } from "./addon.ts";
 
 export type {
   EtaRateAlgorithm,
@@ -19,9 +19,5 @@ export type {
 } from "./types.ts";
 export { EtaScheduler } from "./eta-scheduler.ts";
 
-/** The ETA estimation addon for a system (real time) Time-Provider. */
-// export const addon = function <TDate>() {
-//   return new EtaScheduler<TDate>();
-// };
-export const addon = EtaScheduler;
+export { addon };
 export default addon;

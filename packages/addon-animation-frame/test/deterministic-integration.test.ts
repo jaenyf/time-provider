@@ -1,10 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
 import { BaseManualRuntime, toInstant } from "@time-provider/core/deterministic";
 import type { ITimeConverter } from "@time-provider/core";
-import { addon as addonClass, DeterministicAnimationFrameScheduler } from "../src/deterministic.ts";
+import { addon } from "../src/deterministic.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
-
-const addon = new addonClass();
 
 /*
  * A real manual runtime (same shape as core's own FakeManualRuntime test double), not the
@@ -48,7 +46,7 @@ class RealManualRuntime extends BaseManualRuntime<number> {
 
 function createAnimatedRuntime(): RealManualRuntime & WithAnimationFrameApi<unknown> {
   const runtime = new RealManualRuntime(0);
-  addon.applyToRuntime(runtime);
+  addon().create().applyToRuntime(runtime);
   return runtime as RealManualRuntime & WithAnimationFrameApi<unknown>;
 }
 
@@ -85,7 +83,7 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
 
   test("respects a configured hostFramesRate for the frame count, not just the scheduled delay", () => {
     const runtime = new RealManualRuntime(0);
-    const configured = new DeterministicAnimationFrameScheduler().withHostFramesRate(90);
+    const configured = addon().withHostFramesRate(90).create();
     configured.applyToRuntime(runtime);
     let frameCount = 0;
     function loop() {
@@ -94,7 +92,7 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     }
     configured.animation.scheduleFrame(loop);
 
-    configured.advance({ milliseconds: 1000 }); // ~90 frames at 90fps
+    runtime.advance({ milliseconds: 1000 }); // ~90 frames at 90fps
 
     expect(frameCount).toBe(90);
   });

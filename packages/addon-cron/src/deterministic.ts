@@ -1,4 +1,4 @@
-import { CronScheduler } from "./cron-scheduler.ts";
+import { addon } from "./addon.ts";
 
 export type { ICronApi, WithCronApi } from "./types.ts";
 export { CronScheduler } from "./cron-scheduler.ts";
@@ -22,6 +22,5 @@ export type {
   NumericString,
 } from "./cron-parser.ts";
 
-//export const addon = sharedAddon;
-export const addon = CronScheduler;
+export { addon };
 export default addon;

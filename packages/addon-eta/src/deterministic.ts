@@ -1,4 +1,4 @@
-import { EtaScheduler } from "./eta-scheduler.ts";
+import { addon } from "./addon.ts";
 
 export type {
   EtaRateAlgorithm,
@@ -19,13 +19,5 @@ export type {
 } from "./types.ts";
 export { EtaScheduler } from "./eta-scheduler.ts";
 
-/**
- * The ETA estimation addon for a deterministic Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)` to add an `eta` property backed by the runtime's
- * own simulated clock instead of the host's real clock.
- */
-// export const addon = function <TDate>() {
-//   return new EtaScheduler<TDate>();
-// };
-export const addon = EtaScheduler;
+export { addon };
 export default addon;

@@ -34,10 +34,6 @@ export class EtaScheduler<TDate>
     return this;
   }
 
-  clone(): this {
-    return new EtaScheduler() as this;
-  }
-
   estimate(): IEtaTrackBuilder {
     return new EtaTrackBuilder(this.runtime);
   }

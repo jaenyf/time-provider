@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   createTimeProvider,
-  IRuntime,
+  type IAddon,
+  type IAddonBuilder,
   type ISystemAddon,
   type ISystemPlugin,
   type IUtcOnlySystemPlugin,
@@ -12,7 +13,6 @@ import {
   type IDeterministicPluggedRuntimeBuilder,
   type IDeterministicAddon,
 } from "@time-provider/core/deterministic";
-import { AddonBase } from "../src/addons/addon-base.ts";
 
 function fakeSystemPlugin(): IUtcOnlySystemPlugin<unknown> {
   return {
@@ -89,127 +89,55 @@ function fakeDeterministicPlugin(): IDeterministicPlugin<unknown> {
   };
 }
 
-class FakeSystemAddon extends AddonBase<unknown> implements ISystemAddon<unknown> {
-  constructor() {
-    super();
-    this.isDisposed = false;
-  }
-
-  protected applyToRuntimeImpl(runtime: IRuntime<unknown>): void {}
-  clone(): this {
-    return new FakeSystemAddon() as this;
-  }
-  dispose(): void {
-    throw new Error("Method not implemented.");
-  }
-  isDisposed: boolean;
-  [Symbol.dispose](): void {
-    throw new Error("Method not implemented.");
-  }
-}
-
-function fakeSystemAddon(): {
-  addonCtor: new () => ISystemAddon<unknown>;
-  calls: { applyToRuntime: number; clone: number };
-} {
-  const calls = { applyToRuntime: 0, clone: 0 };
-  const addon = {
-    applyToRuntime: (runtime: unknown) => {
-      calls.applyToRuntime++;
-      return runtime;
-    },
-    clone: () => {
-      calls.clone++;
-      return addon;
-    },
-  };
-  return { addonCtor: FakeSystemAddon, calls };
-}
-
-function fakeCollidingSystemAddon(): () => ISystemAddon<unknown> {
-  const addon = {
-    // Collides with ISystemPluggedRuntimeBuilder's own `create()` method.
-    create: () => undefined,
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
-  };
-  return () => addon as unknown as ISystemAddon<unknown>;
-}
-
 /**
- * Every plain addon has the exact same `applyToRuntime`/`clone` member names - a second addon
- * with no other members of its own, like this one.
+ * A minimal addon-builder factory: `.use()` calls it once to obtain the addon-builder, whose
+ * `create()` then returns a fresh addon each time it's called. Records how many addon-builders
+ * were built, and how many times `applyToRuntime` ran across every addon `create()` produced.
  */
-function fakeOtherSystemAddon(): () => ISystemAddon<unknown> {
-  const addon = {
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
-  };
-  return () => addon as unknown as ISystemAddon<unknown>;
+function fakeAddonBuilder<TAddon extends IAddon<unknown>>(): {
+  factory: () => IAddonBuilder<TAddon>;
+  calls: { create: number; applyToRuntime: number };
+} {
+  const calls = { create: 0, applyToRuntime: 0 };
+  const factory = () =>
+    ({
+      create: () => {
+        calls.create++;
+        return {
+          applyToRuntime: (_runtime: unknown) => {
+            calls.applyToRuntime++;
+          },
+        } as unknown as TAddon;
+      },
+    }) satisfies IAddonBuilder<TAddon>;
+  return { factory, calls };
 }
 
-/** An addon that also extends the builder chain itself with a non-colliding extra method. */
-function fakeSystemAddonWithBuilderExtra(): () => ISystemAddon<unknown> & {
+/** An addon-builder factory whose builder's own extra property collides with an existing builder member. */
+function fakeCollidingAddonBuilder(
+  collidingName: string,
+): () => IAddonBuilder<ISystemAddon<unknown> & IDeterministicAddon<unknown>> {
+  return () =>
+    ({
+      create: () =>
+        ({ applyToRuntime: (runtime: unknown) => runtime }) as unknown as ISystemAddon<unknown> &
+          IDeterministicAddon<unknown>,
+      [collidingName]: () => undefined,
+    }) as unknown as IAddonBuilder<ISystemAddon<unknown> & IDeterministicAddon<unknown>>;
+}
+
+/** An addon-builder factory whose builder also extends the runtime-builder chain with a non-colliding extra method. */
+function fakeAddonBuilderWithBuilderExtra(): IAddonBuilder<
+  ISystemAddon<unknown> & IDeterministicAddon<unknown>
+> & {
   withExtra(): string;
 } {
-  const addon = {
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
+  return {
+    create: () =>
+      ({ applyToRuntime: (runtime: unknown) => runtime }) as unknown as ISystemAddon<unknown> &
+        IDeterministicAddon<unknown>,
     withExtra: () => "extra-value",
   };
-  return () => addon as unknown as ISystemAddon<unknown> & { withExtra(): string };
-}
-
-function fakeDeterministicAddon(): {
-  addon: () => IDeterministicAddon<unknown>;
-  calls: { applyToRuntime: number; clone: number };
-} {
-  const calls = { applyToRuntime: 0, clone: 0 };
-  const addon = {
-    applyToRuntime: (runtime: unknown) => {
-      calls.applyToRuntime++;
-      return runtime;
-    },
-    clone: () => {
-      calls.clone++;
-      return addon;
-    },
-  };
-  return { addon: () => addon as unknown as IDeterministicAddon<unknown>, calls };
-}
-
-function fakeCollidingDeterministicAddon(): () => IDeterministicAddon<unknown> {
-  const addon = {
-    // Collides with IDeterministicPluggedRuntimeBuilder's own `asManual()` method.
-    asManual: () => undefined,
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
-  };
-  return () => addon as unknown as IDeterministicAddon<unknown>;
-}
-
-/**
- * Every plain addon has the exact same `applyToRuntime`/`clone` member names - a second addon
- * with no other members of its own, like this one.
- */
-function fakeOtherDeterministicAddon(): () => IDeterministicAddon<unknown> {
-  const addon = {
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
-  };
-  return () => addon as unknown as IDeterministicAddon<unknown>;
-}
-
-/** An addon that also extends the builder chain itself with a non-colliding extra method. */
-function fakeDeterministicAddonWithBuilderExtra(): () => IDeterministicAddon<unknown> & {
-  withExtra(): string;
-} {
-  const addon = {
-    applyToRuntime: (runtime: unknown) => runtime,
-    clone: () => addon,
-    withExtra: () => "extra-value",
-  };
-  return () => addon as unknown as IDeterministicAddon<unknown> & { withExtra(): string };
 }
 
 describe("RuntimeBuilder", () => {
@@ -230,61 +158,63 @@ describe("RuntimeBuilder", () => {
 
 describe("SystemPluggedRuntimeBuilder", () => {
   describe("use", () => {
-    test("clones the given addon", () => {
-      const { addonCtor: addon, calls } = fakeSystemAddon();
-      createTimeProvider.for(fakeSystemPlugin()).use(addon);
-      expect(calls.clone).toBe(1);
+    test("does not build the addon yet - create() is deferred to the runtime-builder's own create()", () => {
+      const { factory, calls } = fakeAddonBuilder();
+      createTimeProvider.for(fakeSystemPlugin()).use(factory);
+      expect(calls.create).toBe(0);
     });
 
     test("returns the builder, for chaining", () => {
       const builder = createTimeProvider.for(fakeSystemPlugin());
-      expect(builder.use(fakeSystemAddon().addonCtor)).toBe(builder);
+      expect(builder.use(fakeAddonBuilder().factory)).toBe(builder);
     });
 
     test("throws instead of silently shadowing an existing builder method", () => {
       const builder = createTimeProvider.for(fakeSystemPlugin());
-      expect(() => builder.use<unknown>(fakeCollidingSystemAddon())).toThrow(/collides/);
+      expect(() => builder.use(fakeCollidingAddonBuilder("withTimezone"))).toThrow(/collides/);
     });
 
-    test("composes with a second, different addon - not a false collision on applyToRuntime/clone", () => {
+    test("composes with a second, different addon-builder - not a false collision on create", () => {
       const builder = createTimeProvider.for(fakeSystemPlugin());
       expect(() =>
-        builder.use<unknown>(fakeSystemAddon().addonCtor).use<unknown>(fakeOtherSystemAddon()),
+        builder.use(fakeAddonBuilder().factory).use(fakeAddonBuilder().factory),
       ).not.toThrow();
     });
 
-    test("applying the same addon a second time doesn't falsely collide either", () => {
+    test("using the same addon-builder factory a second time doesn't falsely collide either", () => {
       const builder = createTimeProvider.for(fakeSystemPlugin());
-      const { addonCtor: addon } = fakeSystemAddon();
-      expect(() => builder.use<unknown>(addon).use<unknown>(addon)).not.toThrow();
+      const { factory } = fakeAddonBuilder();
+      expect(() => builder.use(factory).use(factory)).not.toThrow();
     });
 
-    test("splices an addon's own extra builder-chain method onto the builder", () => {
+    test("splices an addon-builder's own extra builder-chain method onto the builder", () => {
       const builder = createTimeProvider
         .for(fakeSystemPlugin())
-        .use(fakeSystemAddonWithBuilderExtra());
+        .use(fakeAddonBuilderWithBuilderExtra);
       expect(builder.withExtra()).toBe("extra-value");
     });
   });
 
   describe("create", () => {
-    test("applies every used addon to the created runtime", () => {
-      const { addonCtor: addon, calls } = fakeSystemAddon();
-      createTimeProvider.for(fakeSystemPlugin()).use(addon).create();
+    test("builds and applies every used addon to the created runtime", () => {
+      const { factory, calls } = fakeAddonBuilder();
+      createTimeProvider.for(fakeSystemPlugin()).use(factory).create();
+      expect(calls.create).toBe(1);
       expect(calls.applyToRuntime).toBe(1);
     });
 
-    test("never applies an addon that was never used", () => {
-      const { calls } = fakeSystemAddon();
+    test("never builds an addon that was never used", () => {
+      const { calls } = fakeAddonBuilder();
       createTimeProvider.for(fakeSystemPlugin()).create();
-      expect(calls.applyToRuntime).toBe(0);
+      expect(calls.create).toBe(0);
     });
 
-    test("applies every used addon when two different addons are composed", () => {
-      const { addonCtor: addonA, calls: callsA } = fakeSystemAddon();
-      const addonB = fakeOtherSystemAddon();
-      createTimeProvider.for(fakeSystemPlugin()).use<unknown>(addonA).use<unknown>(addonB).create();
+    test("applies every used addon when two different addon-builders are composed", () => {
+      const { factory: factoryA, calls: callsA } = fakeAddonBuilder();
+      const { factory: factoryB, calls: callsB } = fakeAddonBuilder();
+      createTimeProvider.for(fakeSystemPlugin()).use(factoryA).use(factoryB).create();
       expect(callsA.applyToRuntime).toBe(1);
+      expect(callsB.applyToRuntime).toBe(1);
     });
   });
 });
@@ -309,41 +239,39 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
   });
 
   describe("use", () => {
-    test("clones the given addon", () => {
-      const { addon, calls } = fakeDeterministicAddon();
-      createDeterministicTimeProvider.for(fakeDeterministicPlugin()).use(addon);
-      expect(calls.clone).toBe(1);
+    test("does not build the addon yet - create() is deferred to the strategy builder's own create()", () => {
+      const { factory, calls } = fakeAddonBuilder();
+      createDeterministicTimeProvider.for(fakeDeterministicPlugin()).use(factory);
+      expect(calls.create).toBe(0);
     });
 
     test("returns the builder, for chaining", () => {
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
-      expect(builder.use(fakeDeterministicAddon().addon)).toBe(builder);
+      expect(builder.use(fakeAddonBuilder().factory)).toBe(builder);
     });
 
     test("throws instead of silently shadowing an existing builder method", () => {
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
-      expect(() => builder.use<unknown>(fakeCollidingDeterministicAddon())).toThrow(/collides/);
+      expect(() => builder.use(fakeCollidingAddonBuilder("asManual"))).toThrow(/collides/);
     });
 
-    test("composes with a second, different addon - not a false collision on applyToRuntime/clone", () => {
+    test("composes with a second, different addon-builder - not a false collision on create", () => {
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
       expect(() =>
-        builder
-          .use<unknown>(fakeDeterministicAddon().addon)
-          .use<unknown>(fakeOtherDeterministicAddon()),
+        builder.use(fakeAddonBuilder().factory).use(fakeAddonBuilder().factory),
       ).not.toThrow();
     });
 
-    test("applying the same addon a second time doesn't falsely collide either", () => {
+    test("using the same addon-builder factory a second time doesn't falsely collide either", () => {
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
-      const { addon } = fakeDeterministicAddon();
-      expect(() => builder.use<unknown>(addon).use<unknown>(addon)).not.toThrow();
+      const { factory } = fakeAddonBuilder();
+      expect(() => builder.use(factory).use(factory)).not.toThrow();
     });
 
-    test("splices an addon's own extra builder-chain method onto the builder", () => {
+    test("splices an addon-builder's own extra builder-chain method onto the builder", () => {
       const builder = createDeterministicTimeProvider
         .for(fakeDeterministicPlugin())
-        .use(fakeDeterministicAddonWithBuilderExtra());
+        .use(fakeAddonBuilderWithBuilderExtra);
       expect(builder.withExtra()).toBe("extra-value");
     });
   });
@@ -362,29 +290,31 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
       (builder: IDeterministicPluggedRuntimeBuilder<unknown>) => builder.asSequential().create(),
     ],
   ] as const)("%s().create()", (_name, create) => {
-    test("applies every used addon to the created runtime", () => {
-      const { addon, calls } = fakeDeterministicAddon();
-      const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin()).use(addon);
+    test("builds and applies every used addon to the created runtime", () => {
+      const { factory, calls } = fakeAddonBuilder();
+      const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin()).use(factory);
       create(builder);
+      expect(calls.create).toBe(1);
       expect(calls.applyToRuntime).toBe(1);
     });
 
-    test("never applies an addon that was never used", () => {
-      const { calls } = fakeDeterministicAddon();
+    test("never builds an addon that was never used", () => {
+      const { calls } = fakeAddonBuilder();
       const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin());
       create(builder);
-      expect(calls.applyToRuntime).toBe(0);
+      expect(calls.create).toBe(0);
     });
 
-    test("applies every used addon when two different addons are composed", () => {
-      const { addon: addonA, calls: callsA } = fakeDeterministicAddon();
-      const addonB = fakeOtherDeterministicAddon();
+    test("applies every used addon when two different addon-builders are composed", () => {
+      const { factory: factoryA, calls: callsA } = fakeAddonBuilder();
+      const { factory: factoryB, calls: callsB } = fakeAddonBuilder();
       const builder = createDeterministicTimeProvider
         .for(fakeDeterministicPlugin())
-        .use<unknown>(addonA)
-        .use<unknown>(addonB);
+        .use(factoryA)
+        .use(factoryB);
       create(builder);
       expect(callsA.applyToRuntime).toBe(1);
+      expect(callsB.applyToRuntime).toBe(1);
     });
   });
 });

@@ -6,13 +6,14 @@ import type {
   TimezoneDefinition,
 } from "../types/types.ts";
 import type {
+  AddonOf,
+  IAddonBuilder,
   ISystemPluggedRuntimeBuilder,
   ISystemAddon,
   IRuntimeBuilder,
   IUtcOnlySystemPluggedRuntimeBuilder,
 } from "./builders.ts";
 import { BaseRuntimeBuilder } from "./builder-base.ts";
-import { AddonHelper } from "../addons/addon-helper.ts";
 
 type AnySystemPlugin<TDate> = ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>;
 
@@ -20,28 +21,30 @@ class SystemPluggedRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnySystemPlugin<TDate>>
   implements ISystemPluggedRuntimeBuilder<TDate>
 {
-  #addons: ISystemAddon<TDate>[] = [];
+  #addonBuilders: IAddonBuilder<ISystemAddon<TDate>>[] = [];
 
   constructor(plugin: AnySystemPlugin<TDate>, localTimezone: TimezoneDefinition) {
     super(plugin, localTimezone);
   }
 
-  use<TAddon, TBuilderExtra = unknown>(
-    Ctor: new () => TAddon,
-  ): ISystemPluggedRuntimeBuilder<TDate, TAddon> & TBuilderExtra {
-    const instance = AddonHelper.createAddon(Ctor);
-    BaseRuntimeBuilder.assertNoAddonCollision(this, instance);
-    this.#addons.push(instance as ISystemAddon<TDate>);
-    BaseRuntimeBuilder.spliceAddonExtras(this, instance);
-    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddon> & TBuilderExtra;
+  use<TFactory extends () => IAddonBuilder<ISystemAddon<TDate>>>(
+    addonBuilderFactory: TFactory,
+  ): ISystemPluggedRuntimeBuilder<TDate, AddonOf<ReturnType<TFactory>>> &
+    Omit<ReturnType<TFactory>, "create"> {
+    const addonBuilder: IAddonBuilder<ISystemAddon<TDate>> = addonBuilderFactory();
+    BaseRuntimeBuilder.assertNoAddonCollision(this, addonBuilder);
+    this.#addonBuilders.push(addonBuilder);
+    BaseRuntimeBuilder.spliceAddonExtras(this, addonBuilder);
+    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, AddonOf<ReturnType<TFactory>>> &
+      Omit<ReturnType<TFactory>, "create">;
   }
 
   create(): ITimeProvider<TDate> {
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSystemRuntime(this.localTimezone)
       : (this.plugin.createSystemRuntime() as unknown as IRuntime<TDate>);
-    for (const addon of this.#addons) {
-      addon.applyToRuntime(runtime);
+    for (const addonBuilder of this.#addonBuilders) {
+      addonBuilder.create().applyToRuntime(runtime);
     }
     return Object.freeze(runtime);
   }

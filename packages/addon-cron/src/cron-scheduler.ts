@@ -77,10 +77,6 @@ export class CronScheduler<
     AddonHelper.extendRuntimeWithProperty(runtime, "cron", this);
   }
 
-  clone(): this {
-    return new CronScheduler() as this;
-  }
-
   schedule(expression: string, callback: () => void): IScheduledHandle;
   schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): IScheduledHandle;
   schedule(
@@ -92,7 +88,14 @@ export class CronScheduler<
     const parsed =
       typeof expressionOrSpec === "string"
         ? parseCronExpression(expressionOrSpec, calendarScheme)
-        : parseCronSpec(expressionOrSpec, calendarScheme);
+        : /*
+            calendarScheme (IRuntime.calendarScheme) is always ICalendarScheme<TDate, MonthName,
+            DayOfWeekName> - the runtime's own calendar, not CronScheduler's TMonthName/TWeekdayName
+            - so parseCronSpec infers its month/weekday name types from calendarScheme alone. The
+            two already agree by construction (a caller can only build a spec using the names this
+            scheduler's own `schedule` overload accepts), so this is a type-level-only mismatch.
+          */
+          parseCronSpec(expressionOrSpec as ICronSpec<MonthName, DayOfWeekName>, calendarScheme);
     /*
       Anchored to the schedule's own last computed occurrence, not a fresh `timestampNow()` read
       on every rearm: on a deterministic runtime, a single advance() can drain several due

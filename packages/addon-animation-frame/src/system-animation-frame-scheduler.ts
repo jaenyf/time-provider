@@ -52,9 +52,6 @@ export class SystemAnimationFrameScheduler<TDate>
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(runtime, "animation", this);
   }
-  clone(): this {
-    return new SystemAnimationFrameScheduler() as this;
-  }
 
   scheduleFrame(callback: () => void): IScheduledHandle {
     return new ScheduledHandle(

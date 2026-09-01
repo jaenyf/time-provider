@@ -43,15 +43,6 @@ export class DeterministicAnimationFrameScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(runtime, "animation", this);
   }
 
-  clone(): this {
-    return new DeterministicAnimationFrameScheduler<TDate>() as this;
-  }
-
-  withHostFramesRate(rate: number): typeof this {
-    this.hostFramesRate = rate;
-    return this;
-  }
-
   /**
    * The simulated host display refresh rate driving `requestAnimationFrame`
    * on this scheduler (defaults to 60hz).

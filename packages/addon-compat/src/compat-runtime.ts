@@ -32,10 +32,6 @@ export class CompatRuntime<TDate>
     AddonHelper.extendRuntimeWithProperty(runtime, "compat", this);
   }
 
-  clone(): this {
-    return new CompatRuntime() as this;
-  }
-
   setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
     return this.runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }

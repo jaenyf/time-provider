@@ -27,8 +27,4 @@ export class AddonHelper {
     runtime.registerAddon(addon);
     return runtime as IRuntime<TDate> & TAddonType;
   }
-
-  static createAddon<TAddon>(addonCtor: new () => TAddon): object {
-    return new addonCtor() as object;
-  }
 }
