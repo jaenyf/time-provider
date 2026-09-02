@@ -22,6 +22,7 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
 } {
   const intervals: { callback: () => void; delay: number | undefined }[] = [];
   return {
+    intervals,
     timestampNow: timestampNowDelegate,
     clock: {
       timestampNow: timestampNowDelegate,
