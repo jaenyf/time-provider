@@ -1,4 +1,4 @@
-import type { DurationMilliseconds, EpochMilliseconds, IAddon } from "@time-provider/core";
+import type { DurationMilliseconds, EpochMilliseconds } from "@time-provider/core";
 
 /**
  * How the estimated completion rate is derived from reported progress:
@@ -264,9 +264,16 @@ export type WithEtaApi<TDate> = {
 
 /**
  * The ETA API facade this addon adds to a composed Time-Provider, reachable as
- * `timeProvider.eta` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
+ * `timeProvider.eta` once composed via `createTimeProvider.for(plugin).use(thisAddon)`. Doesn't
+ * extend `IAddon<TDate>` (unlike the underlying `EtaScheduler`): the facade actually reachable at
+ * `.eta` deliberately drops the addon's own lifecycle members (`.runtime`, `.applyToRuntime`,
+ * `.dispose`, `.isDisposed`) - a consumer has no business calling those - so the type shouldn't
+ * promise them either.
  */
-export interface IEtaApi<TDate> extends IAddon<TDate>, WithEtaApi<TDate> {
+// Kept generic over TDate for symmetry with WithEtaApi<TDate> and the rest of the *Api<TDate>
+// family, even though no member here happens to reference it.
+// oxlint-disable-next-line no-unused-vars
+export interface IEtaApi<TDate> {
   /** Starts configuring a new ETA schedule - see {@link IEtaTrackBuilder}. */
   estimate(): IEtaTrackBuilder;
 }

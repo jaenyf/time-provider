@@ -96,9 +96,19 @@ describe("SystemAnimationFrameScheduler", () => {
     });
 
     describe("addon facade", () => {
-      test("exposes a dediacted facade property", () => {
+      test("applyToRuntime exposes a dedicated facade property on the runtime", () => {
         using sut = new SystemAnimationFrameScheduler();
-        expect(sut.animation).toBeDefined();
+        const runtime = fakeRuntime() as IRuntime<unknown> & { animation?: unknown };
+        sut.applyToRuntime(runtime);
+        expect(runtime.animation).toBeDefined();
+      });
+      test("the facade does not recursively re-expose itself", () => {
+        using sut = new SystemAnimationFrameScheduler();
+        const runtime = fakeRuntime() as IRuntime<unknown> & {
+          animation?: { animation?: unknown };
+        };
+        sut.applyToRuntime(runtime);
+        expect(runtime.animation?.animation).toBeUndefined();
       });
     });
 

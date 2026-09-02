@@ -70,9 +70,21 @@ describe("EtaScheduler", () => {
   });
 
   describe("addon facade", () => {
-    test("exposes a dediacted facade property", () => {
+    test("applyToRuntime exposes a dedicated facade property on the runtime", () => {
       using sut = new EtaScheduler();
-      expect(sut.eta).toBeDefined();
+      const runtime = fakeRuntime(() => asEpochMilliseconds()) as unknown as IRuntime<unknown> & {
+        eta?: unknown;
+      };
+      sut.applyToRuntime(runtime);
+      expect(runtime.eta).toBeDefined();
+    });
+    test("the facade does not recursively re-expose itself", () => {
+      using sut = new EtaScheduler();
+      const runtime = fakeRuntime(() => asEpochMilliseconds()) as unknown as IRuntime<unknown> & {
+        eta?: { eta?: unknown };
+      };
+      sut.applyToRuntime(runtime);
+      expect(runtime.eta?.eta).toBeUndefined();
     });
   });
 

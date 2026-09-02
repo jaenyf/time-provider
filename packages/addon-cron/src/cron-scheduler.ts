@@ -14,7 +14,7 @@ import {
   type ICronSpec,
   type MonthName,
 } from "./cron-parser.ts";
-import type { ICronApi, WithCronApi } from "./types.ts";
+import type { ICronApi } from "./types.ts";
 
 /**
  * Implements {@link ICronApi} on top of `ITimers.recurring`, re-deriving the delay to the
@@ -29,10 +29,7 @@ export class CronScheduler<
   TWeekdayName extends string = DayOfWeekName,
 >
   extends AddonBase<TDate>
-  implements
-    ICronApi<TDate, TMonthName, TWeekdayName>,
-    IAddon<TDate>,
-    WithCronApi<TDate, TMonthName, TWeekdayName>
+  implements ICronApi<TDate, TMonthName, TWeekdayName>, IAddon<TDate>
 {
   #isDisposed: boolean;
 
@@ -53,10 +50,6 @@ export class CronScheduler<
     this.#isDisposed = false;
   }
 
-  get cron(): ICronApi<TDate, TMonthName, TWeekdayName> {
-    return this;
-  }
-
   private getClockTimezone(): string {
     const clock = this.runtime.clock;
     return "timezone" in clock ? clock.timezone : "Etc/UTC";
@@ -74,7 +67,12 @@ export class CronScheduler<
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "cron", this);
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "cron",
+      { schedule: this.schedule.bind(this) },
+      this,
+    );
   }
 
   schedule(expression: string, callback: () => void): IScheduledHandle;

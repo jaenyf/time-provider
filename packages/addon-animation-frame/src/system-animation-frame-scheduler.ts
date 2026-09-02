@@ -1,5 +1,5 @@
 import { AddonBase, type IScheduledHandle, type IRuntime, AddonHelper } from "@time-provider/core";
-import type { IAnimationFrameScheduler, WithAnimationFrameApi } from "./types.ts";
+import type { IAnimationFrameScheduler } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
@@ -50,7 +50,7 @@ class SystemAnimationFrameHandle implements IScheduledHandle {
  */
 export class SystemAnimationFrameScheduler<TDate>
   extends AddonBase<TDate>
-  implements IAnimationFrameScheduler<TDate>, WithAnimationFrameApi<TDate>
+  implements IAnimationFrameScheduler<TDate>
 {
   #isDisposed: boolean;
   /**
@@ -67,10 +67,6 @@ export class SystemAnimationFrameScheduler<TDate>
     this.#isDisposed = false;
   }
 
-  get animation(): IAnimationFrameScheduler<TDate> {
-    return this;
-  }
-
   dispose(): void {
     this.#isDisposed = true;
   }
@@ -82,7 +78,12 @@ export class SystemAnimationFrameScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "animation", this);
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "animation",
+      { scheduleFrame: this.scheduleFrame.bind(this) },
+      this,
+    );
   }
 
   scheduleFrame(callback: () => void): IScheduledHandle {

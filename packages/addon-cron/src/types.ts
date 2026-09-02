@@ -1,4 +1,4 @@
-import type { IAddon, IScheduledHandle } from "@time-provider/core";
+import type { IScheduledHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
@@ -20,14 +20,20 @@ export type WithCronApi<
 
 /**
  * The cron API facade this addon adds to a composed Time-Provider, reachable as
- * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
+ * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`. Doesn't
+ * extend `IAddon<TDate>` (unlike the underlying `CronScheduler`): the facade actually reachable at
+ * `.cron` deliberately drops the addon's own lifecycle members (`.runtime`, `.applyToRuntime`,
+ * `.dispose`, `.isDisposed`) - a consumer has no business calling those - so the type shouldn't
+ * promise them either.
  */
 export interface ICronApi<
+  // Kept generic over TDate for symmetry with WithCronApi<TDate> and the rest of the *Api<TDate>
+  // family, even though no member here happens to reference it.
+  // oxlint-disable-next-line no-unused-vars
   TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
->
-  extends IAddon<TDate>, WithCronApi<TDate, TMonthName, TWeekdayName> {
+> {
   /**
    * Schedules `callback` to run every time `expression` next matches, in the runtime's local
    * timezone (`"Etc/UTC"` for a UTC-only runtime).

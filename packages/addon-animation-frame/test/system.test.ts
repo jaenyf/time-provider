@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { IAddon, IRuntime } from "@time-provider/core";
 import { addon as addonBuilderFactory } from "../src/index.ts";
-import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
 import "./polyfills.ts";
 
 const animationFrameAddon = addonBuilderFactory().create();
@@ -21,10 +20,10 @@ function fakeSystemRuntime(): FakeRuntime {
 }
 
 describe("animationFrameAddon (system)", () => {
-  test("applyToSystem defines .animation with a SystemAnimationFrameScheduler", () => {
+  test("applyToSystem defines .animation with a scheduleFrame() facade", () => {
     const runtime = fakeSystemRuntime();
     animationFrameAddon.applyToRuntime(runtime);
-    expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
+    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 
   test("applyToSystem's defined property is enumerable but not writable", () => {
@@ -41,6 +40,6 @@ describe("animationFrameAddon (system)", () => {
     expect(first).not.toBe(second);
     const runtime = fakeSystemRuntime();
     second.applyToRuntime(runtime);
-    expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
+    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 });

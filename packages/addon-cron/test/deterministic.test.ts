@@ -68,10 +68,10 @@ function fakeDeterministicRuntime(
 }
 
 describe("cronAddon (deterministic)", () => {
-  test("applyToRuntime defines .cron with a CronScheduler", () => {
+  test("applyToRuntime defines .cron with a schedule() facade", () => {
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     addon.applyToRuntime(runtime);
-    expect(runtime.cron).toBeInstanceOf(CronScheduler);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -120,6 +120,6 @@ describe("cronAddon (deterministic)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     second.applyToRuntime(runtime);
-    expect(runtime.cron).toBeInstanceOf(CronScheduler);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 });

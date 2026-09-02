@@ -1,11 +1,8 @@
 import { AddonBase, AddonHelper, type IRuntime } from "@time-provider/core";
 import { EtaTrackBuilder } from "./eta-tracker.ts";
-import type { IEtaApi, IEtaTrackBuilder, WithEtaApi } from "./types.ts";
+import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 
-export class EtaScheduler<TDate>
-  extends AddonBase<TDate>
-  implements IEtaApi<TDate>, WithEtaApi<TDate>
-{
+export class EtaScheduler<TDate> extends AddonBase<TDate> implements IEtaApi<TDate> {
   #isDisposed: boolean;
 
   /**
@@ -27,11 +24,12 @@ export class EtaScheduler<TDate>
   }
 
   protected applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "eta", this);
-  }
-
-  get eta(): IEtaApi<TDate> {
-    return this;
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "eta",
+      { estimate: this.estimate.bind(this) },
+      this,
+    );
   }
 
   estimate(): IEtaTrackBuilder {

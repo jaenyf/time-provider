@@ -54,10 +54,10 @@ function fakeDeterministicRuntime(now: number): {
 }
 
 describe("etaAddon (deterministic)", () => {
-  test("applyToRuntime defines .eta with an EtaScheduler", () => {
+  test("applyToRuntime defines .eta with an estimate() facade", () => {
     const { runtime } = fakeDeterministicRuntime(0);
     addon.applyToRuntime(runtime);
-    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -87,6 +87,6 @@ describe("etaAddon (deterministic)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeDeterministicRuntime(0);
     second.applyToRuntime(runtime);
-    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 });
