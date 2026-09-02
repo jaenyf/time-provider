@@ -53,6 +53,29 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
 }
 
 describe("EtaScheduler", () => {
+  describe("addon initialization", () => {
+    test("throws when addon has not been initialized", () => {
+      using sut = new EtaScheduler();
+      expect(() => {
+        sut.estimate();
+      }).toThrow();
+    });
+    test("does not throw when addon has been initialized", () => {
+      using sut = new EtaScheduler();
+      sut.applyToRuntime(fakeRuntime(() => asEpochMilliseconds()));
+      expect(() => {
+        sut.estimate();
+      }).not.toThrow();
+    });
+  });
+
+  describe("addon facade", () => {
+    test("exposes a dediacted facade property", () => {
+      using sut = new EtaScheduler();
+      expect(sut.eta).toBeDefined();
+    });
+  });
+
   describe("dispose", () => {
     test("explicit dispose call disposes instance", () => {
       const runtime = fakeRuntime(() => asEpochMilliseconds());

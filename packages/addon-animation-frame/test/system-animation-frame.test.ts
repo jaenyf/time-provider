@@ -79,6 +79,29 @@ describe("SystemAnimationFrameScheduler", () => {
       removeAnimationFrameAPI();
     });
 
+    describe("addon initialization", () => {
+      test("throws when addon has not been initialized", () => {
+        using sut = new SystemAnimationFrameScheduler();
+        expect(() => {
+          using _handle = sut.scheduleFrame(() => {});
+        }).toThrow();
+      });
+      test("does not throw when addon has been initialized", () => {
+        using sut = new SystemAnimationFrameScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        expect(() => {
+          using _handle = sut.scheduleFrame(() => {});
+        }).not.toThrow();
+      });
+    });
+
+    describe("addon facade", () => {
+      test("exposes a dediacted facade property", () => {
+        using sut = new SystemAnimationFrameScheduler();
+        expect(sut.animation).toBeDefined();
+      });
+    });
+
     describe("dispose", () => {
       test("explicit dispose call disposes instance", () => {
         const sut = new SystemAnimationFrameScheduler();
@@ -92,6 +115,57 @@ describe("SystemAnimationFrameScheduler", () => {
           sutRef = sut;
         }
         expect(sutRef.isDisposed).toBe(true);
+      });
+    });
+
+    describe("SystemAnimationFrameHandle", () => {
+      describe("dispose", () => {
+        test("dispose is idempotent", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          const handle = sut.scheduleFrame(() => {});
+          handle.dispose();
+          handle.dispose();
+          handle.dispose();
+          handle.dispose();
+          expect(handle.isDisposed).toBe(true);
+        });
+        test("isDisposed is true when the handle has been disposed", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          const handle = sut.scheduleFrame(() => {});
+          handle.dispose();
+          expect(handle.isDisposed).toBe(true);
+        });
+        test("isDisposed is false when the handle has not yet been disposed", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          using handle = sut.scheduleFrame(() => {});
+          expect(handle.isDisposed).toBe(false);
+        });
+      });
+      describe("abort", () => {
+        test("handle is not aborted by default", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          using handle = sut.scheduleFrame(() => {});
+          expect(handle.signal.aborted).toBe(false);
+        });
+        test("handle can be aborted", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          using handle = sut.scheduleFrame(() => {});
+          handle.signal.dispatchEvent(new Event("abort"));
+          expect(handle.signal.aborted).toBe(true);
+        });
+        test("abort does not throws when the handle is being disposed", () => {
+          using sut = new SystemAnimationFrameScheduler();
+          sut.applyToRuntime(fakeRuntime());
+          using handle = sut.scheduleFrame(() => {});
+          handle.dispose();
+          handle.signal.dispatchEvent(new Event("abort"));
+          expect(handle.signal.aborted).toBe(true);
+        });
       });
     });
 

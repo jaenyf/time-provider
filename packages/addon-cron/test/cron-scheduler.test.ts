@@ -45,6 +45,9 @@ function fakeRuntime(
   const handle = {
     kind: 2,
     isDisposed: false,
+    [Symbol.dispose]: () => {
+      cleared.push(handle);
+    },
     dispose: () => {
       cleared.push(handle);
     },
@@ -79,6 +82,34 @@ function fakeRuntime(
 }
 
 describe("CronScheduler", () => {
+  describe("addon initialization", () => {
+    test("throws when addon has not been initialized", () => {
+      using sut = new CronScheduler();
+      expect(() => {
+        using _handle = sut.schedule("* * * * *", () => {});
+      }).toThrow();
+    });
+    test("does not throw when addon has been initialized", () => {
+      using sut = new CronScheduler();
+      sut.applyToRuntime(
+        fakeRuntime(
+          () => "Etc/UTC",
+          () => asEpochMilliseconds(),
+        ) as unknown as IRuntime<unknown>,
+      );
+      expect(() => {
+        using _handle = sut.schedule("* * * * *", () => {});
+      }).not.toThrow();
+    });
+  });
+
+  describe("addon facade", () => {
+    test("exposes a dediacted facade property", () => {
+      using sut = new CronScheduler();
+      expect(sut.cron).toBeDefined();
+    });
+  });
+
   describe("dispose", () => {
     test("explicit dispose call disposes instance", () => {
       const sut = new CronScheduler();
