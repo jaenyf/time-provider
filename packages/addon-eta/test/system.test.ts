@@ -46,6 +46,7 @@ function fakeSystemRuntime(now: number): {
     runtime: {
       timers,
       clock,
+      timestampNow: () => now,
       registerAddon: (_addon: IAddon<unknown>) => {},
     } as unknown as FakeRuntime,
     intervals,

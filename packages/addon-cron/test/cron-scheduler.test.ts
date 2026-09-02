@@ -31,7 +31,10 @@ function fakeRuntime(
 ): {
   clock: {
     timestampNow: () => EpochMilliseconds;
+    timezone: string;
   };
+  timestampNow: () => EpochMilliseconds;
+  registerAddon: (addon: unknown) => void;
   timers: ITimers;
   recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[];
   cleared: IScheduledHandle[];
@@ -52,9 +55,11 @@ function fakeRuntime(
     get calendarScheme() {
       return defaultCalendarScheme;
     },
-    clock: {
-      timestampNow: timestampNowDelegate,
+    timestampNow: timestampNowDelegate,
+    get clock() {
+      return { timestampNow: timestampNowDelegate, timezone: timezoneDelegate() };
     },
+    registerAddon: () => {},
     timers: {
       once() {
         throw new Error("not used by CronScheduler");
@@ -77,7 +82,7 @@ describe("CronScheduler", () => {
   describe("dispose", () => {
     test("explicit dispose call disposes instance", () => {
       const sut = new CronScheduler();
-      sut.applyToRuntimeImpl(
+      sut.applyToRuntime(
         fakeRuntime(
           () => "Etc/UTC",
           () => asEpochMilliseconds(),
@@ -106,8 +111,8 @@ describe("CronScheduler", () => {
           >
         | undefined = undefined;
       {
-        const sut = new CronScheduler();
-        sut.applyToRuntimeImpl(
+        using sut = new CronScheduler();
+        sut.applyToRuntime(
           fakeRuntime(
             () => "Etc/UTC",
             () => asEpochMilliseconds(),
@@ -126,7 +131,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => asEpochMilliseconds(),
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     expect(() => sut.schedule("not a cron expression", () => {})).toThrow(
       /Invalid cron expression/,
     );
@@ -140,7 +145,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
 
     sut.schedule("* * * * *", () => {});
     expect(runtime.recurring).toHaveLength(1);
@@ -156,7 +161,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     const runs: number[] = [];
     sut.schedule("* * * * *", () => runs.push(now));
 
@@ -176,7 +181,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     sut.schedule("* * * * *", () => {});
 
     now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 12, 0, 0) });
@@ -191,7 +196,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     sut.schedule("0 9,10,11 * * *", () => {});
 
     expect(runtime.recurring[0]?.initialDelay?.milliseconds).toBe(
@@ -214,7 +219,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     const error = new Error("boom");
     sut.schedule("* * * * *", () => {
       throw error;
@@ -229,7 +234,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => asEpochMilliseconds(),
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     const handle = sut.schedule("* * * * *", () => {});
     handle.dispose();
     expect(runtime.cleared).toEqual([handle]);
@@ -242,7 +247,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     sut.schedule({ minute: 30, hour: 9 }, () => {});
     expect(runtime.recurring[0]?.initialDelay?.milliseconds).toBe(
       Date.UTC(2024, 0, 1, 9, 30, 0) - now,
@@ -255,7 +260,7 @@ describe("CronScheduler", () => {
       () => "Etc/UTC",
       () => asEpochMilliseconds(),
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     expect(() => sut.schedule({ minute: 60 }, () => {})).toThrow(/out of range/);
     expect(runtime.recurring).toHaveLength(0);
   });
@@ -264,10 +269,10 @@ describe("CronScheduler", () => {
     const now = toInstant({ milliseconds: Date.UTC(2024, 2, 25, 10, 0, 0) });
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
-      () => "Etc/UTC",
+      () => "Europe/Paris",
       () => now,
     );
-    sut.applyToRuntimeImpl(runtime as unknown as IRuntime<unknown>);
+    sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
     sut.schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(runtime.recurring[0]?.initialDelay?.milliseconds).toBe(
@@ -284,6 +289,7 @@ describe("CronScheduler", () => {
         () => timezone,
         () => now,
       );
+      sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
 
       timezone = "Asia/Tokyo";
       sut.schedule("0 9 * * *", () => {});
@@ -306,6 +312,7 @@ describe("CronScheduler", () => {
         () => timezone,
         () => now,
       );
+      sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
       sut.schedule("0 9 * * *", () => {});
 
       timezone = "Asia/Tokyo";

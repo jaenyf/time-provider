@@ -36,6 +36,7 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
   return {
     intervals,
     cleared,
+    timestampNow: timestampNowDelegate,
     clock: {
       timestampNow: timestampNowDelegate,
     },
@@ -562,7 +563,7 @@ describe("DurationEtaTracker", () => {
     const tracker = sut
       .withEstimatedDuration(toDuration({ milliseconds: 5000 }))
       .start((s) => (latest = s));
-    getTimestamp = () => toInstant({ milliseconds: 1000 }); // finished early
+    getTimestamp = () => toInstant({ milliseconds: 2000 }); // finished early
     tracker.done();
     expect(latest!.status).toBe("done");
     expect(latest!.eta).toBe(2000);

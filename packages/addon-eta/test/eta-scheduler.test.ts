@@ -22,10 +22,11 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
 } {
   const intervals: { callback: () => void; delay: number | undefined }[] = [];
   return {
-    intervals,
+    timestampNow: timestampNowDelegate,
     clock: {
-      timestampNow: timestampNowDelegate(),
+      timestampNow: timestampNowDelegate,
     },
+    registerAddon: () => {},
     timers: {
       once() {
         throw new Error("not used by the eta addon");

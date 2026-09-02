@@ -1,10 +1,20 @@
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
+import type { IRuntime } from "@time-provider/core";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
 
 describe("SystemAnimationFrameScheduler", () => {
   function removeAnimationFrameAPI() {
     delete (globalThis as unknown as { requestAnimationFrame?: unknown }).requestAnimationFrame;
     delete (globalThis as unknown as { cancelAnimationFrame?: unknown }).cancelAnimationFrame;
+  }
+
+  function fakeRuntime(): IRuntime<unknown> {
+    return {
+      registerAddon: () => {},
+      clearTimer: (handle: { nativeHandle?: unknown }) => {
+        cancelAnimationFrame(handle.nativeHandle as number);
+      },
+    } as unknown as IRuntime<unknown>;
   }
 
   describe("without a native animation-frame API (e.g. plain Node.js)", () => {
@@ -90,6 +100,7 @@ describe("SystemAnimationFrameScheduler", () => {
 
     test("delegates requestAnimationFrame to the native function", () => {
       const sut = new SystemAnimationFrameScheduler();
+      sut.applyToRuntime(fakeRuntime());
       let called = false;
       sut.scheduleFrame(() => (called = true));
       expect(calls.size).toBe(1);
@@ -98,8 +109,9 @@ describe("SystemAnimationFrameScheduler", () => {
     });
     test("disposing handle delegates cancelAnimationFrame to the native function", () => {
       const sut = new SystemAnimationFrameScheduler();
+      sut.applyToRuntime(fakeRuntime());
       const handle = sut.scheduleFrame(() => {});
-      sut.dispose();
+      handle.dispose();
       expect(calls.has(handle as unknown as number)).toBe(false);
     });
   });

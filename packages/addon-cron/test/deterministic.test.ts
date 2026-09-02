@@ -59,6 +59,7 @@ function fakeDeterministicRuntime(
     runtime: {
       timers,
       clock,
+      timestampNow: () => now,
       calendarScheme: defaultCalendarScheme,
       registerAddon: (_addon: IAddon<unknown>) => {},
     } as unknown as FakeRuntime,

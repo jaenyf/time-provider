@@ -29,6 +29,7 @@ function fakeRuntime(): IRuntime<unknown> & {
   return {
     scheduled,
     cleared,
+    registerAddon: () => {},
     timers: {
       once(durationSpec: IDurationSpec, callback: () => void) {
         const handle = {
