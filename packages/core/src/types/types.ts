@@ -481,20 +481,16 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
 export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
 export const SCHEDULED_TIMER_KIND_RECURRING = 2;
-export const SCHEDULED_ANIMATION_KIND_FRAME = 3;
 export type ScheduledHandleKind =
   | typeof SCHEDULED_TIMER_KIND_TIMEOUT
   | typeof SCHEDULED_TIMER_KIND_INTERVAL
-  | typeof SCHEDULED_TIMER_KIND_RECURRING
-  | typeof SCHEDULED_ANIMATION_KIND_FRAME;
+  | typeof SCHEDULED_TIMER_KIND_RECURRING;
 
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
  */
-export interface IScheduledHandle extends IDisposable, IHasAbortSignal {
-  readonly kind: ScheduledHandleKind;
-}
+export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}
 
 /**
  * Additionnal options to create a timer.

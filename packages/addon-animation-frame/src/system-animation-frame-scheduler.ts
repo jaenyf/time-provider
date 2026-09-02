@@ -1,15 +1,47 @@
-import {
-  AddonBase,
-  ScheduledHandle,
-  type IScheduledHandle,
-  SCHEDULED_ANIMATION_KIND_FRAME,
-  type IRuntime,
-  AddonHelper,
-} from "@time-provider/core";
+import { AddonBase, type IScheduledHandle, type IRuntime, AddonHelper } from "@time-provider/core";
 import type { IAnimationFrameScheduler, WithAnimationFrameApi } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
+}
+
+class SystemAnimationFrameHandle implements IScheduledHandle {
+  readonly #nativeHandle: number;
+  #disposed = false;
+  #abortController?: AbortController;
+
+  constructor(nativeHandle: number) {
+    this.#nativeHandle = nativeHandle;
+  }
+
+  get isDisposed(): boolean {
+    return this.#disposed;
+  }
+
+  dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    this.#abortController?.abort("Animation frame handle is being disposed");
+    cancelAnimationFrame(this.#nativeHandle);
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  get signal(): AbortSignal {
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      if (this.#disposed) {
+        this.#abortController.abort("Animation frame handle is being disposed");
+      } else {
+        this.#abortController.signal.addEventListener("abort", () => this.dispose());
+      }
+    }
+    return this.#abortController.signal;
+  }
 }
 
 /**
@@ -54,10 +86,7 @@ export class SystemAnimationFrameScheduler<TDate>
   }
 
   scheduleFrame(callback: () => void): IScheduledHandle {
-    return new ScheduledHandle(
-      SCHEDULED_ANIMATION_KIND_FRAME,
-      this.runtime,
-      requestAnimationFrame(callback),
-    );
+    void this.runtime;
+    return new SystemAnimationFrameHandle(requestAnimationFrame(callback));
   }
 }

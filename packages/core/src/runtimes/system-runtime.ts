@@ -41,10 +41,8 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       case SCHEDULED_TIMER_KIND_INTERVAL:
         clearInterval(handle.nativeHandle);
         break;
-      case SCHEDULED_TIMER_KIND_RECURRING:
-        clearTimeout(handle.nativeHandle);
-        break;
       case SCHEDULED_TIMER_KIND_TIMEOUT:
+      case SCHEDULED_TIMER_KIND_RECURRING:
         clearTimeout(handle.nativeHandle);
         break;
       default:

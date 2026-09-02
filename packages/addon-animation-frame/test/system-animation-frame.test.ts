@@ -11,9 +11,6 @@ describe("SystemAnimationFrameScheduler", () => {
   function fakeRuntime(): IRuntime<unknown> {
     return {
       registerAddon: () => {},
-      clearTimer: (handle: { nativeHandle?: unknown }) => {
-        cancelAnimationFrame(handle.nativeHandle as number);
-      },
     } as unknown as IRuntime<unknown>;
   }
 

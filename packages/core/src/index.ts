@@ -41,7 +41,6 @@ export {
   SCHEDULED_TIMER_KIND_TIMEOUT,
   SCHEDULED_TIMER_KIND_INTERVAL,
   SCHEDULED_TIMER_KIND_RECURRING,
-  SCHEDULED_ANIMATION_KIND_FRAME,
 } from "./types/types.ts";
 export * from "./helpers/branded-types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
