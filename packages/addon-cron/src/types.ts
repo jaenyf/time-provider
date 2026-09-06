@@ -1,4 +1,4 @@
-import type { IAddon, IScheduledHandle } from "@time-provider/core";
+import type { IScheduledHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
@@ -23,11 +23,13 @@ export type WithCronApi<
  * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 export interface ICronApi<
+  // Kept generic over TDate for symmetry with WithCronApi<TDate> and the rest of the *Api<TDate>
+  // family, even though no member here happens to reference it.
+  // oxlint-disable-next-line no-unused-vars
   TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
->
-  extends IAddon<TDate>, WithCronApi<TDate, TMonthName, TWeekdayName> {
+> {
   /**
    * Schedules `callback` to run every time `expression` next matches, in the runtime's local
    * timezone (`"Etc/UTC"` for a UTC-only runtime).

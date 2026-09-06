@@ -85,12 +85,13 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     const runtime = new RealManualRuntime(0);
     const configured = addonBuilderFactory().withHostFramesRate(90).create();
     configured.applyToRuntime(runtime);
+    const timeProvider = runtime as RealManualRuntime & WithAnimationFrameApi<unknown>;
     let frameCount = 0;
     function loop() {
       frameCount++;
-      configured.animation.scheduleFrame(loop);
+      timeProvider.animation.scheduleFrame(loop);
     }
-    configured.animation.scheduleFrame(loop);
+    timeProvider.animation.scheduleFrame(loop);
 
     runtime.advance({ milliseconds: 1000 }); // ~90 frames at 90fps
 

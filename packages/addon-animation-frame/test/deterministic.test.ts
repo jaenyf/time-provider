@@ -42,17 +42,24 @@ function fakeDeterministicRuntime(): {
   };
 }
 
+type DeterministicAnimationFacade = { scheduleFrame: (callback: () => void) => unknown } & {
+  hostFramesRate: number;
+};
+
 describe("animationFrameAddon (deterministic)", () => {
-  test("applyToRuntime defines .animation with a DeterministicAnimationFrameScheduler", () => {
+  test("applyToRuntime defines .animation with a scheduleFrame()/hostFramesRate facade, not the addon itself", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    expect(runtime.animation).toBeInstanceOf(DeterministicAnimationFrameScheduler);
+    expect(runtime.animation).not.toBeInstanceOf(DeterministicAnimationFrameScheduler);
+    const facade = runtime.animation as DeterministicAnimationFacade;
+    expect(facade.scheduleFrame).toEqual(expect.any(Function));
+    expect(facade.hostFramesRate).toBe(60);
   });
 
   test("applyToRuntime wires .animation to the runtime's own scheduler", () => {
     const { runtime, scheduled } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler<unknown>;
+    const scheduler = runtime.animation as DeterministicAnimationFacade;
     scheduler.scheduleFrame(() => {});
     expect(scheduled.size).toBe(1);
   });
@@ -61,7 +68,7 @@ describe("animationFrameAddon (deterministic)", () => {
     const instance = addonBuilderFactory().withHostFramesRate(100).create();
     const { runtime } = fakeDeterministicRuntime();
     instance.applyToRuntime(runtime);
-    const scheduler = runtime.animation as DeterministicAnimationFrameScheduler<unknown>;
+    const scheduler = runtime.animation as DeterministicAnimationFacade;
     expect(scheduler.hostFramesRate).toBe(100);
   });
 
@@ -82,14 +89,12 @@ describe("animationFrameAddon (deterministic)", () => {
       const untouchedRuntime = fakeDeterministicRuntime().runtime;
       untouched.applyToRuntime(untouchedRuntime);
 
-      expect(
-        (configuredRuntime.animation as DeterministicAnimationFrameScheduler<unknown>)
-          .hostFramesRate,
-      ).toBe(fps);
-      expect(
-        (untouchedRuntime.animation as DeterministicAnimationFrameScheduler<unknown>)
-          .hostFramesRate,
-      ).toBe(defaultFps);
+      expect((configuredRuntime.animation as DeterministicAnimationFacade).hostFramesRate).toBe(
+        fps,
+      );
+      expect((untouchedRuntime.animation as DeterministicAnimationFacade).hostFramesRate).toBe(
+        defaultFps,
+      );
     },
   );
 
@@ -106,12 +111,8 @@ describe("animationFrameAddon (deterministic)", () => {
       const secondRuntime = fakeDeterministicRuntime().runtime;
       second.applyToRuntime(secondRuntime);
 
-      expect(
-        (firstRuntime.animation as DeterministicAnimationFrameScheduler<unknown>).hostFramesRate,
-      ).toBe(fps);
-      expect(
-        (secondRuntime.animation as DeterministicAnimationFrameScheduler<unknown>).hostFramesRate,
-      ).toBe(fps);
+      expect((firstRuntime.animation as DeterministicAnimationFacade).hostFramesRate).toBe(fps);
+      expect((secondRuntime.animation as DeterministicAnimationFacade).hostFramesRate).toBe(fps);
     },
   );
 });

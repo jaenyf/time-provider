@@ -54,10 +54,10 @@ function fakeSystemRuntime(now: number): {
 }
 
 describe("etaAddon (system)", () => {
-  test("applyToRuntime defines .eta with an EtaScheduler", () => {
+  test("applyToRuntime defines .eta with an estimate() facade", () => {
     const { runtime } = fakeSystemRuntime(0);
     addon.applyToRuntime(runtime);
-    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -87,6 +87,6 @@ describe("etaAddon (system)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeSystemRuntime(0);
     second.applyToRuntime(runtime);
-    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 });

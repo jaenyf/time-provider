@@ -1,5 +1,5 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { IAnimationFrameScheduler, WithAnimationFrameApi } from "./types.ts";
+import type { IAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 /**
@@ -8,10 +8,7 @@ import type { IDeterministicAddon } from "@time-provider/core/deterministic";
  */
 export class DeterministicAnimationFrameScheduler<TDate>
   extends AddonBase<TDate>
-  implements
-    IDeterministicAddon<TDate>,
-    IAnimationFrameScheduler<TDate>,
-    WithAnimationFrameApi<TDate>
+  implements IDeterministicAddon<TDate>, IAnimationFrameScheduler<TDate>
 {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
@@ -25,10 +22,6 @@ export class DeterministicAnimationFrameScheduler<TDate>
     this.#isDisposed = false;
   }
 
-  get animation(): IAnimationFrameScheduler<TDate> {
-    return this;
-  }
-
   dispose(): void {
     this.#isDisposed = true;
   }
@@ -40,7 +33,17 @@ export class DeterministicAnimationFrameScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "animation", this);
+    const facade: { scheduleFrame: (callback: () => void) => IScheduledHandle } = {
+      scheduleFrame: this.scheduleFrame.bind(this),
+    };
+    Object.defineProperty(facade, "hostFramesRate", {
+      enumerable: true,
+      get: () => this.hostFramesRate,
+      set: (value: number) => {
+        this.hostFramesRate = value;
+      },
+    });
+    AddonHelper.extendRuntimeWithProperty(runtime, "animation", facade, this);
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { IAddon, IScheduledHandle } from "@time-provider/core";
+import type { IScheduledHandle } from "@time-provider/core";
 
 /**
  * The shape this addon adds to a composed Time-Provider: an `animation` property exposing
@@ -18,8 +18,10 @@ export type WithAnimationFrameApi<TDate> = {
  * reachable as `timeProvider.animation` once composed via
  * `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface IAnimationFrameScheduler<TDate>
-  extends IAddon<TDate>, WithAnimationFrameApi<TDate> {
+// Kept generic over TDate for symmetry with WithAnimationFrameApi<TDate>, even though no member
+// here happens to reference it.
+// oxlint-disable-next-line no-unused-vars
+export interface IAnimationFrameScheduler<TDate> {
   /**
    * Schedules frame `callback` to run once, before the next host frame update.
    * On a system (real time) runtime this depends on the host display refresh

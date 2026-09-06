@@ -104,9 +104,23 @@ describe("CronScheduler", () => {
   });
 
   describe("addon facade", () => {
-    test("exposes a dediacted facade property", () => {
+    test("applyToRuntime exposes a dedicated facade property on the runtime", () => {
       using sut = new CronScheduler();
-      expect(sut.cron).toBeDefined();
+      const runtime = fakeRuntime(
+        () => "Etc/UTC",
+        () => asEpochMilliseconds(),
+      ) as unknown as IRuntime<unknown> & { cron?: unknown };
+      sut.applyToRuntime(runtime);
+      expect(runtime.cron).toBeDefined();
+    });
+    test("the facade does not recursively re-expose itself", () => {
+      using sut = new CronScheduler();
+      const runtime = fakeRuntime(
+        () => "Etc/UTC",
+        () => asEpochMilliseconds(),
+      ) as unknown as IRuntime<unknown> & { cron?: { cron?: unknown } };
+      sut.applyToRuntime(runtime);
+      expect(runtime.cron?.cron).toBeUndefined();
     });
   });
 

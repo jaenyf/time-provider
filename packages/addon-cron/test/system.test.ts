@@ -68,10 +68,10 @@ function fakeSystemRuntime(
 }
 
 describe("cronAddon (system)", () => {
-  test("applyToRuntime defines .cron with a CronScheduler", () => {
+  test("applyToRuntime defines .cron with a schedule() facade", () => {
     const { runtime } = fakeSystemRuntime(0, "Etc/UTC");
     cronAddon.applyToRuntime(runtime);
-    expect(runtime.cron).toBeInstanceOf(CronScheduler);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -117,6 +117,6 @@ describe("cronAddon (system)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeSystemRuntime(0, "Etc/UTC");
     second.applyToRuntime(runtime);
-    expect(runtime.cron).toBeInstanceOf(CronScheduler);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 });

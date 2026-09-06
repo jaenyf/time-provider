@@ -1,11 +1,14 @@
-import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
+import type { WithAnimationFrameApi } from "./types.ts";
 
 export type {
   IAnimationFrameScheduler as IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
+
+type DeterministicAnimationFrameAddon<TDate> = WithAnimationFrameApi<TDate> & IAddon<TDate>;
 
 /**
  * Extra builder method contributed by the deterministic animation-frame addon-builder when
@@ -39,7 +42,7 @@ export interface IAnimationFrameBuilderExtra {
  * `@time-provider/core`), so `.use()` only ever resolves the former.
  */
 class DeterministicAnimationFrameAddonBuilder<TDate>
-  extends AddonBuilderBase<TDate, DeterministicAnimationFrameScheduler<TDate>>
+  extends AddonBuilderBase<TDate, DeterministicAnimationFrameAddon<TDate>>
   implements IAnimationFrameBuilderExtra
 {
   #getHostFramesRate: () => number | undefined;
@@ -56,13 +59,13 @@ class DeterministicAnimationFrameAddonBuilder<TDate>
     };
   }
 
-  create(): DeterministicAnimationFrameScheduler<TDate> {
+  create(): DeterministicAnimationFrameAddon<TDate> {
     const scheduler = new DeterministicAnimationFrameScheduler<TDate>();
     const hostFramesRate = this.#getHostFramesRate();
     if (hostFramesRate !== undefined) {
       scheduler.hostFramesRate = hostFramesRate;
     }
-    return scheduler;
+    return scheduler as unknown as DeterministicAnimationFrameAddon<TDate>;
   }
 }
 
@@ -75,7 +78,7 @@ class DeterministicAnimationFrameAddonBuilder<TDate>
  */
 export function addon<TDate>(
   typeHint?: TDate,
-): IAddonBuilder<DeterministicAnimationFrameScheduler<TDate>> & IAnimationFrameBuilderExtra {
+): IAddonBuilder<DeterministicAnimationFrameAddon<TDate>> & IAnimationFrameBuilderExtra {
   return new DeterministicAnimationFrameAddonBuilder<TDate>(typeHint);
 }
 export default addon;

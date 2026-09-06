@@ -61,6 +61,17 @@ export interface ISystemAddon<TDate> extends IAddon<TDate> {}
 export interface IDeterministicAddon<TDate> extends IAddon<TDate> {}
 
 /**
+ * What an addon actually contributes to a composed Time-Provider once `.use()`d: `TAddon`'s own
+ * shape, with `IAddon<TDate>`'s lifecycle members (`.runtime`, `.applyToRuntime`, `.dispose`,
+ * `.isDisposed`, ...) subtracted back out. Every addon package intersects `IAddon<TDate>` into its
+ * own `TAddon` (see e.g. `CronAddon<TDate>` in `@time-provider/addon-cron`'s `addon.ts`) purely so
+ * `.use()`'s generic bound below (`TAddon extends ISystemAddon<TDate>`/`IDeterministicAddon<TDate>`)
+ * is satisfiable - those lifecycle members were never meant to land on the composed Time-Provider
+ * itself, only on the addon instance `.use()` calls `applyToRuntime` on internally.
+ */
+type PublicAddonSurface<TDate, TAddon extends IAddon<TDate>> = Omit<TAddon, keyof IAddon<TDate>>;
+
+/**
  * What an addon package exports instead of the addon itself: something that produces a fresh
  * `TAddon` on demand. `.use()` calls {@link create} once, at Time-Provider creation time - not
  * when composed - so an addon-builder can accumulate configuration (e.g. the animation-frame
@@ -217,7 +228,7 @@ export interface ISystemPluggedRuntimeBuilder<TDate, TExtra = unknown>
    */
   use<TAddon extends ISystemAddon<TDate>>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & TAddon>;
+  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
 }
 
 /**
@@ -234,7 +245,7 @@ export interface IUtcOnlySystemPluggedRuntimeBuilder<
    */
   use<TAddon extends ISystemAddon<TDate>>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & TAddon>;
+  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
 }
 
 /**
@@ -256,7 +267,7 @@ export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
    */
   use<TAddon extends IDeterministicAddon<TDate>>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddon>;
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
 }
 
 /**
@@ -278,7 +289,7 @@ export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
    */
   use<TAddon extends IDeterministicAddon<TDate>>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & TAddon>;
+  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
 }
 
 /**

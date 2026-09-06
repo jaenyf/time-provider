@@ -1,9 +1,12 @@
-import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
 import { CronScheduler } from "./cron-scheduler.ts";
+import type { WithCronApi } from "./types.ts";
 
-class CronAddonBuilder<TDate> extends AddonBuilderBase<TDate, CronScheduler<TDate>> {
-  create(): CronScheduler<TDate> {
-    return new CronScheduler<TDate>();
+type CronAddon<TDate> = WithCronApi<TDate> & IAddon<TDate>;
+
+class CronAddonBuilder<TDate> extends AddonBuilderBase<TDate, CronAddon<TDate>> {
+  create(): CronAddon<TDate> {
+    return new CronScheduler<TDate>() as unknown as CronAddon<TDate>;
   }
 }
 
@@ -13,6 +16,6 @@ class CronAddonBuilder<TDate> extends AddonBuilderBase<TDate, CronScheduler<TDat
  * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
  * `AddonBuilderFactory` in `@time-provider/core`.
  */
-export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CronScheduler<TDate>> {
+export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CronAddon<TDate>> {
   return new CronAddonBuilder<TDate>(typeHint);
 }

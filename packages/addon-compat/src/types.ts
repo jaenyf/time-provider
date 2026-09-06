@@ -3,7 +3,7 @@
 // Timers
 // ---------------------------------------------------------------------------
 
-import type { IAddon, IScheduledHandle } from "@time-provider/core";
+import type { IScheduledHandle } from "@time-provider/core";
 
 /**
  * Schedules and cancels timeouts/intervals.
@@ -106,4 +106,7 @@ export type WithCompatApi<TDate> = {
  * The compat API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.compat` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
-export interface ICompatApi<TDate> extends ITimersProvider, IAddon<TDate>, WithCompatApi<TDate> {}
+// Kept generic over TDate for symmetry with WithCompatApi<TDate>, even though no member here
+// happens to reference it.
+// oxlint-disable-next-line no-unused-vars
+export interface ICompatApi<TDate> extends ITimersProvider {}

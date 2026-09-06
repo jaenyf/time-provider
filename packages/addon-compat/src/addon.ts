@@ -1,9 +1,12 @@
-import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
 import { CompatRuntime } from "./compat-runtime.ts";
+import type { WithCompatApi } from "./types.ts";
 
-class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatRuntime<TDate>> {
-  create(): CompatRuntime<TDate> {
-    return new CompatRuntime<TDate>();
+type CompatAddon<TDate> = WithCompatApi<TDate> & IAddon<TDate>;
+
+class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatAddon<TDate>> {
+  create(): CompatAddon<TDate> {
+    return new CompatRuntime<TDate>() as unknown as CompatAddon<TDate>;
   }
 }
 
@@ -13,6 +16,6 @@ class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatRuntime<TD
  * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
  * `AddonBuilderFactory` in `@time-provider/core`.
  */
-export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CompatRuntime<TDate>> {
+export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CompatAddon<TDate>> {
   return new CompatAddonBuilder<TDate>(typeHint);
 }
