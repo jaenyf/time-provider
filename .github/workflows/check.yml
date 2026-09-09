@@ -24,7 +24,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: voidzero-dev/setup-vp@v1.17.0
+      - uses: voidzero-dev/setup-vp@v1.18.0
         with:
           node-version: "24"
       - run: vp add -D validate-branch-name
@@ -43,7 +43,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: voidzero-dev/setup-vp@v1.17.0
+      - uses: voidzero-dev/setup-vp@v1.18.0
         with:
           node-version: "24"
 
@@ -88,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: voidzero-dev/setup-vp@v1.17.0
+      - uses: voidzero-dev/setup-vp@v1.18.0
         with:
           node-version: "24"
           cache: true
