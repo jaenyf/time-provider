@@ -1,9 +1,8 @@
 # Animation Frames
 
 [`@time-provider/addon-animation-frame`](https://www.npmjs.com/package/@time-provider/addon-animation-frame)
-adds an `.animation` facade over
-`requestAnimationFrame`/`cancelAnimationFrame`, backed by the host's real
-display refresh on a system Time-Provider and by simulated frames on a
+adds an `.animation` facade exposing `scheduleFrame`, backed by the host's
+real display refresh on a system Time-Provider and by simulated frames on a
 deterministic one. Like every [addon](/addons/) it composes in with
 `.use(addon)` and ships two entry points:
 
@@ -14,15 +13,15 @@ import { addon } from "@time-provider/addon-animation-frame";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-const handle = timeProvider.animation.requestAnimationFrame(() => draw());
-timeProvider.animation.cancelAnimationFrame(handle);
+const handle = timeProvider.animation.scheduleFrame(() => draw());
+handle.dispose();
 ```
 
-`requestAnimationFrame` matches the native contract: it fires **once**, not
-repeatedly. Call it again from inside the callback to keep animating.
-`cancelAnimationFrame` is a no-op if the frame already ran or was already
-cancelled. The handle is an `AnimationFrameHandle`, the same type the host's
-native `requestAnimationFrame` returns.
+`scheduleFrame` matches the native `requestAnimationFrame` contract: it fires
+**once**, not repeatedly. Call it again from inside the callback to keep
+animating. `handle.dispose()` is a no-op if the frame already ran or was
+already cancelled. The handle is an `IScheduledHandle`, the same type every
+other `@time-provider/core` timer returns.
 
 ## Simulated frames
 
@@ -47,9 +46,9 @@ const timeProvider = createTimeProvider
 let frames = 0;
 const tick = () => {
   frames++;
-  timeProvider.animation.requestAnimationFrame(tick);
+  timeProvider.animation.scheduleFrame(tick);
 };
-timeProvider.animation.requestAnimationFrame(tick);
+timeProvider.animation.scheduleFrame(tick);
 
 timeProvider.clock.advance({ milliseconds: 100 }); // ~9 frames at 90 FPS
 ```
@@ -68,24 +67,38 @@ animation logic testable off a browser.
 
 ## Composing two independently configured instances
 
-The exported `addon` is a shared singleton, and composing it clones itself so
-two Time-Providers never share state. When you need two instances configured
-_differently_ — two frame rates in the same test file — call `createAddon()`
-from the deterministic entry point for a fresh one:
+`addon` is a factory function: every call returns a fresh builder, so two
+Time-Providers configured with different frame rates never share state —
+just call `.use(addon)` once per Time-Provider:
 
 ```ts
-import { createAddon } from "@time-provider/addon-animation-frame/deterministic";
+import { createTimeProvider } from "@time-provider/core/deterministic";
+import { plugin } from "@time-provider/plugin-native/deterministic";
+import { addon } from "@time-provider/addon-animation-frame/deterministic";
 
-const fast = createAddon().withHostFramesRate(120);
-const slow = createAddon().withHostFramesRate(24);
+const fast = createTimeProvider
+  .for(plugin)
+  .use(addon)
+  .withHostFramesRate(120)
+  .asManual()
+  .withInitialTime(0)
+  .create();
+const slow = createTimeProvider
+  .for(plugin)
+  .use(addon)
+  .withHostFramesRate(24)
+  .asManual()
+  .withInitialTime(0)
+  .create();
 ```
 
 ## The types
 
 Inference covers ordinary use. If you need to write a type down, the addon
-exports `AnimationFrameHandle`, `IAnimationFrameApi` (the `.animation`
-facade), and `WithAnimationFrameApi` for naming a Time-Provider with this addon
-composed in:
+exports `IAnimationFrameApi` (the `.animation` facade) and
+`WithAnimationFrameApi` for naming a Time-Provider with this addon composed
+in. Frame handles are the same `IScheduledHandle` every `@time-provider/core`
+timer returns — there's no addon-specific handle type:
 
 ```ts
 import type {
@@ -94,7 +107,7 @@ import type {
 } from "@time-provider/addon-animation-frame";
 
 function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
-  tp.animation.requestAnimationFrame(() => {});
+  tp.animation.scheduleFrame(() => {});
 }
 ```
 

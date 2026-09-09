@@ -130,6 +130,7 @@ export default defineConfig({
           { text: "Animation Frames", link: "/addons/animation-frame" },
           { text: "Cron Schedules", link: "/addons/cron" },
           { text: "ETA Estimates", link: "/addons/eta" },
+          { text: "Compatibility Layer", link: "/addons/compat" },
           { text: "Writing a Custom Addon", link: "/addons/custom" },
         ],
       },

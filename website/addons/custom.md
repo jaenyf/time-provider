@@ -103,10 +103,12 @@ export function addon<TDate>(): IAddonBuilder<Greeting<TDate>> {
 export default addon;
 ```
 
-A plain object literal is enough when there's no configuration to hold — that
-is the shape `@time-provider/addon-cron`, `@time-provider/addon-eta`, and
-`@time-provider/addon-compat` use. Compose it with
-`createTimeProvider.for(plugin).use(addon)`.
+A plain object literal is enough when there's no configuration to hold, as
+shown above. `@time-provider/addon-cron`, `@time-provider/addon-eta`, and
+`@time-provider/addon-compat` instead extend `AddonBuilderBase` from
+`@time-provider/core` — a small base class for the common case of a
+`create()` that just instantiates the addon. Either shape composes the same
+way, with `createTimeProvider.for(plugin).use(addon)`.
 
 ## Two entry points
 

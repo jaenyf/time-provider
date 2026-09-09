@@ -127,7 +127,7 @@ Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-p
 
 ```typescript
 interface ITimeProvider<TDate> {
-  animation: IAnimationFrameApi; //requestAnimationFrame, cancelAnimationFrame
+  animation: IAnimationFrameApi; //scheduleFrame
 }
 ```
 

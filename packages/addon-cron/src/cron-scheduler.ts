@@ -18,10 +18,10 @@ import type { ICronApi } from "./types.ts";
 
 /**
  * Implements {@link ICronApi} on top of `ITimers.recurring`, re-deriving the delay to the
- * next occurrence after every run. Generic over `TDate`, delegated to `adapter` for every
- * calendar/timezone computation - see {@link ICalendarScheme} - so the same implementation backs
- * every plugin, and each one's own calendar/timezone behavior (if it diverges from the shared
- * default) is honored automatically.
+ * next occurrence after every run. Generic over `TDate`, delegated to the runtime's own
+ * calendar scheme for every calendar/timezone computation - see {@link ICalendarScheme} - so
+ * the same implementation backs every plugin, and each one's own calendar/timezone behavior
+ * (if it diverges from the shared default) is honored automatically.
  */
 export class CronScheduler<
   TDate,
@@ -33,18 +33,6 @@ export class CronScheduler<
 {
   #isDisposed: boolean;
 
-  /**
-   * @param timers the runtime's timers used to run due callbacks.
-   * @param timestampNow reads the runtime's current time, in epoch milliseconds. Side-effect-free
-   * by contract - see {@link ITimestampClock.timestampNow} - which is what lets `schedule()` read
-   * it once to compute the first delay and trust that `ITimers.recurring` reads the same
-   * "now" internally to turn that delay into an absolute run time.
-   * @param timezone reads the IANA timezone cron expressions are evaluated against. Called once
-   * per {@link schedule} so a schedule created after `IClock.withTimezone` uses the timezone the
-   * clock has by then; each schedule then keeps that timezone for its whole life, since retiming
-   * a running job underneath its owner would be the more surprising behaviour.
-   * @param adapter the runtime's calendar scheme - see {@link ICalendarScheme}.
-   */
   constructor() {
     super();
     this.#isDisposed = false;

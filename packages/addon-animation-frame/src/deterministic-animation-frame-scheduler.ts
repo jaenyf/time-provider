@@ -3,7 +3,7 @@ import type { IAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 /**
- * Implements {@link IAnimationFrameScheduler} on top of a deterministic runtime's {@link IDeterministicRuntime},
+ * Implements {@link IAnimationFrameScheduler} on top of a deterministic runtime's {@link IRuntime},
  * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
  */
 export class DeterministicAnimationFrameScheduler<TDate>
@@ -14,9 +14,6 @@ export class DeterministicAnimationFrameScheduler<TDate>
   #hostFrameDurationMs = 1000 / 60;
   #isDisposed: boolean;
 
-  /**
-   * @param timers the deterministic runtime's timers used to simulate frame callbacks.
-   */
   constructor() {
     super();
     this.#isDisposed = false;

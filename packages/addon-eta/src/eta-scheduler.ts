@@ -5,10 +5,6 @@ import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 export class EtaScheduler<TDate> extends AddonBase<TDate> implements IEtaApi<TDate> {
   #isDisposed: boolean;
 
-  /**
-   * @param timers the runtime's timers used to run notification ticks.
-   * @param timestampNow reads the runtime's current time, in epoch milliseconds.
-   */
   constructor() {
     super();
     this.#isDisposed = false;
