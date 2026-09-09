@@ -61,16 +61,16 @@ const timeProvider = createTimeProvider
   .create();
 const handle = timeProvider.cron.schedule("0 9 * * MON-FRI", () => console.log("Good morning!"));
 // ...
-timeProvider.cron.unschedule(handle);
+handle.dispose();
 
 // Deterministic: runs against the runtime's own simulated clock.
-const manual = createDeterministicTimeProvider
+using manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .use(deterministicAddon)
   .asManual()
   .withInitialTime("2024-01-01T00:00:00.000Z")
   .create();
-manual.cron.schedule("*/15 * * * *", () => console.log("Every 15 minutes"));
+using handle = manual.cron.schedule("*/15 * * * *", () => console.log("Every 15 minutes"));
 manual.clock.advance({ minutes: 15 });
 ```
 

@@ -1,8 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { IAddon, IRuntime } from "@time-provider/core";
-import { addon } from "../src/index.ts";
-import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
+import { addon as addonBuilderFactory } from "../src/index.ts";
 import "./polyfills.ts";
+
+const animationFrameAddon = addonBuilderFactory().create();
 
 type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
 
@@ -13,34 +14,32 @@ type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
  * anything else on the fake runtime.
  */
 function fakeSystemRuntime(): FakeRuntime {
-  return { registerAddon: (_addon: IAddon) => {} } as FakeRuntime;
+  return {
+    registerAddon: (_addon: IAddon<unknown>) => {},
+  } as FakeRuntime;
 }
 
 describe("animationFrameAddon (system)", () => {
-  test("applyToSystem defines .animation with a SystemAnimationFrameScheduler", () => {
+  test("applyToSystem defines .animation with a scheduleFrame() facade", () => {
     const runtime = fakeSystemRuntime();
-    addon.applyToRuntime(runtime);
-    expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
+    animationFrameAddon.applyToRuntime(runtime);
+    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 
   test("applyToSystem's defined property is enumerable but not writable", () => {
     const runtime = fakeSystemRuntime();
-    addon.applyToRuntime(runtime);
+    animationFrameAddon.applyToRuntime(runtime);
     const descriptor = Object.getOwnPropertyDescriptor(runtime, "animation");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
   });
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
-
-    test("returns a distinct addon that still applies a SystemAnimationFrameScheduler", () => {
-      const cloned = addon.clone();
-      const runtime = fakeSystemRuntime();
-      cloned.applyToRuntime(runtime);
-      expect(runtime.animation).toBeInstanceOf(SystemAnimationFrameScheduler);
-    });
+  test("addon() returns an independent builder each call", () => {
+    const first = addonBuilderFactory().create();
+    const second = addonBuilderFactory().create();
+    expect(first).not.toBe(second);
+    const runtime = fakeSystemRuntime();
+    second.applyToRuntime(runtime);
+    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 });

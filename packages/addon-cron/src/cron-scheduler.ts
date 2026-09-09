@@ -1,9 +1,10 @@
 import {
-  type ITimerHandle,
-  type EpochMilliseconds,
-  type ICalendarScheme,
-  type ITimers,
+  type IScheduledHandle,
   type IDurationSpec,
+  type IAddon,
+  AddonBase,
+  type IRuntime,
+  AddonHelper,
 } from "@time-provider/core";
 import {
   computeNextOccurrence,
@@ -17,48 +18,33 @@ import type { ICronApi } from "./types.ts";
 
 /**
  * Implements {@link ICronApi} on top of `ITimers.recurring`, re-deriving the delay to the
- * next occurrence after every run. Generic over `TDate`, delegated to `adapter` for every
- * calendar/timezone computation - see {@link ICalendarScheme} - so the same implementation backs
- * every plugin, and each one's own calendar/timezone behavior (if it diverges from the shared
- * default) is honored automatically.
+ * next occurrence after every run. Generic over `TDate`, delegated to the runtime's own
+ * calendar scheme for every calendar/timezone computation - see {@link ICalendarScheme} - so
+ * the same implementation backs every plugin, and each one's own calendar/timezone behavior
+ * (if it diverges from the shared default) is honored automatically.
  */
 export class CronScheduler<
   TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
-> implements ICronApi<TMonthName, TWeekdayName> {
-  #timers: ITimers;
-  #timestampNow: () => EpochMilliseconds;
-  #timezone: () => string;
-  #calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>;
+>
+  extends AddonBase<TDate>
+  implements ICronApi<TDate, TMonthName, TWeekdayName>, IAddon<TDate>
+{
   #isDisposed: boolean;
 
-  /**
-   * @param timers the runtime's timers used to run due callbacks.
-   * @param timestampNow reads the runtime's current time, in epoch milliseconds. Side-effect-free
-   * by contract - see {@link ITimestampClock.timestampNow} - which is what lets `schedule()` read
-   * it once to compute the first delay and trust that `ITimers.recurring` reads the same
-   * "now" internally to turn that delay into an absolute run time.
-   * @param timezone reads the IANA timezone cron expressions are evaluated against. Called once
-   * per {@link schedule} so a schedule created after `IClock.withTimezone` uses the timezone the
-   * clock has by then; each schedule then keeps that timezone for its whole life, since retiming
-   * a running job underneath its owner would be the more surprising behaviour.
-   * @param adapter the runtime's calendar scheme - see {@link ICalendarScheme}.
-   */
-  constructor(
-    timers: ITimers,
-    timestampNow: () => EpochMilliseconds,
-    timezone: () => string,
-    calendarScheme: ICalendarScheme<TDate, TMonthName, TWeekdayName>,
-  ) {
-    this.#timers = timers;
-    this.#timestampNow = timestampNow;
-    this.#timezone = timezone;
-    this.#calendarScheme = calendarScheme;
+  constructor() {
+    super();
     this.#isDisposed = false;
   }
 
+  private getClockTimezone(): string {
+    const clock = this.runtime.clock;
+    return "timezone" in clock ? clock.timezone : "Etc/UTC";
+  }
+
   dispose(): void {
+    //no need to dispose any ScheduledHandle here as they are tracked by the runtime being disposed
     this.#isDisposed = true;
   }
   get isDisposed(): boolean {
@@ -68,18 +54,27 @@ export class CronScheduler<
     this.dispose();
   }
 
-  schedule(expression: string, callback: () => void): ITimerHandle;
-  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): ITimerHandle;
+  applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "cron",
+      { schedule: this.schedule.bind(this) },
+      this,
+    );
+  }
+
+  schedule(expression: string, callback: () => void): IScheduledHandle;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): IScheduledHandle;
   schedule(
     expressionOrSpec: string | ICronSpec<TMonthName, TWeekdayName>,
     callback: () => void,
-  ): ITimerHandle {
-    const calendarScheme = this.#calendarScheme;
-    const timezone = this.#timezone();
+  ): IScheduledHandle {
+    const calendarScheme = this.runtime.calendarScheme;
+    const timezone = this.getClockTimezone();
     const parsed =
       typeof expressionOrSpec === "string"
         ? parseCronExpression(expressionOrSpec, calendarScheme)
-        : parseCronSpec(expressionOrSpec, calendarScheme);
+        : parseCronSpec(expressionOrSpec as ICronSpec<MonthName, DayOfWeekName>, calendarScheme);
     /*
       Anchored to the schedule's own last computed occurrence, not a fresh `timestampNow()` read
       on every rearm: on a deterministic runtime, a single advance() can drain several due
@@ -87,7 +82,7 @@ export class CronScheduler<
       advance()'s final target - not the instant this particular occurrence is actually due at.
       Re-querying it there would skip every occurrence between "now" and that final target.
     */
-    let lastOccurrence = calendarScheme.fromTimestamp(this.#timestampNow());
+    let lastOccurrence = calendarScheme.fromTimestamp(this.runtime.timestampNow());
     const nextDelay = (): IDurationSpec => {
       const next = computeNextOccurrence(parsed, lastOccurrence, timezone, calendarScheme);
       const delay = calendarScheme.toTimestamp(next) - calendarScheme.toTimestamp(lastOccurrence);
@@ -102,13 +97,9 @@ export class CronScheduler<
       throws stops the schedule, exactly as `setRecurring` documents; catch inside your own callback
       if a failing run should not end the job.
     */
-    return this.#timers.recurring(() => {
+    return this.runtime.timers.recurring(() => {
       callback();
       return nextDelay();
     }, nextDelay());
-  }
-
-  unschedule(handle: ITimerHandle): void {
-    handle.dispose();
   }
 }

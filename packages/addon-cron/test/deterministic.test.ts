@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
   DefaultCalendarScheme,
-  type ITimerHandle,
+  type IScheduledHandle,
   type ITimeConverter,
   type ITimers,
   type IRuntime,
@@ -9,9 +9,11 @@ import {
   type IDurationSpec,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/deterministic.ts";
+import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
+
+const addon = addonBuilderFactory().create();
 
 type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
 
@@ -45,7 +47,7 @@ function fakeDeterministicRuntime(
     },
     recurring(callback, initialDelay) {
       recurring.push({ callback, initialDelay });
-      return {} as ITimerHandle;
+      return {} as IScheduledHandle;
     },
     wait() {
       throw new Error("not used by the cron addon");
@@ -57,18 +59,19 @@ function fakeDeterministicRuntime(
     runtime: {
       timers,
       clock,
+      timestampNow: () => now,
       calendarScheme: defaultCalendarScheme,
-      registerAddon: (_addon: IAddon) => {},
+      registerAddon: (_addon: IAddon<unknown>) => {},
     } as unknown as FakeRuntime,
     recurring,
   };
 }
 
 describe("cronAddon (deterministic)", () => {
-  test("applyToRuntime defines .cron with a CronScheduler", () => {
+  test("applyToRuntime defines .cron with a schedule() facade", () => {
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     addon.applyToRuntime(runtime);
-    expect(runtime.cron).toBeInstanceOf(CronScheduler);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -111,16 +114,12 @@ describe("cronAddon (deterministic)", () => {
     );
   });
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
-
-    test("returns a distinct addon that still applies a CronScheduler", () => {
-      const cloned = addon.clone();
-      const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
-      cloned.applyToRuntime(runtime);
-      expect(runtime.cron).toBeInstanceOf(CronScheduler);
-    });
+  test("addon() returns an independent builder each call", () => {
+    const first = addonBuilderFactory().create();
+    const second = addonBuilderFactory().create();
+    expect(first).not.toBe(second);
+    const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
+    second.applyToRuntime(runtime);
+    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 });

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
-import type { ITimerHandle, ITimeConverter } from "../src/types/types.ts";
+import type { IScheduledHandle, ITimeConverter } from "../src/types/types.ts";
 import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
@@ -60,7 +60,7 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
 
       const sut = new FakeManualRuntime(0);
       const fired: number[] = [];
-      const handles: ITimerHandle[] = uniqueDelays.map((delay) =>
+      const handles: IScheduledHandle[] = uniqueDelays.map((delay) =>
         sut.timers.once({ milliseconds: delay }, () => fired.push(delay)),
       );
 

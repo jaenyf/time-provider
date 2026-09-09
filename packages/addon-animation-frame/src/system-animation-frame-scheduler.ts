@@ -1,19 +1,63 @@
-import type { AnimationFrameHandle, IAnimationFrameScheduler } from "./types.ts";
+import { AddonBase, type IScheduledHandle, type IRuntime, AddonHelper } from "@time-provider/core";
+import type { IAnimationFrameScheduler } from "./types.ts";
 
 function throwAnimationFrameApiNotSupported(): never {
   throw new Error("Environment does not support Animation frame API (are you in a browser?)");
+}
+
+class SystemAnimationFrameHandle implements IScheduledHandle {
+  readonly #nativeHandle: number;
+  #disposed = false;
+  #abortController?: AbortController;
+
+  constructor(nativeHandle: number) {
+    this.#nativeHandle = nativeHandle;
+  }
+
+  get isDisposed(): boolean {
+    return this.#disposed;
+  }
+
+  dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    this.#abortController?.abort("Animation frame handle is being disposed");
+    cancelAnimationFrame(this.#nativeHandle);
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  get signal(): AbortSignal {
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      if (this.#disposed) {
+        this.#abortController.abort("Animation frame handle is being disposed");
+      } else {
+        this.#abortController.signal.addEventListener("abort", () => this.dispose());
+      }
+    }
+    return this.#abortController.signal;
+  }
 }
 
 /**
  * Implements {@link IAnimationFrameScheduler} on top of the host's native
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
-export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
+export class SystemAnimationFrameScheduler<TDate>
+  extends AddonBase<TDate>
+  implements IAnimationFrameScheduler<TDate>
+{
   #isDisposed: boolean;
   /**
    * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
    */
   constructor() {
+    super();
     if (typeof requestAnimationFrame !== "function") {
       throwAnimationFrameApiNotSupported();
     }
@@ -33,10 +77,16 @@ export class SystemAnimationFrameScheduler implements IAnimationFrameScheduler {
     this.dispose();
   }
 
-  requestAnimationFrame(callback: () => void): AnimationFrameHandle {
-    return requestAnimationFrame(callback);
+  applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "animation",
+      { scheduleFrame: this.scheduleFrame.bind(this) },
+      this,
+    );
   }
-  cancelAnimationFrame(handle: AnimationFrameHandle): void {
-    cancelAnimationFrame(handle);
+
+  scheduleFrame(callback: () => void): IScheduledHandle {
+    return new SystemAnimationFrameHandle(requestAnimationFrame(callback));
   }
 }

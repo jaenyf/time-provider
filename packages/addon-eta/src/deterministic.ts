@@ -1,7 +1,4 @@
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import { AddonHelper } from "@time-provider/core";
-import { EtaScheduler } from "./eta-scheduler.ts";
-import type { WithEtaApi } from "./types.ts";
+import { addon } from "./addon.ts";
 
 export type {
   EtaRateAlgorithm,
@@ -22,26 +19,5 @@ export type {
 } from "./types.ts";
 export { EtaScheduler } from "./eta-scheduler.ts";
 
-function createAddon<TDate>(): IDeterministicAddon<TDate, WithEtaApi> {
-  return {
-    applyToRuntime(runtime) {
-      return AddonHelper.extendRuntimeWithProperty(
-        runtime,
-        "eta",
-        new EtaScheduler(runtime.timers, () => runtime.clock.timestampNow()),
-        undefined as unknown as WithEtaApi,
-      );
-    },
-    clone(): IDeterministicAddon<TDate, WithEtaApi> {
-      return createAddon<TDate>();
-    },
-  };
-}
-
-/**
- * The ETA estimation addon for a deterministic Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)` to add an `eta` property backed by the runtime's
- * own simulated clock instead of the host's real clock.
- */
-export const addon: IDeterministicAddon<unknown, WithEtaApi> = createAddon();
+export { addon };
 export default addon;

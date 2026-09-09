@@ -112,6 +112,49 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
 }
 ```
 
+Same idea, closer to a real service - a retry/backoff loop injected with the
+time provider, unaware of which strategy backs it:
+
+```typescript
+// production: a retry/backoff service, injected with the real time provider
+class RetryingOperation {
+  constructor(private readonly timeProvider: ITimeProvider<Date>) {}
+
+  run(operation: () => boolean, onGiveUp: () => void, maxAttempts = 3) {
+    let attempt = 0;
+    this.timeProvider.timers.recurring(() => {
+      attempt++;
+      if (operation()) return false; // succeeded, stop retrying
+      if (attempt >= maxAttempts) {
+        onGiveUp();
+        return false;
+      }
+      return { seconds: attempt }; // back off: 1s, 2s, 3s...
+    });
+  }
+}
+
+new RetryingOperation(timeProvider).run(sendRequest, pageOnCallEngineer);
+```
+
+```typescript
+// test: same service, injected with a manual provider instead - no real waiting
+using timeProvider = createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
+
+let attempts = 0;
+let gaveUp = false;
+new RetryingOperation(timeProvider).run(
+  () => ++attempts === 3, // succeeds on the 3rd try
+  () => (gaveUp = true),
+);
+
+timeProvider.clock.advance({ seconds: 1 }); // 2nd attempt
+timeProvider.clock.advance({ seconds: 2 }); // 3rd attempt, succeeds
+
+expect(attempts).toBe(3);
+expect(gaveUp).toBe(false);
+```
+
 Every time provider exposes the same four-part surface:
 
 ```typescript
@@ -127,7 +170,7 @@ Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-p
 
 ```typescript
 interface ITimeProvider<TDate> {
-  animation: IAnimationFrameApi; //requestAnimationFrame, cancelAnimationFrame
+  animation: IAnimationFrameApi; //scheduleFrame
 }
 ```
 
@@ -151,7 +194,7 @@ createTimeProvider
   .create();
 ```
 
-> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
+> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()` (or `localNow()`, `utcNow()` on sequential clocks)) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run. Use `timestampNow()` instead when you only need a value to compute with - it never triggers any timer on sequential clocks or advances time.
 
 ## Addons vs. Plugins
 

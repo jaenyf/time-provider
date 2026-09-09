@@ -4,4 +4,4 @@ import { addon } from "../../../../addon-animation-frame/dist/index.mjs";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-timeProvider.animation.requestAnimationFrame(() => console.log("frame"));
+timeProvider.animation.scheduleFrame(() => console.log("frame")).dispose();

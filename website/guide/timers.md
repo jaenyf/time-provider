@@ -20,6 +20,16 @@ This is what makes manual/sequential tests deterministic without `await`,
 call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
+For example, jumping 5 seconds past a 1-second `every` fires it 5 times,
+synchronously, before `advance()` returns:
+
+```ts
+let ticks = 0;
+timeProvider.timers.every({ seconds: 1 }, () => ticks++);
+timeProvider.clock.advance({ seconds: 5 });
+ticks; // 5
+```
+
 `recurring` (see [ITimers](/api/timers)) shares a heap with
 `once`/`every`, so it fires in the same true chronological order
 as the other two. A due `recurring` entry is pulled out of the heap
@@ -28,6 +38,17 @@ value is actually rearming it. That's what keeps it safe for the run to
 itself schedule new work (on a manual/sequential clock, that reentrantly
 drains the same heap) without the entry being visible to that nested drain
 while its own fate is still being decided.
+
+## Errors in callbacks
+
+A throwing callback matches whatever the host environment already does with
+an uncaught exception in a native timer: under Node.js it propagates, same
+as a throwing `setTimeout`/`setInterval` callback would; anywhere else it's
+caught, logged via `console.error`, and the batch keeps draining. This holds
+for System and Manual/Sequential runtimes alike — the deterministic runtime
+mirrors the same per-environment behavior rather than adding its own policy.
+Either way, a throwing `recurring` callback doesn't get a next run — it's
+treated the same as returning `false`.
 
 ## Implementation notes
 

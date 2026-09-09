@@ -7,7 +7,9 @@ Each call to `clock.utcNow()` / `clock.localNow()` **consumes the next
 instant in the list** (once only the last one remains, it keeps returning
 that one) — unlike the manual clock, reading time here is itself what
 advances it, and any due timer callbacks run
-synchronously in-line as a side effect of that same read.
+synchronously in-line as a side effect of that same read. Use
+`clock.timestampNow()` instead when you only need a value to compute
+with — it never consumes an instant or runs callbacks.
 
 _Note: If the sequence to step through is empty, the resulting clock stays at the Unix epoch._
 

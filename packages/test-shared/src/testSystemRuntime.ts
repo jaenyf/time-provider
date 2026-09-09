@@ -1,5 +1,5 @@
 import {
-  type ITimerHandle,
+  type IScheduledHandle,
   type ISystemPlugin,
   type IUtcOnlySystemPlugin,
   type TimezoneDefinition,
@@ -257,7 +257,7 @@ export function testSystemRuntime<TDate>(
           test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
             const sut = plugin.createSystemRuntime("Pacific/Kiritimati").timers;
             let runs = 0;
-            let handle: ITimerHandle;
+            let handle: IScheduledHandle;
             handle = sut.recurring(
               () => {
                 runs++;

@@ -18,7 +18,7 @@ export interface IDurationSpec {
 
 /**
  * Convert a duration spec to a branded duration expressed in milliseconds.
- * @param millisecondsDuration the duration in milliseconds.
+ * @param durationSpec the spec describing the duration.
  * @returns a branded DurationMilliseconds type
  */
 export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
@@ -117,8 +117,8 @@ export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
 }
 
 /**
- * Get the epoch time as a branded EpochMilliseconds type.
- * @returns epoch time as a IEpochInstantSpec type
+ * The epoch time.
+ * @returns the epoch time as a IEpochInstantSpec type.
  */
 export function asEpoch(): IEpochInstantSpec {
   return { milliseconds: 0 };
@@ -130,7 +130,6 @@ export function asEpochMilliseconds(): EpochMilliseconds {
 
 export const epochArithmetic = {
   addDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a + b) as EpochMilliseconds,
-  substract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
-  substractDuration: (a: EpochMilliseconds, b: DurationMilliseconds) =>
-    (a - b) as EpochMilliseconds,
+  subtract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
+  subtractDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a - b) as EpochMilliseconds,
 };

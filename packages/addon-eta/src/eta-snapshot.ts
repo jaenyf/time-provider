@@ -56,7 +56,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     this.startTime = startTime;
     this.completed = completed;
     this.total = total;
-    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
+    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
     this.#remaining = new Lazy(() => this.total - this.completed);
     this.#percentage = new Lazy(() => (this.total > 0 ? (this.completed / this.total) * 100 : 0));
     this.#rate = new Lazy(() => rateEstimator?.estimateRate());
@@ -67,7 +67,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     );
     this.#remainingMilliseconds = new Lazy(() => {
       const eta = this.#eta.value;
-      return eta === undefined ? undefined : epochArithmetic.substract(eta, now);
+      return eta === undefined ? undefined : epochArithmetic.subtract(eta, now);
     });
   }
 
@@ -119,7 +119,7 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     this.startTime = startTime;
     this.stageCompleted = stageCompleted;
     this.stageTotal = stageTotal;
-    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
+    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
     this.currentStageIndex = currentStageIndex;
     this.stageCount = stageCount;
     this.#stageRemaining = new Lazy(() => this.stageTotal - this.stageCompleted);
@@ -186,9 +186,8 @@ export class EtaDurationSnapshot implements IEtaDurationSnapshot {
   ) {
     this.status = status;
     this.startTime = startTime;
-    this.elapsedMilliseconds = epochArithmetic.substract(now, startTime);
+    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
     this.eta = eta;
-    this.remainingMilliseconds =
-      eta === undefined ? undefined : epochArithmetic.substract(eta, now);
+    this.remainingMilliseconds = eta === undefined ? undefined : epochArithmetic.subtract(eta, now);
   }
 }

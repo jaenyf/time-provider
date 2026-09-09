@@ -1,5 +1,10 @@
 import { expect, test, describe } from "vite-plus/test";
-import { asap, type IRuntime, type ITimerHandle, type IUtcOnlyRuntime } from "@time-provider/core";
+import {
+  asap,
+  type IRuntime,
+  type IScheduledHandle,
+  type IUtcOnlyRuntime,
+} from "@time-provider/core";
 
 export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRuntime<TDate>) {
   describe("dispose", () => {
@@ -71,7 +76,7 @@ export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRu
     expect(handle.isDisposed).toBe(true);
   });
   test("using implicit dispose also dispose created once-handles", () => {
-    let handleRef: ITimerHandle | undefined = undefined;
+    let handleRef: IScheduledHandle | undefined = undefined;
     {
       using sut = createSUT();
       handleRef = sut.once(asap(), () => {});
@@ -86,7 +91,7 @@ export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRu
     expect(handle.isDisposed).toBe(true);
   });
   test("using implicit dispose also dispose created every-handles", () => {
-    let handleRef: ITimerHandle | undefined = undefined;
+    let handleRef: IScheduledHandle | undefined = undefined;
     {
       using sut = createSUT();
       handleRef = sut.every(asap(), () => {});
@@ -103,7 +108,7 @@ export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRu
     expect(handle.isDisposed).toBe(true);
   });
   test("using implicit dispose also dispose created recurring-handles", () => {
-    let handleRef: ITimerHandle | undefined = undefined;
+    let handleRef: IScheduledHandle | undefined = undefined;
     {
       using sut = createSUT();
       handleRef = sut.recurring(() => {

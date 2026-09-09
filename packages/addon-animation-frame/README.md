@@ -22,7 +22,7 @@
 ## Description
 
 This is the [Animation Frame API](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-Extends the library by exposing the animation frame API (`requestAnimationFrame`/`cancelAnimationFrame`) through a dedicated (`.animation`) facade.
+Extends the library by exposing the animation frame API (`scheduleFrame`) through a dedicated (`.animation`) facade.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
@@ -49,7 +49,7 @@ import { addon as deterministicAddon } from "@time-provider/addon-animation-fram
 
 // System: real requestAnimationFrame (or a clear error outside a browser)
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
+timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
 
 // Deterministic: simulated against the runtime's own clock
 const manual = createDeterministicTimeProvider
@@ -58,7 +58,7 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-manual.animation.requestAnimationFrame(() => console.log("Frame!"));
+manual.animation.scheduleFrame(() => console.log("Frame!"));
 manual.clock.advance({ milliseconds: 20 });
 ```
 

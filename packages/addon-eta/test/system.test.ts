@@ -1,15 +1,20 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  type ITimerHandle,
+  type IScheduledHandle,
   type IRuntime,
   type ITimers,
   toDuration,
   type IAddon,
 } from "@time-provider/core";
-import { addon } from "../src/index.ts";
+import { addon as addonBuilderFactory } from "../src/index.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
-type FakeRuntime = IRuntime<unknown> & { eta?: unknown; registerAddon(addon: IAddon): void };
+const addon = addonBuilderFactory().create();
+
+type FakeRuntime = IRuntime<unknown> & {
+  eta?: unknown;
+  registerAddon(addon: IAddon<unknown>): void;
+};
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and
@@ -27,7 +32,7 @@ function fakeSystemRuntime(now: number): {
     },
     every(durationSpec, callback) {
       intervals.push({ callback, delay: toDuration(durationSpec) });
-      return {} as ITimerHandle;
+      return {} as IScheduledHandle;
     },
     recurring() {
       throw new Error("not used by the eta addon");
@@ -38,16 +43,21 @@ function fakeSystemRuntime(now: number): {
   };
   const clock = { timestampNow: () => now };
   return {
-    runtime: { timers, clock, registerAddon: (_addon: IAddon) => {} } as unknown as FakeRuntime,
+    runtime: {
+      timers,
+      clock,
+      timestampNow: () => now,
+      registerAddon: (_addon: IAddon<unknown>) => {},
+    } as unknown as FakeRuntime,
     intervals,
   };
 }
 
 describe("etaAddon (system)", () => {
-  test("applyToRuntime defines .eta with an EtaScheduler", () => {
+  test("applyToRuntime defines .eta with an estimate() facade", () => {
     const { runtime } = fakeSystemRuntime(0);
     addon.applyToRuntime(runtime);
-    expect(runtime.eta).toBeInstanceOf(EtaScheduler);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
@@ -62,7 +72,7 @@ describe("etaAddon (system)", () => {
     const { runtime, intervals } = fakeSystemRuntime(1000);
     addon.applyToRuntime(runtime);
     const snapshots: { startTime: number }[] = [];
-    (runtime.eta as EtaScheduler)
+    (runtime.eta as EtaScheduler<unknown>)
       .estimate()
       .withEstimatedDuration(5000)
       .start((s) => snapshots.push(s));
@@ -71,16 +81,12 @@ describe("etaAddon (system)", () => {
     expect(snapshots[0]!.startTime).toBe(1000);
   });
 
-  describe("clone", () => {
-    test("returns a distinct instance", () => {
-      expect(addon.clone()).not.toBe(addon);
-    });
-
-    test("returns a distinct addon that still applies an EtaScheduler", () => {
-      const cloned = addon.clone();
-      const { runtime } = fakeSystemRuntime(0);
-      cloned.applyToRuntime(runtime);
-      expect(runtime.eta).toBeInstanceOf(EtaScheduler);
-    });
+  test("addon() returns an independent builder each call", () => {
+    const first = addonBuilderFactory().create();
+    const second = addonBuilderFactory().create();
+    expect(first).not.toBe(second);
+    const { runtime } = fakeSystemRuntime(0);
+    second.applyToRuntime(runtime);
+    expect(runtime.eta).toStrictEqual({ estimate: expect.any(Function) });
   });
 });

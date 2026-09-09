@@ -13,18 +13,19 @@ import { addon } from "@time-provider/addon-animation-frame";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
+timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
 ```
 
 `timeProvider` above is still a plain `ITimeProvider<Date>` — `clock`,
 `parser`, `timers`, `performance` — plus whatever the addon adds, here an
-`.animation` facade exposing `requestAnimationFrame`/`cancelAnimationFrame`.
+`.animation` facade exposing `scheduleFrame`.
 
-| Addon                                              | Property     | Adds                                                                                       | Contributed type        | npm                                                                       |
-| -------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------------- |
-| [`addon-animation-frame`](/addons/animation-frame) | `.animation` | `requestAnimationFrame`/`cancelAnimationFrame` — the host's real frames, or simulated ones | `WithAnimationFrameApi` | [npm](https://www.npmjs.com/package/@time-provider/addon-animation-frame) |
-| [`addon-cron`](/addons/cron)                       | `.cron`      | callbacks on 5-field cron schedules, read in the runtime's own timezone                    | `WithCronApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-cron)            |
-| [`addon-eta`](/addons/eta)                         | `.eta`       | estimates of when a job finishes, from reported progress or a fixed expected duration      | `WithEtaApi`            | [npm](https://www.npmjs.com/package/@time-provider/addon-eta)             |
+| Addon                                              | Property     | Adds                                                                                           | Contributed type        | npm                                                                       |
+| -------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| [`addon-animation-frame`](/addons/animation-frame) | `.animation` | `scheduleFrame` — the host's real frames, or simulated ones                                    | `WithAnimationFrameApi` | [npm](https://www.npmjs.com/package/@time-provider/addon-animation-frame) |
+| [`addon-cron`](/addons/cron)                       | `.cron`      | callbacks on 5-field cron schedules, read in the runtime's own timezone                        | `WithCronApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-cron)            |
+| [`addon-eta`](/addons/eta)                         | `.eta`       | estimates of when a job finishes, from reported progress or a fixed expected duration          | `WithEtaApi`            | [npm](https://www.npmjs.com/package/@time-provider/addon-eta)             |
+| [`addon-compat`](/addons/compat)                   | `.compat`    | native-style `setTimeout`/`setInterval`/`setRecurring` signatures, for migrating incrementally | `WithCompatApi`         | [npm](https://www.npmjs.com/package/@time-provider/addon-compat)          |
 
 Each one peer-depends on `@time-provider/core` and nothing else, so composing
 an addon adds no third-party package to your dependency tree.
@@ -39,7 +40,7 @@ shape it contributes, to intersect with the provider type:
 import type { WithAnimationFrameApi } from "@time-provider/addon-animation-frame";
 
 function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
-  tp.animation.requestAnimationFrame(() => {});
+  tp.animation.scheduleFrame(() => {});
 }
 ```
 
@@ -66,7 +67,7 @@ const timeProvider = createTimeProvider
   .withInitialTime(0)
   .create();
 
-timeProvider.animation.requestAnimationFrame(() => console.log("Frame!"));
+timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
 timeProvider.clock.advance({ milliseconds: 20 }); // simulated frame duration elapses
 ```
 
@@ -91,8 +92,9 @@ timeProvider.cron.schedule("0 9 * * *", () => reindex());
 timeProvider.eta.estimate();
 ```
 
-Each `.use(...)` clones the addon it is given, so composing the same exported
-singleton with two Time-Providers never shares state between them.
+Each addon's `addon` export is a factory function, not a shared instance:
+`.use(...)` calls it to get a fresh addon-builder, so composing the same
+import with two Time-Providers never shares state between them.
 
 Want a facade of your own? See
 [Writing a Custom Addon](/addons/custom).

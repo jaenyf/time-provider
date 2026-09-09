@@ -1,29 +1,21 @@
-import { AddonHelper } from "@time-provider/core";
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
+import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
 import { CronScheduler } from "./cron-scheduler.ts";
 import type { WithCronApi } from "./types.ts";
 
-function createAddon<TDate>(): IDeterministicAddon<TDate, WithCronApi> {
-  return {
-    applyToRuntime(runtime) {
-      const timezone = (): string =>
-        "timezone" in runtime.clock ? runtime.clock.timezone : "Etc/UTC";
-      return AddonHelper.extendRuntimeWithProperty(
-        runtime,
-        "cron",
-        new CronScheduler(
-          runtime.timers,
-          () => runtime.clock.timestampNow(),
-          timezone,
-          runtime.calendarScheme,
-        ),
-        undefined as unknown as WithCronApi,
-      );
-    },
-    clone(): IDeterministicAddon<TDate, WithCronApi> {
-      return createAddon<TDate>();
-    },
-  };
+type CronAddon<TDate> = WithCronApi<TDate> & IAddon<TDate>;
+
+class CronAddonBuilder<TDate> extends AddonBuilderBase<TDate, CronAddon<TDate>> {
+  create(): CronAddon<TDate> {
+    return new CronScheduler<TDate>() as unknown as CronAddon<TDate>;
+  }
 }
 
-export const addon = createAddon();
+/**
+ * The cron addon-builder for a Time-Provider. Compose it with
+ * `createTimeProvider.for(plugin).use(addon)`.
+ * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
+ * `AddonBuilderFactory` in `@time-provider/core`.
+ */
+export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CronAddon<TDate>> {
+  return new CronAddonBuilder<TDate>(typeHint);
+}

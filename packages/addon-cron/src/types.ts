@@ -1,4 +1,4 @@
-import type { IAddon, ITimerHandle } from "@time-provider/core";
+import type { IScheduledHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
@@ -7,6 +7,7 @@ import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
  * Gregorian ones every plugin shipped today uses.
  */
 export type WithCronApi<
+  TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
 > = {
@@ -14,7 +15,7 @@ export type WithCronApi<
    * Schedules and cancels callbacks running on cron schedules, evaluated in this runtime's own
    * local timezone (`"Etc/UTC"` on a UTC-only runtime) - see {@link ICronApi}.
    */
-  cron: ICronApi<TMonthName, TWeekdayName>;
+  cron: ICronApi<TDate, TMonthName, TWeekdayName>;
 };
 
 /**
@@ -22,9 +23,13 @@ export type WithCronApi<
  * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 export interface ICronApi<
+  // Kept generic over TDate for symmetry with WithCronApi<TDate> and the rest of the *Api<TDate>
+  // family, even though no member here happens to reference it.
+  // oxlint-disable-next-line no-unused-vars
+  TDate,
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
-> extends IAddon {
+> {
   /**
    * Schedules `callback` to run every time `expression` next matches, in the runtime's local
    * timezone (`"Etc/UTC"` for a UTC-only runtime).
@@ -32,7 +37,7 @@ export interface ICronApi<
    * day-of-week`), e.g. `"0 9 * * MON-FRI"` or `"*\/15 8-18 * * *"`.
    * @throws if `expression` is malformed.
    */
-  schedule(expression: string, callback: () => void): ITimerHandle;
+  schedule(expression: string, callback: () => void): IScheduledHandle;
   /**
    * Schedules `callback` to run every time `spec` next matches, in the runtime's local timezone
    * (`"Etc/UTC"` for a UTC-only runtime). A JSON-friendly alternative to the cron expression
@@ -41,10 +46,5 @@ export interface ICronApi<
    * this form.
    * @throws if `spec` is malformed.
    */
-  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): ITimerHandle;
-  /**
-   * Cancels a schedule previously created via {@link ICronApi.schedule}. A no-op if it was
-   * already cancelled.
-   */
-  unschedule(handle: ITimerHandle): void;
+  schedule(spec: ICronSpec<TMonthName, TWeekdayName>, callback: () => void): IScheduledHandle;
 }
