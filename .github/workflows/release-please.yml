@@ -27,6 +27,7 @@ permissions:
 
 jobs:
   release:
+    name: Update release PR
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
