@@ -101,9 +101,9 @@ describe("epoch-arithmetic", () => {
       r: toInstant({ milliseconds: 2 }),
     },
   ])(
-    "substractDuration",
+    "subtractDuration",
     (testCase: { a: EpochMilliseconds; b: DurationMilliseconds; r: EpochMilliseconds }) => {
-      expect(epochArithmetic.substractDuration(testCase.a, testCase.b)).toEqual(testCase.r);
+      expect(epochArithmetic.subtractDuration(testCase.a, testCase.b)).toEqual(testCase.r);
     },
   );
 
@@ -119,9 +119,9 @@ describe("epoch-arithmetic", () => {
       r: toInstant({ milliseconds: 2 }),
     },
   ])(
-    "substract",
+    "subtract",
     (testCase: { a: EpochMilliseconds; b: EpochMilliseconds; r: EpochMilliseconds }) => {
-      expect(epochArithmetic.substract(testCase.a, testCase.b)).toEqual(testCase.r);
+      expect(epochArithmetic.subtract(testCase.a, testCase.b)).toEqual(testCase.r);
     },
   );
 });

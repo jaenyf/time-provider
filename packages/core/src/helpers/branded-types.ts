@@ -130,7 +130,6 @@ export function asEpochMilliseconds(): EpochMilliseconds {
 
 export const epochArithmetic = {
   addDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a + b) as EpochMilliseconds,
-  substract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
-  substractDuration: (a: EpochMilliseconds, b: DurationMilliseconds) =>
-    (a - b) as EpochMilliseconds,
+  subtract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
+  subtractDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a - b) as EpochMilliseconds,
 };

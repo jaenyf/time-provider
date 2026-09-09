@@ -59,7 +59,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
 
   now(): DurationMilliseconds {
     this.assertInitialization();
-    return epochArithmetic.substract(this.#runtime.timestampNow(), this.assertAndGetTimeOrigin());
+    return epochArithmetic.subtract(this.#runtime.timestampNow(), this.assertAndGetTimeOrigin());
   }
 
   get timeOrigin(): EpochMilliseconds {
@@ -162,7 +162,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
         if (options.start !== undefined) {
           endTime = epochArithmetic.addDuration(startTime, options.duration);
         } else {
-          startTime = epochArithmetic.substractDuration(endTime, options.duration);
+          startTime = epochArithmetic.subtractDuration(endTime, options.duration);
         }
       }
     }
@@ -171,7 +171,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       name,
       entryType: "measure",
       startTime,
-      duration: epochArithmetic.substract(endTime, startTime),
+      duration: epochArithmetic.subtract(endTime, startTime),
     };
 
     this.#entries.push(entry);
