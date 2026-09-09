@@ -21,7 +21,7 @@ import { addon as systemCompat } from "../../addon-compat/dist/index.mjs";
 import {
   addon as deterministicCompat,
   type WithCompatApi,
-} from "../../addon-compat/dist/index.mjs";
+} from "../../addon-compat/dist/deterministic.mjs";
 import { addon as systemCron } from "../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../addon-eta/dist/index.mjs";
