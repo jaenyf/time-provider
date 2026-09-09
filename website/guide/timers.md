@@ -29,6 +29,17 @@ itself schedule new work (on a manual/sequential clock, that reentrantly
 drains the same heap) without the entry being visible to that nested drain
 while its own fate is still being decided.
 
+## Errors in callbacks
+
+A throwing callback matches whatever the host environment already does with
+an uncaught exception in a native timer: under Node.js it propagates, same
+as a throwing `setTimeout`/`setInterval` callback would; anywhere else it's
+caught, logged via `console.error`, and the batch keeps draining. This holds
+for System and Manual/Sequential runtimes alike — the deterministic runtime
+mirrors the same per-environment behavior rather than adding its own policy.
+Either way, a throwing `recurring` callback doesn't get a next run — it's
+treated the same as returning `false`.
+
 ## Implementation notes
 
 Internally, `once`/`every` insert into a binary heap ordered by
