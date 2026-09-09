@@ -112,6 +112,49 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
 }
 ```
 
+Same idea, closer to a real service - a retry/backoff loop injected with the
+time provider, unaware of which strategy backs it:
+
+```typescript
+// production: a retry/backoff service, injected with the real time provider
+class RetryingOperation {
+  constructor(private readonly timeProvider: ITimeProvider<Date>) {}
+
+  run(operation: () => boolean, onGiveUp: () => void, maxAttempts = 3) {
+    let attempt = 0;
+    this.timeProvider.timers.recurring(() => {
+      attempt++;
+      if (operation()) return false; // succeeded, stop retrying
+      if (attempt >= maxAttempts) {
+        onGiveUp();
+        return false;
+      }
+      return { seconds: attempt }; // back off: 1s, 2s, 3s...
+    });
+  }
+}
+
+new RetryingOperation(timeProvider).run(sendRequest, pageOnCallEngineer);
+```
+
+```typescript
+// test: same service, injected with a manual provider instead - no real waiting
+using timeProvider = createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
+
+let attempts = 0;
+let gaveUp = false;
+new RetryingOperation(timeProvider).run(
+  () => ++attempts === 3, // succeeds on the 3rd try
+  () => (gaveUp = true),
+);
+
+timeProvider.clock.advance({ seconds: 1 }); // 2nd attempt
+timeProvider.clock.advance({ seconds: 2 }); // 3rd attempt, succeeds
+
+expect(attempts).toBe(3);
+expect(gaveUp).toBe(false);
+```
+
 Every time provider exposes the same four-part surface:
 
 ```typescript
