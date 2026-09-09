@@ -5,6 +5,7 @@ import { testManualRuntime } from "./testManualRuntime.ts";
 import { testSequentialRuntime } from "./testSequentialRuntime.ts";
 import { testTimeProvider } from "./testTimeProvider.ts";
 import { testRuntimeBuilders } from "./testRuntimeBuilders.ts";
+import { testCalendarSchemeDst } from "./helpers/testCalendarSchemeDst.ts";
 import { getBuilderFor, getDeterministicBuilderFor } from "./helpers/testHelpers.ts";
 import type { ISystemPlugin, IUtcOnlySystemPlugin } from "@time-provider/core";
 import type {
@@ -34,6 +35,14 @@ export function testAll<TDate>(
     testFixedRuntime(deterministicPlugin, parseTimeToUtc, parseTimeToLocal);
     testManualRuntime(deterministicPlugin, parseTimeToUtc, parseTimeToLocal);
     testSequentialRuntime(deterministicPlugin, parseTimeToUtc, parseTimeToLocal);
+  });
+
+  describe("Calendar", () => {
+    testCalendarSchemeDst(systemPlugin.supportsLocalTime, () =>
+      systemPlugin.supportsLocalTime
+        ? systemPlugin.createSystemRuntime("Europe/Paris").calendarScheme
+        : throwInvalidOperation(),
+    );
   });
 
   describe("RuntimeBuilders", () => {
