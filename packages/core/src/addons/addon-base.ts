@@ -17,8 +17,8 @@ export abstract class AddonBase<TDate> implements IAddon<TDate> {
   }
 
   applyToRuntime(runtime: IRuntime<TDate>): void {
-    this.applyToRuntimeImpl(runtime);
     this.#runtime = runtime;
+    this.applyToRuntimeImpl(runtime);
     this.#initialized = true;
   }
 
