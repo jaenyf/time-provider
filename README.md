@@ -151,7 +151,7 @@ createTimeProvider
   .create();
 ```
 
-> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()`, `localNow()`, `utcNow()`) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run.
+> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()` (or `localNow()`, `utcNow()` on sequential clocks)) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run. Use `timestampNow()` instead when you only need a value to compute with - it never triggers any timer on sequential clocks or advances time.
 
 ## Addons vs. Plugins
 
