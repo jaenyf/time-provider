@@ -48,8 +48,10 @@ expect(retries).toBe(3);
 ```
 
 Manual and sequential clocks run synchronously: a due timer callback fires in-line, as a direct side effect of the call
-that made it due (`advance()`, `localNow()`, `utcNow()`) — not on a real
-event-loop tick. No `await`, no fake-timer install/restore boilerplate.
+that made it due (`advance()` — or `localNow()`, `utcNow()` on sequential
+clocks) — not on a real event-loop tick. Use `timestampNow()` instead when
+you only need a value to compute with; it never triggers this. No `await`,
+no fake-timer install/restore boilerplate.
 
 ## Try it live
 
