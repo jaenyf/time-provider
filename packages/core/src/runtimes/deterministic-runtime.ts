@@ -1,4 +1,4 @@
-import { toInstant, type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
+import { type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
@@ -505,22 +505,12 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
 
   /**
    * The due-heap is already this runtime's authoritative record of every outstanding timer, so
-   * unlike the base class, tracking handles in a separate `Set` here would be pure duplication:
-   * `trackHandle`/`untrackHandle` become no-ops (still wiring up abort-signal disposal), and
-   * disposal sweeps the heap directly instead of that empty `Set`.
+   * unlike the base class, tracking handles in a separate `Set` here would be pure duplication.
+   * disposeTimersHandles() sweeps the heap directly instead; once()/every()/recurring() below wire
+   * up abort-signal disposal inline rather than routing through trackHandle()/untrackHandle() -
+   * measured as a real cost on this hot path (an overridden-to-near-no-op virtual call is still a
+   * virtual call), so those two are unused here and left unoverridden.
    */
-  protected override trackHandle(
-    handle: IScheduledHandle,
-    options?: ITimerOptions,
-  ): IScheduledHandle {
-    BaseRuntime.ensureTimerDisposalOnAbort(handle, options);
-    return handle;
-  }
-
-  protected override untrackHandle(_handle: IScheduledHandle): void {
-    /* nothing to remove from - see trackHandle */
-  }
-
   protected override disposeTimersHandles(): void {
     this.#dueQueue.disposeAll();
   }
@@ -535,7 +525,6 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
       entry.cancelled = true;
       this.#dueQueue.retireEntry(entry);
     }
-    this.untrackHandle(handle);
   }
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
@@ -543,7 +532,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerTimeout(this, now + msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(entry, options);
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
@@ -552,7 +542,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerInterval(this, now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(entry, options);
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
 
   recurring(
@@ -564,7 +555,8 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(this, now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(entry, options);
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
   //#endregion timers
 }
@@ -596,15 +588,14 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   localNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToLocalDateImpl(
-      this.localTimezone,
-      toInstant({ milliseconds: nowTimestamp }),
-    );
+    // Already a validated epoch-milliseconds value (see timestampNowImpl below) - no need to
+    // round-trip it back through toInstant()'s spec-object validation.
+    return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp as EpochMilliseconds);
   }
   utcNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToUtcDateImpl(toInstant({ milliseconds: nowTimestamp }));
+    return this.convertToUtcDateImpl(nowTimestamp as EpochMilliseconds);
   }
   /**
    * Side-effect-free, as required by {@link ITimestampClock.timestampNow}: returns the timestamp
@@ -612,12 +603,12 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
    * {@link localNowImpl}/{@link utcNowImpl}.
    */
   timestampNowImpl(): EpochMilliseconds {
-    return toInstant({
-      milliseconds:
-        this._sequentialTimestamps.length > 0
-          ? this._sequentialTimestamps[this.#sequentialIndex]
-          : 0,
-    });
+    // _sequentialTimestamps entries are already validated epoch-milliseconds values (populated via
+    // convertToEpochTimestampImpl, which itself validates) - no need to re-validate them here by
+    // round-tripping through toInstant()'s spec-object form.
+    return (
+      this._sequentialTimestamps.length > 0 ? this._sequentialTimestamps[this.#sequentialIndex] : 0
+    ) as EpochMilliseconds;
   }
 
   private consumeNextSequentialTimestamp(): number {
