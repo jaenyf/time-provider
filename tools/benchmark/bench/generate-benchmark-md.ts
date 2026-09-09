@@ -29,7 +29,7 @@ function formatEntry(): string {
   const timestamp = new Date().toISOString();
   const commitRef = currentCommitRef();
 
-  const commitLink = `([${commitRef}](${commitRef}))`;
+  const commitLink = `([${commitRef}](https://github.com/jaenyf/time-provider/commit/${commitRef}))`;
   const lines: string[] = [`## ${timestamp} - ${commitLink}`, ""];
 
   for (const [scenario, byAdapter] of byScenario) {

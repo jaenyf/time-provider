@@ -3,7 +3,7 @@
 Auto-generated and triggered by [last release](https://github.com/jaenyf/time-provider/actions/workflows/release-please.yml).
 <!-- benchmark-history:start -->
 
-## 2026-08-10T15:36:38.670Z - ([4c87692](4c87692))
+## 2026-08-10T15:36:38.670Z - ([4c87692](https://github.com/jaenyf/time-provider/commit/4c87692))
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -78,7 +78,7 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 6.80x faster than jest fake-timers (modern)
 - 6.94x faster than sinon fake-timers
 
-## 2026-08-01T10:30:35.885Z - ([83a25f0](83a25f0))
+## 2026-08-01T10:30:35.885Z - ([83a25f0](https://github.com/jaenyf/time-provider/commit/83a25f0))
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -153,7 +153,7 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 6.46x faster than jest fake-timers (modern)
 - 6.56x faster than sinon fake-timers
 
-## 2026-08-01T10:05:36.991Z - ([8b09e42](8b09e42))
+## 2026-08-01T10:05:36.991Z - ([8b09e42](https://github.com/jaenyf/time-provider/commit/8b09e42))
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -228,7 +228,7 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 6.76x faster than jest fake-timers (modern)
 - 6.87x faster than sinon fake-timers
 
-## 2026-07-25T20:16:36.601Z - ([6a2a3d5](6a2a3d5))
+## 2026-07-25T20:16:36.601Z - ([6a2a3d5](https://github.com/jaenyf/time-provider/commit/6a2a3d5))
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
