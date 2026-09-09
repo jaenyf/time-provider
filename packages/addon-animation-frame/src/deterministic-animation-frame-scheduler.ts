@@ -33,17 +33,12 @@ export class DeterministicAnimationFrameScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    const facade: { scheduleFrame: (callback: () => void) => IScheduledHandle } = {
-      scheduleFrame: this.scheduleFrame.bind(this),
-    };
-    Object.defineProperty(facade, "hostFramesRate", {
-      enumerable: true,
-      get: () => this.hostFramesRate,
-      set: (value: number) => {
-        this.hostFramesRate = value;
-      },
-    });
-    AddonHelper.extendRuntimeWithProperty(runtime, "animation", facade, this);
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "animation",
+      { scheduleFrame: this.scheduleFrame.bind(this) },
+      this,
+    );
   }
 
   /**
