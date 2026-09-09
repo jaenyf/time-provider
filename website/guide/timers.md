@@ -20,6 +20,16 @@ This is what makes manual/sequential tests deterministic without `await`,
 call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
+For example, jumping 5 seconds past a 1-second `every` fires it 5 times,
+synchronously, before `advance()` returns:
+
+```ts
+let ticks = 0;
+timeProvider.timers.every({ seconds: 1 }, () => ticks++);
+timeProvider.clock.advance({ seconds: 5 });
+ticks; // 5
+```
+
 `recurring` (see [ITimers](/api/timers)) shares a heap with
 `once`/`every`, so it fires in the same true chronological order
 as the other two. A due `recurring` entry is pulled out of the heap
