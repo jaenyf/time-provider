@@ -12,7 +12,6 @@ import type {
   ITimerOptions,
   EpochMilliseconds,
 } from "../types/types.ts";
-import type { ScheduledHandle } from "./scheduled-handle.ts";
 import { type IDurationSpec } from "../helpers/branded-types.ts";
 import type { IAddon } from "../deterministic.ts";
 
@@ -122,7 +121,13 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#abortControler.signal;
   }
 
-  private disposeTimersHandles(): void {
+  /**
+   * Disposes every handle this runtime is still tracking as outstanding. Overridable: a subclass
+   * that already has its own authoritative record of outstanding handles (e.g. the deterministic
+   * runtime's due-heap) can dispose from that instead, skipping this base's `#timersHandles` set
+   * bookkeeping entirely - see {@link trackHandle}/{@link untrackHandle}.
+   */
+  protected disposeTimersHandles(): void {
     for (const handle of this.#timersHandles) {
       handle.dispose();
     }
@@ -180,7 +185,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     }
   }
 
-  abstract clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
+  abstract clearTimer(handle: IScheduledHandle): void;
   abstract once(
     delay: IDurationSpec,
     callback: () => void,
