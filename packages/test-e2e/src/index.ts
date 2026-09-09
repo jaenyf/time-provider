@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { createTimeProvider } from "../../core/dist/deterministic.mjs";
 import { plugin } from "../../plugin-native/dist/deterministic.mjs";
+import { addon as addonAnimationFrame } from "../../addon-animation-frame/dist/deterministic.mjs";
 import { addon as addonCron } from "../../addon-cron/dist/deterministic.mjs";
 import { addon as addonEta } from "../../addon-eta/dist/deterministic.mjs";
 
@@ -11,7 +12,14 @@ import { addon as addonEta } from "../../addon-eta/dist/deterministic.mjs";
 describe("e2e", () => {
   describe("general", () => {
     test("basic assertion", () => {
-      using tp = createTimeProvider.for(plugin).use(addonCron).use(addonEta).asManual().create();
+      using tp = createTimeProvider
+        .for(plugin)
+        .use(addonAnimationFrame)
+        .withHostFramesRate(42)
+        .use(addonCron)
+        .use(addonEta)
+        .asManual()
+        .create();
       expect(tp.clock.utcNow()).not.toBeDefined();
     });
   });
