@@ -312,8 +312,8 @@
             </div>
           </div>
           <p class="pg-note">
-            <code>requestAnimationFrame</code> fires once, whenever a frame becomes due for the
-            current strategy — asynchronously on <strong>system</strong>, in-line on
+            <code>scheduleFrame</code> fires once, whenever a frame becomes due for the current
+            strategy — asynchronously on <strong>system</strong>, in-line on
             <strong>manual</strong>/<strong>sequential</strong>, never on <strong>fixed</strong>.
           </p>
         </div>
@@ -1427,7 +1427,7 @@ function requestFrame() {
   const label = frameLabel.value.trim() || "frame";
   const id = nextId++;
   try {
-    const handle = timeProvider.value.animation.requestAnimationFrame(() => {
+    const handle = timeProvider.value.animation.scheduleFrame(() => {
       pushLog("raf", `"${label}" frame fired`);
       dropTimerRow(id);
     });
