@@ -20,7 +20,7 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.0",
     "@js-temporal/polyfill": "~0.5.1",
-    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
