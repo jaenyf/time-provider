@@ -1,17 +1,17 @@
 # Time-Provider
 
-[![npm](https://img.shields.io/npm/v/@time-provider%2Fcore.svg)](https://www.npmjs.com/package/@time-provider/core)
-[![types](https://img.shields.io/npm/types/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core?activeTab=code)
-[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github)](https://github.com/jaenyf/time-provider)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fcore.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core)
+[![types](https://img.shields.io/npm/types/@time-provider/core?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core?activeTab=code)
+[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=86400)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
-[![tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-tests-count-badge.json)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
-[![npm downloads](https://img.shields.io/npm/dm/@time-provider/core)](https://www.npmjs.com/package/@time-provider/core)
-[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
-[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core)](https://bundlephobia.com/package/%40time-provider%2Fcore)
-[![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core)](https://bundlephobia.com/package/%40time-provider%2Fcore)
+[![tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-tests-count-badge.json&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
+[![npm downloads](https://img.shields.io/npm/dm/@time-provider/core?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
+[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core?cacheSeconds=86400)](https://bundlephobia.com/package/%40time-provider%2Fcore)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core?cacheSeconds=86400)](https://bundlephobia.com/package/%40time-provider%2Fcore)
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
-[![license](https://img.shields.io/npm/l/@time-provider/core)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/@time-provider/core?cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
 <p align="center">
   <picture>
