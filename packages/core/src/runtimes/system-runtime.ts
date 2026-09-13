@@ -33,22 +33,23 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     super(localTimezone, converter, new SystemPerformance());
   }
 
-  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
-  clearTimer<TNativeHandle extends ReturnTypeOfTimer>(
-    handle: ScheduledHandle<TDate, TNativeHandle>,
-  ): void {
-    switch (handle.kind) {
+  clearTimer(handle: IScheduledHandle): void {
+    // Only this class's once()/every()/recurring() ever construct a handle for a system runtime,
+    // and they always hand back a ScheduledHandle wrapping a native setTimeout/setInterval id -
+    // safe to assume that shape here.
+    const scheduledHandle = handle as ScheduledHandle<TDate, ReturnTypeOfTimer>;
+    switch (scheduledHandle.kind) {
       case SCHEDULED_TIMER_KIND_INTERVAL:
-        clearInterval(handle.nativeHandle);
+        clearInterval(scheduledHandle.nativeHandle);
         break;
       case SCHEDULED_TIMER_KIND_TIMEOUT:
       case SCHEDULED_TIMER_KIND_RECURRING:
-        clearTimeout(handle.nativeHandle);
+        clearTimeout(scheduledHandle.nativeHandle);
         break;
       default:
         throw new Error("Invalid operation");
     }
-    this.untrackHandle(handle);
+    this.untrackHandle(scheduledHandle);
   }
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions) {

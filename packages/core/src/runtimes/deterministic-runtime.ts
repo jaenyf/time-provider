@@ -1,4 +1,4 @@
-import { toInstant, type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
+import { type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../environment.ts";
 import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
 import type {
@@ -6,6 +6,7 @@ import type {
   IAdvanceOptions,
   IManualClock,
   IManualRuntime,
+  IRuntime,
   ITimeConverter,
   ScheduledHandleKind,
   TimezoneDefinition,
@@ -19,9 +20,15 @@ import {
   SCHEDULED_TIMER_KIND_TIMEOUT,
 } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
-import { ScheduledHandle } from "./scheduled-handle.ts";
 
-interface BaseDueEntry {
+/**
+ * A pending timer entry in a {@link DueHeap} - also the {@link IScheduledHandle} handed back to
+ * callers, so scheduling a timer only ever allocates this one object (a separate heap entry plus
+ * a wrapping handle would be two). One class for all three timer kinds rather than a kind-specific
+ * subclass each: measured markedly faster here, since a single shared shape keeps the heap's
+ * `_siftUp`/`_siftDown`/`drainDue` monomorphic across kinds instead of polymorphic.
+ */
+class DueEntry<TDate> implements IScheduledHandle {
   runAt: number;
   seq: number;
   /**
@@ -31,38 +38,92 @@ interface BaseDueEntry {
   heapIndex: number;
   /** Meaningful only for TIMER_KIND_INTERVAL; 0 on the other kinds. */
   delay: number;
-  /** Meaningful only for TIMER_KIND_RECURRING; false on the other kinds. */
+  /** Meaningful only for TIMER_KIND_RECURRING; unused on the other kinds. */
   cancelled: boolean;
+  isDisposed: boolean;
+  readonly kind: ScheduledHandleKind;
   /**
    * The heap instance owning this entry. Guards against a handle from one runtime being used to
    * clear an entry in a different runtime's heap.
    */
-  readonly owner: DueHeap;
+  readonly owner: DueHeap<TDate>;
+  /** Return value decides the next run for TIMER_KIND_RECURRING; ignored on the other kinds. */
+  callback: (() => void) | (() => IDurationSpec | false);
+  /**
+   * Links in the heap's intrusive "every entry ever created, until individually disposed" list -
+   * separate from the heap's own array (a fired or cancelled entry leaves that array, but must
+   * stay reachable here so the runtime's own dispose() can still mark it disposed later). A plain
+   * `Set` measured roughly twice as slow here at this call volume.
+   */
+  _livePrev: DueEntry<TDate> | undefined;
+  _liveNext: DueEntry<TDate> | undefined;
+  readonly #runtime: IRuntime<TDate>;
+  #abortController?: AbortController;
+
+  constructor(
+    kind: ScheduledHandleKind,
+    runtime: IRuntime<TDate>,
+    owner: DueHeap<TDate>,
+    runAt: number,
+    seq: number,
+    delay: number,
+    callback: (() => void) | (() => IDurationSpec | false),
+  ) {
+    this.kind = kind;
+    this.#runtime = runtime;
+    this.owner = owner;
+    this.runAt = runAt;
+    this.seq = seq;
+    this.heapIndex = -1;
+    this.delay = delay;
+    this.cancelled = false;
+    this.callback = callback;
+    this.isDisposed = false;
+    this._livePrev = undefined;
+    this._liveNext = undefined;
+  }
+
+  dispose(): void {
+    if (this.isDisposed) return;
+    if (this.#abortController !== undefined) {
+      this.#abortController.abort("Timer handle is being disposed");
+    }
+    this.#runtime.clearTimer(this);
+    this.isDisposed = true;
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  get signal(): AbortSignal {
+    if (this.isDisposed) {
+      return BaseRuntime.ABORTED_SIGNAL;
+    }
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      this.#abortController.signal.addEventListener("abort", () => {
+        this.dispose();
+      });
+    }
+    return this.#abortController.signal;
+  }
 }
 
-interface TimeoutEntry extends BaseDueEntry {
-  readonly kind: typeof SCHEDULED_TIMER_KIND_TIMEOUT;
-  callback: () => void;
-}
-
-interface IntervalEntry extends BaseDueEntry {
-  readonly kind: typeof SCHEDULED_TIMER_KIND_INTERVAL;
-  callback: () => void;
-}
-
-interface RecurringEntry extends BaseDueEntry {
-  readonly kind: typeof SCHEDULED_TIMER_KIND_RECURRING;
-  /** Return value decides the next run; `false` stops the schedule. */
-  callback: () => IDurationSpec | false;
-}
-
-type DueEntry = TimeoutEntry | IntervalEntry | RecurringEntry;
+type AnyDueEntry<TDate> = DueEntry<TDate>;
 
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
-class DueHeap {
-  private _entries: DueEntry[] = [];
+class DueHeap<TDate> {
+  private _entries: AnyDueEntry<TDate>[] = [];
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
+  /**
+   * Intrusive doubly-linked list of every entry this heap has ever created, until it's
+   * individually disposed - a fired or cancelled entry leaves `_entries` (the binary heap array)
+   * but stays linked here, since {@link disposeAll} must still be able to reach and dispose it.
+   */
+  private _liveHead: AnyDueEntry<TDate> | undefined;
+  private _liveTail: AnyDueEntry<TDate> | undefined;
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -72,58 +133,119 @@ class DueHeap {
     return this._entries.length > 0 ? this._entries[0].runAt : undefined;
   }
 
-  registerTimeout(runAt: number, callback: () => void): TimeoutEntry {
-    const entry: TimeoutEntry = {
+  private _linkLive(entry: AnyDueEntry<TDate>): void {
+    entry._livePrev = this._liveTail;
+    if (this._liveTail !== undefined) {
+      this._liveTail._liveNext = entry;
+    } else {
+      this._liveHead = entry;
+    }
+    this._liveTail = entry;
+  }
+
+  private _unlinkLive(entry: AnyDueEntry<TDate>): void {
+    if (entry._livePrev !== undefined) {
+      entry._livePrev._liveNext = entry._liveNext;
+    } else {
+      this._liveHead = entry._liveNext;
+    }
+    if (entry._liveNext !== undefined) {
+      entry._liveNext._livePrev = entry._livePrev;
+    } else {
+      this._liveTail = entry._livePrev;
+    }
+    entry._livePrev = undefined;
+    entry._liveNext = undefined;
+  }
+
+  registerTimeout(runtime: IRuntime<TDate>, runAt: number, callback: () => void): DueEntry<TDate> {
+    const entry = new DueEntry(
+      SCHEDULED_TIMER_KIND_TIMEOUT,
+      runtime,
+      this,
       runAt,
-      seq: this._nextSeq++,
-      heapIndex: -1,
-      delay: 0,
-      cancelled: false,
-      kind: SCHEDULED_TIMER_KIND_TIMEOUT,
+      this._nextSeq++,
+      0,
       callback,
-      owner: this,
-    };
+    );
     this._insert(entry);
+    this._linkLive(entry);
     return entry;
   }
 
-  registerInterval(runAt: number, delay: number, callback: () => void): IntervalEntry {
-    const entry: IntervalEntry = {
+  registerInterval(
+    runtime: IRuntime<TDate>,
+    runAt: number,
+    delay: number,
+    callback: () => void,
+  ): DueEntry<TDate> {
+    const entry = new DueEntry(
+      SCHEDULED_TIMER_KIND_INTERVAL,
+      runtime,
+      this,
       runAt,
-      seq: this._nextSeq++,
-      heapIndex: -1,
+      this._nextSeq++,
       delay,
-      cancelled: false,
-      kind: SCHEDULED_TIMER_KIND_INTERVAL,
       callback,
-      owner: this,
-    };
+    );
     this._insert(entry);
+    this._linkLive(entry);
     return entry;
   }
 
-  registerRecurring(runAt: number, callback: () => IDurationSpec | false): RecurringEntry {
-    const entry: RecurringEntry = {
+  registerRecurring(
+    runtime: IRuntime<TDate>,
+    runAt: number,
+    callback: () => IDurationSpec | false,
+  ): DueEntry<TDate> {
+    const entry = new DueEntry(
+      SCHEDULED_TIMER_KIND_RECURRING,
+      runtime,
+      this,
       runAt,
-      seq: this._nextSeq++,
-      heapIndex: -1,
-      delay: 0,
-      cancelled: false,
-      kind: SCHEDULED_TIMER_KIND_RECURRING,
+      this._nextSeq++,
+      0,
       callback,
-      owner: this,
-    };
+    );
     this._insert(entry);
+    this._linkLive(entry);
     return entry;
   }
 
-  /** Removes an arbitrary entry in O(log n) using its tracked heapIndex; no-op if already removed. */
-  remove(entry: DueEntry): void {
+  /**
+   * Removes `entry` from the heap array if still pending, and from the live list - called once
+   * per entry, from its own (idempotency-guarded) `dispose()`.
+   */
+  retireEntry(entry: AnyDueEntry<TDate>): void {
     if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
+    this._unlinkLive(entry);
+  }
+
+  /**
+   * Disposes every live entry (heap-pending or already-fired-but-not-yet-individually-disposed)
+   * and empties both the heap array and the live list. Detaches everything up front so each
+   * entry's own `dispose()` - which reenters `retireEntry()` - finds nothing left to unlink
+   * rather than mutating the structures this loop is walking.
+   */
+  disposeAll(): void {
+    for (const entry of this._entries) {
+      entry.heapIndex = -1;
+    }
+    this._entries = [];
+    let entry = this._liveHead;
+    this._liveHead = undefined;
+    this._liveTail = undefined;
+    while (entry !== undefined) {
+      const next = entry._liveNext;
+      entry._livePrev = undefined;
+      entry._liveNext = undefined;
+      entry.dispose();
+      entry = next;
+    }
   }
 
   /** Appends `entry` at the end of the heap and sifts it up into place. */
-  private _insert(entry: DueEntry): void {
+  private _insert(entry: AnyDueEntry<TDate>): void {
     const index = this._entries.length;
     this._entries.push(entry);
     this._siftUp(entry, index);
@@ -158,7 +280,7 @@ class DueHeap {
   }
 
   /** Hole-algorithm siftUp: shifts ancestors down one slot at a time, then seats `moving` once. */
-  private _siftUp(moving: DueEntry, index: number): void {
+  private _siftUp(moving: AnyDueEntry<TDate>, index: number): void {
     const entries = this._entries;
     const movingRunAt = moving.runAt;
     const movingSeq = moving.seq;
@@ -181,7 +303,7 @@ class DueHeap {
   }
 
   /** Hole-algorithm siftDown: shifts the smaller child up one slot at a time, then seats `moving` once. */
-  private _siftDown(moving: DueEntry, index: number): void {
+  private _siftDown(moving: AnyDueEntry<TDate>, index: number): void {
     const entries = this._entries;
     const length = entries.length;
     const movingRunAt = moving.runAt;
@@ -298,13 +420,15 @@ class DueHeap {
           }
           //#endregion inlining of DueHeap.pop
           const previousRunAt = root.runAt;
+          // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
+          const recurringCallback = root.callback as () => IDurationSpec | false;
           let next: IDurationSpec | false;
 
           if (rethrowTimersErrors) {
-            next = root.callback();
+            next = recurringCallback();
           } else {
             try {
-              next = root.callback();
+              next = recurringCallback();
             } catch (error) {
               console.error(error);
               next = false;
@@ -330,12 +454,13 @@ class DueHeap {
  * Base class for all deterministic runtime classes.
  */
 export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
-  #dueQueue: DueHeap;
+  #dueQueue: DueHeap<TDate>;
+  #dueDrainingDisabled = false;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     const performance = new DeterministicPerformance<TDate>();
     super(localTimezone, converter, performance);
-    this.#dueQueue = new DueHeap();
+    this.#dueQueue = new DueHeap<TDate>();
     performance.initialize(this);
   }
 
@@ -366,17 +491,18 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   }
 
   //#region heap management
-  private static clearDueHandle(handle: unknown, queue: DueHeap, kind: ScheduledHandleKind): void {
-    if (handle === undefined || handle === null) return;
-    const entry = handle as DueEntry;
-    if (entry.owner !== queue || entry.kind !== kind) return;
-    entry.cancelled = true;
-    queue.remove(entry);
+  /**
+   * Permanently stops {@link mayRunDueCallbacks} from draining - called once, from
+   * {@link BaseFixedRuntime}'s constructor, instead of overriding that method: an
+   * overridden-to-near-no-op virtual call is still a virtual call, and this hot path is called on
+   * every timer registration and every clock read.
+   */
+  protected disableDueDraining(): void {
+    this.#dueDrainingDisabled = true;
   }
 
-  //#endregion heap management
-
   protected mayRunDueCallbacks(nowTimestamp: number): void {
+    if (this.#dueDrainingDisabled) return;
     this.#dueQueue.drainDue(nowTimestamp);
   }
 
@@ -385,33 +511,43 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     return this.#dueQueue.peekRunAt();
   }
 
+  /**
+   * The due-heap is already this runtime's authoritative record of every outstanding timer, so
+   * unlike the base class, tracking handles in a separate Set here would be pure duplication.
+   */
+  protected override disposeTimersHandles(): void {
+    this.#dueQueue.disposeAll();
+  }
+  //#endregion heap management
+
   //#region timers
-  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void {
-    BaseDeterministicRuntime.clearDueHandle(handle.nativeHandle, this.#dueQueue, handle.kind);
-    this.untrackHandle(handle);
+  clearTimer(handle: IScheduledHandle): void {
+    // Only this class's own once()/every()/recurring() ever construct a handle for this runtime,
+    // and they always hand back the DueEntry itself - safe to assume that shape here.
+    const entry = handle as AnyDueEntry<TDate>;
+    if (entry.owner === this.#dueQueue) {
+      entry.cancelled = true;
+      this.#dueQueue.retireEntry(entry);
+    }
   }
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
+    const entry = this.#dueQueue.registerTimeout(this, now + msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, entry),
-      options,
-    );
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
+    const entry = this.#dueQueue.registerInterval(this, now + msDelay, msDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, entry),
-      options,
-    );
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
 
   recurring(
@@ -421,12 +557,10 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   ): IScheduledHandle {
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.timestampNow();
-    const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
+    const entry = this.#dueQueue.registerRecurring(this, now + msInitialDelay, callback);
     this.mayRunDueCallbacks(now);
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, entry),
-      options,
-    );
+    if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
+    return entry;
   }
   //#endregion timers
 }
@@ -458,15 +592,14 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   localNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToLocalDateImpl(
-      this.localTimezone,
-      toInstant({ milliseconds: nowTimestamp }),
-    );
+    // Already a validated epoch-milliseconds value (see timestampNowImpl below) - no need to
+    // round-trip it back through toInstant()'s spec-object validation.
+    return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp as EpochMilliseconds);
   }
   utcNowImpl(): TDate {
     const nowTimestamp = this.consumeNextSequentialTimestamp();
     this.mayRunDueCallbacks(nowTimestamp);
-    return this.convertToUtcDateImpl(toInstant({ milliseconds: nowTimestamp }));
+    return this.convertToUtcDateImpl(nowTimestamp as EpochMilliseconds);
   }
   /**
    * Side-effect-free, as required by {@link ITimestampClock.timestampNow}: returns the timestamp
@@ -474,12 +607,12 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
    * {@link localNowImpl}/{@link utcNowImpl}.
    */
   timestampNowImpl(): EpochMilliseconds {
-    return toInstant({
-      milliseconds:
-        this._sequentialTimestamps.length > 0
-          ? this._sequentialTimestamps[this.#sequentialIndex]
-          : 0,
-    });
+    // _sequentialTimestamps entries are already validated epoch-milliseconds values (populated via
+    // convertToEpochTimestampImpl, which itself validates) - no need to re-validate them here by
+    // round-tripping through toInstant()'s spec-object form.
+    return (
+      this._sequentialTimestamps.length > 0 ? this._sequentialTimestamps[this.#sequentialIndex] : 0
+    ) as EpochMilliseconds;
   }
 
   private consumeNextSequentialTimestamp(): number {
@@ -505,14 +638,8 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, [fixedTime], converter);
-  }
-
-  /**
-   * Never runs due timer callbacks: on a fixed clock, time never advances, so scheduled callbacks are
-   * never due. See {@link ITimers}.
-   */
-  protected override mayRunDueCallbacks(_nowTimestamp: number): void {
-    /* time is frozen */
+    // Time never advances on a fixed clock, so scheduled callbacks are never due - see ITimers.
+    this.disableDueDraining();
   }
 }
 
