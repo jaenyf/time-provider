@@ -110,11 +110,9 @@ class DueEntry<TDate> implements IScheduledHandle {
   }
 }
 
-type AnyDueEntry<TDate> = DueEntry<TDate>;
-
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap<TDate> {
-  private _entries: AnyDueEntry<TDate>[] = [];
+  private _entries: DueEntry<TDate>[] = [];
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
   /**
@@ -122,8 +120,8 @@ class DueHeap<TDate> {
    * individually disposed - a fired or cancelled entry leaves `_entries` (the binary heap array)
    * but stays linked here, since {@link disposeAll} must still be able to reach and dispose it.
    */
-  private _liveHead: AnyDueEntry<TDate> | undefined;
-  private _liveTail: AnyDueEntry<TDate> | undefined;
+  private _liveHead: DueEntry<TDate> | undefined;
+  private _liveTail: DueEntry<TDate> | undefined;
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -133,7 +131,7 @@ class DueHeap<TDate> {
     return this._entries.length > 0 ? this._entries[0].runAt : undefined;
   }
 
-  private _linkLive(entry: AnyDueEntry<TDate>): void {
+  private _linkLive(entry: DueEntry<TDate>): void {
     entry._livePrev = this._liveTail;
     if (this._liveTail !== undefined) {
       this._liveTail._liveNext = entry;
@@ -143,7 +141,7 @@ class DueHeap<TDate> {
     this._liveTail = entry;
   }
 
-  private _unlinkLive(entry: AnyDueEntry<TDate>): void {
+  private _unlinkLive(entry: DueEntry<TDate>): void {
     if (entry._livePrev !== undefined) {
       entry._livePrev._liveNext = entry._liveNext;
     } else {
@@ -216,7 +214,7 @@ class DueHeap<TDate> {
    * Removes `entry` from the heap array if still pending, and from the live list - called once
    * per entry, from its own (idempotency-guarded) `dispose()`.
    */
-  retireEntry(entry: AnyDueEntry<TDate>): void {
+  retireEntry(entry: DueEntry<TDate>): void {
     if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
     this._unlinkLive(entry);
   }
@@ -245,7 +243,7 @@ class DueHeap<TDate> {
   }
 
   /** Appends `entry` at the end of the heap and sifts it up into place. */
-  private _insert(entry: AnyDueEntry<TDate>): void {
+  private _insert(entry: DueEntry<TDate>): void {
     const index = this._entries.length;
     this._entries.push(entry);
     this._siftUp(entry, index);
@@ -280,7 +278,7 @@ class DueHeap<TDate> {
   }
 
   /** Hole-algorithm siftUp: shifts ancestors down one slot at a time, then seats `moving` once. */
-  private _siftUp(moving: AnyDueEntry<TDate>, index: number): void {
+  private _siftUp(moving: DueEntry<TDate>, index: number): void {
     const entries = this._entries;
     const movingRunAt = moving.runAt;
     const movingSeq = moving.seq;
@@ -303,7 +301,7 @@ class DueHeap<TDate> {
   }
 
   /** Hole-algorithm siftDown: shifts the smaller child up one slot at a time, then seats `moving` once. */
-  private _siftDown(moving: AnyDueEntry<TDate>, index: number): void {
+  private _siftDown(moving: DueEntry<TDate>, index: number): void {
     const entries = this._entries;
     const length = entries.length;
     const movingRunAt = moving.runAt;
@@ -524,7 +522,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   clearTimer(handle: IScheduledHandle): void {
     // Only this class's own once()/every()/recurring() ever construct a handle for this runtime,
     // and they always hand back the DueEntry itself - safe to assume that shape here.
-    const entry = handle as AnyDueEntry<TDate>;
+    const entry = handle as DueEntry<TDate>;
     if (entry.owner === this.#dueQueue) {
       entry.cancelled = true;
       this.#dueQueue.retireEntry(entry);
