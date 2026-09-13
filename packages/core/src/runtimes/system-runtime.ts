@@ -57,10 +57,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     if (msDelay < 0) {
       msDelay = 0 as DurationMilliseconds;
     }
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
-      options,
-    );
+    let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
+      undefined;
+    const nativeHandle = setTimeout(() => {
+      try {
+        callback();
+      } finally {
+        // A one-shot timer has nothing left to dispose once its callback has run.
+        handle?.dispose();
+      }
+    }, msDelay);
+    handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, nativeHandle);
+    return this.trackHandle(handle, options);
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
@@ -89,9 +97,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
         if (handle !== undefined && handle.isDisposed) {
           return false;
         }
-        const next = callback();
+        let next: IDurationSpec | false;
+        try {
+          next = callback();
+        } catch (error) {
+          // Nothing left to dispose once the schedule has stopped, including by throwing.
+          handle?.dispose();
+          throw error;
+        }
         if (next !== false) {
           arm(toDuration(next));
+        } else {
+          handle?.dispose();
         }
       }, msInitialDelay);
       if (handle !== undefined) {
