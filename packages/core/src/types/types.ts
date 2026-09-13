@@ -488,6 +488,10 @@ export type ScheduledHandleKind =
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
+ *
+ * A handle with nothing left to run becomes disposed on its own: a {@link ITimers.once} handle
+ * once its callback has executed, and a {@link ITimers.recurring} handle once its callback
+ * returns `false`. Calling `dispose()` yourself afterward is a harmless no-op.
  */
 export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}
 

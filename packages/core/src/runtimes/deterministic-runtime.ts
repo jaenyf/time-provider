@@ -383,6 +383,8 @@ class DueHeap<TDate> {
               console.error(error);
             }
           }
+          // A one-shot timer has nothing left to dispose once its callback has run.
+          root.dispose();
 
           break;
         }
@@ -440,10 +442,32 @@ class DueHeap<TDate> {
             let nextMs = toDuration(next);
             root.runAt = previousRunAt + (nextMs < 1 ? 1 : nextMs);
             this._insert(root);
+          } else if (!root.cancelled) {
+            // Exhausted naturally (returned false): nothing left to dispose. A concurrent
+            // dispose() during the callback already did this itself (root.cancelled would be true).
+            root.dispose();
           }
           break;
         }
       }
+    }
+  }
+
+  /**
+   * Drains due entries up to `targetTimestamp`, calling `setCurrentTimestamp` with each due
+   * entry's own `runAt` right before firing it - a self-rescheduling callback must see the clock
+   * at *its own* due time, not already at the final target, or its new entry always lands past
+   * the target and the whole chain fires only once, however large the gap. Kept as its own tight
+   * loop here rather than in the caller: one method call per due batch instead of bouncing back
+   * out to the runtime on every single entry measurably cut per-tick overhead for advance()-heavy
+   * workloads (many ticks in one call).
+   */
+  drainDueAdvancing(targetTimestamp: number, setCurrentTimestamp: (runAt: number) => void): void {
+    for (;;) {
+      const nextDue = this.peekRunAt();
+      if (nextDue === undefined || nextDue > targetTimestamp) break;
+      setCurrentTimestamp(nextDue);
+      this.drainDue(nextDue);
     }
   }
 }
@@ -507,6 +531,15 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
   /** The `runAt` of the earliest pending due entry, or `undefined` if none is scheduled. */
   protected peekNextDueTimestamp(): number | undefined {
     return this.#dueQueue.peekRunAt();
+  }
+
+  /** See {@link DueHeap.drainDueAdvancing}. */
+  protected drainDueAdvancing(
+    targetTimestamp: number,
+    setCurrentTimestamp: (runAt: number) => void,
+  ): void {
+    if (this.#dueDrainingDisabled) return;
+    this.#dueQueue.drainDueAdvancing(targetTimestamp, setCurrentTimestamp);
   }
 
   /**
@@ -712,12 +745,9 @@ export abstract class BaseManualRuntime<TDate>
     // setTimeout) reads timestampNow() when it re-registers, so it must see the clock at *its
     // own* due time, not already at the final target - otherwise its new entry always lands
     // past the target and the whole chain fires only once per advance(), however large the gap.
-    let nextDue = this.peekNextDueTimestamp();
-    while (nextDue !== undefined && nextDue <= targetTimestamp) {
-      this._sequentialTimestamps[0] = nextDue;
-      this.mayRunDueCallbacks(nextDue);
-      nextDue = this.peekNextDueTimestamp();
-    }
+    this.drainDueAdvancing(targetTimestamp, (runAt) => {
+      this._sequentialTimestamps[0] = runAt;
+    });
 
     this.setDeterminedTime(time);
     return this;
