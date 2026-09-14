@@ -141,6 +141,15 @@ class MicrotaskQueue {
   }
 
   /**
+   * Discards every callback still queued, without running them. Used when the owning runtime is
+   * disposed: unlike a due timer (cancelled via its own handle), a queued microtask has no handle
+   * of its own to dispose, so this is the only way to keep it from running on a later checkpoint.
+   */
+  clear(): void {
+    this._queue.length = 0;
+  }
+
+  /**
    * Runs every queued callback in order, until the queue is empty - a microtask queueing another
    * microtask is picked up by the same checkpoint, exactly as the host does. A callback that
    * throws is handled per {@link shouldRethrowTimerErrors}; either way the callbacks that already
@@ -662,9 +671,14 @@ export abstract class BaseDeterministicRuntime<TDate>
   /**
    * The due-heap is already this runtime's authoritative record of every outstanding timer, so
    * unlike the base class, tracking handles in a separate Set here would be pure duplication.
+   * Also discards any still-queued microtasks: on a deterministic runtime they only ever run
+   * through this runtime's own checkpoint, so once disposed they have no way left to run - unlike
+   * a system runtime, where a queued microtask already lives on the host's own queue (see
+   * {@link BaseSystemRuntime.queueMicrotask}) and runs regardless of disposal.
    */
   protected override disposeTimersHandles(): void {
     this.#dueQueue.disposeAll();
+    this.#microtasks.clear();
   }
   //#endregion heap management
 

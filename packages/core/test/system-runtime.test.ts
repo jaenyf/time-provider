@@ -189,5 +189,16 @@ describe("BaseSystemRuntime", () => {
       await Promise.resolve();
       expect(log).toEqual(["promise", "microtask"]);
     });
+
+    test("still runs even after the runtime that queued it is disposed", async () => {
+      // Unlike a deterministic runtime, dispose() has no way to reach into the host's own
+      // microtask queue and cancel this - see BaseSystemRuntime.queueMicrotask.
+      let called = false;
+      sut.queueMicrotask(() => (called = true));
+      sut.dispose();
+
+      await Promise.resolve();
+      expect(called).toBe(true);
+    });
   });
 });

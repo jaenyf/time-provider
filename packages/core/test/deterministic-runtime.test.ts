@@ -496,3 +496,30 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     expect(b.isDisposed).toBe(true);
   });
 });
+
+describe("BaseManualRuntime microtasks and dispose", () => {
+  test("disposing the runtime discards still-queued microtasks", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.timers.queueMicrotask(() => (called = true));
+
+    sut.dispose();
+    sut.timers.drainMicrotasks();
+
+    expect(called).toBe(false);
+  });
+
+  test("a microtask that disposes its own runtime doesn't crash the still-running checkpoint", () => {
+    const sut = new FakeManualRuntime(0);
+    const log: string[] = [];
+    sut.timers.queueMicrotask(() => {
+      log.push("m1");
+      sut.dispose();
+    });
+    sut.timers.queueMicrotask(() => log.push("m2"));
+
+    expect(() => sut.timers.drainMicrotasks()).not.toThrow();
+    // m1 disposed the runtime mid-checkpoint, clearing the queue before m2 got its turn.
+    expect(log).toEqual(["m1"]);
+  });
+});

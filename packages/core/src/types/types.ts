@@ -558,6 +558,11 @@ export interface ITimers {
    * A microtask may itself queue further microtasks, and a checkpoint keeps going until the queue
    * is empty. A microtask that unconditionally re-queues itself therefore never lets the
    * checkpoint finish.
+   *
+   * Disposing the runtime clears a deterministic one's still-queued microtasks along with its
+   * timers, so none of them run afterward. A system runtime cannot do the same: `callback` is
+   * already sitting on the host's own microtask queue, which has no notion of this runtime, so it
+   * still runs on schedule even after the Time-Provider it was queued through is disposed.
    * @param callback the function to run at the next checkpoint.
    */
   queueMicrotask(callback: () => void): void;
