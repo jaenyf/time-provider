@@ -4,6 +4,145 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-14
+
+### @time-provider/addon-animation-frame 0.3.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+
+### Bug Fixes
+
+* **core:** issue[#147](https://github.com/jaenyf/time-provider/issues/147) ([#149](https://github.com/jaenyf/time-provider/issues/149)) ([47a2c0a](https://github.com/jaenyf/time-provider/commit/47a2c0a260f35a879dde3185a7f6daa2ded96512))
+
+### @time-provider/addon-compat 0.1.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/addon-cron 0.2.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/addon-eta 0.2.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/core 2.0.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* makes runtimes, timer handles and addons disposable or abortable ([#152](https://github.com/jaenyf/time-provider/issues/152)) ([2ead7d7](https://github.com/jaenyf/time-provider/commit/2ead7d74e4abbf8504b12990b20663b413c752c2))
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+
+### Bug Fixes
+
+* **core:** issue [#144](https://github.com/jaenyf/time-provider/issues/144) ([#145](https://github.com/jaenyf/time-provider/issues/145)) ([b1f9b0e](https://github.com/jaenyf/time-provider/commit/b1f9b0e4ff12ae0b156d9672fb4a3ad7932dcdfe))
+* **core:** issue[#147](https://github.com/jaenyf/time-provider/issues/147) ([#149](https://github.com/jaenyf/time-provider/issues/149)) ([47a2c0a](https://github.com/jaenyf/time-provider/commit/47a2c0a260f35a879dde3185a7f6daa2ded96512))
+* **playground:** timer handles cancellation ([#154](https://github.com/jaenyf/time-provider/issues/154)) ([7041336](https://github.com/jaenyf/time-provider/commit/70413369c5127cef27a8dd845fd24005e697a66e))
+
+
+### Performance Improvements
+
+* restore part of previous performances ([#162](https://github.com/jaenyf/time-provider/issues/162)) ([3a96c37](https://github.com/jaenyf/time-provider/commit/3a96c375fab84e73b58e94466b46a74891820d43))
+
+### @time-provider/plugin-dayjs 0.5.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/plugin-luxon 0.5.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/plugin-moment 0.5.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/plugin-moment-timezone 0.4.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+### @time-provider/plugin-native 0.5.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
+
+### Bug Fixes
+
+* **core:** issue [#144](https://github.com/jaenyf/time-provider/issues/144) ([#145](https://github.com/jaenyf/time-provider/issues/145)) ([b1f9b0e](https://github.com/jaenyf/time-provider/commit/b1f9b0e4ff12ae0b156d9672fb4a3ad7932dcdfe))
+
+### @time-provider/plugin-temporal 0.5.0
+
+### ⚠ BREAKING CHANGES
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150))
+
+### Features
+
+* rewrite main timers api (once, every, recurring, wait) and add compat addon ([#150](https://github.com/jaenyf/time-provider/issues/150)) ([fe68409](https://github.com/jaenyf/time-provider/commit/fe684096744f7fceddd4d5e58167a16841fad068))
+
 ## 2026-08-10
 
 ### @time-provider/addon-animation-frame 0.2.0
