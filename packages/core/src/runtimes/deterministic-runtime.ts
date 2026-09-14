@@ -85,11 +85,15 @@ class DueEntry<TDate> implements IScheduledHandle {
 
   dispose(): void {
     if (this.isDisposed) return;
+    // Set before abort(): abort() can synchronously re-enter dispose() through this entry's own
+    // "abort" listener below, and that reentrant call must see isDisposed already true and return
+    // immediately - otherwise it reaches clearTimer()/retireEntry() a second time, and the live
+    // list's unlink isn't safe to run twice.
+    this.isDisposed = true;
     if (this.#abortController !== undefined) {
       this.#abortController.abort("Timer handle is being disposed");
     }
     this.#runtime.clearTimer(this);
-    this.isDisposed = true;
   }
 
   [Symbol.dispose](): void {
@@ -528,17 +532,16 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     this.#dueQueue.drainDue(nowTimestamp);
   }
 
-  /** The `runAt` of the earliest pending due entry, or `undefined` if none is scheduled. */
-  protected peekNextDueTimestamp(): number | undefined {
-    return this.#dueQueue.peekRunAt();
-  }
-
-  /** See {@link DueHeap.drainDueAdvancing}. */
+  /**
+   * See {@link DueHeap.drainDueAdvancing}. No {@link disableDueDraining} guard here, unlike
+   * {@link mayRunDueCallbacks}: this is only ever reached through {@link BaseManualRuntime.advance},
+   * and only {@link BaseFixedRuntime} - a sibling of {@link BaseManualRuntime}, not a base of it -
+   * ever disables draining.
+   */
   protected drainDueAdvancing(
     targetTimestamp: number,
     setCurrentTimestamp: (runAt: number) => void,
   ): void {
-    if (this.#dueDrainingDisabled) return;
     this.#dueQueue.drainDueAdvancing(targetTimestamp, setCurrentTimestamp);
   }
 

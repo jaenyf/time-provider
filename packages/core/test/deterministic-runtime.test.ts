@@ -336,3 +336,48 @@ describe("BaseManualRuntime drainDue exception handling", () => {
     });
   });
 });
+
+describe("BaseManualRuntime timer handle signal/dispose", () => {
+  test("signal is not aborted by default", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    expect(handle.signal.aborted).toBe(false);
+  });
+
+  test("signal is already aborted for a handle disposed before signal was ever accessed", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    handle.dispose();
+    expect(handle.signal.aborted).toBe(true);
+  });
+
+  test("accessing signal a second time returns the same signal instead of recreating it", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    expect(handle.signal).toBe(handle.signal);
+  });
+
+  test("dispatching abort on a lazily-created signal disposes the handle", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    handle.signal.dispatchEvent(new Event("abort"));
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  test("disposing a handle after its signal was accessed still disposes it, and leaves other live handles reachable", () => {
+    // Regression test: dispose() aborting this handle's own AbortController re-enters dispose()
+    // synchronously through the "abort" listener signal wires up. If dispose() didn't guard against
+    // that reentrant call before reaching the heap's live-entry list, the second (redundant) unlink
+    // corrupted the list, silently orphaning any other live entry from runtime.dispose()'s sweep.
+    const sut = new FakeManualRuntime(0);
+    const a = sut.timers.once({ milliseconds: 100 }, () => {});
+    const b = sut.timers.once({ milliseconds: 200 }, () => {});
+    const lazyLoad = a.signal; // trigger the lazy load
+    a.dispose();
+    expect(lazyLoad).not.toBe(undefined);
+    expect(a.isDisposed).toBe(true);
+
+    sut.dispose();
+    expect(b.isDisposed).toBe(true);
+  });
+});
