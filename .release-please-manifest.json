@@ -1,5 +1,6 @@
 {
   "packages/addon-animation-frame": "0.2.0",
+  "packages/addon-compat": "0.0.1",
   "packages/addon-cron": "0.1.0",
   "packages/addon-eta": "0.1.0",
   "packages/core": "1.4.0",
