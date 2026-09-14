@@ -328,6 +328,43 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(log).toEqual(["m1", "m2"]);
     });
 
+    test("a due callback's microtasks run before the next due callback sharing its runAt", () => {
+      // Both timers are already due by the time either runs - a single advance() call fires them
+      // both from the same drainDue batch, unlike two separate once() calls (each of which gets
+      // its own mayRunDueCallbacks turn regardless of how the checkpoint is placed). Only a
+      // per-callback checkpoint inside that shared batch gets this order right.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.timers.once({ milliseconds: 5 }, () => {
+        log.push("t1");
+        sut.timers.queueMicrotask(() => log.push("m1"));
+      });
+      sut.timers.once({ milliseconds: 5 }, () => log.push("t2"));
+
+      sut.advance({ milliseconds: 5 });
+
+      expect(log).toEqual(["t1", "m1", "t2"]);
+    });
+
+    test("a due callback's microtasks run before the next due callback at a later runAt, within the same advance()", () => {
+      // Same point as above, but the two due callbacks land at different runAt values within one
+      // advance() walk (drainDueAdvancing's own loop over several drainDue calls), rather than
+      // sharing a single drainDue batch.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.timers.once({ milliseconds: 5 }, () => {
+        log.push("t1");
+        sut.timers.queueMicrotask(() => log.push("m1"));
+      });
+      sut.timers.once({ milliseconds: 10 }, () => log.push("t2"));
+
+      sut.advance({ milliseconds: 15 });
+
+      expect(log).toEqual(["t1", "m1", "t2"]);
+    });
+
     test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
