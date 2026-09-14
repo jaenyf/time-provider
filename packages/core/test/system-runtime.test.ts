@@ -111,6 +111,18 @@ describe("BaseSystemRuntime", () => {
       vi.advanceTimersByTime(delay * 4);
       expect(callbackCounts).toEqual(3);
     });
+
+    test("disposes the handle and rethrows when the callback throws, same as returning false", () => {
+      const error = new Error("boom");
+      const handle = sut.recurring(
+        () => {
+          throw error;
+        },
+        { milliseconds: 10 },
+      );
+      expect(() => vi.advanceTimersByTime(10)).toThrow(error);
+      expect(handle.isDisposed).toBe(true);
+    });
   });
 
   describe("clearing recurring", () => {

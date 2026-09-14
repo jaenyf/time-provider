@@ -12,7 +12,6 @@ import type {
   ITimerOptions,
   EpochMilliseconds,
 } from "../types/types.ts";
-import type { ScheduledHandle } from "./scheduled-handle.ts";
 import { type IDurationSpec } from "../helpers/branded-types.ts";
 import type { IAddon } from "../deterministic.ts";
 
@@ -122,7 +121,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#abortControler.signal;
   }
 
-  private disposeTimersHandles(): void {
+  protected disposeTimersHandles(): void {
     for (const handle of this.#timersHandles) {
       handle.dispose();
     }
@@ -180,7 +179,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     }
   }
 
-  abstract clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
+  abstract clearTimer(handle: IScheduledHandle): void;
   abstract once(
     delay: IDurationSpec,
     callback: () => void,

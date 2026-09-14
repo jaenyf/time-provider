@@ -9,7 +9,6 @@ import type {
   DefaultCalendarSchemeWeekdayName,
 } from "../calendar/default-calendar-scheme-names.ts";
 import type { IDurationSpec } from "../helpers/branded-types.ts";
-import type { ScheduledHandle } from "../runtimes/scheduled-handle.ts";
 
 //#region General branded types
 declare const __brand: unique symbol;
@@ -489,6 +488,10 @@ export type ScheduledHandleKind =
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
  * {@link ITimers.recurring}).
+ *
+ * A handle with nothing left to run becomes disposed on its own: a {@link ITimers.once} handle
+ * once its callback has executed, and a {@link ITimers.recurring} handle once its callback
+ * returns `false`. Calling `dispose()` yourself afterward is a harmless no-op.
  */
 export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}
 
@@ -546,8 +549,8 @@ interface IWithTimers {
   get timers(): ITimers;
 }
 
-interface IClearTimers<TDate> {
-  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
+interface IClearTimers {
+  clearTimer(handle: IScheduledHandle): void;
 }
 
 //#endregion
@@ -603,7 +606,7 @@ export interface IRuntime<TDate>
     IDisposable,
     IHasAbortSignal,
     ITimers,
-    IClearTimers<TDate>,
+    IClearTimers,
     IClock<TDate>,
     IParser<TDate>,
     ITimeProvider<TDate>,
@@ -619,7 +622,7 @@ export interface IUtcOnlyRuntime<TDate>
     IDisposable,
     IHasAbortSignal,
     ITimers,
-    IClearTimers<TDate>,
+    IClearTimers,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyTimeProvider<TDate>,
@@ -637,7 +640,7 @@ export interface IManualRuntime<TDate>
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
     ITimers,
-    IClearTimers<TDate>,
+    IClearTimers,
     IClock<TDate>,
     IParser<TDate>,
     IManualTimeProvider<TDate>,
@@ -655,7 +658,7 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
     ITimers,
-    IClearTimers<TDate>,
+    IClearTimers,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,

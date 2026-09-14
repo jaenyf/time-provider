@@ -33,22 +33,23 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     super(localTimezone, converter, new SystemPerformance());
   }
 
-  clearTimer<TNativeHandle>(handle: ScheduledHandle<TDate, TNativeHandle>): void;
-  clearTimer<TNativeHandle extends ReturnTypeOfTimer>(
-    handle: ScheduledHandle<TDate, TNativeHandle>,
-  ): void {
-    switch (handle.kind) {
+  clearTimer(handle: IScheduledHandle): void {
+    // Only this class's once()/every()/recurring() ever construct a handle for a system runtime,
+    // and they always hand back a ScheduledHandle wrapping a native setTimeout/setInterval id -
+    // safe to assume that shape here.
+    const scheduledHandle = handle as ScheduledHandle<TDate, ReturnTypeOfTimer>;
+    switch (scheduledHandle.kind) {
       case SCHEDULED_TIMER_KIND_INTERVAL:
-        clearInterval(handle.nativeHandle);
+        clearInterval(scheduledHandle.nativeHandle);
         break;
       case SCHEDULED_TIMER_KIND_TIMEOUT:
       case SCHEDULED_TIMER_KIND_RECURRING:
-        clearTimeout(handle.nativeHandle);
+        clearTimeout(scheduledHandle.nativeHandle);
         break;
       default:
         throw new Error("Invalid operation");
     }
-    this.untrackHandle(handle);
+    this.untrackHandle(scheduledHandle);
   }
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions) {
@@ -56,10 +57,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     if (msDelay < 0) {
       msDelay = 0 as DurationMilliseconds;
     }
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, setTimeout(callback, msDelay)),
-      options,
-    );
+    let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
+      undefined;
+    const nativeHandle = setTimeout(() => {
+      try {
+        callback();
+      } finally {
+        // A one-shot timer has nothing left to dispose once its callback has run.
+        handle?.dispose();
+      }
+    }, msDelay);
+    handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, nativeHandle);
+    return this.trackHandle(handle, options);
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
@@ -88,9 +97,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
         if (handle !== undefined && handle.isDisposed) {
           return false;
         }
-        const next = callback();
+        let next: IDurationSpec | false;
+        try {
+          next = callback();
+        } catch (error) {
+          // Nothing left to dispose once the schedule has stopped, including by throwing.
+          handle?.dispose();
+          throw error;
+        }
         if (next !== false) {
           arm(toDuration(next));
+        } else {
+          handle?.dispose();
         }
       }, msInitialDelay);
       if (handle !== undefined) {
