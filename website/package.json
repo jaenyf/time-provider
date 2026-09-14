@@ -19,7 +19,7 @@
     "@time-provider/plugin-moment-timezone": "workspace:*",
     "@time-provider/plugin-native": "workspace:*",
     "@time-provider/plugin-temporal": "workspace:*",
-    "dayjs": "~1.8.15",
+    "dayjs": "~1.11.23",
     "luxon": "^3.7.2",
     "moment": "~2.30.1",
     "moment-timezone": "~0.6.3"
