@@ -36,6 +36,8 @@
 
 Time-Provider is currently under active development. While the project follows Semantic Versioning and may release versions beyond 1.0 before the API is considered stable, **the API should be considered unstable for the time being and may change between releases**.
 
+**Note:** As the new API (timers: once/every/recurring/wait with abort/dispose interfaces) is released, [a compat addon](https://www.npmjs.com/package/@time-provider/addon-compat) that still exposes the previous low-level-like methods (setTimeout/clearTimeout) is also [available here](https://www.npmjs.com/package/@time-provider/addon-compat). It will expose your previous method calls through the compat prefix and may help transitioning to the new API.
+
 This disclaimer will be removed once the API has stabilized.
 
 ## Time is a dependency
