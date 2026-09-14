@@ -6,7 +6,7 @@ export type {
   EpochMilliseconds,
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
-  IDeterministicTimers,
+  IDeterministicMicrotasks,
   IDeterministicTimeProvider,
   IUtcOnlyDeterministicTimeProvider,
   IManualTimeProvider,

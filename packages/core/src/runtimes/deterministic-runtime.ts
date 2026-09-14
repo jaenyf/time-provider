@@ -5,7 +5,7 @@ import type {
   IScheduledHandle,
   IAdvanceOptions,
   IDeterministicRuntime,
-  IDeterministicTimers,
+  IDeterministicMicrotasks,
   IManualClock,
   IManualRuntime,
   IRuntime,
@@ -621,28 +621,28 @@ export abstract class BaseDeterministicRuntime<TDate>
     this.#dueDrainingDisabled = true;
   }
 
+  //#region microtasks management
   /**
-   * Narrows {@link BaseRuntime.timers}: a deterministic runtime's timers also expose
-   * {@link IDeterministicTimers.drainMicrotasks}.
+   * Narrows {@link BaseRuntime.microtasks}: a deterministic runtime's microtasks also expose
+   * {@link IDeterministicMicrotasks.drain}.
    */
-  override get timers(): IDeterministicTimers {
+  override get microtasks(): IDeterministicMicrotasks {
     return this;
   }
 
-  //#region microtasks management
   /**
-   * Queues `callback` on this runtime's own microtask queue. See {@link ITimers.queueMicrotask}.
+   * Queues `callback` on this runtime's own microtask queue. See {@link IMicrotasks.queue}.
    */
-  queueMicrotask(callback: () => void): void {
+  queue(callback: () => void): void {
     this.#microtasks.push(callback);
   }
   /**
-   * Runs this runtime's pending microtasks. See {@link IDeterministicTimers.drainMicrotasks}.
+   * Runs this runtime's pending microtasks. See {@link IDeterministicMicrotasks.drain}.
    *
    * A no-op when called while a checkpoint on this runtime is already draining - see
    * {@link MicrotaskQueue}.
    */
-  drainMicrotasks(): void {
+  drain(): void {
     this.#microtasks.runCheckpoint(this.#rethrowTimerErrors);
   }
   //#endregion microtasks management
@@ -679,7 +679,7 @@ export abstract class BaseDeterministicRuntime<TDate>
    * Also discards any still-queued microtasks: on a deterministic runtime they only ever run
    * through this runtime's own checkpoint, so once disposed they have no way left to run - unlike
    * a system runtime, where a queued microtask already lives on the host's own queue (see
-   * {@link BaseSystemRuntime.queueMicrotask}) and runs regardless of disposal.
+   * {@link BaseSystemRuntime.queue}) and runs regardless of disposal.
    */
   protected override disposeTimersHandles(): void {
     this.#dueQueue.disposeAll();

@@ -40,9 +40,6 @@ function fakeDeterministicRuntime(now: number): {
     wait() {
       throw new Error("not used by the eta addon");
     },
-    queueMicrotask() {
-      throw new Error("not used by the eta addon");
-    },
   };
   const clock = { timestampNow: () => now };
   return {

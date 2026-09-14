@@ -283,7 +283,7 @@
               />
             </label>
             <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="enqueueMicrotask">
-              queueMicrotask
+              microtasks.queue
             </button>
             <button
               class="pg-btn"
@@ -291,16 +291,16 @@
               :disabled="!timeProvider"
               @click="drainMicrotasks"
             >
-              drainMicrotasks
+              microtasks.drain
             </button>
           </div>
           <p class="pg-note">
-            On <strong>system</strong>, <code>queueMicrotask</code> hands the callback to the host's
-            own microtask queue - it fires asynchronously, sharing one FIFO queue with promise
-            continuations. On
+            On <strong>system</strong>, <code>microtasks.queue</code> hands the callback to the
+            host's own microtask queue - it fires asynchronously, sharing one FIFO queue with
+            promise continuations. On
             <strong>fixed</strong>/<strong>manual</strong>/<strong>sequential</strong>, it goes on
             this runtime's own queue instead, and is drained automatically after each due callback
-            and before any scheduling call or clock read - <code>drainMicrotasks</code>
+            and before any scheduling call or clock read - <code>microtasks.drain</code>
             runs that checkpoint on demand, which is the only way to observe one queued directly
             from here rather than from inside a due callback.
           </p>
@@ -1364,7 +1364,7 @@ function enqueueMicrotask() {
   if (!timeProvider.value) return;
   const label = microtaskLabel.value.trim() || "microtask";
   try {
-    timeProvider.value.timers.queueMicrotask(() => {
+    timeProvider.value.microtasks.queue(() => {
       pushLog("microtask", `"${label}" ran`);
     });
     pushLog("tick", `Queued microtask "${label}"`);
@@ -1376,8 +1376,8 @@ function enqueueMicrotask() {
 function drainMicrotasks() {
   if (!timeProvider.value) return;
   try {
-    timeProvider.value.timers.drainMicrotasks();
-    pushLog("tick", "drainMicrotasks()");
+    timeProvider.value.microtasks.drain();
+    pushLog("tick", "microtasks.drain()");
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }

@@ -166,6 +166,7 @@ export class E2eHelper {
     E2eHelper.testLocalParser(timeProvider, underlyingISOString, underlyingToMs);
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
+    E2eHelper.testMicrotasks(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
     E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
@@ -188,6 +189,7 @@ export class E2eHelper {
     E2eHelper.testInexistantLocalParser(timeProvider);
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
+    E2eHelper.testMicrotasks(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
     E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
@@ -281,18 +283,23 @@ export class E2eHelper {
     expect(() => {
       timeProvider.timers.once(asap(), () => {}).dispose();
     }).not.toThrow();
+  }
+
+  private static testMicrotasks<TDate>(
+    timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
+  ) {
     expect(() => {
-      timeProvider.timers.queueMicrotask(() => {});
+      timeProvider.microtasks.queue(() => {});
     }).not.toThrow();
   }
 
   private static testMicrotaskDrain<TDate>(
     timeProvider: IDeterministicTimeProvider<TDate> | IUtcOnlyDeterministicTimeProvider<TDate>,
   ) {
-    describe("timers", () => {
-      test("drainMicrotasks", () => {
+    describe("microtasks", () => {
+      test("drain", () => {
         expect(() => {
-          timeProvider.timers.drainMicrotasks();
+          timeProvider.microtasks.drain();
         }).not.toThrow();
       });
     });

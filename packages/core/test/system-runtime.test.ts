@@ -170,10 +170,10 @@ describe("BaseSystemRuntime", () => {
     });
   });
 
-  describe("queueMicrotask", () => {
+  describe("queue", () => {
     test("hands the callback to the host's own microtask queue", async () => {
       const log: string[] = [];
-      sut.queueMicrotask(() => log.push("queued"));
+      sut.queue(() => log.push("queued"));
 
       // A system runtime defers to the host, so nothing has run while the stack is still up.
       expect(log).toEqual([]);
@@ -184,7 +184,7 @@ describe("BaseSystemRuntime", () => {
     test("shares one FIFO queue with promise continuations, as the host does", async () => {
       const log: string[] = [];
       void Promise.resolve().then(() => log.push("promise"));
-      sut.queueMicrotask(() => log.push("microtask"));
+      sut.queue(() => log.push("microtask"));
 
       await Promise.resolve();
       expect(log).toEqual(["promise", "microtask"]);
@@ -192,9 +192,9 @@ describe("BaseSystemRuntime", () => {
 
     test("still runs even after the runtime that queued it is disposed", async () => {
       // Unlike a deterministic runtime, dispose() has no way to reach into the host's own
-      // microtask queue and cancel this - see BaseSystemRuntime.queueMicrotask.
+      // microtask queue and cancel this - see BaseSystemRuntime.queue.
       let called = false;
-      sut.queueMicrotask(() => (called = true));
+      sut.queue(() => (called = true));
       sut.dispose();
 
       await Promise.resolve();

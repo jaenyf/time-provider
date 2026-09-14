@@ -3,6 +3,7 @@ import type {
   IScheduledHandle,
   ICalendarScheme,
   IClock,
+  IMicrotasks,
   IParser,
   IPerformance,
   IRuntime,
@@ -161,6 +162,9 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get timers(): ITimers {
     return this;
   }
+  get microtasks(): IMicrotasks {
+    return this;
+  }
   get parser(): IParser<TDate> {
     return this;
   }
@@ -200,7 +204,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
       this.once(delay, () => resolve(), options);
     });
   }
-  abstract queueMicrotask(callback: () => void): void;
+  abstract queue(callback: () => void): void;
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();

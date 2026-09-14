@@ -39,6 +39,9 @@ itself schedule new work (on a manual/sequential clock, that reentrantly
 drains the same heap) without the entry being visible to that nested drain
 while its own fate is still being decided.
 
+Microtasks are a separate facet from timers - see
+[Microtasks](/guide/microtasks) for `timeProvider.microtasks`.
+
 ## Errors in callbacks
 
 A throwing callback matches whatever the host environment already does with

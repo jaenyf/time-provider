@@ -503,7 +503,7 @@ export interface ITimerOptions {
 }
 
 /**
- * Schedules and cancels timeouts/intervals/recurring, and queues microtasks.
+ * Schedules and cancels timeouts/intervals/recurring.
  *
  * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, timer callbacks run asynchronously via the real, native
@@ -540,54 +540,6 @@ export interface ITimers {
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): IScheduledHandle;
-
-  /**
-   * Queues `callback` to run at the next microtask checkpoint, before control returns to the
-   * event loop.
-   *
-   * On a system clock this is the host's own `queueMicrotask`, so the callback shares the one
-   * real microtask queue with promise continuations, in FIFO order. On a deterministic clock the
-   * callback goes into this runtime's own queue instead. Because there is no task boundary to
-   * hook the checkpoint to, it runs at every point that stands in for one: after each due timer
-   * callback, before any `once`/`every`/`recurring` call and any clock read that may run due
-   * callbacks, and on demand via {@link IDeterministicTimers.drainMicrotasks}. A callback queued
-   * right before one of those calls may therefore run earlier than it would on a real host, where
-   * it would wait for the current task to finish. Microtasks are not time-driven, so a fixed
-   * clock still runs them even though it never runs a timer.
-   *
-   * A microtask may itself queue further microtasks, and a checkpoint keeps going until the queue
-   * is empty. A microtask that unconditionally re-queues itself therefore never lets the
-   * checkpoint finish.
-   *
-   * Disposing the runtime clears a deterministic one's still-queued microtasks along with its
-   * timers, so none of them run afterward. A system runtime cannot do the same: `callback` is
-   * already sitting on the host's own microtask queue, which has no notion of this runtime, so it
-   * still runs on schedule even after the Time-Provider it was queued through is disposed.
-   * @param callback the function to run at the next checkpoint.
-   */
-  queueMicrotask(callback: () => void): void;
-}
-
-/**
- * The {@link ITimers} of a deterministic (fixed/manual/sequential) runtime, which additionally
- * lets a test run the microtask checkpoint on demand. See {@link ITimers} for the execution model
- * shared with a system runtime's timers.
- */
-export interface IDeterministicTimers extends ITimers {
-  /**
-   * Runs every callback queued through {@link ITimers.queueMicrotask} on this runtime, in order,
-   * until the queue is empty - including microtasks queued by a microtask. Synchronous: they have
-   * all run by the time this returns.
-   *
-   * A deterministic runtime already runs a checkpoint before its due timers and after each due
-   * callback, so this is only needed to observe a microtask queued from a test's own code, where
-   * there is no boundary for the runtime to hook.
-   *
-   * Only the callbacks this runtime was asked to queue are run. Pending promise continuations
-   * (`await`, `.then()`) live on the host's real microtask queue, which no synchronous call can
-   * drain - they still settle when the surrounding stack unwinds, as they do in production.
-   */
-  drainMicrotasks(): void;
 }
 
 interface IWithTimers {
@@ -597,15 +549,84 @@ interface IWithTimers {
   get timers(): ITimers;
 }
 
-interface IWithDeterministicTimers {
-  /**
-   * Get the current configured deterministic timers
-   */
-  get timers(): IDeterministicTimers;
-}
-
 interface IClearTimers {
   clearTimer(handle: IScheduledHandle): void;
+}
+
+//#endregion
+
+//#region Microtasks
+// ---------------------------------------------------------------------------
+// Microtasks
+// ---------------------------------------------------------------------------
+
+/**
+ * Queues callbacks to run at the next microtask checkpoint, before control returns to the event
+ * loop.
+ *
+ * Execution model depends on the clock strategy backing this:
+ * - On a **system** clock this is the host's own `queueMicrotask`, so a queued callback shares
+ *   the one real microtask queue with promise continuations, in FIFO order.
+ * - On a **manual**, **sequential**, or **fixed** clock, a queued callback goes onto this runtime's
+ *   own queue instead. Because there is no task boundary to hook the checkpoint to, it runs at
+ *   every point that stands in for one: after each due timer callback, before any
+ *   `once`/`every`/`recurring` call and any clock read or `advance()` that may run due callbacks,
+ *   and on demand via {@link IDeterministicMicrotasks.drain}. A callback queued right before one
+ *   of those calls may therefore run earlier than it would on a real host, where it would wait
+ *   for the current task to finish. Microtasks are not time-driven, so a fixed clock still runs
+ *   them even though it never runs a timer.
+ *
+ * A microtask may itself queue further microtasks, and a checkpoint keeps going until the queue
+ * is empty. A microtask that unconditionally re-queues itself therefore never lets the checkpoint
+ * finish.
+ *
+ * Disposing a deterministic runtime clears its still-queued microtasks along with its timers, so
+ * none of them run afterward. A system runtime cannot do the same: a queued callback is already
+ * sitting on the host's own microtask queue, which has no notion of this runtime, so it still
+ * runs on schedule even after the Time-Provider it was queued through is disposed.
+ */
+export interface IMicrotasks {
+  /**
+   * Queues `callback` to run at the next microtask checkpoint.
+   * @param callback the function to run at the next checkpoint.
+   */
+  queue(callback: () => void): void;
+}
+
+/**
+ * The {@link IMicrotasks} of a deterministic (fixed/manual/sequential) runtime, which additionally
+ * lets a test run the microtask checkpoint on demand. See {@link IMicrotasks} for the execution
+ * model shared with a system runtime's.
+ */
+export interface IDeterministicMicrotasks extends IMicrotasks {
+  /**
+   * Runs every callback queued through {@link IMicrotasks.queue} on this runtime, in order, until
+   * the queue is empty - including microtasks queued by a microtask. Synchronous: they have all
+   * run by the time this returns.
+   *
+   * A deterministic runtime already runs a checkpoint before its due timers and after each due
+   * callback, so this is only needed to observe a microtask queued from a test's own code, where
+   * there is no boundary for the runtime to hook.
+   *
+   * Only the callbacks this runtime was asked to queue are run. Pending promise continuations
+   * (`await`, `.then()`) live on the host's real microtask queue, which no synchronous call can
+   * drain - they still settle when the surrounding stack unwinds, as they do in production.
+   */
+  drain(): void;
+}
+
+interface IWithMicrotasks {
+  /**
+   * Get the current configured microtasks
+   */
+  get microtasks(): IMicrotasks;
+}
+
+interface IWithDeterministicMicrotasks {
+  /**
+   * Get the current configured deterministic microtasks
+   */
+  get microtasks(): IDeterministicMicrotasks;
 }
 
 //#endregion
@@ -662,6 +683,7 @@ export interface IRuntime<TDate>
     IHasAbortSignal,
     ITimers,
     IClearTimers,
+    IMicrotasks,
     IClock<TDate>,
     IParser<TDate>,
     ITimeProvider<TDate>,
@@ -676,8 +698,9 @@ export interface IDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    IDeterministicTimers,
+    ITimers,
     IClearTimers,
+    IDeterministicMicrotasks,
     IClock<TDate>,
     IParser<TDate>,
     IDeterministicTimeProvider<TDate>,
@@ -694,6 +717,7 @@ export interface IUtcOnlyRuntime<TDate>
     IHasAbortSignal,
     ITimers,
     IClearTimers,
+    IMicrotasks,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyTimeProvider<TDate>,
@@ -708,8 +732,9 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    IDeterministicTimers,
+    ITimers,
     IClearTimers,
+    IDeterministicMicrotasks,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyDeterministicTimeProvider<TDate>,
@@ -726,8 +751,9 @@ export interface IManualRuntime<TDate>
     IHasAbortSignal,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
-    IDeterministicTimers,
+    ITimers,
     IClearTimers,
+    IDeterministicMicrotasks,
     IClock<TDate>,
     IParser<TDate>,
     IManualTimeProvider<TDate>,
@@ -744,8 +770,9 @@ export interface IUtcOnlyManualRuntime<TDate>
     IHasAbortSignal,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    IDeterministicTimers,
+    ITimers,
     IClearTimers,
+    IDeterministicMicrotasks,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
@@ -760,8 +787,8 @@ export interface IUtcOnlyManualRuntime<TDate>
 // ---------------------------------------------------------------------------
 
 /**
- * The public facade of a Time-Provider: exposes its `clock`, `timers`, `parser`, and
- * `performance`, backed by a timezone-aware clock.
+ * The public facade of a Time-Provider: exposes its `clock`, `timers`, `microtasks`, `parser`,
+ * and `performance`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
   extends
@@ -769,19 +796,21 @@ export interface ITimeProvider<TDate>
     IHasAbortSignal,
     IWithClock<IClock<TDate>>,
     IWithTimers,
+    IWithMicrotasks,
     IWithParser<IParser<TDate>>,
     IWithPerformance {}
 
 /**
- * The public facade of a deterministic Time-Provider: exposes its `clock`, `timers`, `parser`, and
- * `performance`, backed by a timezone-aware clock.
+ * The public facade of a deterministic Time-Provider: exposes its `clock`, `timers`,
+ * `microtasks`, `parser`, and `performance`, backed by a timezone-aware clock.
  */
 export interface IDeterministicTimeProvider<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
     IWithClock<IClock<TDate>>,
-    IWithDeterministicTimers,
+    IWithTimers,
+    IWithDeterministicMicrotasks,
     IWithParser<IParser<TDate>>,
     IWithPerformance {}
 
@@ -794,6 +823,7 @@ export interface IUtcOnlyTimeProvider<TDate>
     IHasAbortSignal,
     IWithClock<IUtcOnlyClock<TDate>>,
     IWithTimers,
+    IWithMicrotasks,
     IWithParser<IUtcOnlyParser<TDate>>,
     IWithPerformance {}
 
@@ -805,7 +835,8 @@ export interface IUtcOnlyDeterministicTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyClock<TDate>>,
-    IWithDeterministicTimers,
+    IWithTimers,
+    IWithDeterministicMicrotasks,
     IWithParser<IUtcOnlyParser<TDate>>,
     IWithPerformance {}
 
@@ -817,7 +848,8 @@ export interface IManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IManualClock<TDate>>,
-    IWithDeterministicTimers,
+    IWithTimers,
+    IWithDeterministicMicrotasks,
     IWithParser<IParser<TDate>>,
     IWithPerformance {}
 
@@ -830,7 +862,8 @@ export interface IUtcOnlyManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    IWithDeterministicTimers,
+    IWithTimers,
+    IWithDeterministicMicrotasks,
     IWithParser<IUtcOnlyParser<TDate>>,
     IWithPerformance {}
 //#endregion

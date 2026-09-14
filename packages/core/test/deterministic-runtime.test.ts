@@ -235,18 +235,18 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
       const error = new Error("boom");
-      sut.timers.queueMicrotask(() => {
+      sut.microtasks.queue(() => {
         log.push("throwing");
         throw error;
       });
-      sut.timers.queueMicrotask(() => log.push("after"));
+      sut.microtasks.queue(() => log.push("after"));
 
       // The checkpoint stops where it threw, exactly as a due callback batch does.
-      expect(() => sut.timers.drainMicrotasks()).toThrow(error);
+      expect(() => sut.microtasks.drain()).toThrow(error);
       expect(log).toEqual(["throwing"]);
 
       // The one that threw already ran, so only what is genuinely still pending resumes.
-      expect(() => sut.timers.drainMicrotasks()).not.toThrow();
+      expect(() => sut.microtasks.drain()).not.toThrow();
       expect(log).toEqual(["throwing", "after"]);
     });
 
@@ -256,7 +256,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const log: string[] = [];
       const error = new Error("boom");
       sut.timers.once({ milliseconds: 10 }, () => {
-        sut.timers.queueMicrotask(() => log.push("microtask"));
+        sut.microtasks.queue(() => log.push("microtask"));
         throw error;
       });
 
@@ -268,14 +268,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
-      sut.timers.queueMicrotask(() => {
+      sut.microtasks.queue(() => {
         runCount++;
         // Scheduling a timer runs mayRunDueCallbacks, which would restart the checkpoint on the
         // same, not-yet-cleared queue without the reentrancy guard.
         sut.timers.once({ milliseconds: 1000 }, () => {});
       });
 
-      sut.timers.drainMicrotasks();
+      sut.microtasks.drain();
 
       expect(runCount).toBe(1);
     });
@@ -284,13 +284,13 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
-      sut.timers.queueMicrotask(() => {
+      sut.microtasks.queue(() => {
         runCount++;
         // A sequential/manual clock read also runs mayRunDueCallbacks.
         sut.clock.utcNow();
       });
 
-      sut.timers.drainMicrotasks();
+      sut.microtasks.drain();
 
       expect(runCount).toBe(1);
     });
@@ -300,7 +300,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
       sut.timers.once({ milliseconds: 10 }, () => {
-        sut.timers.queueMicrotask(() => {
+        sut.microtasks.queue(() => {
           runCount++;
           sut.clock.utcNow();
         });
@@ -315,15 +315,15 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
-      sut.timers.queueMicrotask(() => {
+      sut.microtasks.queue(() => {
         log.push("m1");
         // The nested checkpoint this triggers is a no-op, but m2 must still be picked up by the
         // outer, still-running checkpoint loop.
         sut.timers.once({ milliseconds: 1000 }, () => {});
-        sut.timers.queueMicrotask(() => log.push("m2"));
+        sut.microtasks.queue(() => log.push("m2"));
       });
 
-      sut.timers.drainMicrotasks();
+      sut.microtasks.drain();
 
       expect(log).toEqual(["m1", "m2"]);
     });
@@ -338,7 +338,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const log: string[] = [];
       sut.timers.once({ milliseconds: 5 }, () => {
         log.push("t1");
-        sut.timers.queueMicrotask(() => log.push("m1"));
+        sut.microtasks.queue(() => log.push("m1"));
       });
       sut.timers.once({ milliseconds: 5 }, () => log.push("t2"));
 
@@ -356,7 +356,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const log: string[] = [];
       sut.timers.once({ milliseconds: 5 }, () => {
         log.push("t1");
-        sut.timers.queueMicrotask(() => log.push("m1"));
+        sut.microtasks.queue(() => log.push("m1"));
       });
       sut.timers.once({ milliseconds: 10 }, () => log.push("t2"));
 
@@ -373,7 +373,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let ran = false;
-      sut.timers.queueMicrotask(() => (ran = true));
+      sut.microtasks.queue(() => (ran = true));
 
       sut.advance({ milliseconds: 100 });
 
@@ -435,12 +435,12 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
       const error = new Error("boom");
-      sut.timers.queueMicrotask(() => {
+      sut.microtasks.queue(() => {
         throw error;
       });
-      sut.timers.queueMicrotask(() => log.push("after"));
+      sut.microtasks.queue(() => log.push("after"));
 
-      expect(() => sut.timers.drainMicrotasks()).not.toThrow();
+      expect(() => sut.microtasks.drain()).not.toThrow();
       expect(log).toEqual(["after"]);
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
@@ -553,10 +553,10 @@ describe("BaseManualRuntime microtasks and dispose", () => {
   test("disposing the runtime discards still-queued microtasks", () => {
     const sut = new FakeManualRuntime(0);
     let called = false;
-    sut.timers.queueMicrotask(() => (called = true));
+    sut.microtasks.queue(() => (called = true));
 
     sut.dispose();
-    sut.timers.drainMicrotasks();
+    sut.microtasks.drain();
 
     expect(called).toBe(false);
   });
@@ -564,13 +564,13 @@ describe("BaseManualRuntime microtasks and dispose", () => {
   test("a microtask that disposes its own runtime doesn't crash the still-running checkpoint", () => {
     const sut = new FakeManualRuntime(0);
     const log: string[] = [];
-    sut.timers.queueMicrotask(() => {
+    sut.microtasks.queue(() => {
       log.push("m1");
       sut.dispose();
     });
-    sut.timers.queueMicrotask(() => log.push("m2"));
+    sut.microtasks.queue(() => log.push("m2"));
 
-    expect(() => sut.timers.drainMicrotasks()).not.toThrow();
+    expect(() => sut.microtasks.drain()).not.toThrow();
     // m1 disposed the runtime mid-checkpoint, clearing the queue before m2 got its turn.
     expect(log).toEqual(["m1"]);
   });

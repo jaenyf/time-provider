@@ -15,6 +15,7 @@ import {
 import { testRuntime } from "./helpers/testRuntime.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testTimers } from "./helpers/testTimers.ts";
+import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import { testAddonCronFixed } from "./helpers/testCron.ts";
 
@@ -101,6 +102,10 @@ export function testFixedRuntime<TDate>(
           expect(intervalCalled).toBe(false);
         });
       });
+    });
+
+    describe("microtasks", () => {
+      testMicrotasks(createSUT, true);
     });
 
     describe("performance", () => {

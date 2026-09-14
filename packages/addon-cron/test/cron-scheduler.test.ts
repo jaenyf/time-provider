@@ -77,9 +77,6 @@ function fakeRuntime(
       wait() {
         throw new Error("not used by CronScheduler");
       },
-      queueMicrotask() {
-        throw new Error("not used by CronScheduler");
-      },
     },
   };
 }

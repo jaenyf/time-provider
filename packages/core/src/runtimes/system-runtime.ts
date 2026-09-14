@@ -128,7 +128,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
    * closes over a Time-Provider that is disposed by the time it fires - unlike a deterministic
    * runtime, which discards its still-queued microtasks on {@link BaseRuntime.dispose}.
    */
-  queueMicrotask(callback: () => void): void {
+  queue(callback: () => void): void {
     queueMicrotask(callback);
   }
 }

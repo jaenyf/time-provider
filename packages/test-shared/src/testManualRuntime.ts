@@ -4,6 +4,7 @@ import type {
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
+import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -716,6 +717,10 @@ export function testManualRuntime<TDate>(
           });
         });
       });
+    });
+
+    describe("microtasks", () => {
+      testMicrotasks(createSUT);
     });
 
     describe("performance", () => {

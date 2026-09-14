@@ -85,3 +85,8 @@ handle.dispose(); // no-op if already fired/cleared
 
 `initialDelay` (asap() or { milliseconds: 0 } if omitted or negative) is the initial delay to
 the very first run. Every run after that is scheduled from `callback`'s own return value.
+
+## Microtasks
+
+Queuing a callback to run at the next microtask checkpoint isn't a timer -
+see [IMicrotasks](/api/microtasks) for `timeProvider.microtasks`.

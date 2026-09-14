@@ -64,9 +64,6 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
       wait() {
         throw new Error("not used by the eta addon");
       },
-      queueMicrotask() {
-        throw new Error("not used by the eta addon");
-      },
     },
   } as unknown as IRuntime<unknown> & {
     intervals: { callback: () => void; delay: number | undefined; handle: IScheduledHandle }[];
