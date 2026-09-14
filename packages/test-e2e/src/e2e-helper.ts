@@ -10,7 +10,9 @@ import { asap, createTimeProvider as createSystemTimeProvider } from "../../core
 import {
   createTimeProvider as createDeterministicTimeProvider,
   type IDeterministicPlugin,
+  type IDeterministicTimeProvider,
   type IUtcOnlyDeterministicPlugin,
+  type IUtcOnlyDeterministicTimeProvider,
 } from "../../core/dist/deterministic.mjs";
 import type { WithEtaApi } from "../../addon-eta/dist/index.d.mts";
 import type { WithCronApi } from "../../addon-cron/dist/index.d.mts";
@@ -63,6 +65,7 @@ export class E2eHelper {
     {
       using fixed = deterministicBuilder.asFixed().create();
       E2eHelper.testTimeProvider(fixed, underlyingISOString, underlyingStringifier, underlyingToMs);
+      E2eHelper.testMicrotaskDrain(fixed);
     }
 
     {
@@ -73,6 +76,7 @@ export class E2eHelper {
         underlyingStringifier,
         underlyingToMs,
       );
+      E2eHelper.testMicrotaskDrain(manual);
     }
 
     {
@@ -83,6 +87,7 @@ export class E2eHelper {
         underlyingStringifier,
         underlyingToMs,
       );
+      E2eHelper.testMicrotaskDrain(sequential);
     }
   }
 
@@ -126,6 +131,7 @@ export class E2eHelper {
       underlyingStringifier,
       underlyingToMs,
     );
+    E2eHelper.testMicrotaskDrain(fixed);
 
     E2eHelper.testUtcOnlyTimeProvider(
       manual,
@@ -133,6 +139,7 @@ export class E2eHelper {
       underlyingStringifier,
       underlyingToMs,
     );
+    E2eHelper.testMicrotaskDrain(manual);
 
     E2eHelper.testUtcOnlyTimeProvider(
       sequential,
@@ -140,6 +147,7 @@ export class E2eHelper {
       underlyingStringifier,
       underlyingToMs,
     );
+    E2eHelper.testMicrotaskDrain(sequential);
   }
 
   private static testTimeProvider<TDate>(
@@ -273,6 +281,21 @@ export class E2eHelper {
     expect(() => {
       timeProvider.timers.once(asap(), () => {}).dispose();
     }).not.toThrow();
+    expect(() => {
+      timeProvider.timers.queueMicrotask(() => {});
+    }).not.toThrow();
+  }
+
+  private static testMicrotaskDrain<TDate>(
+    timeProvider: IDeterministicTimeProvider<TDate> | IUtcOnlyDeterministicTimeProvider<TDate>,
+  ) {
+    describe("timers", () => {
+      test("drainMicrotasks", () => {
+        expect(() => {
+          timeProvider.timers.drainMicrotasks();
+        }).not.toThrow();
+      });
+    });
   }
 
   private static testAddonAnimation<TDate>(

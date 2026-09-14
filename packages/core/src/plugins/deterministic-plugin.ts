@@ -1,11 +1,11 @@
 import type {
   EpochMilliseconds,
   IDeterministicPlugin,
+  IDeterministicRuntime,
   IManualRuntime,
-  IRuntime,
   IUtcOnlyDeterministicPlugin,
+  IUtcOnlyDeterministicRuntime,
   IUtcOnlyManualRuntime,
-  IUtcOnlyRuntime,
   TimezoneDefinition,
 } from "../types/types.ts";
 
@@ -30,7 +30,7 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   protected abstract readonly FixedRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
-  ) => IRuntime<TDate>;
+  ) => IDeterministicRuntime<TDate>;
   /**
    * The concrete sequential runtime constructor for this plugin's date library. Subclasses
    * provide this so {@link createSequentialRuntime} can instantiate the right runtime.
@@ -38,7 +38,7 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ) => IRuntime<TDate>;
+  ) => IDeterministicRuntime<TDate>;
 
   createManualRuntime(
     localTimezone: TimezoneDefinition,
@@ -49,13 +49,13 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   createFixedRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
-  ): IRuntime<TDate> {
+  ): IDeterministicRuntime<TDate> {
     return new this.FixedRuntimeCtor(localTimezone, initialTime);
   }
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ): IRuntime<TDate> {
+  ): IDeterministicRuntime<TDate> {
     return new this.SequentialRuntimeCtor(localTimezone, sequentialTimes);
   }
 }
@@ -83,7 +83,7 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   protected abstract readonly FixedRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
-  ) => IUtcOnlyRuntime<TDate>;
+  ) => IUtcOnlyDeterministicRuntime<TDate>;
   /**
    * The concrete sequential runtime constructor for this plugin's date library. Subclasses
    * provide this so {@link createSequentialRuntime} can instantiate the right runtime.
@@ -91,7 +91,7 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ) => IUtcOnlyRuntime<TDate>;
+  ) => IUtcOnlyDeterministicRuntime<TDate>;
 
   #utcTimezone: TimezoneDefinition = "Etc/UTC";
 
@@ -102,12 +102,12 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   }
   createFixedRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
-  ): IUtcOnlyRuntime<TDate> {
+  ): IUtcOnlyDeterministicRuntime<TDate> {
     return new this.FixedRuntimeCtor(this.#utcTimezone, initialTime);
   }
   createSequentialRuntime(
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ): IUtcOnlyRuntime<TDate> {
+  ): IUtcOnlyDeterministicRuntime<TDate> {
     return new this.SequentialRuntimeCtor(this.#utcTimezone, sequentialTimes);
   }
 }

@@ -59,6 +59,9 @@ function fakeRuntime(): IRuntime<unknown> & {
       wait() {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
+      queueMicrotask() {
+        throw new Error("not used by DeterministicAnimationFrameScheduler");
+      },
     },
   } as unknown as IRuntime<unknown> & {
     scheduled: Map<

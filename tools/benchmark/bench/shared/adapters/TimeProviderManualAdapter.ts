@@ -11,6 +11,8 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     timers: {
       once(ms: IDurationSpec, callback: () => void): unknown;
       every(ms: IDurationSpec, callback: () => void): unknown;
+      drainMicrotasks(): void;
+      queueMicrotask(callback: () => void): void;
     };
     clock: { utcNow(): unknown; advance(config: { milliseconds: number }): unknown };
   };
@@ -35,6 +37,12 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   }
   setInterval(callback: () => void, delayMs: number): void {
     this.#runtime.timers.every({ milliseconds: delayMs }, callback);
+  }
+  drainMicrotasks(): void {
+    this.#runtime.timers.drainMicrotasks();
+  }
+  queueMicrotask(callback: () => void): void {
+    this.#runtime.timers.queueMicrotask(callback);
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });

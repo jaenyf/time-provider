@@ -52,6 +52,9 @@ function fakeDeterministicRuntime(
     wait() {
       throw new Error("not used by the cron addon");
     },
+    queueMicrotask() {
+      throw new Error("not used by the cron addon");
+    },
   };
   const clock =
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };

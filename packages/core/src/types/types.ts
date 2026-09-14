@@ -503,7 +503,7 @@ export interface ITimerOptions {
 }
 
 /**
- * Program timers.
+ * Schedules and cancels timeouts/intervals/recurring, and queues microtasks.
  *
  * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, timer callbacks run asynchronously via the real, native
@@ -540,6 +540,49 @@ export interface ITimers {
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): IScheduledHandle;
+
+  /**
+   * Queues `callback` to run at the next microtask checkpoint, before control returns to the
+   * event loop.
+   *
+   * On a system clock this is the host's own `queueMicrotask`, so the callback shares the one
+   * real microtask queue with promise continuations, in FIFO order. On a deterministic clock the
+   * callback goes into this runtime's own queue instead. Because there is no task boundary to
+   * hook the checkpoint to, it runs at every point that stands in for one: after each due timer
+   * callback, before any `once`/`every`/`recurring` call and any clock read that may run due
+   * callbacks, and on demand via {@link IDeterministicTimers.drainMicrotasks}. A callback queued
+   * right before one of those calls may therefore run earlier than it would on a real host, where
+   * it would wait for the current task to finish. Microtasks are not time-driven, so a fixed
+   * clock still runs them even though it never runs a timer.
+   *
+   * A microtask may itself queue further microtasks, and a checkpoint keeps going until the queue
+   * is empty. A microtask that unconditionally re-queues itself therefore never lets the
+   * checkpoint finish.
+   * @param callback the function to run at the next checkpoint.
+   */
+  queueMicrotask(callback: () => void): void;
+}
+
+/**
+ * The {@link ITimers} of a deterministic (fixed/manual/sequential) runtime, which additionally
+ * lets a test run the microtask checkpoint on demand. See {@link ITimers} for the execution model
+ * shared with a system runtime's timers.
+ */
+export interface IDeterministicTimers extends ITimers {
+  /**
+   * Runs every callback queued through {@link ITimers.queueMicrotask} on this runtime, in order,
+   * until the queue is empty - including microtasks queued by a microtask. Synchronous: they have
+   * all run by the time this returns.
+   *
+   * A deterministic runtime already runs a checkpoint before its due timers and after each due
+   * callback, so this is only needed to observe a microtask queued from a test's own code, where
+   * there is no boundary for the runtime to hook.
+   *
+   * Only the callbacks this runtime was asked to queue are run. Pending promise continuations
+   * (`await`, `.then()`) live on the host's real microtask queue, which no synchronous call can
+   * drain - they still settle when the surrounding stack unwinds, as they do in production.
+   */
+  drainMicrotasks(): void;
 }
 
 interface IWithTimers {
@@ -547,6 +590,13 @@ interface IWithTimers {
    * Get the current configured timers
    */
   get timers(): ITimers;
+}
+
+interface IWithDeterministicTimers {
+  /**
+   * Get the current configured deterministic timers
+   */
+  get timers(): IDeterministicTimers;
 }
 
 interface IClearTimers {
@@ -615,6 +665,22 @@ export interface IRuntime<TDate>
 }
 
 /**
+ * A deterministic (fixed/manual/sequential) runtime backed by a timezone-aware clock.
+ */
+export interface IDeterministicRuntime<TDate>
+  extends
+    IDisposable,
+    IHasAbortSignal,
+    IDeterministicTimers,
+    IClearTimers,
+    IClock<TDate>,
+    IParser<TDate>,
+    IDeterministicTimeProvider<TDate>,
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon<TDate>): void;
+}
+
+/**
  * A runtime backed by an UTC only clock.
  */
 export interface IUtcOnlyRuntime<TDate>
@@ -631,6 +697,22 @@ export interface IUtcOnlyRuntime<TDate>
 }
 
 /**
+ * A deterministic (fixed/manual/sequential) runtime backed by an UTC only clock.
+ */
+export interface IUtcOnlyDeterministicRuntime<TDate>
+  extends
+    IDisposable,
+    IHasAbortSignal,
+    IDeterministicTimers,
+    IClearTimers,
+    IUtcOnlyClock<TDate>,
+    IUtcOnlyParser<TDate>,
+    IUtcOnlyDeterministicTimeProvider<TDate>,
+    IWithCalendarScheme<TDate> {
+  registerAddon(addon: IAddon<TDate>): void;
+}
+
+/**
  * A runtime backed by a manual clock.
  */
 export interface IManualRuntime<TDate>
@@ -639,7 +721,7 @@ export interface IManualRuntime<TDate>
     IHasAbortSignal,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
     IClock<TDate>,
     IParser<TDate>,
@@ -657,7 +739,7 @@ export interface IUtcOnlyManualRuntime<TDate>
     IHasAbortSignal,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
     IUtcOnlyClock<TDate>,
     IUtcOnlyParser<TDate>,
@@ -686,6 +768,19 @@ export interface ITimeProvider<TDate>
     IWithPerformance {}
 
 /**
+ * The public facade of a deterministic Time-Provider: exposes its `clock`, `timers`, `parser`, and
+ * `performance`, backed by a timezone-aware clock.
+ */
+export interface IDeterministicTimeProvider<TDate>
+  extends
+    IDisposable,
+    IHasAbortSignal,
+    IWithClock<IClock<TDate>>,
+    IWithDeterministicTimers,
+    IWithParser<IParser<TDate>>,
+    IWithPerformance {}
+
+/**
  * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
  */
 export interface IUtcOnlyTimeProvider<TDate>
@@ -698,6 +793,18 @@ export interface IUtcOnlyTimeProvider<TDate>
     IWithPerformance {}
 
 /**
+ * The public facade of a deterministic Time-Provider backed by a timezone-naive (UTC only) clock.
+ */
+export interface IUtcOnlyDeterministicTimeProvider<TDate>
+  extends
+    IDisposable,
+    IHasAbortSignal,
+    IWithClock<IUtcOnlyClock<TDate>>,
+    IWithDeterministicTimers,
+    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithPerformance {}
+
+/**
  * The public facade of a Time-Provider backed by a manual (advanceable), timezone-aware clock.
  */
 export interface IManualTimeProvider<TDate>
@@ -705,7 +812,7 @@ export interface IManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IManualClock<TDate>>,
-    IWithTimers,
+    IWithDeterministicTimers,
     IWithParser<IParser<TDate>>,
     IWithPerformance {}
 
@@ -718,7 +825,7 @@ export interface IUtcOnlyManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    IWithTimers,
+    IWithDeterministicTimers,
     IWithParser<IUtcOnlyParser<TDate>>,
     IWithPerformance {}
 //#endregion
@@ -780,7 +887,7 @@ export interface IDeterministicPlugin<TDate> {
   createFixedRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
-  ): IRuntime<TDate>;
+  ): IDeterministicRuntime<TDate>;
   /**
    * Create a runtime for sequential time and timers.
    *
@@ -789,7 +896,7 @@ export interface IDeterministicPlugin<TDate> {
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ): IRuntime<TDate>;
+  ): IDeterministicRuntime<TDate>;
 }
 
 /**
@@ -812,7 +919,7 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    */
   createFixedRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
-  ): IUtcOnlyRuntime<TDate>;
+  ): IUtcOnlyDeterministicRuntime<TDate>;
   /**
    * Create a runtime for sequential time and timers.
    *
@@ -820,6 +927,6 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    */
   createSequentialRuntime(
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
-  ): IUtcOnlyRuntime<TDate>;
+  ): IUtcOnlyDeterministicRuntime<TDate>;
 }
 //#endregion

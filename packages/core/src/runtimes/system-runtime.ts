@@ -120,4 +120,10 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
     return this.trackHandle(handle, options);
   }
+  /**
+   * Queues `callback` via the native `queueMicrotask`, onto the host's own microtask queue.
+   */
+  queueMicrotask(callback: () => void): void {
+    queueMicrotask(callback);
+  }
 }

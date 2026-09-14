@@ -1,11 +1,13 @@
 import type {
   IDeterministicPlugin,
   IDisposable,
+  IDeterministicTimeProvider,
   IManualTimeProvider,
   IRuntime,
   ISystemPlugin,
   ITimeProvider,
   IUtcOnlyDeterministicPlugin,
+  IUtcOnlyDeterministicTimeProvider,
   IUtcOnlyManualTimeProvider,
   IUtcOnlySystemPlugin,
   IUtcOnlyTimeProvider,
@@ -133,7 +135,7 @@ interface IAsRuntimeBuilders<TFixed, TManual, TSequential> {
  */
 export interface IFixedRuntimeBuilder<TDate, TExtra = unknown>
   extends
-    ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
+    ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<IFixedRuntimeBuilder<TDate, TExtra>> {
   /**
    * Store the fixed time of the fixed time provider
@@ -145,7 +147,7 @@ export interface IFixedRuntimeBuilder<TDate, TExtra = unknown>
  * Builds a deterministic, UTC only Time-Provider whose clock stays fixed at a single point in time.
  */
 interface IUtcOnlyFixedRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
-  IUtcOnlyTimeProvider<TDate> & TExtra
+  IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
   /**
    * Store the fixed time of the fixed time provider
@@ -190,7 +192,7 @@ interface IUtcOnlyManualRuntimeBuilder<TDate, TExtra = unknown> extends ICreateT
  */
 export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
   extends
-    ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
+    ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<ISequentialRuntimeBuilder<TDate, TExtra>> {
   /**
    * Store a new sequential time to be provided when getting time
@@ -205,7 +207,7 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
  * one per clock read.
  */
 interface IUtcOnlySequentialRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
-  IUtcOnlyTimeProvider<TDate> & TExtra
+  IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
   /**
    * Store a new sequential time to be provided when getting time

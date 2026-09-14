@@ -15,6 +15,10 @@ export interface ITimerAdapter {
   now(): unknown;
   setTimeout(callback: () => void, delayMs: number): void;
   setInterval(callback: () => void, delayMs: number): void;
+  /** Queues `callback` on whatever microtask queue this adapter's library maintains. */
+  queueMicrotask(callback: () => void): void;
+  /** Drain whatever microtask queue this adapter's library maintains. */
+  drainMicrotasks(): void;
   /**
    * Advances the fake clock by the next delay from this adapter's pre-planned delay list
    * (see its constructor), synchronously firing whatever becomes due.

@@ -200,6 +200,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
       this.once(delay, () => resolve(), options);
     });
   }
+  abstract queueMicrotask(callback: () => void): void;
 
   hostTimezone(): TimezoneDefinition {
     return SystemHelper.getRealHostTimezone();

@@ -4,6 +4,8 @@ import { DeterministicPerformance } from "../performance/deterministic-performan
 import type {
   IScheduledHandle,
   IAdvanceOptions,
+  IDeterministicRuntime,
+  IDeterministicTimers,
   IManualClock,
   IManualRuntime,
   IRuntime,
@@ -111,6 +113,68 @@ class DueEntry<TDate> implements IScheduledHandle {
       });
     }
     return this.#abortController.signal;
+  }
+}
+
+/**
+ * A runtime's microtask queue, and the checkpoint that drains it.
+ *
+ * The checkpoint is deliberately not reentrant: nothing in the host runs a nested checkpoint
+ * either. A callback can trigger a further checkpoint indirectly - scheduling a timer or reading
+ * a sequential/manual clock both go through {@link BaseDeterministicRuntime.mayRunDueCallbacks} -
+ * and without the guard below, that reentrant call would restart the drain loop at index 0 on the
+ * same backing array and rerun every callback that already ran this checkpoint, including itself.
+ * A `queueMicrotask` call made while already draining is simply appended: the active loop reads
+ * `queue.length` fresh on every iteration, so it picks the new entry up on its own, exactly as a
+ * microtask queueing another microtask does natively.
+ */
+class MicrotaskQueue {
+  private readonly _queue: (() => void)[] = [];
+  private _draining = false;
+
+  get length(): number {
+    return this._queue.length;
+  }
+
+  push(callback: () => void): void {
+    this._queue.push(callback);
+  }
+
+  /**
+   * Runs every queued callback in order, until the queue is empty - a microtask queueing another
+   * microtask is picked up by the same checkpoint, exactly as the host does. A callback that
+   * throws is handled per {@link shouldRethrowTimerErrors}; either way the callbacks that already
+   * ran are removed, so a throwing one never runs a second time on a later checkpoint.
+   *
+   * A no-op while a checkpoint on this queue is already running; see the class doc.
+   */
+  runCheckpoint(rethrowErrors: boolean): void {
+    if (this._draining) return;
+    const queue = this._queue;
+    let ranCount = 0;
+    this._draining = true;
+    try {
+      if (rethrowErrors) {
+        while (ranCount < queue.length) queue[ranCount++]();
+      } else {
+        while (ranCount < queue.length) {
+          try {
+            queue[ranCount++]();
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }
+    } finally {
+      // On the common hot path everything queued has run and the whole array goes.
+      // Truncating skips the removed-elements array `splice` builds and hands back for nothing.
+      if (ranCount === queue.length) {
+        queue.length = 0;
+      } else {
+        queue.splice(0, ranCount);
+      }
+      this._draining = false;
+    }
   }
 }
 
@@ -351,109 +415,119 @@ class DueHeap<TDate> {
   }
 
   /**
-   * Runs any pending callbacks due at or before `now`.
-   * A callback that throws is handled per {@link shouldRethrowTimerErrors}
+   * Runs any pending callbacks due at or before `now`, running a microtask checkpoint over
+   * `microtasks` after each one - each due callback is a task, and the host runs a checkpoint at
+   * the end of every task. A callback that throws is handled per {@link shouldRethrowTimerErrors},
+   * and the checkpoint still runs on the way out, as it would natively.
    */
-  drainDue(now: number): void {
+  drainDue(now: number, microtasks: MicrotaskQueue): void {
     const entries = this._entries;
     const rethrowTimersErrors = this._shouldRethrowTimerErrors;
 
-    for (;;) {
-      //#region inlining of DueHeap.peek
-      if (entries.length === 0) break;
-      const root = entries[0];
-      //#endregion inlining of DueHeap.peek
-      if (root.runAt > now) break;
+    try {
+      for (;;) {
+        //#region inlining of DueHeap.peek
+        if (entries.length === 0) break;
+        const root = entries[0];
+        //#endregion inlining of DueHeap.peek
+        if (root.runAt > now) break;
 
-      switch (root.kind) {
-        case SCHEDULED_TIMER_KIND_TIMEOUT: {
-          //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
-          //#region inlining of DueHeap.pop
-          root.heapIndex = -1;
-          const lastIndex = entries.length - 1;
-          if (lastIndex > 0) {
-            const last = entries.pop()!;
-            this._siftDown(last, 0);
-          } else {
-            entries.pop();
-          }
-          //#endregion inlining of DueHeap.pop
-          if (rethrowTimersErrors) {
-            root.callback();
-          } else {
-            try {
+        switch (root.kind) {
+          case SCHEDULED_TIMER_KIND_TIMEOUT: {
+            //this loop's root-removal is duplicated rather than shared with the TIMER_KIND_RECURRING
+            //#region inlining of DueHeap.pop
+            root.heapIndex = -1;
+            const lastIndex = entries.length - 1;
+            if (lastIndex > 0) {
+              const last = entries.pop()!;
+              this._siftDown(last, 0);
+            } else {
+              entries.pop();
+            }
+            //#endregion inlining of DueHeap.pop
+            if (rethrowTimersErrors) {
               root.callback();
-            } catch (error) {
-              console.error(error);
+            } else {
+              try {
+                root.callback();
+              } catch (error) {
+                console.error(error);
+              }
             }
-          }
-          // A one-shot timer has nothing left to dispose once its callback has run.
-          root.dispose();
+            // A one-shot timer has nothing left to dispose once its callback has run.
+            root.dispose();
 
-          break;
-        }
-        case SCHEDULED_TIMER_KIND_INTERVAL: {
-          const callback = root.callback;
-          //#region inlining of DueHeap.nextSeq
-          root.seq = this._nextSeq++;
-          //#endregion inlining of DueHeap.nextSeq
-          root.runAt += root.delay > 0 ? root.delay : 1;
-          //#region inlining of DueHeap.fixAfterIncrease
-          this._siftDown(root, 0);
-          //#endregion inlining of DueHeap.fixAfterIncrease
-          if (rethrowTimersErrors) {
-            callback();
-          } else {
-            try {
-              callback();
-            } catch (error) {
-              console.error(error);
-            }
+            break;
           }
-          break;
-        }
-        case SCHEDULED_TIMER_KIND_RECURRING: {
-          //#region inlining of DueHeap.pop
-          root.heapIndex = -1;
-          const lastIndex = entries.length - 1;
-          if (lastIndex > 0) {
-            const last = entries.pop()!;
-            this._siftDown(last, 0);
-          } else {
-            entries.pop();
-          }
-          //#endregion inlining of DueHeap.pop
-          const previousRunAt = root.runAt;
-          // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
-          const recurringCallback = root.callback as () => IDurationSpec | false;
-          let next: IDurationSpec | false;
-
-          if (rethrowTimersErrors) {
-            next = recurringCallback();
-          } else {
-            try {
-              next = recurringCallback();
-            } catch (error) {
-              console.error(error);
-              next = false;
-            }
-          }
-
-          if (!root.cancelled && next !== false) {
+          case SCHEDULED_TIMER_KIND_INTERVAL: {
+            const callback = root.callback;
             //#region inlining of DueHeap.nextSeq
             root.seq = this._nextSeq++;
             //#endregion inlining of DueHeap.nextSeq
-            let nextMs = toDuration(next);
-            root.runAt = previousRunAt + (nextMs < 1 ? 1 : nextMs);
-            this._insert(root);
-          } else if (!root.cancelled) {
-            // Exhausted naturally (returned false): nothing left to dispose. A concurrent
-            // dispose() during the callback already did this itself (root.cancelled would be true).
-            root.dispose();
+            root.runAt += root.delay > 0 ? root.delay : 1;
+            //#region inlining of DueHeap.fixAfterIncrease
+            this._siftDown(root, 0);
+            //#endregion inlining of DueHeap.fixAfterIncrease
+            if (rethrowTimersErrors) {
+              callback();
+            } else {
+              try {
+                callback();
+              } catch (error) {
+                console.error(error);
+              }
+            }
+            break;
           }
-          break;
+          case SCHEDULED_TIMER_KIND_RECURRING: {
+            //#region inlining of DueHeap.pop
+            root.heapIndex = -1;
+            const lastIndex = entries.length - 1;
+            if (lastIndex > 0) {
+              const last = entries.pop()!;
+              this._siftDown(last, 0);
+            } else {
+              entries.pop();
+            }
+            //#endregion inlining of DueHeap.pop
+            const previousRunAt = root.runAt;
+            // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
+            const recurringCallback = root.callback as () => IDurationSpec | false;
+            let next: IDurationSpec | false;
+
+            if (rethrowTimersErrors) {
+              next = recurringCallback();
+            } else {
+              try {
+                next = recurringCallback();
+              } catch (error) {
+                console.error(error);
+                next = false;
+              }
+            }
+
+            if (!root.cancelled && next !== false) {
+              //#region inlining of DueHeap.nextSeq
+              root.seq = this._nextSeq++;
+              //#endregion inlining of DueHeap.nextSeq
+              let nextMs = toDuration(next);
+              root.runAt = previousRunAt + (nextMs < 1 ? 1 : nextMs);
+              this._insert(root);
+            } else if (!root.cancelled) {
+              // Exhausted naturally (returned false): nothing left to dispose. A concurrent
+              // dispose() during the callback already did this itself (root.cancelled would be true).
+              root.dispose();
+            }
+            break;
+          }
         }
+
+        /* the due callback just ran is a task, and every task ends on a microtask checkpoint */
+        if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
       }
+    } finally {
+      /* a due callback that threw still leaves the checkpoint owed, as it would natively */
+      if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
     }
   }
 
@@ -466,12 +540,16 @@ class DueHeap<TDate> {
    * out to the runtime on every single entry measurably cut per-tick overhead for advance()-heavy
    * workloads (many ticks in one call).
    */
-  drainDueAdvancing(targetTimestamp: number, setCurrentTimestamp: (runAt: number) => void): void {
+  drainDueAdvancing(
+    targetTimestamp: number,
+    setCurrentTimestamp: (runAt: number) => void,
+    microtasks: MicrotaskQueue,
+  ): void {
     for (;;) {
       const nextDue = this.peekRunAt();
       if (nextDue === undefined || nextDue > targetTimestamp) break;
       setCurrentTimestamp(nextDue);
-      this.drainDue(nextDue);
+      this.drainDue(nextDue, microtasks);
     }
   }
 }
@@ -479,14 +557,21 @@ class DueHeap<TDate> {
 /**
  * Base class for all deterministic runtime classes.
  */
-export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate> {
+export abstract class BaseDeterministicRuntime<TDate>
+  extends BaseRuntime<TDate>
+  implements IDeterministicRuntime<TDate>
+{
   #dueQueue: DueHeap<TDate>;
   #dueDrainingDisabled = false;
+  #microtasks: MicrotaskQueue;
+  #rethrowTimerErrors: boolean;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     const performance = new DeterministicPerformance<TDate>();
     super(localTimezone, converter, performance);
     this.#dueQueue = new DueHeap<TDate>();
+    this.#microtasks = new MicrotaskQueue();
+    this.#rethrowTimerErrors = shouldRethrowTimerErrors();
     performance.initialize(this);
   }
 
@@ -527,9 +612,38 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     this.#dueDrainingDisabled = true;
   }
 
+  /**
+   * Narrows {@link BaseRuntime.timers}: a deterministic runtime's timers also expose
+   * {@link IDeterministicTimers.drainMicrotasks}.
+   */
+  override get timers(): IDeterministicTimers {
+    return this;
+  }
+
+  //#region microtasks management
+  /**
+   * Queues `callback` on this runtime's own microtask queue. See {@link ITimers.queueMicrotask}.
+   */
+  queueMicrotask(callback: () => void): void {
+    this.#microtasks.push(callback);
+  }
+  /**
+   * Runs this runtime's pending microtasks. See {@link IDeterministicTimers.drainMicrotasks}.
+   *
+   * A no-op when called while a checkpoint on this runtime is already draining - see
+   * {@link MicrotaskQueue}.
+   */
+  drainMicrotasks(): void {
+    this.#microtasks.runCheckpoint(this.#rethrowTimerErrors);
+  }
+  //#endregion microtasks management
+
   protected mayRunDueCallbacks(nowTimestamp: number): void {
+    const microtasks = this.#microtasks;
+    /* the call that got us here ends a task, so its microtasks are owed before any timer runs */
+    if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     if (this.#dueDrainingDisabled) return;
-    this.#dueQueue.drainDue(nowTimestamp);
+    this.#dueQueue.drainDue(nowTimestamp, microtasks);
   }
 
   /**
@@ -542,7 +656,7 @@ export abstract class BaseDeterministicRuntime<TDate> extends BaseRuntime<TDate>
     targetTimestamp: number,
     setCurrentTimestamp: (runAt: number) => void,
   ): void {
-    this.#dueQueue.drainDueAdvancing(targetTimestamp, setCurrentTimestamp);
+    this.#dueQueue.drainDueAdvancing(targetTimestamp, setCurrentTimestamp, this.#microtasks);
   }
 
   /**
@@ -673,6 +787,7 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
   ) {
     super(localTimezone, [fixedTime], converter);
     // Time never advances on a fixed clock, so scheduled callbacks are never due - see ITimers.
+    // Microtasks aren't time-driven, so they still run - see mayRunDueCallbacks's own checkpoint.
     this.disableDueDraining();
   }
 }

@@ -42,6 +42,9 @@ function fakeDeterministicRuntime(): {
     wait() {
       throw new Error("not used by the animation-frame addon");
     },
+    queueMicrotask() {
+      throw new Error("not used by the animation-frame addon");
+    },
   };
   return {
     runtime: {
