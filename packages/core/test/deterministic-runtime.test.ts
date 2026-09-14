@@ -365,6 +365,21 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(log).toEqual(["t1", "m1", "t2"]);
     });
 
+    test("advance() drains pending microtasks even when nothing ends up due", () => {
+      // advance() reaches drainDueAdvancing directly, bypassing mayRunDueCallbacks - so unlike a
+      // once()/every()/recurring() call, it has no pre-checkpoint of its own by default.
+      // drainDueAdvancing's loop only checkpoints as a side effect of a due callback actually
+      // running, so with nothing due at all it would never run one without an explicit guard.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let ran = false;
+      sut.timers.queueMicrotask(() => (ran = true));
+
+      sut.advance({ milliseconds: 100 });
+
+      expect(ran).toBe(true);
+    });
+
     test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
