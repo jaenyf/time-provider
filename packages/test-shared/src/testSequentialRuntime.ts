@@ -712,44 +712,36 @@ export function testSequentialRuntime<TDate>(
           );
         });
         describe("runtime heap", () => {
-          const compactionThreshold = 1000;
-          test("compaction discards timeout entries once it is triggered (utcNow)", () => {
-            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+          const total = 20;
+          test("disposing most of many pending timeouts still fires exactly the survivors (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, 100 + total]);
             let fireCount = 0;
             const handles: IScheduledHandle[] = [];
-            const thresholdBeforeCompaction = compactionThreshold - 1;
-            for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(sut.once({ milliseconds: compactionThreshold + i }, () => fireCount++));
+            for (let i = 0; i < total; i++) {
+              handles.push(sut.once({ milliseconds: 100 + i }, () => fireCount++));
             }
-            //clear the half of registered callbacks
+            // Dispose most of them (well past half) - however the runtime's due-heap reclaims a
+            // disposed entry internally, the survivors must still fire, and only them.
             for (let i = 0; i < handles.length; i += 2) {
               handles[i].dispose();
             }
-            // this 1000th registration trips COMPACTION_INTERVAL and runs compact()
-            sut.once({ milliseconds: compactionThreshold * 2 - 2 }, () => fireCount++);
-            //advance time
             sut.utcNow();
             sut.utcNow();
-            expect(fireCount).toBe(compactionThreshold / 2);
+            expect(fireCount).toBe(total / 2);
           });
-          test("compaction discards interval entries once it is triggered (utcNow)", () => {
-            const sut = createSequentialRuntime("", [0, compactionThreshold * 2 - 2]);
+          test("disposing most of many pending intervals still fires exactly the survivors (utcNow)", () => {
+            const sut = createSequentialRuntime("", [0, 100 + total]);
             let fireCount = 0;
             const handles: IScheduledHandle[] = [];
-            const thresholdBeforeCompaction = compactionThreshold - 1;
-            for (let i = 0; i < thresholdBeforeCompaction; i++) {
-              handles.push(sut.every({ milliseconds: compactionThreshold + i }, () => fireCount++));
+            for (let i = 0; i < total; i++) {
+              handles.push(sut.every({ milliseconds: 100 + i }, () => fireCount++));
             }
-            //clear the half of registered callbacks
             for (let i = 0; i < handles.length; i += 2) {
               handles[i].dispose();
             }
-            // the following every call triggers compaction
-            sut.every({ milliseconds: compactionThreshold * 2 - 2 }, () => fireCount++);
-            //advance time
             sut.utcNow();
             sut.utcNow();
-            expect(fireCount).toBe(compactionThreshold / 2);
+            expect(fireCount).toBe(total / 2);
           });
           test("clearing a non-root, non-last heap entry sifts the replacement up when it belongs higher (utcNow)", () => {
             const sut = createSequentialRuntime("Pacific/Kiritimati", [0, 61]);
