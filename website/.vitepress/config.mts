@@ -106,6 +106,7 @@ export default defineConfig({
         text: "Concepts",
         items: [
           { text: "Deterministic Scheduler", link: "/guide/timers" },
+          { text: "Microtasks", link: "/guide/microtasks" },
           { text: "Timezones & Local Time", link: "/guide/timezones" },
           { text: "Testing With Time-Provider", link: "/guide/testing" },
         ],
@@ -142,6 +143,7 @@ export default defineConfig({
           { text: "IClock", link: "/api/clock" },
           { text: "IParser", link: "/api/parser" },
           { text: "ITimers", link: "/api/timers" },
+          { text: "IMicrotasks", link: "/api/microtasks" },
           { text: "IPerformance", link: "/api/performance" },
         ],
       },

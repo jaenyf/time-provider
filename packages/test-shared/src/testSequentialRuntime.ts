@@ -6,6 +6,7 @@ import {
   asap,
 } from "@time-provider/core";
 import { testTimers } from "./helpers/testTimers.ts";
+import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -785,6 +786,10 @@ export function testSequentialRuntime<TDate>(
           );
         });
       });
+    });
+
+    describe("microtasks", () => {
+      testMicrotasks(createSUT);
     });
 
     describe("performance", () => {

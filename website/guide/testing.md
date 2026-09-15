@@ -45,8 +45,13 @@ expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teard
   `jest.useRealTimers()` pair to remember, and nothing leaks between tests
   if you forget to clean up.
 - **Deterministic by construction.** Manual and sequential runs are
-  synchronous, so assertions after `advance()` don't need `await` or a
-  microtask flush.
+  synchronous, so assertions after `advance()` don't need `await` — a due
+  callback, and any microtask it queues, has already run by the time
+  `advance()` returns. A microtask your test queues directly (not from
+  inside a due callback) is the one exception: it needs an explicit
+  `timeProvider.microtasks.drain()` to observe, since there's no other
+  checkpoint boundary for the runtime to hook a drain to — see
+  [Microtasks](/guide/microtasks).
 
 ## Choosing a strategy for a given test
 

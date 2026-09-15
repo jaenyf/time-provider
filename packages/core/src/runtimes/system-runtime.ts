@@ -120,4 +120,15 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
     return this.trackHandle(handle, options);
   }
+  /**
+   * Queues `callback` via the native `queueMicrotask`, onto the host's own microtask queue.
+   *
+   * Disposing this runtime does not cancel it: the host's microtask queue has no notion of this
+   * runtime at all, so a callback already queued here still runs on schedule even if `callback`
+   * closes over a Time-Provider that is disposed by the time it fires - unlike a deterministic
+   * runtime, which discards its still-queued microtasks on {@link BaseRuntime.dispose}.
+   */
+  queue(callback: () => void): void {
+    queueMicrotask(callback);
+  }
 }

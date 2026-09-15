@@ -30,6 +30,7 @@ export type {
   IRuntime,
   IUtcOnlyRuntime,
   ITimers,
+  IMicrotasks,
   IScheduledHandle,
   ScheduledHandleKind,
   CalendarSchemeFields,

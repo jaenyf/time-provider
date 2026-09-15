@@ -230,6 +230,156 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(otherFired).toBe(true);
     });
 
+    test("a throwing microtask rethrows, and never runs again on a later checkpoint", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.microtasks.queue(() => {
+        log.push("throwing");
+        throw error;
+      });
+      sut.microtasks.queue(() => log.push("after"));
+
+      // The checkpoint stops where it threw, exactly as a due callback batch does.
+      expect(() => sut.microtasks.drain()).toThrow(error);
+      expect(log).toEqual(["throwing"]);
+
+      // The one that threw already ran, so only what is genuinely still pending resumes.
+      expect(() => sut.microtasks.drain()).not.toThrow();
+      expect(log).toEqual(["throwing", "after"]);
+    });
+
+    test("a throwing due callback still leaves its microtask checkpoint owed", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.timers.once({ milliseconds: 10 }, () => {
+        sut.microtasks.queue(() => log.push("microtask"));
+        throw error;
+      });
+
+      expect(() => sut.advance({ milliseconds: 10 })).toThrow(error);
+      expect(log).toEqual(["microtask"]);
+    });
+
+    test("a microtask that schedules a timer doesn't re-run itself (checkpoint reentrancy)", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.microtasks.queue(() => {
+        runCount++;
+        // Scheduling a timer runs mayRunDueCallbacks, which would restart the checkpoint on the
+        // same, not-yet-cleared queue without the reentrancy guard.
+        sut.timers.once({ milliseconds: 1000 }, () => {});
+      });
+
+      sut.microtasks.drain();
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask that reads the clock doesn't re-run itself (checkpoint reentrancy)", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.microtasks.queue(() => {
+        runCount++;
+        // A sequential/manual clock read also runs mayRunDueCallbacks.
+        sut.clock.utcNow();
+      });
+
+      sut.microtasks.drain();
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask queued by a due callback and reading the clock doesn't re-run itself", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let runCount = 0;
+      sut.timers.once({ milliseconds: 10 }, () => {
+        sut.microtasks.queue(() => {
+          runCount++;
+          sut.clock.utcNow();
+        });
+      });
+
+      sut.advance({ milliseconds: 10 });
+
+      expect(runCount).toBe(1);
+    });
+
+    test("a microtask queued during a nested checkpoint attempt still runs, in the same drain", () => {
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.microtasks.queue(() => {
+        log.push("m1");
+        // The nested checkpoint this triggers is a no-op, but m2 must still be picked up by the
+        // outer, still-running checkpoint loop.
+        sut.timers.once({ milliseconds: 1000 }, () => {});
+        sut.microtasks.queue(() => log.push("m2"));
+      });
+
+      sut.microtasks.drain();
+
+      expect(log).toEqual(["m1", "m2"]);
+    });
+
+    test("a due callback's microtasks run before the next due callback sharing its runAt", () => {
+      // Both timers are already due by the time either runs - a single advance() call fires them
+      // both from the same drainDue batch, unlike two separate once() calls (each of which gets
+      // its own mayRunDueCallbacks turn regardless of how the checkpoint is placed). Only a
+      // per-callback checkpoint inside that shared batch gets this order right.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.timers.once({ milliseconds: 5 }, () => {
+        log.push("t1");
+        sut.microtasks.queue(() => log.push("m1"));
+      });
+      sut.timers.once({ milliseconds: 5 }, () => log.push("t2"));
+
+      sut.advance({ milliseconds: 5 });
+
+      expect(log).toEqual(["t1", "m1", "t2"]);
+    });
+
+    test("a due callback's microtasks run before the next due callback at a later runAt, within the same advance()", () => {
+      // Same point as above, but the two due callbacks land at different runAt values within one
+      // advance() walk (drainDueAdvancing's own loop over several drainDue calls), rather than
+      // sharing a single drainDue batch.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      sut.timers.once({ milliseconds: 5 }, () => {
+        log.push("t1");
+        sut.microtasks.queue(() => log.push("m1"));
+      });
+      sut.timers.once({ milliseconds: 10 }, () => log.push("t2"));
+
+      sut.advance({ milliseconds: 15 });
+
+      expect(log).toEqual(["t1", "m1", "t2"]);
+    });
+
+    test("advance() drains pending microtasks even when nothing ends up due", () => {
+      // advance() reaches drainDueAdvancing directly, bypassing mayRunDueCallbacks - so unlike a
+      // once()/every()/recurring() call, it has no pre-checkpoint of its own by default.
+      // drainDueAdvancing's loop only checkpoints as a side effect of a due callback actually
+      // running, so with nothing due at all it would never run one without an explicit guard.
+      stubNodeLike();
+      const sut = new FakeManualRuntime(0);
+      let ran = false;
+      sut.microtasks.queue(() => (ran = true));
+
+      sut.advance({ milliseconds: 100 });
+
+      expect(ran).toBe(true);
+    });
+
     test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
@@ -275,6 +425,23 @@ describe("BaseManualRuntime drainDue exception handling", () => {
 
       expect(() => sut.advance({ milliseconds: 20 })).not.toThrow();
       expect(otherFired).toBe(true);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    });
+
+    test("a throwing microtask is logged and doesn't block the rest of the checkpoint", () => {
+      stubBrowserLike();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sut = new FakeManualRuntime(0);
+      const log: string[] = [];
+      const error = new Error("boom");
+      sut.microtasks.queue(() => {
+        throw error;
+      });
+      sut.microtasks.queue(() => log.push("after"));
+
+      expect(() => sut.microtasks.drain()).not.toThrow();
+      expect(log).toEqual(["after"]);
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
     });
@@ -379,5 +546,32 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
 
     sut.dispose();
     expect(b.isDisposed).toBe(true);
+  });
+});
+
+describe("BaseManualRuntime microtasks and dispose", () => {
+  test("disposing the runtime discards still-queued microtasks", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.microtasks.queue(() => (called = true));
+
+    sut.dispose();
+    sut.microtasks.drain();
+
+    expect(called).toBe(false);
+  });
+
+  test("a microtask that disposes its own runtime doesn't crash the still-running checkpoint", () => {
+    const sut = new FakeManualRuntime(0);
+    const log: string[] = [];
+    sut.microtasks.queue(() => {
+      log.push("m1");
+      sut.dispose();
+    });
+    sut.microtasks.queue(() => log.push("m2"));
+
+    expect(() => sut.microtasks.drain()).not.toThrow();
+    // m1 disposed the runtime mid-checkpoint, clearing the queue before m2 got its turn.
+    expect(log).toEqual(["m1"]);
   });
 });

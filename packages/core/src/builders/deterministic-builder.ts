@@ -1,9 +1,10 @@
 import type {
   IDeterministicPlugin,
+  IDeterministicRuntime,
+  IDeterministicTimeProvider,
   IManualRuntime,
   IManualTimeProvider,
   IRuntime,
-  ITimeProvider,
   IUtcOnlyDeterministicPlugin,
   TimezoneDefinition,
 } from "../types/types.ts";
@@ -53,11 +54,11 @@ class FixedRuntimeBuilder<TDate>
     this.#fixedDateTime = initialDateTime;
     return this;
   }
-  create(): ITimeProvider<TDate> {
+  create(): IDeterministicTimeProvider<TDate> {
     const initialTime = undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0;
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createFixedRuntime(this.localTimezone, initialTime)
-      : (this.plugin.createFixedRuntime(initialTime) as unknown as IRuntime<TDate>);
+      : (this.plugin.createFixedRuntime(initialTime) as unknown as IDeterministicRuntime<TDate>);
     applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }
@@ -117,11 +118,13 @@ class SequentialRuntimeBuilder<TDate>
     return this;
   }
 
-  create(): ITimeProvider<TDate> {
+  create(): IDeterministicTimeProvider<TDate> {
     const sequentialTimes = this.#sequentialTimes.length ? this.#sequentialTimes : [0];
     const runtime = this.plugin.supportsLocalTime
       ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
-      : (this.plugin.createSequentialRuntime(sequentialTimes) as unknown as IRuntime<TDate>);
+      : (this.plugin.createSequentialRuntime(
+          sequentialTimes,
+        ) as unknown as IDeterministicRuntime<TDate>);
     applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }

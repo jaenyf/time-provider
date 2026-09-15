@@ -49,6 +49,37 @@ export const schedulingScenarios: Scenario[] = [
       adapter.advance();
     },
   },
+  /*
+    The two microtask scenarios below share the timeout scenario's shape on purpose: comparing
+    them against `schedule N timeouts, with time advance` is what separates the cost of reaching
+    a microtask checkpoint from the cost of running one.
+  */
+  {
+    name: `schedule ${samplesCount} timeouts queueing 1 microtask each, with time advance and drain`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
+    run: (adapter) => {
+      const microtask = () => {};
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => adapter.queueMicrotask(microtask), i);
+      }
+      adapter.advance();
+      adapter.drainMicrotasks();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts queueing 10 microtasks each, with time advance and drain`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
+    run: (adapter) => {
+      const microtask = () => {};
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {
+          for (let k = 0; k < 10; k++) adapter.queueMicrotask(microtask);
+        }, i);
+      }
+      adapter.advance();
+      adapter.drainMicrotasks();
+    },
+  },
   {
     name: `schedule ${samplesCount} intervals, without time advance`,
     run: (adapter) => {
@@ -65,6 +96,60 @@ export const schedulingScenarios: Scenario[] = [
         adapter.setInterval(() => {}, (i + 1) * 10);
       }
       adapter.advance();
+    },
+  },
+  /*
+    The two microtask scenarios below share the timeout scenario's shape on purpose: comparing
+    them against `schedule N intervals, with time advance` is what separates the cost of reaching
+    a microtask checkpoint from the cost of running one.
+  */
+  {
+    name: `schedule ${samplesCount} intervals queueing 1 microtask each, with time advance and drain`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
+    run: (adapter) => {
+      const microtask = () => {};
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setInterval(() => adapter.queueMicrotask(microtask), (i + 1) * 10);
+      }
+      adapter.advance();
+      adapter.drainMicrotasks();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} intervals queueing 10 microtasks each, with time advance and drain`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
+    run: (adapter) => {
+      const microtask = () => {};
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setInterval(
+          () => {
+            for (let k = 0; k < 10; k++) adapter.queueMicrotask(microtask);
+          },
+          (i + 1) * 10,
+        );
+      }
+      adapter.advance();
+      adapter.drainMicrotasks();
+    },
+  },
+  {
+    name: `queue ${samplesCount} microtasks, and drain without time advance`,
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.queueMicrotask(() => {});
+      }
+      adapter.drainMicrotasks();
+    },
+  },
+  {
+    name: `queue ${samplesCount} microtasks, with time advance and drain`,
+    advanceDelaysMs: [timeoutsAdvanceMs],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.queueMicrotask(() => {});
+      }
+      adapter.advance();
+      adapter.drainMicrotasks();
     },
   },
 ];

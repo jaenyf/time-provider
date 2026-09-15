@@ -4,6 +4,7 @@ import type {
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
+import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testParser } from "./helpers/testParser.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
@@ -715,6 +716,20 @@ export function testManualRuntime<TDate>(
             expect(order).toEqual(["1", "2", "3", "4", "5", "60"]);
           });
         });
+      });
+    });
+
+    describe("microtasks", () => {
+      testMicrotasks(createSUT);
+
+      test("advance() drains pending microtasks even when nothing ends up due", () => {
+        const sut = createSUT();
+        let ran = false;
+        sut.microtasks.queue(() => (ran = true));
+
+        sut.advance({ milliseconds: 100 });
+
+        expect(ran).toBe(true);
       });
     });
 

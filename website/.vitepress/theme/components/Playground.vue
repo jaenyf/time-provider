@@ -271,6 +271,39 @@
             its period from what the run itself returns — here, the previous delay times the backoff
             factor — and returns <code>false</code> on the last run to stop.
           </p>
+
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>label</span>
+              <input
+                type="text"
+                v-model="microtaskLabel"
+                placeholder="Microtask"
+                style="width: 110px"
+              />
+            </label>
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="enqueueMicrotask">
+              microtasks.queue
+            </button>
+            <button
+              class="pg-btn"
+              v-if="selectedStrategy !== 'system'"
+              :disabled="!timeProvider"
+              @click="drainMicrotasks"
+            >
+              microtasks.drain
+            </button>
+          </div>
+          <p class="pg-note">
+            On <strong>system</strong>, <code>microtasks.queue</code> hands the callback to the
+            host's own microtask queue - it fires asynchronously, sharing one FIFO queue with
+            promise continuations. On
+            <strong>fixed</strong>/<strong>manual</strong>/<strong>sequential</strong>, it goes on
+            this runtime's own queue instead, and is drained automatically after each due callback
+            and before any scheduling call or clock read - <code>microtasks.drain</code>
+            runs that checkpoint on demand, which is the only way to observe one queued directly
+            from here rather than from inside a due callback.
+          </p>
         </div>
       </div>
 
@@ -956,6 +989,8 @@ const timerLabel = ref("Tick");
 const timerKind = ref<SchedulerTimerKind>("every");
 const timerDelay = ref(1000);
 
+const microtaskLabel = ref("Microtask");
+
 // A recurring schedule computes its next delay from the run that just happened, so the playground
 // needs a rule for that: start at `recurringInitialDelay`, multiply by `recurringFactor` after
 // every run (factor 1 behaves exactly like `every`), and return `false` once
@@ -1320,6 +1355,29 @@ function advance() {
     const options = { [advanceUnit.value]: advanceAmount.value };
     timeProvider.value.clock.advance(options);
     pushLog("tick", `advance(${JSON.stringify(options)})`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function enqueueMicrotask() {
+  if (!timeProvider.value) return;
+  const label = microtaskLabel.value.trim() || "microtask";
+  try {
+    timeProvider.value.microtasks.queue(() => {
+      pushLog("microtask", `"${label}" ran`);
+    });
+    pushLog("tick", `Queued microtask "${label}"`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function drainMicrotasks() {
+  if (!timeProvider.value) return;
+  try {
+    timeProvider.value.microtasks.drain();
+    pushLog("tick", "microtasks.drain()");
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }
