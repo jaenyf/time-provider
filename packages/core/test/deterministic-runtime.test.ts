@@ -549,6 +549,152 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
   });
 });
 
+describe("BaseManualRuntime tagged timers", () => {
+  test("register() does not run the callback in-line", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => (called = true));
+    expect(called).toBe(false);
+  });
+
+  test("register() clamps a negative delay to 0, same as once() - already due, so it fires in-line", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.taggedTimers.register("tag", { milliseconds: -100 }, () => (called = true));
+    expect(called).toBe(true);
+  });
+
+  test("take() removes and returns the callback, oldest first", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(1));
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(2));
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(3));
+
+    const callbacks = sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY);
+    for (const callback of callbacks) callback();
+
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  test("take() honors maxCount, leaving the remainder for a later take", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(1));
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(2));
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(3));
+
+    for (const callback of sut.taggedTimers.take("tag", 2)) callback();
+    expect(order).toEqual([1, 2]);
+
+    for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  test("take() with nothing registered under the tag returns an empty array", () => {
+    const sut = new FakeManualRuntime(0);
+    expect(sut.taggedTimers.take("never-registered", 10)).toEqual([]);
+  });
+
+  test("take() from a tag that's been fully drained already returns an empty array", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => {});
+    sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY);
+    expect(sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+
+  test("different tags are fully isolated from each other", () => {
+    const sut = new FakeManualRuntime(0);
+    let aCalled = false;
+    let bCalled = false;
+    sut.taggedTimers.register("a", { milliseconds: 1000 }, () => (aCalled = true));
+    sut.taggedTimers.register("b", { milliseconds: 1000 }, () => (bCalled = true));
+
+    for (const callback of sut.taggedTimers.take("a", Number.POSITIVE_INFINITY)) callback();
+
+    expect(aCalled).toBe(true);
+    expect(bCalled).toBe(false);
+    expect(sut.taggedTimers.take("b", Number.POSITIVE_INFINITY)).toHaveLength(1);
+  });
+
+  test("disposing the returned handle removes it from the heap and from its tag's list", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    const handle = sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => (called = true));
+    handle.dispose();
+
+    const callbacks = sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY);
+
+    expect(callbacks).toEqual([]);
+    expect(called).toBe(false);
+  });
+
+  test("disposing a middle entry directly still lets take() retrieve the rest, in order", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(1));
+    const middle = sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(2));
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(3));
+
+    middle.dispose();
+    for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+
+    expect(order).toEqual([1, 3]);
+  });
+
+  test("disposing the tail entry directly still lets take() retrieve the rest, in order", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(1));
+    const tail = sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(2));
+
+    tail.dispose();
+    for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+
+    expect(order).toEqual([1]);
+  });
+
+  test("disposing a handle after it's been taken is a safe no-op", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => {});
+    sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY);
+    expect(() => handle.dispose()).not.toThrow();
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  test("a tagged entry coexists with plain once()/every() entries in the shared heap", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 100000 }, () => order.push("tagged"));
+    sut.timers.once({ milliseconds: 10 }, () => order.push("timeout"));
+
+    sut.advance({ milliseconds: 20 });
+
+    // The tagged entry is due impossibly far in the future, so advancing past the unrelated
+    // timeout must not disturb it.
+    expect(order).toEqual(["timeout"]);
+    expect(sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)).toHaveLength(1);
+  });
+
+  test("a tagged entry that becomes naturally due fires through the normal heap, and can't be taken again", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.taggedTimers.register("tag", { milliseconds: 10 }, () => order.push("fired"));
+
+    sut.advance({ milliseconds: 10 });
+
+    expect(order).toEqual(["fired"]);
+    expect(sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+
+  test("disposing the runtime disposes still-pending tagged entries too", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => {});
+    sut.dispose();
+    expect(handle.isDisposed).toBe(true);
+  });
+});
+
 describe("BaseManualRuntime microtasks and dispose", () => {
   test("disposing the runtime discards still-queued microtasks", () => {
     const sut = new FakeManualRuntime(0);

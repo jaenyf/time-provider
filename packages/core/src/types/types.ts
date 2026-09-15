@@ -549,6 +549,25 @@ interface IWithTimers {
   get timers(): ITimers;
 }
 
+/**
+ * Deterministic-only capability letting an addon register callbacks under an arbitrary `tag` and
+ * later retrieve them directly, without scanning every other pending timer/interval/recurring
+ * entry sharing the runtime's due-heap. A tagged entry behaves exactly like a {@link ITimers.once}
+ * one-shot - same due-heap, same cancellation via `dispose()` on its handle - the tag is purely an
+ * extra index into that same heap, kept in insertion order per tag.
+ */
+export interface ITaggedTimers {
+  /** Registers `callback` under `tag`, exactly like {@link ITimers.once} plus that extra index. */
+  register(tag: unknown, delay: IDurationSpec, callback: () => void): IScheduledHandle;
+  /**
+   * Removes up to `maxCount` still-pending entries registered under `tag`, oldest first, and
+   * returns their callbacks - each entry is already removed from the heap (and its handle
+   * disposed) by the time this returns, so invoking the returned callbacks, if desired, is the
+   * caller's own job, not this method's.
+   */
+  take(tag: unknown, maxCount: number): (() => void)[];
+}
+
 interface IClearTimers {
   clearTimer(handle: IScheduledHandle): void;
 }

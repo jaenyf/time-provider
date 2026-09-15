@@ -9,6 +9,7 @@ import type {
   IManualClock,
   IManualRuntime,
   IRuntime,
+  ITaggedTimers,
   ITimeConverter,
   ScheduledHandleKind,
   TimezoneDefinition,
@@ -59,6 +60,13 @@ class DueEntry<TDate> implements IScheduledHandle {
    */
   _livePrev: DueEntry<TDate> | undefined;
   _liveNext: DueEntry<TDate> | undefined;
+  /**
+   * `undefined` unless created via {@link DueHeap.registerTagged} - the tag this entry was
+   * registered under, and its links in that tag's own intrusive list (see {@link DueHeap._tagLists}).
+   */
+  tag: unknown;
+  _tagPrev: DueEntry<TDate> | undefined;
+  _tagNext: DueEntry<TDate> | undefined;
   readonly #runtime: IRuntime<TDate>;
   #abortController?: AbortController;
 
@@ -83,6 +91,9 @@ class DueEntry<TDate> implements IScheduledHandle {
     this.isDisposed = false;
     this._livePrev = undefined;
     this._liveNext = undefined;
+    this.tag = undefined;
+    this._tagPrev = undefined;
+    this._tagNext = undefined;
   }
 
   dispose(): void {
@@ -199,6 +210,13 @@ class DueHeap<TDate> {
    */
   private _liveHead: DueEntry<TDate> | undefined;
   private _liveTail: DueEntry<TDate> | undefined;
+  /**
+   * One intrusive doubly-linked list per tag, letting {@link takeTagged} retrieve entries
+   * registered under a given tag directly, in registration order, without scanning every other
+   * pending entry sharing this heap - the same technique {@link _liveHead}/{@link _liveTail}
+   * already uses for "every entry ever created", just partitioned by tag instead of unconditional.
+   */
+  private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -233,19 +251,91 @@ class DueHeap<TDate> {
     entry._liveNext = undefined;
   }
 
+  private _linkTag(entry: DueEntry<TDate>, tag: unknown): void {
+    const list = this._tagLists.get(tag);
+    if (list === undefined) {
+      this._tagLists.set(tag, { head: entry, tail: entry });
+      return;
+    }
+    entry._tagPrev = list.tail;
+    list.tail._tagNext = entry;
+    list.tail = entry;
+  }
+
+  private _unlinkTag(entry: DueEntry<TDate>): void {
+    // Always set by _linkTag right when this entry was created (registerTagged is the only
+    // caller that ever sets entry.tag), and never removed until this same unlink runs - so by
+    // construction, the list for this entry's tag is always present here.
+    const list = this._tagLists.get(entry.tag)!;
+    if (entry._tagPrev !== undefined) {
+      entry._tagPrev._tagNext = entry._tagNext;
+    }
+    if (entry._tagNext !== undefined) {
+      entry._tagNext._tagPrev = entry._tagPrev;
+    }
+    if (list.head === entry && list.tail === entry) {
+      this._tagLists.delete(entry.tag);
+    } else {
+      if (list.head === entry) list.head = entry._tagNext!;
+      if (list.tail === entry) list.tail = entry._tagPrev!;
+    }
+    entry._tagPrev = undefined;
+    entry._tagNext = undefined;
+  }
+
+  /**
+   * Shared construction path for every registerX method on this class: builds a `kind` entry and
+   * inserts it into the heap and the live list, additionally linked into `tag`'s own intrusive
+   * list - so {@link takeTagged} can retrieve it directly later, see {@link ITaggedTimers} - when
+   * `tag` isn't `undefined`. {@link registerTimeout}/{@link registerInterval}/
+   * {@link registerRecurring} are this with `tag: undefined`, not a kind of their own.
+   */
+  registerTagged(
+    tag: unknown,
+    kind: ScheduledHandleKind,
+    runtime: IRuntime<TDate>,
+    runAt: number,
+    delay: number,
+    callback: (() => void) | (() => IDurationSpec | false),
+  ): DueEntry<TDate> {
+    const entry = new DueEntry(kind, runtime, this, runAt, this._nextSeq++, delay, callback);
+    this._insert(entry);
+    this._linkLive(entry);
+    if (tag !== undefined) {
+      entry.tag = tag;
+      this._linkTag(entry, tag);
+    }
+    return entry;
+  }
+
+  /**
+   * Removes up to `maxCount` still-pending entries registered under `tag`, oldest first, returning
+   * their callbacks - each removal goes through the same `dispose()` every other cancellation
+   * path uses, so the heap array, the live list, and this tag's own list all stay consistent
+   * (`dispose()` re-enters {@link retireEntry}, which unlinks the tag list too) without this
+   * method needing to touch any of them directly.
+   */
+  takeTagged(tag: unknown, maxCount: number): (() => void)[] {
+    const callbacks: (() => void)[] = [];
+    let node = this._tagLists.get(tag)?.head;
+    while (node !== undefined && callbacks.length < maxCount) {
+      const next = node._tagNext;
+      callbacks.push(node.callback as () => void);
+      node.dispose();
+      node = next;
+    }
+    return callbacks;
+  }
+
   registerTimeout(runtime: IRuntime<TDate>, runAt: number, callback: () => void): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerTagged(
+      undefined,
       SCHEDULED_TIMER_KIND_TIMEOUT,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       0,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   registerInterval(
@@ -254,18 +344,14 @@ class DueHeap<TDate> {
     delay: number,
     callback: () => void,
   ): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerTagged(
+      undefined,
       SCHEDULED_TIMER_KIND_INTERVAL,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       delay,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   registerRecurring(
@@ -273,18 +359,14 @@ class DueHeap<TDate> {
     runAt: number,
     callback: () => IDurationSpec | false,
   ): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerTagged(
+      undefined,
       SCHEDULED_TIMER_KIND_RECURRING,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       0,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   /**
@@ -294,6 +376,7 @@ class DueHeap<TDate> {
   retireEntry(entry: DueEntry<TDate>): void {
     if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
     this._unlinkLive(entry);
+    if (entry.tag !== undefined) this._unlinkTag(entry);
   }
 
   /**
@@ -730,6 +813,33 @@ export abstract class BaseDeterministicRuntime<TDate>
     return entry;
   }
   //#endregion timers
+
+  //#region tagged timers
+  /** See {@link ITaggedTimers}. */
+  get taggedTimers(): ITaggedTimers {
+    return this;
+  }
+
+  register(tag: unknown, delay: IDurationSpec, callback: () => void): IScheduledHandle {
+    let msDelay = toDuration(delay);
+    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const now = this.timestampNow();
+    const entry = this.#dueQueue.registerTagged(
+      tag,
+      SCHEDULED_TIMER_KIND_TIMEOUT,
+      this,
+      now + msDelay,
+      0,
+      callback,
+    );
+    this.mayRunDueCallbacks(now);
+    return entry;
+  }
+
+  take(tag: unknown, maxCount: number): (() => void)[] {
+    return this.#dueQueue.takeTagged(tag, maxCount);
+  }
+  //#endregion tagged timers
 }
 
 /**
