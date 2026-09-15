@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/jaenyf/time-provider/compare/core-v2.0.0...core-v2.1.0) (2026-09-15)
+
+
+### Features
+
+* microtasks ([#163](https://github.com/jaenyf/time-provider/issues/163)) ([608db55](https://github.com/jaenyf/time-provider/commit/608db5535375610b3754b10618fde4643b0ca6be))
+
 ## [2.0.0](https://github.com/jaenyf/time-provider/compare/core-v1.4.0...core-v2.0.0) (2026-09-14)
 
 
