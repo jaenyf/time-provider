@@ -3,7 +3,7 @@
   "packages/addon-compat": "0.1.0",
   "packages/addon-cron": "0.2.0",
   "packages/addon-eta": "0.2.0",
-  "packages/core": "2.0.0",
+  "packages/core": "2.1.0",
   "packages/plugin-dayjs": "0.5.0",
   "packages/plugin-luxon": "0.5.0",
   "packages/plugin-moment": "0.5.0",
