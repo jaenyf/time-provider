@@ -6,9 +6,9 @@ import type { IScheduledHandle } from "@time-provider/core";
  */
 export type WithIdleApi = {
   /**
-   * Schedules work to run when the host has spare time, via `requestIdleCallback` - the host's
-   * real idle periods on a system runtime, an idle period simulated against this runtime's own
-   * clock on a deterministic one. See {@link IIdleApi}.
+   * Schedules work to run when the host has spare time, via `request` - the host's real idle
+   * periods on a system runtime, an idle period simulated against this runtime's own clock on a
+   * deterministic one. See {@link IIdleApi}.
    */
   idle: IIdleApi;
 };
@@ -30,5 +30,5 @@ export interface IIdleApi {
    * other scheduling API in this library, via `dispose()` on the returned handle rather than a
    * separate cancel method - a no-op if it already ran or was already disposed.
    */
-  requestIdleCallback(callback: () => void): IScheduledHandle;
+  request(callback: () => void): IScheduledHandle;
 }

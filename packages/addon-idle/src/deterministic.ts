@@ -13,7 +13,7 @@ type DeterministicIdleAddon<TDate> = WithIdleApi & IAddon<TDate>;
  */
 export interface IIdleBuilderExtra {
   /**
-   * Sets the simulated idle delay driving `requestIdleCallback` on the resulting Time-Provider's
+   * Sets the simulated idle delay driving `request` on the resulting Time-Provider's
    * `idle` API. Defaults to 1ms - see {@link DeterministicIdleScheduler.idleDelay}.
    * @param delayMilliseconds how far the runtime's clock must move forward before an idle
    * callback runs, in milliseconds.
@@ -85,7 +85,7 @@ declare module "@time-provider/core/deterministic" {
   // itself, but the augmented interface's own type-parameter list must match the original.
   interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown> {
     /**
-     * Sets the simulated idle delay driving `requestIdleCallback` on the resulting Time-Provider's
+     * Sets the simulated idle delay driving `request` on the resulting Time-Provider's
      * `idle` API. Defaults to 1ms. Only meaningful once composed with this addon via `.use(addon)`;
      * declared here (rather than inferred through `.use()`) so TypeScript sees it as soon as this
      * module is imported.

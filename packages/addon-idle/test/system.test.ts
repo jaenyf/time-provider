@@ -17,11 +17,11 @@ function fakeSystemRuntime(): FakeRuntime {
 }
 
 describe("idleAddon (system)", () => {
-  test("applyToRuntime defines .idle with a requestIdleCallback facade", () => {
+  test("applyToRuntime defines .idle with a request facade", () => {
     const runtime = fakeSystemRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
-      requestIdleCallback: expect.any(Function),
+      request: expect.any(Function),
     });
   });
 
@@ -40,7 +40,7 @@ describe("idleAddon (system)", () => {
     const runtime = fakeSystemRuntime();
     second.applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
-      requestIdleCallback: expect.any(Function),
+      request: expect.any(Function),
     });
   });
 });

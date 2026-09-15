@@ -33,21 +33,21 @@ export class DeterministicIdleScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "idle",
-      { requestIdleCallback: this.requestIdleCallback.bind(this) },
+      { request: this.request.bind(this) },
       this,
     );
   }
 
   /**
    * The simulated delay, in milliseconds, standing in for an idle period on a deterministic
-   * runtime: a callback registered with `requestIdleCallback` runs once this runtime's clock has
-   * moved that far forward. Raise it to push idle work further behind the timeouts the code
-   * under test schedules.
+   * runtime: a callback registered with `request` runs once this runtime's clock has moved that
+   * far forward. Raise it to push idle work further behind the timeouts the code under test
+   * schedules.
    *
    * Defaults to 1ms rather than 0 so that an idle callback always lands *after* the work already
    * due at the current instant - a deterministic runtime drains a 0ms delay in-line, so a 0
-   * default would run the callback synchronously from `requestIdleCallback` itself, which is the
-   * one thing an idle callback should never do.
+   * default would run the callback synchronously from `request` itself, which is the one thing an
+   * idle callback should never do.
    */
   get idleDelay(): number {
     return this.#idleDelay;
@@ -61,7 +61,7 @@ export class DeterministicIdleScheduler<TDate>
     this.#idleDelay = value > 0 ? value : 0;
   }
 
-  requestIdleCallback(callback: () => void): IScheduledHandle {
+  request(callback: () => void): IScheduledHandle {
     return this.runtime.timers.once({ milliseconds: this.#idleDelay }, callback);
   }
 }

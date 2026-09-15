@@ -82,12 +82,12 @@ export class SystemIdleScheduler<TDate> extends AddonBase<TDate> implements IIdl
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "idle",
-      { requestIdleCallback: this.requestIdleCallback.bind(this) },
+      { request: this.request.bind(this) },
       this,
     );
   }
 
-  requestIdleCallback(callback: () => void): IScheduledHandle {
+  request(callback: () => void): IScheduledHandle {
     return new SystemIdleHandle(requestIdleCallback(callback));
   }
 }

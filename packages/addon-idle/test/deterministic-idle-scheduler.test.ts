@@ -8,7 +8,7 @@ import {
 import { DeterministicIdleScheduler } from "../src/deterministic-idle-scheduler.ts";
 
 /*
- * requestIdleCallback just delegates to the runtime's own timers.once, and hands its handle back
+ * request just delegates to the runtime's own timers.once, and hands its handle back
  * as-is for cancellation via dispose() - the one-shot/cancellation behavior itself is already
  * covered by core's own setTimeout tests, so these only need to check the delegation contract,
  * not re-simulate a queue.
@@ -91,13 +91,13 @@ describe("DeterministicIdleScheduler", () => {
     });
   });
 
-  describe("requestIdleCallback", () => {
+  describe("request", () => {
     test("delegates to the runtime's timers.once with the default 1ms idle delay", () => {
       using sut = new DeterministicIdleScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
       const callback = () => {};
-      sut.requestIdleCallback(callback);
+      sut.request(callback);
       expect(runtime.scheduled.size).toBe(1);
       const [entry] = runtime.scheduled.values();
       expect(entry?.callback).toBe(callback);
@@ -109,7 +109,7 @@ describe("DeterministicIdleScheduler", () => {
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
       sut.idleDelay = 42;
-      sut.requestIdleCallback(() => {});
+      sut.request(() => {});
       const [entry] = runtime.scheduled.values();
       expect(entry?.delayMs).toBe(42);
     });
@@ -118,7 +118,7 @@ describe("DeterministicIdleScheduler", () => {
       using sut = new DeterministicIdleScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
-      const handle = sut.requestIdleCallback(() => {});
+      const handle = sut.request(() => {});
       expect(handle).toBeDefined();
 
       handle.dispose();

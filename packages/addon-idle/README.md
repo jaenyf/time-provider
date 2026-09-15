@@ -22,16 +22,16 @@
 ## Description
 
 This is the [Idle](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-It adds an `.idle` facade exposing the idle callback API (`requestIdleCallback`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.timers`, `.microtasks`, `.parser` and `.performance` ones.
+It adds an `.idle` facade exposing the idle callback API (`request`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.timers`, `.microtasks`, `.parser` and `.performance` ones.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
 
 - `@time-provider/addon-idle` - for a **system** (real time) Time-Provider
-  created via `@time-provider/core`. `.idle` passes through to the real
-  `requestIdleCallback`/`cancelIdleCallback`, or throws a clear error when the host has no native
-  equivalent (e.g. Safari) - `cancelIdleCallback` itself stays an internal detail; cancel by
-  calling `dispose()` on the handle `requestIdleCallback` returns.
+  created via `@time-provider/core`. `.idle.request` passes through to the real
+  `requestIdleCallback`, or throws a clear error when the host has no native equivalent (e.g.
+  Safari) - `cancelIdleCallback` itself stays an internal detail; cancel by calling `dispose()` on
+  the handle `.idle.request` returns.
 - `@time-provider/addon-idle/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
   `@time-provider/core/deterministic`. `.idle` is simulated against that
@@ -47,9 +47,9 @@ import { plugin as deterministicPlugin } from "@time-provider/plugin-native/dete
 import { addon } from "@time-provider/addon-idle";
 import { addon as deterministicAddon } from "@time-provider/addon-idle/deterministic";
 
-// System: real requestIdleCallback (or a clear error if not available)
+// System: real requestIdleCallback under the hood (or a clear error if not available)
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-timeProvider.idle.requestIdleCallback(() => console.log("Idle!"));
+timeProvider.idle.request(() => console.log("Idle!"));
 
 // Deterministic: simulated against the runtime's own clock
 const manual = createDeterministicTimeProvider
@@ -58,7 +58,7 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-manual.idle.requestIdleCallback(() => console.log("Idle!"));
+manual.idle.request(() => console.log("Idle!"));
 manual.clock.advance({ milliseconds: 1 }); // the idle callback runs here
 ```
 
@@ -68,7 +68,7 @@ There is no such thing as a real idle period on a deterministic runtime, so an i
 scheduled on the runtime's own clock instead: it fires once "now" has moved forward by the
 simulated idle delay. That delay defaults to **1ms**, which keeps idle work behind whatever is
 already due at the current instant - a deterministic runtime drains a 0ms delay in-line, so a 0
-default would run the callback synchronously from `requestIdleCallback` itself.
+default would run the callback synchronously from `request` itself.
 
 `.withIdleDelay(ms)` is contributed by the deterministic addon and chains directly off
 `.use(addon)`, before you pick a strategy. Raise it to push idle work further out, behind the
@@ -84,7 +84,7 @@ const manual = createDeterministicTimeProvider
   .create();
 
 manual.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
-manual.idle.requestIdleCallback(() => console.log("Idle!"));
+manual.idle.request(() => console.log("Idle!"));
 manual.clock.advance({ milliseconds: 50 }); // "Busy!"
 manual.clock.advance({ milliseconds: 50 }); // "Idle!"
 ```

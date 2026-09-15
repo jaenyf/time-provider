@@ -10,7 +10,7 @@ import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 
 type FakeRuntime = IRuntime<unknown> & { idle?: unknown };
 type IdleFacade = {
-  requestIdleCallback: (callback: () => void) => IScheduledHandle;
+  request: (callback: () => void) => IScheduledHandle;
 };
 
 /*
@@ -59,27 +59,27 @@ function fakeDeterministicRuntime(): {
 }
 
 describe("idleAddon (deterministic)", () => {
-  test("applyToRuntime defines .idle with a requestIdleCallback facade", () => {
+  test("applyToRuntime defines .idle with a request facade", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
-      requestIdleCallback: expect.any(Function),
+      request: expect.any(Function),
     });
   });
 
   test("applyToRuntime wires .idle to the runtime's own timers, with the default 1ms idle delay", () => {
     const { runtime, scheduled, delays } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    (runtime.idle as IdleFacade).requestIdleCallback(() => {});
+    (runtime.idle as IdleFacade).request(() => {});
     expect(scheduled.size).toBe(1);
     expect(delays).toStrictEqual([1]);
   });
 
-  test("withIdleDelay configures the delay requestIdleCallback schedules with", () => {
+  test("withIdleDelay configures the delay request schedules with", () => {
     const instance = addonBuilderFactory().withIdleDelay(100).create();
     const { runtime, delays } = fakeDeterministicRuntime();
     instance.applyToRuntime(runtime);
-    (runtime.idle as IdleFacade).requestIdleCallback(() => {});
+    (runtime.idle as IdleFacade).request(() => {});
     expect(delays).toStrictEqual([100]);
   });
 
@@ -92,7 +92,7 @@ describe("idleAddon (deterministic)", () => {
     const { runtime, scheduled } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     const facade = runtime.idle as IdleFacade;
-    const handle = facade.requestIdleCallback(() => {});
+    const handle = facade.request(() => {});
     expect(scheduled.size).toBe(1);
     handle.dispose();
     expect(scheduled.size).toBe(0);
@@ -107,11 +107,11 @@ describe("idleAddon (deterministic)", () => {
 
       const { runtime: configuredRuntime, delays: configuredDelays } = fakeDeterministicRuntime();
       configured.applyToRuntime(configuredRuntime);
-      (configuredRuntime.idle as IdleFacade).requestIdleCallback(() => {});
+      (configuredRuntime.idle as IdleFacade).request(() => {});
 
       const { runtime: untouchedRuntime, delays: untouchedDelays } = fakeDeterministicRuntime();
       untouched.applyToRuntime(untouchedRuntime);
-      (untouchedRuntime.idle as IdleFacade).requestIdleCallback(() => {});
+      (untouchedRuntime.idle as IdleFacade).request(() => {});
 
       expect(configuredDelays).toStrictEqual([delayMs]);
       expect(untouchedDelays).toStrictEqual([defaultDelayMs]);
@@ -128,11 +128,11 @@ describe("idleAddon (deterministic)", () => {
 
       const { runtime: firstRuntime, delays: firstDelays } = fakeDeterministicRuntime();
       first.applyToRuntime(firstRuntime);
-      (firstRuntime.idle as IdleFacade).requestIdleCallback(() => {});
+      (firstRuntime.idle as IdleFacade).request(() => {});
 
       const { runtime: secondRuntime, delays: secondDelays } = fakeDeterministicRuntime();
       second.applyToRuntime(secondRuntime);
-      (secondRuntime.idle as IdleFacade).requestIdleCallback(() => {});
+      (secondRuntime.idle as IdleFacade).request(() => {});
 
       expect(firstDelays).toStrictEqual([delayMs]);
       expect(secondDelays).toStrictEqual([delayMs]);
