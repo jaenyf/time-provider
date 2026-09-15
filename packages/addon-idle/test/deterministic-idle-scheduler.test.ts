@@ -8,9 +8,10 @@ import {
 import { DeterministicIdleScheduler } from "../src/deterministic-idle-scheduler.ts";
 
 /*
- * requestIdleCallback/cancelIdleCallback just delegate to the runtime's own timers.once/dispose -
- * the one-shot/cancellation behavior itself is already covered by core's own setTimeout tests, so
- * these only need to check the delegation contract, not re-simulate a queue.
+ * requestIdleCallback just delegates to the runtime's own timers.once, and hands its handle back
+ * as-is for cancellation via dispose() - the one-shot/cancellation behavior itself is already
+ * covered by core's own setTimeout tests, so these only need to check the delegation contract,
+ * not re-simulate a queue.
  */
 function fakeRuntime(): IRuntime<unknown> & {
   scheduled: Map<number, { callback: () => void; delayMs?: number }>;
@@ -119,16 +120,8 @@ describe("DeterministicIdleScheduler", () => {
       sut.applyToRuntime(runtime);
       const handle = sut.requestIdleCallback(() => {});
       expect(handle).toBeDefined();
-    });
-  });
 
-  describe("cancelIdleCallback", () => {
-    test("delegates to the underlying handle's dispose", () => {
-      using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      sut.applyToRuntime(runtime);
-      const handle = sut.requestIdleCallback(() => {});
-      sut.cancelIdleCallback(handle);
+      handle.dispose();
       expect(runtime.cleared.size).toBe(1);
     });
   });

@@ -10,8 +10,7 @@ import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 
 type FakeRuntime = IRuntime<unknown> & { idle?: unknown };
 type IdleFacade = {
-  requestIdleCallback: (callback: () => void) => unknown;
-  cancelIdleCallback: (handle: unknown) => void;
+  requestIdleCallback: (callback: () => void) => IScheduledHandle;
 };
 
 /*
@@ -60,12 +59,11 @@ function fakeDeterministicRuntime(): {
 }
 
 describe("idleAddon (deterministic)", () => {
-  test("applyToRuntime defines .idle with a requestIdleCallback/cancelIdleCallback facade", () => {
+  test("applyToRuntime defines .idle with a requestIdleCallback facade", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
       requestIdleCallback: expect.any(Function),
-      cancelIdleCallback: expect.any(Function),
     });
   });
 
@@ -90,13 +88,13 @@ describe("idleAddon (deterministic)", () => {
     expect(builder.withIdleDelay(100)).toBe(builder);
   });
 
-  test("cancelIdleCallback disposes the underlying scheduled handle", () => {
+  test("disposing the returned handle cancels the underlying scheduled handle", () => {
     const { runtime, scheduled } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     const facade = runtime.idle as IdleFacade;
     const handle = facade.requestIdleCallback(() => {});
     expect(scheduled.size).toBe(1);
-    facade.cancelIdleCallback(handle);
+    handle.dispose();
     expect(scheduled.size).toBe(0);
   });
 

@@ -404,7 +404,7 @@ export class E2eHelper {
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithIdleApi,
   ) {
     expect(() => {
-      timeProvider.idle.cancelIdleCallback(timeProvider.idle.requestIdleCallback(() => {}));
+      timeProvider.idle.requestIdleCallback(() => {}).dispose();
     }).not.toThrow();
   }
 }

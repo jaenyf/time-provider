@@ -22,7 +22,7 @@
 ## Description
 
 This is the [Idle](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-It adds an `.idle` facade exposing the idle callback API (`requestIdleCallback`/`cancelIdleCallback`), alongside the existing `.clock`, `.scheduler`, `.parser` and `.performance` ones.
+It adds an `.idle` facade exposing the idle callback API (`requestIdleCallback`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.timers`, `.microtasks`, `.parser` and `.performance` ones.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
@@ -30,7 +30,8 @@ It is split into a default (system/real-time) entry point and a deterministic on
 - `@time-provider/addon-idle` - for a **system** (real time) Time-Provider
   created via `@time-provider/core`. `.idle` passes through to the real
   `requestIdleCallback`/`cancelIdleCallback`, or throws a clear error when the host has no native
-  equivalent (e.g. Safari).
+  equivalent (e.g. Safari) - `cancelIdleCallback` itself stays an internal detail; cancel by
+  calling `dispose()` on the handle `requestIdleCallback` returns.
 - `@time-provider/addon-idle/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
   `@time-provider/core/deterministic`. `.idle` is simulated against that
@@ -82,7 +83,7 @@ const manual = createDeterministicTimeProvider
   .withInitialTime(0)
   .create();
 
-manual.scheduler.setTimeout(() => console.log("Busy!"), 50);
+manual.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
 manual.idle.requestIdleCallback(() => console.log("Idle!"));
 manual.clock.advance({ milliseconds: 50 }); // "Busy!"
 manual.clock.advance({ milliseconds: 50 }); // "Idle!"

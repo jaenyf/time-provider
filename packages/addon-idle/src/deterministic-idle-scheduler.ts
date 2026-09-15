@@ -1,6 +1,6 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import type { IdleHandle, IIdleApi } from "./types.ts";
+import type { IIdleApi } from "./types.ts";
 
 /**
  * Implements {@link IIdleApi} on top of a deterministic runtime's own timers: an idle callback is
@@ -33,10 +33,7 @@ export class DeterministicIdleScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "idle",
-      {
-        requestIdleCallback: this.requestIdleCallback.bind(this),
-        cancelIdleCallback: this.cancelIdleCallback.bind(this),
-      },
+      { requestIdleCallback: this.requestIdleCallback.bind(this) },
       this,
     );
   }
@@ -64,13 +61,7 @@ export class DeterministicIdleScheduler<TDate>
     this.#idleDelay = value > 0 ? value : 0;
   }
 
-  requestIdleCallback(callback: () => void): IdleHandle {
-    return this.runtime.timers.once(
-      { milliseconds: this.#idleDelay },
-      callback,
-    ) as unknown as IdleHandle;
-  }
-  cancelIdleCallback(handle: IdleHandle): void {
-    (handle as unknown as IScheduledHandle).dispose();
+  requestIdleCallback(callback: () => void): IScheduledHandle {
+    return this.runtime.timers.once({ milliseconds: this.#idleDelay }, callback);
   }
 }

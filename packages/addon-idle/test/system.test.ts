@@ -17,12 +17,11 @@ function fakeSystemRuntime(): FakeRuntime {
 }
 
 describe("idleAddon (system)", () => {
-  test("applyToRuntime defines .idle with a requestIdleCallback/cancelIdleCallback facade", () => {
+  test("applyToRuntime defines .idle with a requestIdleCallback facade", () => {
     const runtime = fakeSystemRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
       requestIdleCallback: expect.any(Function),
-      cancelIdleCallback: expect.any(Function),
     });
   });
 
@@ -42,7 +41,6 @@ describe("idleAddon (system)", () => {
     second.applyToRuntime(runtime);
     expect(runtime.idle).toStrictEqual({
       requestIdleCallback: expect.any(Function),
-      cancelIdleCallback: expect.any(Function),
     });
   });
 });

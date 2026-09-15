@@ -1,8 +1,49 @@
-import { AddonBase, AddonHelper, type IRuntime } from "@time-provider/core";
-import type { IdleHandle, IIdleApi } from "./types.ts";
+import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
+import type { IIdleApi } from "./types.ts";
+
+type NativeIdleHandle = ReturnType<typeof requestIdleCallback>;
 
 function throwIdleApiNotSupported(): never {
   throw new Error("Environment does not support the Idle Callback API (are you in Safari?)");
+}
+
+class SystemIdleHandle implements IScheduledHandle {
+  readonly #nativeHandle: NativeIdleHandle;
+  #disposed = false;
+  #abortController?: AbortController;
+
+  constructor(nativeHandle: NativeIdleHandle) {
+    this.#nativeHandle = nativeHandle;
+  }
+
+  get isDisposed(): boolean {
+    return this.#disposed;
+  }
+
+  dispose(): void {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    this.#abortController?.abort("Idle callback handle is being disposed");
+    cancelIdleCallback(this.#nativeHandle);
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  get signal(): AbortSignal {
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      if (this.#disposed) {
+        this.#abortController.abort("Idle callback handle is being disposed");
+      } else {
+        this.#abortController.signal.addEventListener("abort", () => this.dispose());
+      }
+    }
+    return this.#abortController.signal;
+  }
 }
 
 /**
@@ -41,18 +82,12 @@ export class SystemIdleScheduler<TDate> extends AddonBase<TDate> implements IIdl
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "idle",
-      {
-        requestIdleCallback: this.requestIdleCallback.bind(this),
-        cancelIdleCallback: this.cancelIdleCallback.bind(this),
-      },
+      { requestIdleCallback: this.requestIdleCallback.bind(this) },
       this,
     );
   }
 
-  requestIdleCallback(callback: () => void): IdleHandle {
-    return requestIdleCallback(callback);
-  }
-  cancelIdleCallback(handle: IdleHandle): void {
-    cancelIdleCallback(handle);
+  requestIdleCallback(callback: () => void): IScheduledHandle {
+    return new SystemIdleHandle(requestIdleCallback(callback));
   }
 }

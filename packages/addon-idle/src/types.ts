@@ -1,8 +1,4 @@
-/**
- * A handle returned by {@link IIdleApi.requestIdleCallback}, to be passed to
- * {@link IIdleApi.cancelIdleCallback}.
- */
-export type IdleHandle = ReturnType<typeof requestIdleCallback>;
+import type { IScheduledHandle } from "@time-provider/core";
 
 /**
  * The shape this addon adds to a composed Time-Provider: an `idle` property exposing
@@ -10,9 +6,9 @@ export type IdleHandle = ReturnType<typeof requestIdleCallback>;
  */
 export type WithIdleApi = {
   /**
-   * Schedules work to run when the host has spare time, via `requestIdleCallback`/
-   * `cancelIdleCallback` - the host's real idle periods on a system runtime, an idle period
-   * simulated against this runtime's own clock on a deterministic one. See {@link IIdleApi}.
+   * Schedules work to run when the host has spare time, via `requestIdleCallback` - the host's
+   * real idle periods on a system runtime, an idle period simulated against this runtime's own
+   * clock on a deterministic one. See {@link IIdleApi}.
    */
   idle: IIdleApi;
 };
@@ -30,12 +26,9 @@ export interface IIdleApi {
    * {@link DeterministicIdleScheduler.idleDelay}.
    *
    * Matches the native `requestIdleCallback` contract: fires exactly once, not repeatedly - call
-   * it again from within the callback to keep polling for idle time.
+   * it again from within the callback to keep polling for idle time. Cancel it, same as every
+   * other scheduling API in this library, via `dispose()` on the returned handle rather than a
+   * separate cancel method - a no-op if it already ran or was already disposed.
    */
-  requestIdleCallback(callback: () => void): IdleHandle;
-  /**
-   * Cancels an idle callback previously scheduled via {@link IIdleApi.requestIdleCallback}.
-   * A no-op if it already ran or was already cancelled.
-   */
-  cancelIdleCallback(handle: IdleHandle): void;
+  requestIdleCallback(callback: () => void): IScheduledHandle;
 }

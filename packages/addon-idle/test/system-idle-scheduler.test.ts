@@ -95,11 +95,19 @@ describe("SystemIdleScheduler", () => {
       [...calls.values()][0]?.();
       expect(called).toBe(true);
     });
-    test("delegates cancelIdleCallback to the native function", () => {
+    test("disposing the returned handle delegates to the native cancelIdleCallback", () => {
       const sut = new SystemIdleScheduler();
       const handle = sut.requestIdleCallback(() => {});
-      sut.cancelIdleCallback(handle);
-      expect(calls.has(handle as unknown as number)).toBe(false);
+      expect(calls.size).toBe(1);
+      handle.dispose();
+      expect(calls.size).toBe(0);
+    });
+    test("disposing the returned handle is a no-op the second time", () => {
+      const sut = new SystemIdleScheduler();
+      const handle = sut.requestIdleCallback(() => {});
+      handle.dispose();
+      expect(() => handle.dispose()).not.toThrow();
+      expect(handle.isDisposed).toBe(true);
     });
   });
 });

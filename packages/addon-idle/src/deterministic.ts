@@ -2,7 +2,7 @@ import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provide
 import { DeterministicIdleScheduler } from "./deterministic-idle-scheduler.ts";
 import type { WithIdleApi } from "./types.ts";
 
-export type { IdleHandle, IIdleApi, WithIdleApi } from "./types.ts";
+export type { IIdleApi, WithIdleApi } from "./types.ts";
 export { DeterministicIdleScheduler } from "./deterministic-idle-scheduler.ts";
 
 type DeterministicIdleAddon<TDate> = WithIdleApi & IAddon<TDate>;
