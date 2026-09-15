@@ -785,6 +785,81 @@ describe("BaseManualRuntime tagged timers", () => {
       sut.advance({ milliseconds: 10 });
       expect(order).toEqual(["a", "b", "c", "d", "e", "f"]);
     });
+
+    test("disposing a regular once() timer before it's due leaves it tombstoned, not firing, without disturbing siblings sharing its due time", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // Six total entries keeps the disposed one below the 50% compaction threshold, so it stays
+      // a physical tombstone - registered first, so it's the heap root - when advance() reaches
+      // it, exercising drainDue's TIMEOUT isDisposed skip for a plain (non-tagged) once().
+      const toCancel = sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      sut.advance({ milliseconds: 20 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
+
+    test("disposing a regular every() interval before its first tick stops it for good, without disturbing siblings", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      const toCancel = sut.timers.every({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      // Advancing well past several would-be ticks confirms the interval doesn't just skip once -
+      // it's popped out entirely (see drainDue's INTERVAL case), never rescheduled as a zombie.
+      sut.advance({ milliseconds: 100 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
+
+    test("disposing a regular every() interval that ends up the only pending entry pops it out cleanly", () => {
+      const sut = new FakeManualRuntime(0);
+      let fireCount = 0;
+      // Registered alongside enough siblings that disposing it alone doesn't immediately cross
+      // the 50% compaction threshold, so it stays a tombstone - the siblings fire and leave the
+      // heap first (all due earlier), so by the time drainDue reaches this interval's own due
+      // time it's the sole remaining entry, exercising the lastIndex === 0 pop branch.
+      const handle = sut.timers.every({ milliseconds: 100 }, () => fireCount++);
+      for (let i = 0; i < 5; i++) sut.timers.once({ milliseconds: 10 + i }, () => {});
+      handle.dispose();
+
+      sut.advance({ milliseconds: 100 });
+
+      expect(fireCount).toBe(0);
+    });
+
+    test("disposing a regular recurring() registration before its first tick stops it for good, without disturbing siblings", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      const toCancel = sut.timers.recurring(
+        () => {
+          order.push("a");
+          return { milliseconds: 10 };
+        },
+        { milliseconds: 10 },
+      );
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      sut.advance({ milliseconds: 100 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
   });
 });
 

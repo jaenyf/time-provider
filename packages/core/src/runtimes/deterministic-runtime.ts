@@ -317,13 +317,10 @@ class DueHeap<TDate> {
 
   /**
    * Removes up to `maxCount` still-pending entries registered under `tag`, oldest first, returning
-   * their callbacks. Unlike `dispose()` (used by every other cancellation path), this doesn't pay
-   * an immediate `O(log heapSize)` removal per entry: it only marks each one disposed and unlinks
-   * it from the live list and this tag's own list (all `O(1)`) - the entry stays physically in
-   * `_entries` at its current `heapIndex` as a tombstone, still fully valid heap-comparison data
-   * for whatever else touches the heap meanwhile, until {@link _compact} sweeps it out in one
-   * amortized pass. `drainDue`'s `TIMEOUT` case skips a tombstone it reaches naturally instead of
-   * re-running its callback.
+   * their callbacks. Each removal goes through the same `dispose()` every other cancellation path
+   * uses (so an already-created `signal` gets aborted here too, exactly as it would for a normal
+   * `once()` completing) - `dispose()` re-enters {@link retireEntry}, which is lazy: see its own
+   * doc for why this doesn't pay an immediate `O(log heapSize)` removal per entry.
    */
   takeTagged(tag: unknown, maxCount: number): (() => void)[] {
     const callbacks: (() => void)[] = [];
@@ -331,22 +328,18 @@ class DueHeap<TDate> {
     while (node !== undefined && callbacks.length < maxCount) {
       const next = node._tagNext;
       callbacks.push(node.callback as () => void);
-      node.isDisposed = true;
-      this._unlinkLive(node);
-      this._unlinkTag(node);
-      this._deadCount++;
+      node.dispose();
       node = next;
     }
-    if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
     return callbacks;
   }
 
   /**
-   * Sweeps every tombstoned entry (see {@link takeTagged}) out of `_entries` in one linear pass,
-   * then rebuilds the heap invariant bottom-up (Floyd's algorithm: reusing `_siftDown` on each
-   * non-leaf index, from the bottom up, is `O(survivorCount)` overall - the same per-node
-   * primitive `_removeAtIndex` uses for a single removal, just amortized across all of them at
-   * once instead of paid individually per tombstone).
+   * Sweeps every tombstoned entry (see {@link retireEntry}) out of `_entries` in one linear pass,
+   * then rebuilds the heap invariant bottom-up: Floyd's algorithm, reusing `_siftDown` on each
+   * non-leaf index from the bottom up, builds a valid heap in `O(survivorCount)` overall - far
+   * cheaper than the `O(log heapSize)` an individual removal would cost, paid once per batch of
+   * tombstones instead of once per tombstone.
    */
   private _compact(): void {
     const survivors = this._entries.filter((entry) => !entry.isDisposed);
@@ -401,13 +394,20 @@ class DueHeap<TDate> {
   }
 
   /**
-   * Removes `entry` from the heap array if still pending, and from the live list - called once
-   * per entry, from its own (idempotency-guarded) `dispose()`.
+   * Retires `entry` - called once per entry, from its own (idempotency-guarded) `dispose()`.
+   * Unlinks it from the live list and its tag's list (if any) immediately, both `O(1)`; if it's
+   * still physically in the heap array, this doesn't remove it there and then (see
+   * {@link takeTagged}'s doc for why that's `O(log heapSize)` and worth deferring) - it's left as
+   * a tombstone, counted toward the next {@link _compact}. `drainDue` also discards a tombstone it
+   * reaches naturally on its own, so most near-term cancellations - the common case - end up
+   * swept for free as a side effect of the clock simply advancing, without ever needing a compact.
    */
   retireEntry(entry: DueEntry<TDate>): void {
-    if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
     this._unlinkLive(entry);
     if (entry.tag !== undefined) this._unlinkTag(entry);
+    if (entry.heapIndex < 0) return;
+    this._deadCount++;
+    if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
   }
 
   /**
@@ -438,34 +438,6 @@ class DueHeap<TDate> {
     const index = this._entries.length;
     this._entries.push(entry);
     this._siftUp(entry, index);
-  }
-
-  /** Removes whatever entry occupies heap position `index` and re-seats the heap around the gap. */
-  private _removeAtIndex(index: number): void {
-    const entries = this._entries;
-    entries[index].heapIndex = -1;
-    const lastIndex = entries.length - 1;
-    if (index === lastIndex) {
-      entries.pop();
-      return;
-    }
-    const moved = entries.pop()!;
-    const parent = entries[(index - 1) >>> 1];
-    /*
-      The replacement is either smaller or larger than what used to sit here, never both, so
-      only one direction can ever move it - comparing against the parent picks the right one
-      instead of unconditionally trying both.
-    */
-    //#region inlining of isBefore
-    if (
-      index > 0 &&
-      (moved.runAt < parent.runAt || (moved.runAt === parent.runAt && moved.seq < parent.seq))
-    ) {
-      //#endregion inlining of isBefore
-      this._siftUp(moved, index);
-    } else {
-      this._siftDown(moved, index);
-    }
   }
 
   /** Hole-algorithm siftUp: shifts ancestors down one slot at a time, then seats `moving` once. */
@@ -590,6 +562,20 @@ class DueHeap<TDate> {
             break;
           }
           case SCHEDULED_TIMER_KIND_INTERVAL: {
+            if (root.isDisposed) {
+              // Lazily disposed before this tick (see retireEntry) - pop it out for good rather
+              // than rescheduling a zombie interval that would just keep coming back due.
+              root.heapIndex = -1;
+              const lastIndex = entries.length - 1;
+              if (lastIndex > 0) {
+                const last = entries.pop()!;
+                this._siftDown(last, 0);
+              } else {
+                entries.pop();
+              }
+              this._deadCount--;
+              continue;
+            }
             const callback = root.callback;
             //#region inlining of DueHeap.nextSeq
             root.seq = this._nextSeq++;
@@ -620,6 +606,11 @@ class DueHeap<TDate> {
               entries.pop();
             }
             //#endregion inlining of DueHeap.pop
+            if (root.isDisposed) {
+              // Lazily disposed before this tick (see retireEntry) - already logically gone.
+              this._deadCount--;
+              continue;
+            }
             const previousRunAt = root.runAt;
             // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
             const recurringCallback = root.callback as () => IDurationSpec | false;
