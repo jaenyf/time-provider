@@ -693,6 +693,99 @@ describe("BaseManualRuntime tagged timers", () => {
     sut.dispose();
     expect(handle.isDisposed).toBe(true);
   });
+
+  describe("lazy deletion (take() tombstones instead of removing immediately)", () => {
+    test("taking under the compaction threshold still leaves the remainder correctly ordered", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: number[] = [];
+      for (let i = 1; i <= 10; i++) {
+        sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(i));
+      }
+
+      // 2 of 10 taken (20%) stays under the 50% compaction threshold - the taken two are
+      // tombstones, not physically removed, when the rest are taken next.
+      for (const callback of sut.taggedTimers.take("tag", 2)) callback();
+      expect(order).toEqual([1, 2]);
+
+      for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+      expect(order).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    test("crossing the compaction threshold still behaves correctly for everything registered afterward", () => {
+      const sut = new FakeManualRuntime(0);
+      const firstRound: number[] = [];
+      for (let i = 1; i <= 10; i++) {
+        sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => firstRound.push(i));
+      }
+      // Taking all 10 of 10 (100%) crosses the 50% threshold, triggering a compaction that
+      // rebuilds the heap array and every survivor's heapIndex from scratch.
+      for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+      expect(firstRound).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+      const secondRound: number[] = [];
+      for (let i = 1; i <= 5; i++) {
+        sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => secondRound.push(i));
+      }
+      for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+      expect(secondRound).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    test("compaction that leaves survivors still fires them in the right order afterward", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // 6 tagged entries taken out of 10 total (60%) crosses the 50% threshold, triggering a
+      // compaction that leaves the 4 untouched regular entries as survivors to re-heapify.
+      for (let i = 0; i < 6; i++) {
+        sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(`tagged${i}`));
+      }
+      sut.timers.once({ milliseconds: 30 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 15 }, () => order.push("b"));
+
+      for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+      expect(order).toEqual(["tagged0", "tagged1", "tagged2", "tagged3", "tagged4", "tagged5"]);
+
+      sut.advance({ milliseconds: 30 });
+      expect(order.slice(6)).toEqual(["a", "b", "c", "d"]);
+    });
+
+    test("repeated register/take cycles across many compactions stay correct", () => {
+      const sut = new FakeManualRuntime(0);
+      for (let round = 0; round < 20; round++) {
+        const order: number[] = [];
+        for (let i = 1; i <= 100; i++) {
+          sut.taggedTimers.register("tag", { milliseconds: 1000 }, () => order.push(i));
+        }
+        for (const callback of sut.taggedTimers.take("tag", Number.POSITIVE_INFINITY)) callback();
+        expect(order).toEqual(Array.from({ length: 100 }, (_, i) => i + 1));
+      }
+    });
+
+    test("a tombstone reached naturally via advance() doesn't fire, and doesn't block entries sharing its due time", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // Six total entries keeps the one tombstone below the 50% compaction threshold, so it
+      // stays a physical tombstone in the heap - registered first, so it's the heap root - when
+      // advance() reaches it, exercising drainDue's isDisposed skip rather than compaction.
+      sut.taggedTimers.register("tag", { milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      const [aCallback] = sut.taggedTimers.take("tag", 1);
+      aCallback!();
+      expect(order).toEqual(["a"]);
+
+      sut.advance({ milliseconds: 10 });
+      expect(order).toEqual(["a", "b", "c"]);
+
+      sut.advance({ milliseconds: 10 });
+      expect(order).toEqual(["a", "b", "c", "d", "e", "f"]);
+    });
+  });
 });
 
 describe("BaseManualRuntime microtasks and dispose", () => {

@@ -200,6 +200,8 @@ class MicrotaskQueue {
 
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap<TDate> {
+  /** Once tombstones exceed this fraction of `_entries`, {@link DueHeap._compact} sweeps them out. */
+  private static readonly COMPACTION_THRESHOLD = 0.5;
   private _entries: DueEntry<TDate>[] = [];
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
@@ -217,6 +219,11 @@ class DueHeap<TDate> {
    * already uses for "every entry ever created", just partitioned by tag instead of unconditional.
    */
   private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
+  /**
+   * How many entries in `_entries` are tombstoned (soft-retired by {@link takeTagged}, still
+   * physically occupying an array slot) - see {@link _compact}.
+   */
+  private _deadCount = 0;
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -310,10 +317,13 @@ class DueHeap<TDate> {
 
   /**
    * Removes up to `maxCount` still-pending entries registered under `tag`, oldest first, returning
-   * their callbacks - each removal goes through the same `dispose()` every other cancellation
-   * path uses, so the heap array, the live list, and this tag's own list all stay consistent
-   * (`dispose()` re-enters {@link retireEntry}, which unlinks the tag list too) without this
-   * method needing to touch any of them directly.
+   * their callbacks. Unlike `dispose()` (used by every other cancellation path), this doesn't pay
+   * an immediate `O(log heapSize)` removal per entry: it only marks each one disposed and unlinks
+   * it from the live list and this tag's own list (all `O(1)`) - the entry stays physically in
+   * `_entries` at its current `heapIndex` as a tombstone, still fully valid heap-comparison data
+   * for whatever else touches the heap meanwhile, until {@link _compact} sweeps it out in one
+   * amortized pass. `drainDue`'s `TIMEOUT` case skips a tombstone it reaches naturally instead of
+   * re-running its callback.
    */
   takeTagged(tag: unknown, maxCount: number): (() => void)[] {
     const callbacks: (() => void)[] = [];
@@ -321,10 +331,31 @@ class DueHeap<TDate> {
     while (node !== undefined && callbacks.length < maxCount) {
       const next = node._tagNext;
       callbacks.push(node.callback as () => void);
-      node.dispose();
+      node.isDisposed = true;
+      this._unlinkLive(node);
+      this._unlinkTag(node);
+      this._deadCount++;
       node = next;
     }
+    if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
     return callbacks;
+  }
+
+  /**
+   * Sweeps every tombstoned entry (see {@link takeTagged}) out of `_entries` in one linear pass,
+   * then rebuilds the heap invariant bottom-up (Floyd's algorithm: reusing `_siftDown` on each
+   * non-leaf index, from the bottom up, is `O(survivorCount)` overall - the same per-node
+   * primitive `_removeAtIndex` uses for a single removal, just amortized across all of them at
+   * once instead of paid individually per tombstone).
+   */
+  private _compact(): void {
+    const survivors = this._entries.filter((entry) => !entry.isDisposed);
+    for (let i = 0; i < survivors.length; i++) survivors[i].heapIndex = i;
+    this._entries = survivors;
+    for (let i = (survivors.length >> 1) - 1; i >= 0; i--) {
+      this._siftDown(survivors[i], i);
+    }
+    this._deadCount = 0;
   }
 
   registerTimeout(runtime: IRuntime<TDate>, runAt: number, callback: () => void): DueEntry<TDate> {
@@ -537,6 +568,13 @@ class DueHeap<TDate> {
               entries.pop();
             }
             //#endregion inlining of DueHeap.pop
+            // Tombstoned by takeTagged() before naturally becoming due (see that method) - already
+            // logically gone, so this pop is the only thing left to do for it. Always false for a
+            // plain once() entry, since those are only ever cancelled eagerly.
+            if (root.isDisposed) {
+              this._deadCount--;
+              continue;
+            }
             if (rethrowTimersErrors) {
               root.callback();
             } else {
