@@ -721,6 +721,16 @@ export function testManualRuntime<TDate>(
 
     describe("microtasks", () => {
       testMicrotasks(createSUT);
+
+      test("advance() drains pending microtasks even when nothing ends up due", () => {
+        const sut = createSUT();
+        let ran = false;
+        sut.microtasks.queue(() => (ran = true));
+
+        sut.advance({ milliseconds: 100 });
+
+        expect(ran).toBe(true);
+      });
     });
 
     describe("performance", () => {

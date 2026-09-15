@@ -3,7 +3,7 @@ import type { ITimers } from "@time-provider/core";
 import type { IDeterministicMicrotasks } from "@time-provider/core/deterministic";
 
 export function testMicrotasks(
-  createSUT: () => IDeterministicMicrotasks & Pick<ITimers, "once">,
+  createSUT: () => IDeterministicMicrotasks & Pick<ITimers, "once"> & { dispose(): void },
   isTimeFrozen: boolean = false,
 ) {
   describe("queue", () => {
@@ -52,6 +52,17 @@ export function testMicrotasks(
     test("draining an empty queue does not throw", () => {
       const sut = createSUT();
       expect(() => sut.drain()).not.toThrow();
+    });
+
+    test("disposing the runtime discards still-queued microtasks", () => {
+      const sut = createSUT();
+      let called = false;
+      sut.queue(() => (called = true));
+
+      sut.dispose();
+      sut.drain();
+
+      expect(called).toBe(false);
     });
   });
 
