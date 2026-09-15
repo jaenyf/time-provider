@@ -611,6 +611,10 @@
   content: "No cron schedules";
 }
 
+.pg-timer-list-idle:empty::before {
+  content: "No pending idle callbacks";
+}
+
 .pg-timer-row {
   display: flex;
   align-items: center;
@@ -742,6 +746,9 @@
 }
 .pg-log-row.pg-log-eta .pg-log-msg {
   color: #2dd4bf;
+}
+.pg-log-row.pg-log-idle .pg-log-msg {
+  color: #4ade80;
 }
 
 .pg-note {
