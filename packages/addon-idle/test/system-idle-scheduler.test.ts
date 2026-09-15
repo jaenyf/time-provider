@@ -109,5 +109,50 @@ describe("SystemIdleScheduler", () => {
       expect(() => handle.dispose()).not.toThrow();
       expect(handle.isDisposed).toBe(true);
     });
+    test("implicit dispose (using) delegates to the native cancelIdleCallback", () => {
+      const sut = new SystemIdleScheduler();
+      {
+        using handle = sut.requestIdleCallback(() => {});
+        expect(handle.isDisposed).toBe(false);
+      }
+      expect(calls.size).toBe(0);
+    });
+
+    describe("SystemIdleHandle", () => {
+      describe("abort", () => {
+        test("handle is not aborted by default", () => {
+          const sut = new SystemIdleScheduler();
+          using handle = sut.requestIdleCallback(() => {});
+          expect(handle.signal.aborted).toBe(false);
+        });
+        test("handle can be aborted", () => {
+          const sut = new SystemIdleScheduler();
+          using handle = sut.requestIdleCallback(() => {});
+          handle.signal.dispatchEvent(new Event("abort"));
+          expect(handle.signal.aborted).toBe(true);
+        });
+        test("aborting the signal cancels the native idle callback", () => {
+          const sut = new SystemIdleScheduler();
+          const handle = sut.requestIdleCallback(() => {});
+          expect(calls.size).toBe(1);
+          handle.signal.dispatchEvent(new Event("abort"));
+          expect(calls.size).toBe(0);
+          expect(handle.isDisposed).toBe(true);
+        });
+        test("abort does not throw when the handle is already disposed", () => {
+          const sut = new SystemIdleScheduler();
+          const handle = sut.requestIdleCallback(() => {});
+          handle.dispose();
+          expect(() => handle.signal.dispatchEvent(new Event("abort"))).not.toThrow();
+          expect(handle.signal.aborted).toBe(true);
+        });
+        test("the signal is already aborted when read for the first time after dispose", () => {
+          const sut = new SystemIdleScheduler();
+          const handle = sut.requestIdleCallback(() => {});
+          handle.dispose();
+          expect(handle.signal.aborted).toBe(true);
+        });
+      });
+    });
   });
 });
