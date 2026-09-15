@@ -7,7 +7,7 @@ import type { IScheduledHandle } from "@time-provider/core";
 export type WithIdleApi = {
   /**
    * Schedules work to run when the host has spare time, via `request` - the host's real idle
-   * periods on a system runtime, an idle period simulated against this runtime's own clock on a
+   * periods on a system runtime, requests held pending until explicitly drained on a
    * deterministic one. See {@link IIdleApi}.
    */
   idle: IIdleApi;
@@ -22,8 +22,7 @@ export interface IIdleApi {
    * Schedules `callback` to run once, when the host considers itself idle.
    * On a system (real time) runtime this depends on the host's native implementation - the
    * callback may be delayed for as long as the host stays busy. On a deterministic runtime, it
-   * fires once this runtime's own "now" has moved forward by the simulated idle delay - see
-   * {@link DeterministicIdleScheduler.idleDelay}.
+   * stays pending until explicitly declared idle - see {@link IDeterministicIdleApi.drain}.
    *
    * Matches the native `requestIdleCallback` contract: fires exactly once, not repeatedly - call
    * it again from within the callback to keep polling for idle time. Cancel it, same as every
@@ -46,14 +45,15 @@ export type WithDeterministicIdleApi = {
  * The {@link IIdleApi} of a deterministic (fixed/manual/sequential) runtime, which additionally
  * lets a test run pending idle-requested callbacks on demand.
  *
- * PLACEHOLDER implementation: `drain` currently just advances the clock, relying on `request`'s
- * existing simulated-delay scheduling to fire whatever becomes due - it does not yet honor
- * `maxCount` as an actual callback budget. This will be replaced with a real implementation once
- * a design is chosen; the interface shape is intended to be the stable, final one already.
+ * There's no real notion of "idle" on a deterministic clock - unlike a timeout, nothing about
+ * elapsed simulated time says the runtime has spare capacity - so a request made through
+ * {@link IIdleApi.request} stays pending until this runs it: `advance()`/clock reads never fire
+ * it on their own.
  */
 export interface IDeterministicIdleApi extends IIdleApi {
   /**
-   * Declares the runtime idle now, running pending idle-requested callbacks.
+   * Declares the runtime idle now, running up to `maxCount` pending idle-requested callbacks,
+   * oldest request first.
    * @param maxCount how many pending idle callbacks this idle period allows through. Omit to run
    * everything currently pending.
    * @returns how many callbacks actually ran.

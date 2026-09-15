@@ -7,72 +7,77 @@ import {
 } from "@time-provider/core";
 import { DeterministicIdleScheduler } from "../src/deterministic-idle-scheduler.ts";
 
-/*
- * request just delegates to the runtime's own timers.once, and hands its handle back
- * as-is for cancellation via dispose() - the one-shot/cancellation behavior itself is already
- * covered by core's own setTimeout tests, so these only need to check the delegation contract,
- * not re-simulate a queue.
- */
-function fakeRuntime(withAdvance = true): IRuntime<unknown> & {
-  scheduled: Map<number, { callback: () => void; delayMs?: number }>;
-  cleared: Set<number>;
-  advance?: (options: { milliseconds: number }) => void;
-} {
-  const scheduled = new Map<
-    number,
-    { callback: () => void; delayMs?: number; dueAt: number; disposed: boolean }
-  >();
-  const cleared = new Set<number>();
-  let nextHandle = 1;
-  let elapsed = 0;
-  const runtime = {
-    scheduled,
-    cleared,
-    registerAddon: () => {},
-    timers: {
-      once(durationSpec: IDurationSpec, callback: () => void) {
-        const id = nextHandle++;
-        const delayMs = toDuration(durationSpec);
-        scheduled.set(id, { callback, delayMs, dueAt: elapsed + delayMs, disposed: false });
-        return {
-          dispose: () => {
-            const entry = scheduled.get(id);
-            if (entry) entry.disposed = true;
-            scheduled.delete(id);
-            cleared.add(id);
-          },
-          isDisposed: false,
-          [Symbol.dispose]: () => scheduled.delete(id),
-          signal: new AbortController().signal,
-        } as unknown as IScheduledHandle & { id: number };
-      },
-      every() {
-        throw new Error("not used by DeterministicIdleScheduler");
-      },
-      recurring() {
-        throw new Error("not used by DeterministicIdleScheduler");
-      },
-      wait() {
-        throw new Error("not used by DeterministicIdleScheduler");
-      },
-    },
-  } as unknown as IRuntime<unknown> & {
-    scheduled: Map<number, { callback: () => void; delayMs?: number }>;
-    cleared: Set<number>;
-    advance?: (options: { milliseconds: number }) => void;
+interface TaggedEntry {
+  tag: unknown;
+  callback: () => void;
+}
+
+function makeHandle(entries: TaggedEntry[], entry: TaggedEntry): IScheduledHandle {
+  let disposed = false;
+  let abortController: AbortController | undefined;
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    abortController?.abort();
+    const index = entries.indexOf(entry);
+    if (index >= 0) entries.splice(index, 1);
   };
-  if (withAdvance) {
-    runtime.advance = (options: { milliseconds: number }) => {
-      elapsed += options.milliseconds;
-      for (const [id, entry] of scheduled) {
-        if (!entry.disposed && entry.dueAt <= elapsed) {
-          scheduled.delete(id);
-          entry.callback();
+  return {
+    dispose,
+    get isDisposed() {
+      return disposed;
+    },
+    [Symbol.dispose]: dispose,
+    get signal() {
+      if (abortController === undefined) {
+        abortController = new AbortController();
+        if (disposed) {
+          abortController.abort();
+        } else {
+          abortController.signal.addEventListener("abort", dispose);
         }
       }
-    };
-  }
-  return runtime;
+      return abortController.signal;
+    },
+  } as unknown as IScheduledHandle;
+}
+
+/*
+ * request() registers via the runtime's taggedTimers capability, and drain() retrieves via the
+ * same tag - so this fake only needs to model register()/take() faithfully: registering never
+ * fires in-line (a far-future delay), and take() removes and returns callbacks for a given tag,
+ * oldest first, leaving entries under other tags untouched. dispose()ing a handle removes its
+ * entry immediately, mirroring core's real tag-list unlink-on-dispose behavior.
+ */
+function fakeRuntime(): IRuntime<unknown> & { registeredCount: () => number } {
+  const entries: TaggedEntry[] = [];
+  const taggedTimers = {
+    register(tag: unknown, delay: IDurationSpec, callback: () => void): IScheduledHandle {
+      // A far-future delay is the one thing request() relies on this fake never doing: firing
+      // in-line, the way an already-due (e.g. 0ms) delay normally would.
+      expect(toDuration(delay)).toBeGreaterThan(0);
+      const entry: TaggedEntry = { tag, callback };
+      entries.push(entry);
+      return makeHandle(entries, entry);
+    },
+    take(tag: unknown, maxCount: number): (() => void)[] {
+      const callbacks: (() => void)[] = [];
+      for (let i = 0; i < entries.length && callbacks.length < maxCount;) {
+        if (entries[i].tag === tag) {
+          callbacks.push(entries[i].callback);
+          entries.splice(i, 1);
+        } else {
+          i++;
+        }
+      }
+      return callbacks;
+    },
+  };
+  return {
+    registeredCount: () => entries.length,
+    registerAddon: () => {},
+    taggedTimers,
+  } as unknown as IRuntime<unknown> & { registeredCount: () => number };
 }
 
 describe("DeterministicIdleScheduler", () => {
@@ -94,65 +99,103 @@ describe("DeterministicIdleScheduler", () => {
     });
   });
 
-  describe("idleDelay", () => {
-    test("defaults to 1ms, so an idle callback is never drained in-line at registration", () => {
-      using sut = new DeterministicIdleScheduler();
-      sut.applyToRuntime(fakeRuntime());
-      expect(sut.idleDelay).toBe(1);
-    });
-    test("can be read back after being set", () => {
-      using sut = new DeterministicIdleScheduler();
-      sut.applyToRuntime(fakeRuntime());
-      sut.idleDelay = 250;
-      expect(sut.idleDelay).toBe(250);
-    });
-    test.each([0, -1, -100, NaN])("clamps a non-positive value (%d) to 0", (value) => {
-      using sut = new DeterministicIdleScheduler();
-      sut.applyToRuntime(fakeRuntime());
-      sut.idleDelay = 500;
-      sut.idleDelay = value;
-      expect(sut.idleDelay).toBe(0);
-    });
-  });
-
   describe("request", () => {
-    test("delegates to the runtime's timers.once with the default 1ms idle delay", () => {
+    test("does not run the callback in-line", () => {
       using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      sut.applyToRuntime(runtime);
+      sut.applyToRuntime(fakeRuntime());
       let called = false;
       sut.request(() => (called = true));
-      expect(runtime.scheduled.size).toBe(1);
-      const [entry] = runtime.scheduled.values();
-      entry?.callback();
-      expect(called).toBe(true);
-      expect(entry?.delayMs).toBe(1);
+      expect(called).toBe(false);
     });
 
-    test("a configured idleDelay changes the scheduled delay", () => {
+    test("registers a real entry with the runtime's taggedTimers immediately", () => {
       using sut = new DeterministicIdleScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
-      sut.idleDelay = 42;
       sut.request(() => {});
-      const [entry] = runtime.scheduled.values();
-      expect(entry?.delayMs).toBe(42);
+      expect(runtime.registeredCount()).toBe(1);
     });
 
-    test("returns the underlying scheduled handle", () => {
+    test("returns the underlying registered handle directly", () => {
       using sut = new DeterministicIdleScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
       const handle = sut.request(() => {});
-      expect(handle).toBeDefined();
-
       handle.dispose();
-      expect(runtime.cleared.size).toBe(1);
+      expect(runtime.registeredCount()).toBe(0);
+    });
+
+    test("disposing the handle prevents the callback from ever running", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      let called = false;
+      const handle = sut.request(() => (called = true));
+      handle.dispose();
+      sut.drain();
+      expect(called).toBe(false);
+    });
+
+    test("disposing the handle after it already ran is a safe no-op", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      const handle = sut.request(() => {});
+      sut.drain();
+      expect(() => handle.dispose()).not.toThrow();
+      expect(handle.isDisposed).toBe(true);
+    });
+
+    test("disposing the handle twice while still pending is a safe no-op", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      const handle = sut.request(() => {});
+      handle.dispose();
+      expect(() => handle.dispose()).not.toThrow();
+      expect(handle.isDisposed).toBe(true);
+    });
+
+    test("[Symbol.dispose] disposes the handle, same as dispose()", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      let called = false;
+      {
+        using handle = sut.request(() => (called = true));
+        expect(handle.isDisposed).toBe(false);
+      }
+      sut.drain();
+      expect(called).toBe(false);
+    });
+
+    describe("abort signal", () => {
+      test("aborting the signal cancels a still-pending request", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        let called = false;
+        const handle = sut.request(() => (called = true));
+        handle.signal.dispatchEvent(new Event("abort"));
+        sut.drain();
+        expect(called).toBe(false);
+        expect(handle.isDisposed).toBe(true);
+      });
+
+      test("reading the signal after dispose returns an already-aborted signal", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        const handle = sut.request(() => {});
+        handle.dispose();
+        expect(handle.signal.aborted).toBe(true);
+      });
+
+      test("reading the signal twice returns the same signal instance", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        const handle = sut.request(() => {});
+        expect(handle.signal).toBe(handle.signal);
+      });
     });
   });
 
-  describe("drain (placeholder implementation)", () => {
-    test("advances the runtime's clock, firing due requests", () => {
+  describe("drain", () => {
+    test("runs a pending request and removes its entry from the runtime", () => {
       using sut = new DeterministicIdleScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
@@ -162,12 +205,12 @@ describe("DeterministicIdleScheduler", () => {
       sut.drain();
 
       expect(called).toBe(true);
+      expect(runtime.registeredCount()).toBe(0);
     });
 
-    test("returns how many requests fired", () => {
+    test("returns how many requests ran", () => {
       using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      sut.applyToRuntime(runtime);
+      sut.applyToRuntime(fakeRuntime());
       sut.request(() => {});
       sut.request(() => {});
       sut.request(() => {});
@@ -175,51 +218,105 @@ describe("DeterministicIdleScheduler", () => {
       expect(sut.drain()).toBe(3);
     });
 
-    test("a second drain with nothing pending returns 0", () => {
+    test("runs requests oldest-first", () => {
       using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      sut.applyToRuntime(runtime);
+      sut.applyToRuntime(fakeRuntime());
+      const order: number[] = [];
+      sut.request(() => order.push(1));
+      sut.request(() => order.push(2));
+      sut.request(() => order.push(3));
+
+      sut.drain();
+
+      expect(order).toStrictEqual([1, 2, 3]);
+    });
+
+    test("a second drain with nothing pending returns 0 and does not throw", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
       sut.request(() => {});
       sut.drain();
 
-      expect(sut.drain()).toBe(0);
-    });
-
-    test("advances by maxCount milliseconds when given", () => {
-      using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      const advanceCalls: number[] = [];
-      runtime.advance = (options) => advanceCalls.push(options.milliseconds);
-      sut.applyToRuntime(runtime);
-
-      sut.drain(42);
-
-      expect(advanceCalls).toStrictEqual([42]);
-    });
-
-    test("advances by idleDelay when maxCount is omitted", () => {
-      using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime();
-      const advanceCalls: number[] = [];
-      runtime.advance = (options) => advanceCalls.push(options.milliseconds);
-      sut.idleDelay = 99;
-      sut.applyToRuntime(runtime);
-
-      sut.drain();
-
-      expect(advanceCalls).toStrictEqual([99]);
-    });
-
-    test("is a safe no-op returning 0 when the runtime has no advance()", () => {
-      using sut = new DeterministicIdleScheduler();
-      const runtime = fakeRuntime(false);
-      sut.applyToRuntime(runtime);
-      let called = false;
-      sut.request(() => (called = true));
-
       expect(() => sut.drain()).not.toThrow();
       expect(sut.drain()).toBe(0);
-      expect(called).toBe(false);
+    });
+
+    test("draining an empty scheduler does not throw", () => {
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      expect(() => sut.drain()).not.toThrow();
+      expect(sut.drain()).toBe(0);
+    });
+
+    describe("maxCount", () => {
+      test("runs only maxCount requests, oldest first", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        const order: number[] = [];
+        sut.request(() => order.push(1));
+        sut.request(() => order.push(2));
+        sut.request(() => order.push(3));
+
+        const ran = sut.drain(2);
+
+        expect(ran).toBe(2);
+        expect(order).toStrictEqual([1, 2]);
+      });
+
+      test("leaves the remainder pending for a later drain", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        const order: number[] = [];
+        sut.request(() => order.push(1));
+        sut.request(() => order.push(2));
+        sut.request(() => order.push(3));
+
+        sut.drain(2);
+        sut.drain();
+
+        expect(order).toStrictEqual([1, 2, 3]);
+      });
+
+      test("a maxCount larger than what's pending just runs everything", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        sut.request(() => {});
+        sut.request(() => {});
+
+        expect(sut.drain(100)).toBe(2);
+      });
+
+      test("maxCount of 0 runs nothing", () => {
+        using sut = new DeterministicIdleScheduler();
+        sut.applyToRuntime(fakeRuntime());
+        let called = false;
+        sut.request(() => (called = true));
+
+        expect(sut.drain(0)).toBe(0);
+        expect(called).toBe(false);
+      });
+    });
+
+    test("a request made from inside a draining callback lands on a later drain, not this one", () => {
+      // Unlike a pending-list design whose flush loop re-checks what's left after each callback,
+      // drain() here takes a fixed snapshot of callbacks up front - a reentrant request() adds a
+      // new entry to the runtime's tag list, but that's not part of the snapshot already
+      // in flight, so it can only be picked up by a later drain().
+      using sut = new DeterministicIdleScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      const order: string[] = [];
+      sut.request(() => {
+        order.push("first");
+        sut.request(() => order.push("requested-during-drain"));
+      });
+
+      const ran = sut.drain();
+
+      expect(order).toStrictEqual(["first"]);
+      expect(ran).toBe(1);
+
+      expect(sut.drain()).toBe(1);
+      expect(order).toStrictEqual(["first", "requested-during-drain"]);
     });
   });
 });
