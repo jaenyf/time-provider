@@ -32,3 +32,31 @@ export interface IIdleApi {
    */
   request(callback: () => void): IScheduledHandle;
 }
+
+/**
+ * The shape the deterministic idle addon adds to a composed Time-Provider: an `idle` property
+ * exposing {@link IDeterministicIdleApi}, which additionally lets a test declare the runtime
+ * idle on demand.
+ */
+export type WithDeterministicIdleApi = {
+  idle: IDeterministicIdleApi;
+};
+
+/**
+ * The {@link IIdleApi} of a deterministic (fixed/manual/sequential) runtime, which additionally
+ * lets a test run pending idle-requested callbacks on demand.
+ *
+ * PLACEHOLDER implementation: `drain` currently just advances the clock, relying on `request`'s
+ * existing simulated-delay scheduling to fire whatever becomes due - it does not yet honor
+ * `maxCount` as an actual callback budget. This will be replaced with a real implementation once
+ * a design is chosen; the interface shape is intended to be the stable, final one already.
+ */
+export interface IDeterministicIdleApi extends IIdleApi {
+  /**
+   * Declares the runtime idle now, running pending idle-requested callbacks.
+   * @param maxCount how many pending idle callbacks this idle period allows through. Omit to run
+   * everything currently pending.
+   * @returns how many callbacks actually ran.
+   */
+  drain(maxCount?: number): number;
+}

@@ -44,4 +44,13 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   advance(): void {
     this.#timers.advanceTimersByTime(this.#delays.next());
   }
+  requestIdleCallback(callback: () => void): void {
+    // jest's fake timers don't fake requestIdleCallback/cancelIdleCallback at all (confirmed:
+    // both stay undefined on globalThis once installed) - fall back to the same setTimeout-based
+    // polyfill real browsers without native support use, so this adapter stays comparable.
+    globalThis.setTimeout(callback, 0);
+  }
+  drainIdleCallbacks(ms: number): void {
+    this.#timers.advanceTimersByTime(ms);
+  }
 }

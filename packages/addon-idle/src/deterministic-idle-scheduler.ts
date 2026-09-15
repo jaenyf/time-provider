@@ -1,18 +1,26 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
-import type { IIdleApi } from "./types.ts";
+import type { IDeterministicIdleApi } from "./types.ts";
+
+/** The subset of a manual runtime's `advance` this scheduler's placeholder `drain` needs. */
+type AdvanceableRuntime = { advance(options: { milliseconds: number }): unknown };
+
+function canAdvance(runtime: unknown): runtime is AdvanceableRuntime {
+  return typeof (runtime as { advance?: unknown }).advance === "function";
+}
 
 /**
- * Implements {@link IIdleApi} on top of a deterministic runtime's own timers: an idle callback is
- * scheduled {@link idleDelay} milliseconds out on that runtime's own clock, rather than waiting
- * for a real host idle period.
+ * Implements {@link IDeterministicIdleApi} on top of a deterministic runtime's own timers: an
+ * idle callback is scheduled {@link idleDelay} milliseconds out on that runtime's own clock,
+ * rather than waiting for a real host idle period.
  */
 export class DeterministicIdleScheduler<TDate>
   extends AddonBase<TDate>
-  implements IDeterministicAddon<TDate>, IIdleApi
+  implements IDeterministicAddon<TDate>, IDeterministicIdleApi
 {
   #idleDelay = 1;
   #isDisposed: boolean;
+  #pendingCount = 0;
 
   constructor() {
     super();
@@ -33,7 +41,7 @@ export class DeterministicIdleScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "idle",
-      { request: this.request.bind(this) },
+      { request: this.request.bind(this), drain: this.drain.bind(this) },
       this,
     );
   }
@@ -62,6 +70,26 @@ export class DeterministicIdleScheduler<TDate>
   }
 
   request(callback: () => void): IScheduledHandle {
-    return this.runtime.timers.once({ milliseconds: this.#idleDelay }, callback);
+    this.#pendingCount++;
+    return this.runtime.timers.once({ milliseconds: this.#idleDelay }, () => {
+      this.#pendingCount--;
+      callback();
+    });
+  }
+
+  /**
+   * PLACEHOLDER implementation - see {@link IDeterministicIdleApi.drain}. Currently just advances
+   * the clock by `maxCount` milliseconds (reusing `request`'s existing simulated-delay
+   * scheduling to fire whatever becomes due along the way) rather than actually honoring
+   * `maxCount` as a callback budget. Only does anything on a manual runtime, since it's the only
+   * deterministic strategy with an on-demand `advance()` - a no-op elsewhere (fixed never runs
+   * due work at all, and sequential's future instants are fixed up front at construction, not
+   * something this can reach in on demand).
+   */
+  drain(maxCount?: number): number {
+    if (!canAdvance(this.runtime)) return 0;
+    const before = this.#pendingCount;
+    this.runtime.advance({ milliseconds: maxCount ?? this.#idleDelay });
+    return before - this.#pendingCount;
   }
 }

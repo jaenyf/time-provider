@@ -39,4 +39,10 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   advance(): void {
     this.#clock!.tick(this.#delays.next());
   }
+  requestIdleCallback(callback: () => void): void {
+    this.#clock!.requestIdleCallback(callback);
+  }
+  drainIdleCallbacks(ms: number): void {
+    this.#clock!.tick(ms);
+  }
 }
