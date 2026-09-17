@@ -480,10 +480,11 @@ export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
 export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
 export const SCHEDULED_TIMER_KIND_RECURRING = 2;
-export type ScheduledHandleKind =
-  | typeof SCHEDULED_TIMER_KIND_TIMEOUT
-  | typeof SCHEDULED_TIMER_KIND_INTERVAL
-  | typeof SCHEDULED_TIMER_KIND_RECURRING;
+export enum ScheduledHandleKind {
+  timeout = SCHEDULED_TIMER_KIND_TIMEOUT,
+  interval = SCHEDULED_TIMER_KIND_INTERVAL,
+  recurring = SCHEDULED_TIMER_KIND_RECURRING,
+}
 
 /**
  * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
@@ -706,6 +707,14 @@ export interface IDeterministicRuntime<TDate>
     IDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  specific(
+    tag: unknown,
+    kind: ScheduledHandleKind,
+    initialDelay: IDurationSpec,
+    callback: () => void,
+    intervalDelay?: number,
+  ): IScheduledHandle;
+  takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
 }
 
 /**
@@ -759,6 +768,14 @@ export interface IManualRuntime<TDate>
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  specific(
+    tag: unknown,
+    kind: ScheduledHandleKind,
+    initialDelay: IDurationSpec,
+    callback: () => void,
+    intervalDelay?: number,
+  ): IScheduledHandle;
+  takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
 }
 
 /**

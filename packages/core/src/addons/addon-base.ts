@@ -1,28 +1,31 @@
 import type { IAddon } from "../deterministic.ts";
-import type { IRuntime } from "../types/types.ts";
+import type { IDeterministicRuntime, IRuntime } from "../types/types.ts";
 
-export abstract class AddonBase<TDate> implements IAddon<TDate> {
-  #runtime!: IRuntime<TDate>;
+export abstract class AddonBase<
+  TDate,
+  TRuntime extends IRuntime<TDate> | IDeterministicRuntime<TDate>,
+> implements IAddon<TDate> {
+  #runtime!: TRuntime;
   #initialized: boolean;
 
   constructor() {
     this.#initialized = false;
   }
 
-  get runtime(): IRuntime<TDate> {
+  get runtime(): TRuntime {
     if (!this.#initialized) {
       throw new Error("Add-on has not been initialized.");
     }
     return this.#runtime;
   }
 
-  applyToRuntime(runtime: IRuntime<TDate>): void {
+  applyToRuntime(runtime: TRuntime): void {
     this.#runtime = runtime;
     this.applyToRuntimeImpl(runtime);
     this.#initialized = true;
   }
 
-  protected abstract applyToRuntimeImpl(runtime: IRuntime<TDate>): void;
+  protected abstract applyToRuntimeImpl(runtime: TRuntime): void;
 
   abstract dispose(): void;
   abstract isDisposed: boolean;

@@ -34,8 +34,8 @@ It is split into a default (system/real-time) entry point and a deterministic on
   the handle `.idle.request` returns.
 - `@time-provider/addon-idle/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
-  `@time-provider/core/deterministic`. `.idle` is simulated against that
-  runtime's own clock.
+  `@time-provider/core/deterministic`. Requests made through `.idle.request` stay pending until
+  a test declares the runtime idle via `.idle.drain()`.
 
 ## Usage
 
@@ -51,7 +51,7 @@ import { addon as deterministicAddon } from "@time-provider/addon-idle/determini
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 timeProvider.idle.request(() => console.log("Idle!"));
 
-// Deterministic: simulated against the runtime's own clock
+// Deterministic: requests stay pending until you declare the runtime idle
 const manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .use(deterministicAddon)
@@ -59,34 +59,32 @@ const manual = createDeterministicTimeProvider
   .withInitialTime(0)
   .create();
 manual.idle.request(() => console.log("Idle!"));
-manual.clock.advance({ milliseconds: 1 }); // the idle callback runs here
+manual.idle.drain(); // the idle callback runs here
 ```
 
 ### Simulated idle periods
 
-There is no such thing as a real idle period on a deterministic runtime, so an idle callback is
-scheduled on the runtime's own clock instead: it fires once "now" has moved forward by the
-simulated idle delay. That delay defaults to **1ms**, which keeps idle work behind whatever is
-already due at the current instant - a deterministic runtime drains a 0ms delay in-line, so a 0
-default would run the callback synchronously from `request` itself.
-
-`.withIdleDelay(ms)` is contributed by the deterministic addon and chains directly off
-`.use(addon)`, before you pick a strategy. Raise it to push idle work further out, behind the
-timeouts the code under test schedules:
+There is no such thing as a real idle period on a deterministic runtime - unlike a timeout,
+nothing about elapsed simulated time says the runtime has spare capacity - so `request()` just
+registers the callback under this addon's own tag in the runtime's shared due-heap. `advance()`/
+clock reads never fire it on their own; only `drain()` does, by retrieving up to `maxCount`
+pending requests (oldest first) directly through that tag - without scanning any other pending
+timer/interval/recurring entry sharing the heap:
 
 ```ts
-const manual = createDeterministicTimeProvider
-  .for(deterministicPlugin)
-  .use(deterministicAddon)
-  .withIdleDelay(100)
-  .asManual()
-  .withInitialTime(0)
-  .create();
-
 manual.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
 manual.idle.request(() => console.log("Idle!"));
-manual.clock.advance({ milliseconds: 50 }); // "Busy!"
-manual.clock.advance({ milliseconds: 50 }); // "Idle!"
+manual.clock.advance({ milliseconds: 50 }); // "Busy!" - the idle request is still pending
+manual.idle.drain(); // "Idle!"
+```
+
+Omit `maxCount` to run everything currently pending, or pass it to cap how much idle work a
+single idle period allows through:
+
+```ts
+manual.idle.request(() => console.log("first"));
+manual.idle.request(() => console.log("second"));
+manual.idle.drain(1); // "first" - "second" stays pending for the next drain
 ```
 
 ## License

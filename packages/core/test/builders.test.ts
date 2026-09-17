@@ -94,7 +94,9 @@ function fakeDeterministicPlugin(): IDeterministicPlugin<unknown> {
  * `create()` then returns a fresh addon each time it's called. Records how many addon-builders
  * were built, and how many times `applyToRuntime` ran across every addon `create()` produced.
  */
-function fakeAddonBuilder<TAddon extends IAddon<unknown>>(): {
+function fakeAddonBuilder<
+  TAddon extends IAddon<unknown> = ISystemAddon<unknown> & IDeterministicAddon<unknown>,
+>(): {
   factory: () => IAddonBuilder<TAddon>;
   calls: { create: number; applyToRuntime: number };
 } {

@@ -28,7 +28,7 @@ export class CronScheduler<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
 >
-  extends AddonBase<TDate>
+  extends AddonBase<TDate, IRuntime<TDate>>
   implements ICronApi<TDate, TMonthName, TWeekdayName>, IAddon<TDate>
 {
   #isDisposed: boolean;

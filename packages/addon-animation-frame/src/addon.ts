@@ -1,7 +1,7 @@
-import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddonBuilder, type ISystemAddon } from "@time-provider/core";
 import { SystemAnimationFrameScheduler } from "./system-animation-frame-scheduler.ts";
 import type { WithAnimationFrameApi } from "./types.ts";
-type SystemAnimationFrameAddon<TDate> = WithAnimationFrameApi<TDate> & IAddon<TDate>;
+type SystemAnimationFrameAddon<TDate> = WithAnimationFrameApi<TDate> & ISystemAddon<TDate>;
 
 class SystemAnimationFrameAddonBuilder<TDate> extends AddonBuilderBase<
   TDate,

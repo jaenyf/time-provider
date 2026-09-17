@@ -1,13 +1,13 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { IAnimationFrameScheduler } from "./types.ts";
-import type { IDeterministicAddon } from "@time-provider/core/deterministic";
+import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
 
 /**
  * Implements {@link IAnimationFrameScheduler} on top of a deterministic runtime's {@link IRuntime},
  * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
  */
 export class DeterministicAnimationFrameScheduler<TDate>
-  extends AddonBase<TDate>
+  extends AddonBase<TDate, IDeterministicRuntime<TDate>>
   implements IDeterministicAddon<TDate>, IAnimationFrameScheduler<TDate>
 {
   #hostFramesRate = 60;

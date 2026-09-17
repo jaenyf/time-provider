@@ -32,17 +32,12 @@ export type {
   ITimers,
   IMicrotasks,
   IScheduledHandle,
-  ScheduledHandleKind,
   CalendarSchemeFields,
   ComposableCalendarSchemeFields,
   ICalendarScheme,
   IDefaultCalendarScheme,
 } from "./types/types.ts";
-export {
-  SCHEDULED_TIMER_KIND_TIMEOUT,
-  SCHEDULED_TIMER_KIND_INTERVAL,
-  SCHEDULED_TIMER_KIND_RECURRING,
-} from "./types/types.ts";
+export { ScheduledHandleKind } from "./types/types.ts";
 export * from "./helpers/branded-types.ts";
 export { BaseSystemPlugin, BaseUtcOnlySystemPlugin } from "./plugins/system-plugin.ts";
 export { BaseSystemRuntime } from "./runtimes/system-runtime.ts";

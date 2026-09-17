@@ -1,8 +1,8 @@
-import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddonBuilder, type ISystemAddon } from "@time-provider/core";
 import { CompatRuntime } from "./compat-runtime.ts";
 import type { WithCompatApi } from "./types.ts";
 
-type CompatAddon<TDate> = WithCompatApi<TDate> & IAddon<TDate>;
+type CompatAddon<TDate> = WithCompatApi<TDate> & ISystemAddon<TDate>;
 
 class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatAddon<TDate>> {
   create(): CompatAddon<TDate> {

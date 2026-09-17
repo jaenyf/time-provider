@@ -12,6 +12,7 @@ import type {
   IUtcOnlySystemPlugin,
   IUtcOnlyTimeProvider,
   TimezoneDefinition,
+  IDeterministicRuntime,
 } from "../types/types.ts";
 
 interface ICreateTimeProvider<TProvider> {
@@ -42,25 +43,27 @@ interface IComposeWithTimezone<TBuilder> {
   withDefaultTimezone(): TBuilder;
 }
 
-export interface IAddon<TDate> extends IDisposable {
-  get runtime(): IRuntime<TDate>;
-  /**
-   * Extends a system runtime.
-   */
-  applyToRuntime<TRuntime extends IRuntime<TDate>>(runtime: TRuntime): void;
+interface IWithRuntime<TDate, TRuntime extends IRuntime<TDate> | IDeterministicRuntime<TDate>> {
+  get runtime(): TRuntime;
+  applyToRuntime(runtime: TRuntime): void;
 }
+
+// _TDate is a phantom type parameter here: it isn't referenced in this interface's own body,
+// but every consumer relies on it to constrain an addon to a specific TDate (e.g.
+// `registerAddon(addon: IAddon<TDate>)`, `AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>>`).
+export interface IAddon<_TDate> extends IDisposable {}
 
 /**
  * An addon that extends a system (real time) Time-Provider with extra, addon-specific
  * commodities (`TExtra`).
  */
-export interface ISystemAddon<TDate> extends IAddon<TDate> {}
-
+export interface ISystemAddon<TDate> extends IAddon<TDate>, IWithRuntime<TDate, IRuntime<TDate>> {}
 /**
  * An addon that extends a deterministic (manual/fixed/sequential) Time-Provider with extra,
  * addon-specific commodities (`TExtra`).
  */
-export interface IDeterministicAddon<TDate> extends IAddon<TDate> {}
+export interface IDeterministicAddon<TDate>
+  extends IAddon<TDate>, IWithRuntime<TDate, IDeterministicRuntime<TDate>> {}
 
 /**
  * What an addon actually contributes to a composed Time-Provider once `.use()`d: `TAddon`'s own

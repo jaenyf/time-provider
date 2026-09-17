@@ -50,7 +50,10 @@ class SystemIdleHandle implements IScheduledHandle {
  * Implements {@link IIdleApi} on top of the host's native
  * `requestIdleCallback`/`cancelIdleCallback`.
  */
-export class SystemIdleScheduler<TDate> extends AddonBase<TDate> implements IIdleApi {
+export class SystemIdleScheduler<TDate>
+  extends AddonBase<TDate, IRuntime<TDate>>
+  implements IIdleApi
+{
   #isDisposed: boolean;
 
   /**

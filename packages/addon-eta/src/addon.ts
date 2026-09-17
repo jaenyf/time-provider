@@ -1,8 +1,8 @@
-import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type IAddonBuilder, type ISystemAddon } from "@time-provider/core";
 import { EtaScheduler } from "./eta-scheduler.ts";
 import type { WithEtaApi } from "./types.ts";
 
-type EtaAddon<TDate> = WithEtaApi<TDate> & IAddon<TDate>;
+type EtaAddon<TDate> = WithEtaApi<TDate> & ISystemAddon<TDate>;
 
 class EtaAddonBuilder<TDate> extends AddonBuilderBase<TDate, EtaAddon<TDate>> {
   create(): EtaAddon<TDate> {

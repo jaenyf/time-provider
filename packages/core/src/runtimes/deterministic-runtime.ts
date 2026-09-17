@@ -59,6 +59,13 @@ class DueEntry<TDate> implements IScheduledHandle {
    */
   _livePrev: DueEntry<TDate> | undefined;
   _liveNext: DueEntry<TDate> | undefined;
+  /**
+   * `undefined` unless created via {@link DueHeap.registerSpecific} - the tag this entry was
+   * registered under, and its links in that tag's own intrusive list (see {@link DueHeap._tagLists}).
+   */
+  tag: unknown;
+  _tagPrev: DueEntry<TDate> | undefined;
+  _tagNext: DueEntry<TDate> | undefined;
   readonly #runtime: IRuntime<TDate>;
   #abortController?: AbortController;
 
@@ -83,6 +90,9 @@ class DueEntry<TDate> implements IScheduledHandle {
     this.isDisposed = false;
     this._livePrev = undefined;
     this._liveNext = undefined;
+    this.tag = undefined;
+    this._tagPrev = undefined;
+    this._tagNext = undefined;
   }
 
   dispose(): void {
@@ -189,6 +199,8 @@ class MicrotaskQueue {
 
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap<TDate> {
+  /** Once tombstones exceed this fraction of `_entries`, {@link DueHeap._compact} sweeps them out. */
+  private static readonly COMPACTION_THRESHOLD = 0.5;
   private _entries: DueEntry<TDate>[] = [];
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
@@ -199,6 +211,18 @@ class DueHeap<TDate> {
    */
   private _liveHead: DueEntry<TDate> | undefined;
   private _liveTail: DueEntry<TDate> | undefined;
+  /**
+   * One intrusive doubly-linked list per tag, letting {@link takeOutCallbacksByTag} retrieve entries
+   * registered under a given tag directly, in registration order, without scanning every other
+   * pending entry sharing this heap - the same technique {@link _liveHead}/{@link _liveTail}
+   * already uses for "every entry ever created", just partitioned by tag instead of unconditional.
+   */
+  private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
+  /**
+   * How many entries in `_entries` are tombstoned (soft-retired by {@link takeOutCallbacksByTag}, still
+   * physically occupying an array slot) - see {@link _compact}.
+   */
+  private _deadCount = 0;
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -233,19 +257,108 @@ class DueHeap<TDate> {
     entry._liveNext = undefined;
   }
 
+  private _linkTag(entry: DueEntry<TDate>, tag: unknown): void {
+    const list = this._tagLists.get(tag);
+    if (list === undefined) {
+      this._tagLists.set(tag, { head: entry, tail: entry });
+      return;
+    }
+    entry._tagPrev = list.tail;
+    list.tail._tagNext = entry;
+    list.tail = entry;
+  }
+
+  private _unlinkTag(entry: DueEntry<TDate>): void {
+    // Always set by _linkTag right when this entry was created (registerSpecific is the only
+    // caller that ever sets entry.tag), and never removed until this same unlink runs - so by
+    // construction, the list for this entry's tag is always present here.
+    const list = this._tagLists.get(entry.tag)!;
+    if (entry._tagPrev !== undefined) {
+      entry._tagPrev._tagNext = entry._tagNext;
+    }
+    if (entry._tagNext !== undefined) {
+      entry._tagNext._tagPrev = entry._tagPrev;
+    }
+    if (list.head === entry && list.tail === entry) {
+      this._tagLists.delete(entry.tag);
+    } else {
+      if (list.head === entry) list.head = entry._tagNext!;
+      if (list.tail === entry) list.tail = entry._tagPrev!;
+    }
+    entry._tagPrev = undefined;
+    entry._tagNext = undefined;
+  }
+
+  /**
+   * Shared construction path for every registerX method on this class: builds a `kind` entry and
+   * inserts it into the heap and the live list, additionally linked into `tag`'s own intrusive
+   * list - so {@link takeOutCallbacksByTag} can retrieve it directly later - when `tag` isn't
+   * `undefined`. {@link registerTimeout}/{@link registerInterval}/{@link registerRecurring} are
+   * this with `tag: undefined`, not a kind of their own.
+   */
+  registerSpecific(
+    tag: unknown,
+    kind: ScheduledHandleKind,
+    runtime: IRuntime<TDate>,
+    runAt: number,
+    delay: number,
+    callback: (() => void) | (() => IDurationSpec | false),
+  ): DueEntry<TDate> {
+    const entry = new DueEntry(kind, runtime, this, runAt, this._nextSeq++, delay, callback);
+    this._insert(entry);
+    this._linkLive(entry);
+    if (tag !== undefined) {
+      entry.tag = tag;
+      this._linkTag(entry, tag);
+    }
+    return entry;
+  }
+
+  /**
+   * Extract (and removes) up to `maxCount` still-pending entries registered under `tag`, oldest first, returning
+   * their callbacks. Each removal goes through the same `dispose()` every other cancellation path
+   * uses (so an already-created `signal` gets aborted here too, exactly as it would for a normal
+   * `once()` completing) - `dispose()` re-enters {@link retireEntry}, which is lazy: see its own
+   * doc for why this doesn't pay an immediate `O(log heapSize)` removal per entry.
+   */
+  takeOutCallbacksByTag(tag: unknown, maxCount: number): (() => void)[] {
+    const callbacks: (() => void)[] = [];
+    let node = this._tagLists.get(tag)?.head;
+    while (node !== undefined && callbacks.length < maxCount) {
+      const next = node._tagNext;
+      callbacks.push(node.callback as () => void);
+      node.dispose();
+      node = next;
+    }
+    return callbacks;
+  }
+
+  /**
+   * Sweeps every tombstoned entry (see {@link retireEntry}) out of `_entries` in one linear pass,
+   * then rebuilds the heap invariant bottom-up: Floyd's algorithm, reusing `_siftDown` on each
+   * non-leaf index from the bottom up, builds a valid heap in `O(survivorCount)` overall - far
+   * cheaper than the `O(log heapSize)` an individual removal would cost, paid once per batch of
+   * tombstones instead of once per tombstone.
+   */
+  private _compact(): void {
+    const survivors = this._entries.filter((entry) => !entry.isDisposed);
+    for (let i = 0; i < survivors.length; i++) survivors[i].heapIndex = i;
+    this._entries = survivors;
+    for (let i = (survivors.length >> 1) - 1; i >= 0; i--) {
+      this._siftDown(survivors[i], i);
+    }
+    this._deadCount = 0;
+  }
+
   registerTimeout(runtime: IRuntime<TDate>, runAt: number, callback: () => void): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerSpecific(
+      undefined,
       SCHEDULED_TIMER_KIND_TIMEOUT,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       0,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   registerInterval(
@@ -254,18 +367,14 @@ class DueHeap<TDate> {
     delay: number,
     callback: () => void,
   ): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerSpecific(
+      undefined,
       SCHEDULED_TIMER_KIND_INTERVAL,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       delay,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   registerRecurring(
@@ -273,27 +382,31 @@ class DueHeap<TDate> {
     runAt: number,
     callback: () => IDurationSpec | false,
   ): DueEntry<TDate> {
-    const entry = new DueEntry(
+    return this.registerSpecific(
+      undefined,
       SCHEDULED_TIMER_KIND_RECURRING,
       runtime,
-      this,
       runAt,
-      this._nextSeq++,
       0,
       callback,
     );
-    this._insert(entry);
-    this._linkLive(entry);
-    return entry;
   }
 
   /**
-   * Removes `entry` from the heap array if still pending, and from the live list - called once
-   * per entry, from its own (idempotency-guarded) `dispose()`.
+   * Retires `entry` - called once per entry, from its own (idempotency-guarded) `dispose()`.
+   * Unlinks it from the live list and its tag's list (if any) immediately, both `O(1)`; if it's
+   * still physically in the heap array, this doesn't remove it there and then (see
+   * {@link takeOutCallbacksByTag}'s doc for why that's `O(log heapSize)` and worth deferring) - it's left as
+   * a tombstone, counted toward the next {@link _compact}. `drainDue` also discards a tombstone it
+   * reaches naturally on its own, so most near-term cancellations - the common case - end up
+   * swept for free as a side effect of the clock simply advancing, without ever needing a compact.
    */
   retireEntry(entry: DueEntry<TDate>): void {
-    if (entry.heapIndex >= 0) this._removeAtIndex(entry.heapIndex);
     this._unlinkLive(entry);
+    if (entry.tag !== undefined) this._unlinkTag(entry);
+    if (entry.heapIndex < 0) return;
+    this._deadCount++;
+    if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
   }
 
   /**
@@ -324,34 +437,6 @@ class DueHeap<TDate> {
     const index = this._entries.length;
     this._entries.push(entry);
     this._siftUp(entry, index);
-  }
-
-  /** Removes whatever entry occupies heap position `index` and re-seats the heap around the gap. */
-  private _removeAtIndex(index: number): void {
-    const entries = this._entries;
-    entries[index].heapIndex = -1;
-    const lastIndex = entries.length - 1;
-    if (index === lastIndex) {
-      entries.pop();
-      return;
-    }
-    const moved = entries.pop()!;
-    const parent = entries[(index - 1) >>> 1];
-    /*
-      The replacement is either smaller or larger than what used to sit here, never both, so
-      only one direction can ever move it - comparing against the parent picks the right one
-      instead of unconditionally trying both.
-    */
-    //#region inlining of isBefore
-    if (
-      index > 0 &&
-      (moved.runAt < parent.runAt || (moved.runAt === parent.runAt && moved.seq < parent.seq))
-    ) {
-      //#endregion inlining of isBefore
-      this._siftUp(moved, index);
-    } else {
-      this._siftDown(moved, index);
-    }
   }
 
   /** Hole-algorithm siftUp: shifts ancestors down one slot at a time, then seats `moving` once. */
@@ -454,6 +539,13 @@ class DueHeap<TDate> {
               entries.pop();
             }
             //#endregion inlining of DueHeap.pop
+            // Tombstoned by takeOutCallbacksByTag() before naturally becoming due (see that
+            // method) - already logically gone, so this pop is the only thing left to do for it.
+            // Always false for a plain once() entry, since those are only ever cancelled eagerly.
+            if (root.isDisposed) {
+              this._deadCount--;
+              continue;
+            }
             if (rethrowTimersErrors) {
               root.callback();
             } else {
@@ -469,6 +561,20 @@ class DueHeap<TDate> {
             break;
           }
           case SCHEDULED_TIMER_KIND_INTERVAL: {
+            if (root.isDisposed) {
+              // Lazily disposed before this tick (see retireEntry) - pop it out for good rather
+              // than rescheduling a zombie interval that would just keep coming back due.
+              root.heapIndex = -1;
+              const lastIndex = entries.length - 1;
+              if (lastIndex > 0) {
+                const last = entries.pop()!;
+                this._siftDown(last, 0);
+              } else {
+                entries.pop();
+              }
+              this._deadCount--;
+              continue;
+            }
             const callback = root.callback;
             //#region inlining of DueHeap.nextSeq
             root.seq = this._nextSeq++;
@@ -499,6 +605,11 @@ class DueHeap<TDate> {
               entries.pop();
             }
             //#endregion inlining of DueHeap.pop
+            if (root.isDisposed) {
+              // Lazily disposed before this tick (see retireEntry) - already logically gone.
+              this._deadCount--;
+              continue;
+            }
             const previousRunAt = root.runAt;
             // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
             const recurringCallback = root.callback as () => IDurationSpec | false;
@@ -730,6 +841,33 @@ export abstract class BaseDeterministicRuntime<TDate>
     return entry;
   }
   //#endregion timers
+
+  specific(
+    tag: unknown,
+    kind: ScheduledHandleKind,
+    initialDelay: IDurationSpec,
+    callback: () => void,
+    intervalDelay?: number,
+  ): IScheduledHandle {
+    let msDelay = toDuration(initialDelay);
+    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const now = this.timestampNow();
+    const entry = this.#dueQueue.registerSpecific(
+      tag,
+      kind,
+      this,
+      now + msDelay,
+      intervalDelay ?? 0,
+      callback,
+    );
+    this.mayRunDueCallbacks(now);
+    return entry;
+  }
+
+  takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[] {
+    return this.#dueQueue.takeOutCallbacksByTag(tag, maxCount);
+  }
+  //#endregion tagged timers
 }
 
 /**

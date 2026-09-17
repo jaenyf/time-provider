@@ -1,10 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
-import {
-  toDuration,
-  type IDurationSpec,
-  type IRuntime,
-  type IScheduledHandle,
-} from "@time-provider/core";
+import { toDuration, type IDurationSpec, type IScheduledHandle } from "@time-provider/core";
+import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
 /*
@@ -13,7 +9,7 @@ import { DeterministicAnimationFrameScheduler } from "../src/deterministic-anima
  * behavior itself is already covered by core's own setTimeout tests, so these only need
  * to check the delegation contract, not re-simulate a queue.
  */
-function fakeRuntime(): IRuntime<unknown> & {
+function fakeRuntime(): IDeterministicRuntime<unknown> & {
   scheduled: Map<
     number,
     { callback: () => void; delayMs?: number; dispose: () => void; isDisposed: boolean }
@@ -30,6 +26,13 @@ function fakeRuntime(): IRuntime<unknown> & {
     scheduled,
     cleared,
     registerAddon: () => {},
+    drain: () => {},
+    specific() {
+      throw new Error("not used by DeterministicAnimationFrameScheduler");
+    },
+    takeOutSpecificCallbacks() {
+      throw new Error("not used by DeterministicAnimationFrameScheduler");
+    },
     timers: {
       once(durationSpec: IDurationSpec, callback: () => void) {
         const handle = {
@@ -60,7 +63,7 @@ function fakeRuntime(): IRuntime<unknown> & {
         throw new Error("not used by DeterministicAnimationFrameScheduler");
       },
     },
-  } as unknown as IRuntime<unknown> & {
+  } as unknown as IDeterministicRuntime<unknown> & {
     scheduled: Map<
       number,
       { callback: () => void; delayMs?: number; dispose: () => void; isDisposed: boolean }

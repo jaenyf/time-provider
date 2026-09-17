@@ -1,8 +1,8 @@
-import { AddonBuilderBase, type IAddon, type IAddonBuilder } from "@time-provider/core";
+import { AddonBuilderBase, type ISystemAddon, type IAddonBuilder } from "@time-provider/core";
 import { SystemIdleScheduler } from "./system-idle-scheduler.ts";
 import type { WithIdleApi } from "./types.ts";
 
-type SystemIdleAddon<TDate> = WithIdleApi & IAddon<TDate>;
+type SystemIdleAddon<TDate> = WithIdleApi & ISystemAddon<TDate>;
 
 class SystemIdleAddonBuilder<TDate> extends AddonBuilderBase<TDate, SystemIdleAddon<TDate>> {
   create(): SystemIdleAddon<TDate> {

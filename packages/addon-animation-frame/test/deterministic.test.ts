@@ -1,15 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
-import {
-  toDuration,
-  type IScheduledHandle,
-  type ITimers,
-  type IRuntime,
-  type IAddon,
-} from "@time-provider/core";
+import { toDuration, type IScheduledHandle, type ITimers, type IAddon } from "@time-provider/core";
+import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
-type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
+type FakeRuntime = IDeterministicRuntime<unknown> & { animation?: unknown };
 type AnimationFacade = { scheduleFrame: (callback: () => void) => IScheduledHandle };
 
 /*
@@ -47,6 +42,13 @@ function fakeDeterministicRuntime(): {
     runtime: {
       timers: timers,
       registerAddon: (_addon: IAddon<unknown>) => {},
+      drain: () => {},
+      specific() {
+        throw new Error("not used by the animation-frame addon");
+      },
+      takeOutSpecificCallbacks() {
+        throw new Error("not used by the animation-frame addon");
+      },
     } as unknown as FakeRuntime,
     scheduled,
     delays,
