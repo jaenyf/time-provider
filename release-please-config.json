@@ -21,6 +21,10 @@
       "release-type": "node",
       "component": "addon-eta"
     },
+    "packages/addon-idle": {
+      "release-type": "node",
+      "component": "addon-idle"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core"

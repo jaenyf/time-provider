@@ -25,6 +25,7 @@ timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
 | [`addon-animation-frame`](/addons/animation-frame) | `.animation` | `scheduleFrame` — the host's real frames, or simulated ones                                    | `WithAnimationFrameApi` | [npm](https://www.npmjs.com/package/@time-provider/addon-animation-frame) |
 | [`addon-cron`](/addons/cron)                       | `.cron`      | callbacks on 5-field cron schedules, read in the runtime's own timezone                        | `WithCronApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-cron)            |
 | [`addon-eta`](/addons/eta)                         | `.eta`       | estimates of when a job finishes, from reported progress or a fixed expected duration          | `WithEtaApi`            | [npm](https://www.npmjs.com/package/@time-provider/addon-eta)             |
+| [`addon-idle`](/addons/idle)                       | `.idle`      | `request` - callbacks run when the host reports itself idle, or on demand in a test            | `WithIdleApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-idle)            |
 | [`addon-compat`](/addons/compat)                   | `.compat`    | native-style `setTimeout`/`setInterval`/`setRecurring` signatures, for migrating incrementally | `WithCompatApi`         | [npm](https://www.npmjs.com/package/@time-provider/addon-compat)          |
 
 Each one peer-depends on `@time-provider/core` and nothing else, so composing
@@ -74,9 +75,13 @@ timeProvider.clock.advance({ milliseconds: 20 }); // simulated frame duration el
 `@time-provider/addon-cron` and `@time-provider/addon-eta` behave the same on
 both sides — they read time through `clock.timestampNow()` and program timers on
 `timeProvider.timers`, so the clock strategy already decides when their
-callbacks run. `@time-provider/addon-animation-frame` is the one that differs:
-the system half calls the host's `requestAnimationFrame`, the
-deterministic half simulates frames against the runtime's own clock.
+callbacks run. Two addons differ.
+`@time-provider/addon-animation-frame` calls the host's
+`requestAnimationFrame` on the system side and simulates frames against the
+runtime's own clock on the deterministic one.
+`@time-provider/addon-idle` calls the host's `requestIdleCallback` on the
+system side, while its deterministic half holds every request pending until a
+test calls `idle.drain()`, since a simulated clock has no idle to detect.
 
 ## Composing more than one
 

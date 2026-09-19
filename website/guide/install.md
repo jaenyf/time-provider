@@ -50,5 +50,6 @@ date library? See [Addons](/addons/) — e.g.
 @time-provider/addon-animation-frame   Animation Frame API addon (scheduleFrame)
 @time-provider/addon-cron              Cron scheduling addon (standard 5-field cron expressions)
 @time-provider/addon-eta               ETA estimation addon (progress-based and fixed-duration completion estimates)
+@time-provider/addon-idle              Idle callback addon (request, drained on demand on a deterministic clock)
 @time-provider/addon-compat            Compatibility addon (native-style setTimeout/setInterval/setRecurring signatures)
 ```

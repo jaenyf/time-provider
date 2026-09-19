@@ -25,6 +25,11 @@
       "component": "addon-eta",
       "versioning": "always-bump-patch"
     },
+    "packages/addon-idle": {
+      "release-type": "node",
+      "component": "addon-idle",
+      "versioning": "always-bump-patch"
+    },
     "packages/core": {
       "release-type": "node",
       "component": "core",
