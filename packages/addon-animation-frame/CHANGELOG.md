@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.3.0...addon-animation-frame-v0.4.0) (2026-09-19)
+
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.2.0...addon-animation-frame-v0.3.0) (2026-09-14)
 
 

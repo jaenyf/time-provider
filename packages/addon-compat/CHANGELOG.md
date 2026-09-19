@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.1.0...addon-compat-v0.2.0) (2026-09-19)
+
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
 ## [0.1.0](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.0.1...addon-compat-v0.1.0) (2026-09-14)
 
 
