@@ -4,7 +4,7 @@ import type { ITimers } from "./types.ts";
 /**
  * Implements {@link ICompatApi} that performs underlying calls to core.
  */
-export class CompatRuntime<TDate> extends AddonBase<TDate> {
+export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   #isDisposed: boolean;
   #timersFacade?: ITimers;
 

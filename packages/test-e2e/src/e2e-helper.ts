@@ -17,6 +17,7 @@ import {
 import type { WithEtaApi } from "../../addon-eta/dist/index.d.mts";
 import type { WithCronApi } from "../../addon-cron/dist/index.d.mts";
 import type { WithAnimationFrameApi } from "../../addon-animation-frame/dist/index.d.mts";
+import type { WithIdleApi } from "../../addon-idle/dist/index.d.mts";
 import { addon as systemAfapi } from "../../addon-animation-frame/dist/index.mjs";
 import { addon as deterministicAfapi } from "../../addon-animation-frame/dist/deterministic.mjs";
 import { addon as systemCompat } from "../../addon-compat/dist/index.mjs";
@@ -28,6 +29,8 @@ import { addon as systemCron } from "../../addon-cron/dist/index.mjs";
 import { addon as deterministicCron } from "../../addon-cron/dist/deterministic.mjs";
 import { addon as systemEta } from "../../addon-eta/dist/index.mjs";
 import { addon as deterministicEta } from "../../addon-eta/dist/deterministic.mjs";
+import { addon as systemIdle } from "../../addon-idle/dist/index.mjs";
+import { addon as deterministicIdle } from "../../addon-idle/dist/deterministic.mjs";
 
 export class E2eHelper {
   static e2eTests<TDate>(
@@ -42,7 +45,8 @@ export class E2eHelper {
       .use(systemAfapi)
       .use(systemCompat)
       .use(systemCron)
-      .use(systemEta);
+      .use(systemEta)
+      .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
@@ -50,7 +54,8 @@ export class E2eHelper {
       .withHostFramesRate(50)
       .use(deterministicCompat)
       .use(deterministicCron)
-      .use(deterministicEta);
+      .use(deterministicEta)
+      .use(deterministicIdle);
 
     {
       using system = systemBuilder.create();
@@ -103,7 +108,8 @@ export class E2eHelper {
       .use(systemAfapi)
       .use(systemCompat)
       .use(systemCron)
-      .use(systemEta);
+      .use(systemEta)
+      .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
@@ -111,7 +117,8 @@ export class E2eHelper {
       .withHostFramesRate(50)
       .use(deterministicCompat)
       .use(deterministicCron)
-      .use(deterministicEta);
+      .use(deterministicEta)
+      .use(deterministicIdle);
 
     const system = systemBuilder.create();
     const fixed = deterministicBuilder.asFixed().create();
@@ -155,7 +162,8 @@ export class E2eHelper {
       WithAnimationFrameApi<TDate> &
       WithCompatApi<TDate> &
       WithCronApi<TDate> &
-      WithEtaApi<TDate>,
+      WithEtaApi<TDate> &
+      WithIdleApi,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -171,6 +179,7 @@ export class E2eHelper {
     E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
     E2eHelper.testAddonEta(timeProvider);
+    E2eHelper.testAddonIdle(timeProvider);
   }
 
   private static testUtcOnlyTimeProvider<TDate>(
@@ -178,7 +187,8 @@ export class E2eHelper {
       WithAnimationFrameApi<TDate> &
       WithCompatApi<TDate> &
       WithCronApi<TDate> &
-      WithEtaApi<TDate>,
+      WithEtaApi<TDate> &
+      WithIdleApi,
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
@@ -194,6 +204,7 @@ export class E2eHelper {
     E2eHelper.testAddonCompat(timeProvider);
     E2eHelper.testAddonCron(timeProvider);
     E2eHelper.testAddonEta(timeProvider);
+    E2eHelper.testAddonIdle(timeProvider);
   }
 
   private static testUtcClock<TDate>(
@@ -387,5 +398,13 @@ export class E2eHelper {
       eta.done();
       eta.abandon();
     });
+  }
+
+  private static testAddonIdle<TDate>(
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithIdleApi,
+  ) {
+    expect(() => {
+      timeProvider.idle.request(() => {}).dispose();
+    }).not.toThrow();
   }
 }

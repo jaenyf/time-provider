@@ -720,6 +720,49 @@
         </div>
       </div>
 
+      <div class="pg-panel" v-if="hasIdleAddon" :class="{ 'pg-panel-collapsed': !openPanes.idle }">
+        <div class="pg-panel-header">
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.idle"
+            aria-controls="pg-pane-idle"
+            @click="togglePane('idle')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Idle Callback</span>
+          </button>
+          <span class="pg-badge">{{ schedulerModeLabel }}</span>
+        </div>
+        <div class="pg-panel-body" id="pg-pane-idle" v-show="openPanes.idle">
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>label</span>
+              <input type="text" v-model="idleLabel" placeholder="Idle" style="width: 110px" />
+            </label>
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="requestIdle">
+              Request idle callback
+            </button>
+          </div>
+          <div class="pg-timer-list pg-timer-list-idle">
+            <div class="pg-timer-row" v-for="row in idleRows" :key="row.id">
+              <span
+                ><span class="pg-timer-kind">{{ row.kind }}</span
+                >{{ describeTimer(row) }}</span
+              >
+              <button class="pg-btn" @click="removeTimer(row)">Cancel</button>
+            </div>
+          </div>
+          <p class="pg-note">
+            <code>idle.request</code> fires once, when the host considers itself idle -
+            asynchronously on <strong>system</strong>, once this runtime's own clock has moved
+            forward by the simulated idle delay (1ms by default) on
+            <strong>fixed</strong>/<strong>manual</strong>/<strong>sequential</strong>. Cancel it,
+            same as every scheduling API here, via <code>dispose()</code> on the returned handle.
+          </p>
+        </div>
+      </div>
+
       <div class="pg-panel" :class="{ 'pg-panel-collapsed': !openPanes.log }">
         <div class="pg-panel-header">
           <button
@@ -790,14 +833,16 @@ import { addon as cronAddon } from "@time-provider/addon-cron";
 import { addon as cronDeterministicAddon } from "@time-provider/addon-cron/deterministic";
 import { addon as etaAddon } from "@time-provider/addon-eta";
 import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/deterministic";
+import { addon as idleAddon } from "@time-provider/addon-idle";
+import { addon as idleDeterministicAddon } from "@time-provider/addon-idle/deterministic";
 import { highlightTs } from "../shiki";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
 // What the Scheduler panel's own dropdown offers - one entry per ITimers method.
 type SchedulerTimerKind = "once" | "every" | "recurring";
-// Plus the two addon-backed panels, which register through their own facade rather than
+// Plus the addon-backed panels, which register through their own facade rather than
 // `.scheduler`, but end up in the same row list so a rebuild can clear everything at once.
-type TimerKind = SchedulerTimerKind | "raf" | "cron";
+type TimerKind = SchedulerTimerKind | "raf" | "cron" | "idle";
 
 interface PluginOption {
   key: string;
@@ -895,6 +940,14 @@ const addonOptions: AddonOption[] = [
     deterministicAddon: etaDeterministicAddon,
     importName: "addon-eta",
     varName: "etaAddon",
+  },
+  {
+    key: "idle",
+    label: "Idle Callback API",
+    varName: "idleAddon",
+    systemAddon: idleAddon,
+    deterministicAddon: idleDeterministicAddon,
+    importName: "addon-idle",
   },
 ];
 
@@ -1004,6 +1057,8 @@ const recurringMaxRuns = ref(5);
 
 const frameLabel = ref("Frame");
 
+const idleLabel = ref("Idle");
+
 const cronLabel = ref("Nightly");
 const cronExpression = ref("* * * * *");
 
@@ -1107,6 +1162,7 @@ const supportsLocalTime = computed(() =>
 const hasAnimationFrameAddon = computed(() => enabledAddons.value.includes("animation-frame"));
 const hasCronAddon = computed(() => enabledAddons.value.includes("cron"));
 const hasEtaAddon = computed(() => enabledAddons.value.includes("eta"));
+const hasIdleAddon = computed(() => enabledAddons.value.includes("idle"));
 const enabledAddonList = computed(() =>
   addonOptions.filter((a) => enabledAddons.value.includes(a.key)),
 );
@@ -1115,6 +1171,7 @@ const addonsHint = computed(() => {
   if (hasAnimationFrameAddon.value) hints.push(".animation in the Animation Frame panel");
   if (hasCronAddon.value) hints.push(".cron in the Cron panel");
   if (hasEtaAddon.value) hints.push(".eta in the ETA panel");
+  if (hasIdleAddon.value) hints.push(".idle in the Idle Callback panel");
   return hints.length > 0 ? hints.join(" · ") : "Adds extra facades to the built provider";
 });
 const strategyHint = computed(() => strategyHints[selectedStrategy.value]);
@@ -1132,6 +1189,7 @@ const openPanes = reactive({
   frame: true,
   cron: true,
   eta: true,
+  idle: true,
   log: true,
 });
 function togglePane(key: keyof typeof openPanes) {
@@ -1196,10 +1254,11 @@ interface TimerRow {
 const timerRows = ref<TimerRow[]>([]);
 
 const schedulerRows = computed(() =>
-  timerRows.value.filter((r) => r.kind !== "raf" && r.kind !== "cron"),
+  timerRows.value.filter((r) => r.kind !== "raf" && r.kind !== "cron" && r.kind !== "idle"),
 );
 const frameRows = computed(() => timerRows.value.filter((r) => r.kind === "raf"));
 const cronRows = computed(() => timerRows.value.filter((r) => r.kind === "cron"));
+const idleRows = computed(() => timerRows.value.filter((r) => r.kind === "idle"));
 
 function describeTimer(row: TimerRow): string {
   switch (row.kind) {
@@ -1214,6 +1273,8 @@ function describeTimer(row: TimerRow): string {
         : `"${row.label}" run ${row.runs}/${row.maxRuns}, next in ${row.nextDelayMs}ms`;
     case "raf":
       return `"${row.label}" pending frame`;
+    case "idle":
+      return `"${row.label}" pending idle callback`;
     default:
       return `"${row.label}" (${row.expression})`;
   }
@@ -1491,6 +1552,22 @@ function requestFrame() {
     });
     timerRows.value.push({ id, kind: "raf", label, delayMs: 0, handle: markRaw(handle) });
     pushLog("tick", `Requested animation frame "${label}"`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
+function requestIdle() {
+  if (!timeProvider.value) return;
+  const label = idleLabel.value.trim() || "idle";
+  const id = nextId++;
+  try {
+    const handle = timeProvider.value.idle.request(() => {
+      pushLog("idle", `"${label}" idle callback fired`);
+      dropTimerRow(id);
+    });
+    timerRows.value.push({ id, kind: "idle", label, delayMs: 0, handle: markRaw(handle) });
+    pushLog("tick", `Requested idle callback "${label}"`);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }

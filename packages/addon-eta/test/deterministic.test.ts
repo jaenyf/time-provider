@@ -1,17 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import {
-  type IScheduledHandle,
-  type IRuntime,
-  type ITimers,
-  toDuration,
-  type IAddon,
-} from "@time-provider/core";
+import { type IScheduledHandle, type ITimers, toDuration, type IAddon } from "@time-provider/core";
+import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { EtaScheduler } from "../src/eta-scheduler.ts";
 
 const addon = addonBuilderFactory().create();
 
-type FakeRuntime = IRuntime<unknown> & {
+type FakeRuntime = IDeterministicRuntime<unknown> & {
   eta?: unknown;
   registerAddon(addon: IAddon<unknown>): void;
 };
@@ -48,6 +43,13 @@ function fakeDeterministicRuntime(now: number): {
       clock,
       timestampNow: () => now,
       registerAddon: (_addon: IAddon<unknown>) => {},
+      drain: () => {},
+      specific() {
+        throw new Error("not used by the eta addon");
+      },
+      takeOutSpecificCallbacks() {
+        throw new Error("not used by the eta addon");
+      },
     } as unknown as FakeRuntime,
     intervals,
   };

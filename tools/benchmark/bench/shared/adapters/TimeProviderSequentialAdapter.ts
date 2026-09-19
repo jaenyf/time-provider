@@ -1,6 +1,7 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { createTimeProvider, type IDurationSpec } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
+import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
 export class TimeProviderSequentialAdapter implements ITimerAdapter {
@@ -15,6 +16,16 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     microtasks: {
       queue(callback: () => void): void;
       drain(): void;
+    };
+    /*
+      The idle addon's placeholder `drain()` only fires anything on a manual runtime (it needs
+      an on-demand `advance()`, which sequential doesn't have - its future instants are fixed up
+      front via withSequentialTime()). So drainIdleCallbacks() below is a documented no-op here
+      for now - see DeterministicIdleScheduler.drain.
+    */
+    idle: {
+      request(callback: () => void): unknown;
+      drain(maxCount?: number): number;
     };
     clock: { utcNow(): unknown };
   };
@@ -34,7 +45,11 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    const builder = createTimeProvider.for(plugin).asSequential().withSequentialTime(0);
+    const builder = createTimeProvider
+      .for(plugin)
+      .use(idleAddon)
+      .asSequential()
+      .withSequentialTime(0);
     for (const timestamp of this.#plannedTimestamps) {
       builder.withSequentialTime(timestamp);
     }
@@ -68,5 +83,11 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     */
     this.#runtime.clock.utcNow();
     this.#runtime.clock.utcNow();
+  }
+  requestIdleCallback(callback: () => void): void {
+    this.#runtime.idle.request(callback);
+  }
+  drainIdleCallbacks(ms: number): void {
+    this.#runtime.idle.drain(ms);
   }
 }

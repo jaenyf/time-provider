@@ -94,7 +94,9 @@ function fakeDeterministicPlugin(): IDeterministicPlugin<unknown> {
  * `create()` then returns a fresh addon each time it's called. Records how many addon-builders
  * were built, and how many times `applyToRuntime` ran across every addon `create()` produced.
  */
-function fakeAddonBuilder<TAddon extends IAddon<unknown>>(): {
+function fakeAddonBuilder<
+  TAddon extends IAddon<unknown> = ISystemAddon<unknown> & IDeterministicAddon<unknown>,
+>(): {
   factory: () => IAddonBuilder<TAddon>;
   calls: { create: number; applyToRuntime: number };
 } {
@@ -224,6 +226,21 @@ describe("SystemPluggedRuntimeBuilder", () => {
       expect(callsA.applyToRuntime).toBe(1);
       expect(callsB.applyToRuntime).toBe(1);
     });
+
+    test("the composed provider's type excludes addon-only lifecycle members", () => {
+      // Type-only regression check (enforced by `vp check`'s typecheck, not this test's runtime
+      // assertions): PublicAddonSurface must strip .runtime/.applyToRuntime - added via
+      // IWithRuntime, not IAddon itself - along with .dispose/.isDisposed, or they leak onto
+      // every composed Time-Provider's public type.
+      const provider = createTimeProvider
+        .for(fakeSystemPlugin())
+        .use(fakeAddonBuilder().factory)
+        .create();
+      // @ts-expect-error - .runtime is addon-only; it must not be part of the composed type.
+      void provider.runtime;
+      // @ts-expect-error - .applyToRuntime is addon-only; it must not be part of the composed type.
+      void provider.applyToRuntime;
+    });
   });
 });
 
@@ -323,6 +340,18 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
       create(builder);
       expect(callsA.applyToRuntime).toBe(1);
       expect(callsB.applyToRuntime).toBe(1);
+    });
+
+    test("the composed provider's type excludes addon-only lifecycle members", () => {
+      // Same regression as the system builder's - see that test for why.
+      const builder = createDeterministicTimeProvider
+        .for(fakeDeterministicPlugin())
+        .use(fakeAddonBuilder().factory);
+      const provider = create(builder);
+      // @ts-expect-error - .runtime is addon-only; it must not be part of the composed type.
+      void provider.runtime;
+      // @ts-expect-error - .applyToRuntime is addon-only; it must not be part of the composed type.
+      void provider.applyToRuntime;
     });
   });
 });

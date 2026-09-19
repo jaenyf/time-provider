@@ -12,6 +12,7 @@
   "devDependencies": {
     "@jest/fake-timers": "^30",
     "@sinonjs/fake-timers": "^15",
+    "@time-provider/addon-idle": "workspace:*",
     "@time-provider/core": "workspace:*",
     "@time-provider/plugin-native": "workspace:*",
     "rimraf": "6.1.3"

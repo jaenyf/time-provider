@@ -4,7 +4,6 @@ import type {
   IDeterministicTimeProvider,
   IManualRuntime,
   IManualTimeProvider,
-  IRuntime,
   IUtcOnlyDeterministicPlugin,
   TimezoneDefinition,
 } from "../types/types.ts";
@@ -27,7 +26,7 @@ type AnyDeterministicPlugin<TDate> =
 
 function applyAddonBuilders<TDate>(
   addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[],
-  runtime: IRuntime<TDate>,
+  runtime: IDeterministicRuntime<TDate>,
 ): void {
   for (const addonBuilder of addonBuilders) {
     addonBuilder.create().applyToRuntime(runtime);

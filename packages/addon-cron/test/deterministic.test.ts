@@ -4,18 +4,18 @@ import {
   type IScheduledHandle,
   type ITimeConverter,
   type ITimers,
-  type IRuntime,
   toInstant,
   type IDurationSpec,
   type IAddon,
 } from "@time-provider/core";
+import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { CronScheduler } from "../src/cron-scheduler.ts";
 import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.ts";
 
 const addon = addonBuilderFactory().create();
 
-type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
+type FakeRuntime = IDeterministicRuntime<unknown> & { cron?: unknown };
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (milliseconds) => toInstant({ milliseconds: Number(milliseconds) }),
@@ -62,6 +62,13 @@ function fakeDeterministicRuntime(
       timestampNow: () => now,
       calendarScheme: defaultCalendarScheme,
       registerAddon: (_addon: IAddon<unknown>) => {},
+      drain: () => {},
+      specific() {
+        throw new Error("not used by the cron addon");
+      },
+      takeOutSpecificCallbacks() {
+        throw new Error("not used by the cron addon");
+      },
     } as unknown as FakeRuntime,
     recurring,
   };

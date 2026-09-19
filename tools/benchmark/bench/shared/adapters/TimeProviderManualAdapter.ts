@@ -1,6 +1,7 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
+import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 import { IDurationSpec } from "@time-provider/core";
 
@@ -16,6 +17,10 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
       queue(callback: () => void): void;
       drain(): void;
     };
+    idle: {
+      request(callback: () => void): unknown;
+      drain(maxCount?: number): number;
+    };
     clock: { utcNow(): unknown; advance(config: { milliseconds: number }): unknown };
   };
 
@@ -25,7 +30,7 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    this.#runtime = createTimeProvider.for(plugin).asManual().create();
+    this.#runtime = createTimeProvider.for(plugin).use(idleAddon).asManual().create();
   }
   teardown(): void {
     // Nothing to release - the runtime is just discarded.
@@ -48,5 +53,11 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });
+  }
+  requestIdleCallback(callback: () => void): void {
+    this.#runtime.idle.request(callback);
+  }
+  drainIdleCallbacks(ms: number): void {
+    this.#runtime.idle.drain(ms);
   }
 }

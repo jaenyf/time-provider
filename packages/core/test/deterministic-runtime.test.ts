@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
-import type { IScheduledHandle, ITimeConverter } from "../src/types/types.ts";
+import {
+  ScheduledHandleKind,
+  type IScheduledHandle,
+  type ITimeConverter,
+} from "../src/types/types.ts";
 import { toInstant } from "../src/helpers/branded-types.ts";
 
 const identityConverter: ITimeConverter<number> = {
@@ -546,6 +550,361 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
 
     sut.dispose();
     expect(b.isDisposed).toBe(true);
+  });
+});
+
+describe("BaseManualRuntime tagged timers", () => {
+  test("register() does not run the callback in-line", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => (called = true));
+    expect(called).toBe(false);
+  });
+
+  test("register() clamps a negative delay to 0, same as once() - already due, so it fires in-line", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: -100 }, () => (called = true));
+    expect(called).toBe(true);
+  });
+
+  test("take() removes and returns the callback, oldest first", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(1));
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(2));
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(3));
+
+    const callbacks = sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY);
+    for (const callback of callbacks) callback();
+
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  test("take() honors maxCount, leaving the remainder for a later take", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(1));
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(2));
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(3));
+
+    for (const callback of sut.takeOutSpecificCallbacks("tag", 2)) callback();
+    expect(order).toEqual([1, 2]);
+
+    for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+      callback();
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  test("take() with nothing registered under the tag returns an empty array", () => {
+    const sut = new FakeManualRuntime(0);
+    expect(sut.takeOutSpecificCallbacks("never-registered", 10)).toEqual([]);
+  });
+
+  test("take() from a tag that's been fully drained already returns an empty array", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => {});
+    sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY);
+    expect(sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+
+  test("different tags are fully isolated from each other", () => {
+    const sut = new FakeManualRuntime(0);
+    let aCalled = false;
+    let bCalled = false;
+    sut.specific("a", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => (aCalled = true));
+    sut.specific("b", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => (bCalled = true));
+
+    for (const callback of sut.takeOutSpecificCallbacks("a", Number.POSITIVE_INFINITY)) callback();
+
+    expect(aCalled).toBe(true);
+    expect(bCalled).toBe(false);
+    expect(sut.takeOutSpecificCallbacks("b", Number.POSITIVE_INFINITY)).toHaveLength(1);
+  });
+
+  test("disposing the returned handle removes it from the heap and from its tag's list", () => {
+    const sut = new FakeManualRuntime(0);
+    let called = false;
+    const handle = sut.specific(
+      "tag",
+      ScheduledHandleKind.timeout,
+      { milliseconds: 1000 },
+      () => (called = true),
+    );
+    handle.dispose();
+
+    const callbacks = sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY);
+
+    expect(callbacks).toEqual([]);
+    expect(called).toBe(false);
+  });
+
+  test("disposing a middle entry directly still lets take() retrieve the rest, in order", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(1));
+    const middle = sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+      order.push(2),
+    );
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(3));
+
+    middle.dispose();
+    for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+      callback();
+
+    expect(order).toEqual([1, 3]);
+  });
+
+  test("disposing the tail entry directly still lets take() retrieve the rest, in order", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: number[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () => order.push(1));
+    const tail = sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+      order.push(2),
+    );
+
+    tail.dispose();
+    for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+      callback();
+
+    expect(order).toEqual([1]);
+  });
+
+  test("disposing a handle after it's been taken is a safe no-op", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.specific(
+      "tag",
+      ScheduledHandleKind.timeout,
+      { milliseconds: 1000 },
+      () => {},
+    );
+    sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY);
+    expect(() => handle.dispose()).not.toThrow();
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  test("a tagged entry coexists with plain once()/every() entries in the shared heap", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 100000 }, () =>
+      order.push("tagged"),
+    );
+    sut.timers.once({ milliseconds: 10 }, () => order.push("timeout"));
+
+    sut.advance({ milliseconds: 20 });
+
+    // The tagged entry is due impossibly far in the future, so advancing past the unrelated
+    // timeout must not disturb it.
+    expect(order).toEqual(["timeout"]);
+    expect(sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY)).toHaveLength(1);
+  });
+
+  test("a tagged entry that becomes naturally due fires through the normal heap, and can't be taken again", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () =>
+      order.push("fired"),
+    );
+
+    sut.advance({ milliseconds: 10 });
+
+    expect(order).toEqual(["fired"]);
+    expect(sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+
+  test("disposing the runtime disposes still-pending tagged entries too", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.specific(
+      "tag",
+      ScheduledHandleKind.timeout,
+      { milliseconds: 1000 },
+      () => {},
+    );
+    sut.dispose();
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  describe("lazy deletion (take() tombstones instead of removing immediately)", () => {
+    test("taking under the compaction threshold still leaves the remainder correctly ordered", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: number[] = [];
+      for (let i = 1; i <= 10; i++) {
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+          order.push(i),
+        );
+      }
+
+      // 2 of 10 taken (20%) stays under the 50% compaction threshold - the taken two are
+      // tombstones, not physically removed, when the rest are taken next.
+      for (const callback of sut.takeOutSpecificCallbacks("tag", 2)) callback();
+      expect(order).toEqual([1, 2]);
+
+      for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+        callback();
+      expect(order).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    test("crossing the compaction threshold still behaves correctly for everything registered afterward", () => {
+      const sut = new FakeManualRuntime(0);
+      const firstRound: number[] = [];
+      for (let i = 1; i <= 10; i++) {
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+          firstRound.push(i),
+        );
+      }
+      // Taking all 10 of 10 (100%) crosses the 50% threshold, triggering a compaction that
+      // rebuilds the heap array and every survivor's heapIndex from scratch.
+      for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+        callback();
+      expect(firstRound).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+      const secondRound: number[] = [];
+      for (let i = 1; i <= 5; i++) {
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+          secondRound.push(i),
+        );
+      }
+      for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+        callback();
+      expect(secondRound).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    test("compaction that leaves survivors still fires them in the right order afterward", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // 6 tagged entries taken out of 10 total (60%) crosses the 50% threshold, triggering a
+      // compaction that leaves the 4 untouched regular entries as survivors to re-heapify.
+      for (let i = 0; i < 6; i++) {
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+          order.push(`tagged${i}`),
+        );
+      }
+      sut.timers.once({ milliseconds: 30 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 15 }, () => order.push("b"));
+
+      for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+        callback();
+      expect(order).toEqual(["tagged0", "tagged1", "tagged2", "tagged3", "tagged4", "tagged5"]);
+
+      sut.advance({ milliseconds: 30 });
+      expect(order.slice(6)).toEqual(["a", "b", "c", "d"]);
+    });
+
+    test("repeated register/take cycles across many compactions stay correct", () => {
+      const sut = new FakeManualRuntime(0);
+      for (let round = 0; round < 20; round++) {
+        const order: number[] = [];
+        for (let i = 1; i <= 100; i++) {
+          sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 1000 }, () =>
+            order.push(i),
+          );
+        }
+        for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
+          callback();
+        expect(order).toEqual(Array.from({ length: 100 }, (_, i) => i + 1));
+      }
+    });
+
+    test("a tombstone reached naturally via advance() doesn't fire, and doesn't block entries sharing its due time", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // Six total entries keeps the one tombstone below the 50% compaction threshold, so it
+      // stays a physical tombstone in the heap - registered first, so it's the heap root - when
+      // advance() reaches it, exercising drainDue's isDisposed skip rather than compaction.
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      const [aCallback] = sut.takeOutSpecificCallbacks("tag", 1);
+      aCallback!();
+      expect(order).toEqual(["a"]);
+
+      sut.advance({ milliseconds: 10 });
+      expect(order).toEqual(["a", "b", "c"]);
+
+      sut.advance({ milliseconds: 10 });
+      expect(order).toEqual(["a", "b", "c", "d", "e", "f"]);
+    });
+
+    test("disposing a regular once() timer before it's due leaves it tombstoned, not firing, without disturbing siblings sharing its due time", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // Six total entries keeps the disposed one below the 50% compaction threshold, so it stays
+      // a physical tombstone - registered first, so it's the heap root - when advance() reaches
+      // it, exercising drainDue's TIMEOUT isDisposed skip for a plain (non-tagged) once().
+      const toCancel = sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      sut.advance({ milliseconds: 20 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
+
+    test("disposing a regular every() interval before its first tick stops it for good, without disturbing siblings", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      const toCancel = sut.timers.every({ milliseconds: 10 }, () => order.push("a"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      // Advancing well past several would-be ticks confirms the interval doesn't just skip once -
+      // it's popped out entirely (see drainDue's INTERVAL case), never rescheduled as a zombie.
+      sut.advance({ milliseconds: 100 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
+
+    test("disposing a regular every() interval that ends up the only pending entry pops it out cleanly", () => {
+      const sut = new FakeManualRuntime(0);
+      let fireCount = 0;
+      // Registered alongside enough siblings that disposing it alone doesn't immediately cross
+      // the 50% compaction threshold, so it stays a tombstone - the siblings fire and leave the
+      // heap first (all due earlier), so by the time drainDue reaches this interval's own due
+      // time it's the sole remaining entry, exercising the lastIndex === 0 pop branch.
+      const handle = sut.timers.every({ milliseconds: 100 }, () => fireCount++);
+      for (let i = 0; i < 5; i++) sut.timers.once({ milliseconds: 10 + i }, () => {});
+      handle.dispose();
+
+      sut.advance({ milliseconds: 100 });
+
+      expect(fireCount).toBe(0);
+    });
+
+    test("disposing a regular recurring() registration before its first tick stops it for good, without disturbing siblings", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      const toCancel = sut.timers.recurring(
+        () => {
+          order.push("a");
+          return { milliseconds: 10 };
+        },
+        { milliseconds: 10 },
+      );
+      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+
+      toCancel.dispose();
+      sut.advance({ milliseconds: 100 });
+
+      expect(order).toEqual(["b", "c", "d", "e", "f"]);
+    });
   });
 });
 

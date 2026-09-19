@@ -49,7 +49,7 @@ class SystemAnimationFrameHandle implements IScheduledHandle {
  * `requestAnimationFrame`/`cancelAnimationFrame`.
  */
 export class SystemAnimationFrameScheduler<TDate>
-  extends AddonBase<TDate>
+  extends AddonBase<TDate, IRuntime<TDate>>
   implements IAnimationFrameScheduler<TDate>
 {
   #isDisposed: boolean;

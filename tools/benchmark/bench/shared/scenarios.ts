@@ -152,4 +152,19 @@ export const schedulingScenarios: Scenario[] = [
       adapter.drainMicrotasks();
     },
   },
+  /*
+    Unlike drainMicrotasks() above, drainIdleCallbacks(ms) isn't independent of time passing for
+    any adapter today - every one of them models an idle callback as a delay-gated timeout under
+    the hood (see ITimerAdapter.drainIdleCallbacks), so there's no "without time advance" variant
+    to compare against the way there is for microtasks.
+  */
+  {
+    name: `request ${samplesCount} idle callbacks, and drain`,
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.requestIdleCallback(() => {});
+      }
+      adapter.drainIdleCallbacks(samplesCount);
+    },
+  },
 ];

@@ -2,7 +2,10 @@ import { AddonBase, AddonHelper, type IRuntime } from "@time-provider/core";
 import { EtaTrackBuilder } from "./eta-tracker.ts";
 import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 
-export class EtaScheduler<TDate> extends AddonBase<TDate> implements IEtaApi<TDate> {
+export class EtaScheduler<TDate>
+  extends AddonBase<TDate, IRuntime<TDate>>
+  implements IEtaApi<TDate>
+{
   #isDisposed: boolean;
 
   constructor() {
