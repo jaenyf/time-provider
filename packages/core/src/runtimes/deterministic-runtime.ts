@@ -52,14 +52,6 @@ class DueEntry<TDate> implements IScheduledHandle {
   /** Return value decides the next run for TIMER_KIND_RECURRING; ignored on the other kinds. */
   callback: (() => void) | (() => IDurationSpec | false);
   /**
-   * Links in the heap's intrusive "every entry ever created, until individually disposed" list -
-   * separate from the heap's own array (a fired or cancelled entry leaves that array, but must
-   * stay reachable here so the runtime's own dispose() can still mark it disposed later). A plain
-   * `Set` measured roughly twice as slow here at this call volume.
-   */
-  _livePrev: DueEntry<TDate> | undefined;
-  _liveNext: DueEntry<TDate> | undefined;
-  /**
    * `undefined` unless created via {@link DueHeap.registerSpecific} - the tag this entry was
    * registered under, and its links in that tag's own intrusive list (see {@link DueHeap._tagLists}).
    */
@@ -88,8 +80,6 @@ class DueEntry<TDate> implements IScheduledHandle {
     this.cancelled = false;
     this.callback = callback;
     this.isDisposed = false;
-    this._livePrev = undefined;
-    this._liveNext = undefined;
     this.tag = undefined;
     this._tagPrev = undefined;
     this._tagNext = undefined;
@@ -205,17 +195,16 @@ class DueHeap<TDate> {
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
   /**
-   * Intrusive doubly-linked list of every entry this heap has ever created, until it's
-   * individually disposed - a fired or cancelled entry leaves `_entries` (the binary heap array)
-   * but stays linked here, since {@link disposeAll} must still be able to reach and dispose it.
+   * The entries currently running their callback, innermost last - the only ones that have left
+   * `_entries` without being disposed, and so the only ones {@link disposeAll} can't find there.
+   * One per nesting level: a callback can re-enter {@link drainDue} by scheduling a timer or
+   * advancing the clock, and each level has at most one entry in flight.
    */
-  private _liveHead: DueEntry<TDate> | undefined;
-  private _liveTail: DueEntry<TDate> | undefined;
+  private _inFlight: DueEntry<TDate>[] = [];
   /**
    * One intrusive doubly-linked list per tag, letting {@link takeOutCallbacksByTag} retrieve entries
    * registered under a given tag directly, in registration order, without scanning every other
-   * pending entry sharing this heap - the same technique {@link _liveHead}/{@link _liveTail}
-   * already uses for "every entry ever created", just partitioned by tag instead of unconditional.
+   * pending entry sharing this heap.
    */
   private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
   /**
@@ -230,31 +219,6 @@ class DueHeap<TDate> {
   /** The `runAt` of the earliest pending entry, or `undefined` if the queue is empty. */
   peekRunAt(): number | undefined {
     return this._entries.length > 0 ? this._entries[0].runAt : undefined;
-  }
-
-  private _linkLive(entry: DueEntry<TDate>): void {
-    entry._livePrev = this._liveTail;
-    if (this._liveTail !== undefined) {
-      this._liveTail._liveNext = entry;
-    } else {
-      this._liveHead = entry;
-    }
-    this._liveTail = entry;
-  }
-
-  private _unlinkLive(entry: DueEntry<TDate>): void {
-    if (entry._livePrev !== undefined) {
-      entry._livePrev._liveNext = entry._liveNext;
-    } else {
-      this._liveHead = entry._liveNext;
-    }
-    if (entry._liveNext !== undefined) {
-      entry._liveNext._livePrev = entry._livePrev;
-    } else {
-      this._liveTail = entry._livePrev;
-    }
-    entry._livePrev = undefined;
-    entry._liveNext = undefined;
   }
 
   private _linkTag(entry: DueEntry<TDate>, tag: unknown): void {
@@ -291,8 +255,8 @@ class DueHeap<TDate> {
 
   /**
    * Shared construction path for every registerX method on this class: builds a `kind` entry and
-   * inserts it into the heap and the live list, additionally linked into `tag`'s own intrusive
-   * list - so {@link takeOutCallbacksByTag} can retrieve it directly later - when `tag` isn't
+   * inserts it into the heap, additionally linked into `tag`'s own intrusive list - so
+   * {@link takeOutCallbacksByTag} can retrieve it directly later - when `tag` isn't
    * `undefined`. {@link registerTimeout}/{@link registerInterval}/{@link registerRecurring} are
    * this with `tag: undefined`, not a kind of their own.
    */
@@ -306,7 +270,6 @@ class DueHeap<TDate> {
   ): DueEntry<TDate> {
     const entry = new DueEntry(kind, runtime, this, runAt, this._nextSeq++, delay, callback);
     this._insert(entry);
-    this._linkLive(entry);
     if (tag !== undefined) {
       entry.tag = tag;
       this._linkTag(entry, tag);
@@ -394,7 +357,7 @@ class DueHeap<TDate> {
 
   /**
    * Retires `entry` - called once per entry, from its own (idempotency-guarded) `dispose()`.
-   * Unlinks it from the live list and its tag's list (if any) immediately, both `O(1)`; if it's
+   * Unlinks it from its tag's list (if any) immediately, `O(1)`; if it's
    * still physically in the heap array, this doesn't remove it there and then (see
    * {@link takeOutCallbacksByTag}'s doc for why that's `O(log heapSize)` and worth deferring) - it's left as
    * a tombstone, counted toward the next {@link _compact}. `drainDue` also discards a tombstone it
@@ -402,7 +365,6 @@ class DueHeap<TDate> {
    * swept for free as a side effect of the clock simply advancing, without ever needing a compact.
    */
   retireEntry(entry: DueEntry<TDate>): void {
-    this._unlinkLive(entry);
     if (entry.tag !== undefined) this._unlinkTag(entry);
     if (entry.heapIndex < 0) return;
     this._deadCount++;
@@ -410,25 +372,25 @@ class DueHeap<TDate> {
   }
 
   /**
-   * Disposes every live entry (heap-pending or already-fired-but-not-yet-individually-disposed)
-   * and empties both the heap array and the live list. Detaches everything up front so each
-   * entry's own `dispose()` - which reenters `retireEntry()` - finds nothing left to unlink
-   * rather than mutating the structures this loop is walking.
+   * Disposes every live entry - heap-pending, or fired and still inside its own callback - and
+   * empties the heap array. Detaches everything up front so each entry's own `dispose()` - which
+   * reenters `retireEntry()` - finds nothing left to unlink rather than mutating the structures
+   * this loop is walking. An entry cancelled through `clearTimer()` is left alone: it is already
+   * logically gone, and was never disposed before this method stopped tracking it separately.
    */
   disposeAll(): void {
-    for (const entry of this._entries) {
+    const pending = this._entries;
+    const inFlight = this._inFlight;
+    for (const entry of pending) {
       entry.heapIndex = -1;
     }
     this._entries = [];
-    let entry = this._liveHead;
-    this._liveHead = undefined;
-    this._liveTail = undefined;
-    while (entry !== undefined) {
-      const next = entry._liveNext;
-      entry._livePrev = undefined;
-      entry._liveNext = undefined;
+    this._inFlight = [];
+    for (const entry of pending) {
+      if (!entry.cancelled) entry.dispose();
+    }
+    for (const entry of inFlight) {
       entry.dispose();
-      entry = next;
     }
   }
 
@@ -517,6 +479,9 @@ class DueHeap<TDate> {
   drainDue(now: number, microtasks: MicrotaskQueue): void {
     const entries = this._entries;
     const rethrowTimersErrors = this._shouldRethrowTimerErrors;
+    const inFlight = this._inFlight;
+    /* this call's own base of the in-flight stack - see the `finally` below */
+    const inFlightDepth = inFlight.length;
 
     try {
       for (;;) {
@@ -546,6 +511,7 @@ class DueHeap<TDate> {
               this._deadCount--;
               continue;
             }
+            inFlight.push(root);
             if (rethrowTimersErrors) {
               root.callback();
             } else {
@@ -555,6 +521,7 @@ class DueHeap<TDate> {
                 console.error(error);
               }
             }
+            inFlight.pop();
             // A one-shot timer has nothing left to dispose once its callback has run.
             root.dispose();
 
@@ -615,6 +582,7 @@ class DueHeap<TDate> {
             const recurringCallback = root.callback as () => IDurationSpec | false;
             let next: IDurationSpec | false;
 
+            inFlight.push(root);
             if (rethrowTimersErrors) {
               next = recurringCallback();
             } else {
@@ -625,6 +593,7 @@ class DueHeap<TDate> {
                 next = false;
               }
             }
+            inFlight.pop();
 
             if (!root.cancelled && next !== false) {
               //#region inlining of DueHeap.nextSeq
@@ -646,6 +615,10 @@ class DueHeap<TDate> {
         if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
       }
     } finally {
+      /* a callback that threw past its own pop, or a disposeAll() that emptied the stack under
+         this call, both leave the stack at the wrong length - this is the one place that knows
+         where this call's own entries start */
+      if (inFlight.length > inFlightDepth) inFlight.length = inFlightDepth;
       /* a due callback that threw still leaves the checkpoint owed, as it would natively */
       if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
     }
