@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.4.0...plugin-moment-timezone-v0.4.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+
 ## [0.4.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.3.0...plugin-moment-timezone-v0.4.0) (2026-09-14)
 
 
