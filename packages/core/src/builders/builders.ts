@@ -67,14 +67,20 @@ export interface IDeterministicAddon<TDate>
 
 /**
  * What an addon actually contributes to a composed Time-Provider once `.use()`d: `TAddon`'s own
- * shape, with `IAddon<TDate>`'s lifecycle members (`.runtime`, `.applyToRuntime`, `.dispose`,
- * `.isDisposed`, ...) subtracted back out. Every addon package intersects `IAddon<TDate>` into its
- * own `TAddon` (see e.g. `CronAddon<TDate>` in `@time-provider/addon-cron`'s `addon.ts`) purely so
- * `.use()`'s generic bound below (`TAddon extends ISystemAddon<TDate>`/`IDeterministicAddon<TDate>`)
- * is satisfiable - those lifecycle members were never meant to land on the composed Time-Provider
- * itself, only on the addon instance `.use()` calls `applyToRuntime` on internally.
+ * shape, with every addon lifecycle member (`.dispose`, `.isDisposed`, ... from `IAddon<TDate>`,
+ * plus `.runtime`/`.applyToRuntime` from `IWithRuntime`) subtracted back out. Every addon package
+ * intersects `ISystemAddon<TDate>`/`IDeterministicAddon<TDate>` into its own `TAddon` (see e.g.
+ * `CronAddon<TDate>` in `@time-provider/addon-cron`'s `addon.ts`) purely so `.use()`'s generic
+ * bound below is satisfiable - those lifecycle members were never meant to land on the composed
+ * Time-Provider itself, only on the addon instance `.use()` calls `applyToRuntime` on internally.
+ * Both `IAddon<TDate>` and `IWithRuntime` have to be listed here explicitly - neither one alone
+ * covers every lifecycle member since `.runtime`/`.applyToRuntime` live on the latter, not the
+ * former.
  */
-type PublicAddonSurface<TDate, TAddon extends IAddon<TDate>> = Omit<TAddon, keyof IAddon<TDate>>;
+type PublicAddonSurface<TDate, TAddon extends IAddon<TDate>> = Omit<
+  TAddon,
+  keyof IAddon<TDate> | keyof IWithRuntime<TDate, IRuntime<TDate> | IDeterministicRuntime<TDate>>
+>;
 
 /**
  * What an addon package exports instead of the addon itself: something that produces a fresh
