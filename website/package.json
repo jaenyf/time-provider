@@ -22,7 +22,7 @@
     "@time-provider/plugin-temporal": "workspace:*",
     "dayjs": "~1.11.23",
     "luxon": "^3.7.2",
-    "moment": "~2.30.1",
+    "moment": "~2.31.0",
     "moment-timezone": "~0.6.3"
   },
   "devDependencies": {
