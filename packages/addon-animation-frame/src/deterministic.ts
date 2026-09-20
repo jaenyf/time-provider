@@ -38,10 +38,10 @@ export interface IAnimationFrameBuilderExtra {
  * would only see the runtime-builder if called that way too. The rate it captures is read back in
  * {@link create} through `#getHostFramesRate` rather than a class field, for the same reason a
  * class field wouldn't be reachable from that reassigned `this` either. It's exposed on the
- * runtime-builder's *type* via the `declare module` augmentation below, not via `.use()`'s own
- * generics: TypeScript can't simultaneously infer both the addon's `TDate` and an arbitrary extra
- * builder-chain shape from one addon-builder factory argument (see `AddonBuilderFactory` in
- * `@time-provider/core`), so `.use()` only ever resolves the former.
+ * runtime-builder's *type* by {@link addon} below declaring it in its return type, which
+ * `.use()` infers as its `TBuilderExtra` (see `AddonBuilderFactory` in `@time-provider/core`).
+ * That binds the method to the builder chain the addon was actually composed into, so it isn't
+ * offered on a chain that never used this addon - where calling it would throw.
  */
 class DeterministicAnimationFrameAddonBuilder<TDate>
   extends AddonBuilderBase<TDate, DeterministicAnimationFrameAddon<TDate>>
@@ -84,26 +84,3 @@ export function addon<TDate>(
   return new DeterministicAnimationFrameAddonBuilder<TDate>(typeHint);
 }
 export default addon;
-
-declare module "@time-provider/core/deterministic" {
-  // biome-ignore lint/correctness/noUnusedVariables: TExtra isn't referenced by withHostFramesRate
-  // itself, but the augmented interface's own type-parameter list must match the original.
-  interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown> {
-    /**
-     * Sets the simulated host display refresh rate (in Hz) driving `requestAnimationFrame` on the
-     * resulting Time-Provider's `animation` API. Defaults to 60. Only meaningful once composed
-     * with this addon via `.use(addon)`; declared here (rather than inferred through `.use()`) so
-     * TypeScript sees it as soon as this module is imported.
-     * @param rate the refresh rate in Hz.
-     * @returns self, for chaining with the rest of the builder.
-     */
-    withHostFramesRate(rate: number): this;
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: TExtra isn't referenced by withHostFramesRate
-  // itself, but the augmented interface's own type-parameter list must match the original.
-  interface IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown> {
-    /** Same as {@link IDeterministicPluggedRuntimeBuilder.withHostFramesRate}, for a UTC-only Time-Provider. */
-    withHostFramesRate(rate: number): this;
-  }
-}

@@ -115,10 +115,26 @@ export interface IAddonBuilder<TAddon extends IAddon<any> = IAddon<any>> {
  * concrete, non-generic target type - is a different, unsupported kind of inference: TypeScript
  * collapses `TDate` to `unknown` rather than performing it. Every addon package's own `addon()`
  * factory declares this same parameter to opt into the parameter-position inference instead.
+ *
+ * `TBuilderExtra` is the opposite case, and is inferred from the return type: an addon-builder
+ * that also extends the builder chain itself returns `IAddonBuilder<TAddon> & ItsExtras` (see
+ * `IAnimationFrameBuilderExtra` in `@time-provider/addon-animation-frame`), and TypeScript
+ * matches that intersection against this one to recover the extras. That works here precisely
+ * because the extras are a plain structural shape rather than a type-parameter-position
+ * inference site, so it doesn't compete with `typeHint` for `TDate`.
  */
-export type AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>> = (
+export type AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>, TBuilderExtra = unknown> = (
   typeHint?: TDate,
-) => IAddonBuilder<TAddon>;
+) => IAddonBuilder<TAddon> & TBuilderExtra;
+
+/**
+ * What an addon-builder contributes to the *builder chain* once `.use()`d, as opposed to what
+ * {@link PublicAddonSurface} contributes to the composed Time-Provider: the addon-builder's own
+ * extra chainable configuration methods, with `create()` subtracted back out. `.use()` splices
+ * exactly these onto the runtime-builder at runtime (see `spliceAddonExtras` in
+ * `builder-base.ts`, which skips the same member), so the type mirrors what actually lands.
+ */
+export type PublicBuilderSurface<TBuilderExtra> = Omit<TBuilderExtra, keyof IAddonBuilder>;
 
 /**
  * Start the setup of a manual/fixed/sequential Time-Provider, on top of whatever `TFixed`/
@@ -237,9 +253,10 @@ export interface ISystemPluggedRuntimeBuilder<TDate, TExtra = unknown>
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addonBuilderFactory the addon-builder factory to compose with.
    */
-  use<TAddon extends ISystemAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
+  use<TAddon extends ISystemAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): ISystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>> &
+    PublicBuilderSurface<TBuilderExtra>;
 }
 
 /**
@@ -254,9 +271,10 @@ export interface IUtcOnlySystemPluggedRuntimeBuilder<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addonBuilderFactory the addon-builder factory to compose with.
    */
-  use<TAddon extends ISystemAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
+  use<TAddon extends ISystemAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): IUtcOnlySystemPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>> &
+    PublicBuilderSurface<TBuilderExtra>;
 }
 
 /**
@@ -276,9 +294,10 @@ export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addonBuilderFactory the addon-builder factory to compose with.
    */
-  use<TAddon extends IDeterministicAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
+  use<TAddon extends IDeterministicAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>> &
+    PublicBuilderSurface<TBuilderExtra>;
 }
 
 /**
@@ -298,9 +317,10 @@ export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
    * Extends a Time-Provider with an addon's extra commodities.
    * @param addonBuilderFactory the addon-builder factory to compose with.
    */
-  use<TAddon extends IDeterministicAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>>;
+  use<TAddon extends IDeterministicAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate, TExtra & PublicAddonSurface<TDate, TAddon>> &
+    PublicBuilderSurface<TBuilderExtra>;
 }
 
 /**

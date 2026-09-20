@@ -193,15 +193,24 @@ describe("SystemPluggedRuntimeBuilder", () => {
     });
 
     test("splices an addon-builder's own extra builder-chain method onto the builder", () => {
-      // `.use()` only ever resolves the addon's own TDate-correct type (see
-      // `AddonBuilderFactory` in builders.ts); an addon-builder's *own* extra chain methods -
-      // like this fake's `withExtra`, or the animation-frame addon's `withHostFramesRate` - are
-      // still spliced onto the runtime builder at runtime, but surfacing them on its *type* is up
-      // to the addon package itself (via a `declare module` augmentation), not `.use()`'s generics.
+      // An addon-builder's *own* extra chain methods - like this fake's `withExtra`, or the
+      // animation-frame addon's `withHostFramesRate` - are spliced onto the runtime builder at
+      // runtime, and `.use()` infers them from the factory's return type so they land on its
+      // type too. No cast here: that this line compiles is half of what the test asserts.
       const builder = createTimeProvider
         .for(fakeSystemPlugin())
-        .use(fakeAddonBuilderWithBuilderExtra) as unknown as IWithBuilderExtra;
+        .use(fakeAddonBuilderWithBuilderExtra);
       expect(builder.withExtra()).toBe("extra-value");
+    });
+
+    test("doesn't surface a builder extra on a chain that never used that addon", () => {
+      // Type-only regression check (enforced by `vp check`'s typecheck): an extra bound to one
+      // addon-builder must not leak onto a chain composed with a different one, where calling it
+      // would throw. `withExtra` was previously declared by module augmentation, which is
+      // program-global and put it on every builder in the program.
+      const builder = createTimeProvider.for(fakeSystemPlugin()).use(fakeAddonBuilder().factory);
+      // @ts-expect-error - withExtra belongs to fakeAddonBuilderWithBuilderExtra, not this chain.
+      expect(() => builder.withExtra()).toThrow();
     });
   });
 
@@ -296,8 +305,16 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
     test("splices an addon-builder's own extra builder-chain method onto the builder", () => {
       const builder = createDeterministicTimeProvider
         .for(fakeDeterministicPlugin())
-        .use(fakeAddonBuilderWithBuilderExtra) as unknown as IWithBuilderExtra;
+        .use(fakeAddonBuilderWithBuilderExtra);
       expect(builder.withExtra()).toBe("extra-value");
+    });
+
+    test("doesn't surface a builder extra on a chain that never used that addon", () => {
+      const builder = createDeterministicTimeProvider
+        .for(fakeDeterministicPlugin())
+        .use(fakeAddonBuilder().factory);
+      // @ts-expect-error - withExtra belongs to fakeAddonBuilderWithBuilderExtra, not this chain.
+      expect(() => builder.withExtra()).toThrow();
     });
   });
 

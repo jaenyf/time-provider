@@ -9,6 +9,7 @@ import type {
 } from "../types/types.ts";
 import type {
   AddonBuilderFactory,
+  PublicBuilderSurface,
   IAddonBuilder,
   IDeterministicPluggedRuntimeBuilder,
   IDeterministicRuntimeBuilder,
@@ -139,14 +140,15 @@ class DeterministicPluggedRuntimeBuilder<TDate>
     super(plugin, localTimezone);
   }
 
-  use<TAddon extends IDeterministicAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): IDeterministicPluggedRuntimeBuilder<TDate, TAddon> {
+  use<TAddon extends IDeterministicAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): IDeterministicPluggedRuntimeBuilder<TDate, TAddon> & PublicBuilderSurface<TBuilderExtra> {
     const addonBuilder: IAddonBuilder<IDeterministicAddon<TDate>> = addonBuilderFactory();
     BaseRuntimeBuilder.assertNoAddonCollision(this, addonBuilder);
     this.#addonBuilders.push(addonBuilder);
     BaseRuntimeBuilder.spliceAddonExtras(this, addonBuilder);
-    return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddon>;
+    return this as unknown as IDeterministicPluggedRuntimeBuilder<TDate, TAddon> &
+      PublicBuilderSurface<TBuilderExtra>;
   }
 
   asManual(): IManualRuntimeBuilder<TDate> {

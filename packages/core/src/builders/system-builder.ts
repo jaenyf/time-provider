@@ -7,6 +7,7 @@ import type {
 } from "../types/types.ts";
 import type {
   AddonBuilderFactory,
+  PublicBuilderSurface,
   IAddonBuilder,
   ISystemPluggedRuntimeBuilder,
   ISystemAddon,
@@ -27,14 +28,15 @@ class SystemPluggedRuntimeBuilder<TDate>
     super(plugin, localTimezone);
   }
 
-  use<TAddon extends ISystemAddon<TDate>>(
-    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon>,
-  ): ISystemPluggedRuntimeBuilder<TDate, TAddon> {
+  use<TAddon extends ISystemAddon<TDate>, TBuilderExtra = unknown>(
+    addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
+  ): ISystemPluggedRuntimeBuilder<TDate, TAddon> & PublicBuilderSurface<TBuilderExtra> {
     const addonBuilder: IAddonBuilder<ISystemAddon<TDate>> = addonBuilderFactory();
     BaseRuntimeBuilder.assertNoAddonCollision(this, addonBuilder);
     this.#addonBuilders.push(addonBuilder);
     BaseRuntimeBuilder.spliceAddonExtras(this, addonBuilder);
-    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddon>;
+    return this as unknown as ISystemPluggedRuntimeBuilder<TDate, TAddon> &
+      PublicBuilderSurface<TBuilderExtra>;
   }
 
   create(): ITimeProvider<TDate> {
