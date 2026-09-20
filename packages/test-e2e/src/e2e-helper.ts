@@ -335,6 +335,17 @@ export class E2eHelper {
     expect(() => {
       timeProvider.compat.clearTimeout(timeProvider.compat.setTimeout(() => {}));
     }).not.toThrow("Method not implemented.");
+    expect(timeProvider.compat.now()).toBeDefined();
+    expect(timeProvider.compat.timeOrigin).toBeDefined();
+    expect(() => {
+      timeProvider.compat.mark("e2e");
+      timeProvider.compat.measure("e2e-measure", "e2e");
+      timeProvider.compat.clearMeasures("e2e-measure");
+      timeProvider.compat.clearMarks("e2e");
+    }).not.toThrow("Method not implemented.");
+    expect(timeProvider.compat.getEntries()).toBeDefined();
+    expect(timeProvider.compat.getEntriesByName("e2e")).toBeDefined();
+    expect(timeProvider.compat.getEntriesByType("mark")).toBeDefined();
   }
 
   private static testAddonCron<TDate>(

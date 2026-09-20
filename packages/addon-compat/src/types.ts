@@ -1,4 +1,4 @@
-import type { IScheduledHandle } from "@time-provider/core";
+import type { IPerformance, IScheduledHandle } from "@time-provider/core";
 
 /**
  * The shape this addon adds to a composed Time-Provider: a `compat` property exposing
@@ -15,7 +15,10 @@ export type WithCompatApi<TDate> = {
  * The compat API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.compat` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  *
- * Schedules and cancels timeouts/intervals.
+ * Schedules and cancels timeouts/intervals, and mirrors the native `performance` members the
+ * runtime exposes under `timeProvider.performance` - `now`, `timeOrigin`, `mark`, `measure`,
+ * the `getEntries*` readers and the `clear*` methods - flat alongside them, so migrating code
+ * that calls both keeps one facade to reach for.
  *
  * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, callbacks run asynchronously via the real, native
@@ -39,7 +42,7 @@ export type WithCompatApi<TDate> = {
 // Kept generic over TDate for symmetry with WithCompatApi<TDate>, even though no member here
 // happens to reference it.
 // oxlint-disable-next-line no-unused-vars
-export interface ICompatApi<TDate> {
+export interface ICompatApi<TDate> extends IPerformance {
   /**
    * Schedules `callback` to run once, `millisecondsDelay` milliseconds from
    * now (0 if omitted or negative).

@@ -23,19 +23,35 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat",
-      {
-        setTimeout: this.setTimeout.bind(this),
-        clearTimeout: this.clearTimeout.bind(this),
-        setInterval: this.setInterval.bind(this),
-        clearInterval: this.clearInterval.bind(this),
-        setRecurring: this.setRecurring.bind(this),
-        clearRecurring: this.clearRecurring.bind(this),
-      } satisfies ICompatApi<TDate>,
-      this,
-    );
+    AddonHelper.extendRuntimeWithProperty(runtime, "compat", this.#createFacade(), this);
+  }
+
+  /**
+   * The performance members are pass-throughs, so they read the runtime's own performance API at
+   * call time rather than capturing it here: an addon has no runtime to read it from until
+   * `applyToRuntime` - which builds this facade - has returned.
+   */
+  #createFacade(): ICompatApi<TDate> {
+    const runtimePerformance = () => this.runtimePerformance;
+    return {
+      setTimeout: this.setTimeout.bind(this),
+      clearTimeout: this.clearTimeout.bind(this),
+      setInterval: this.setInterval.bind(this),
+      clearInterval: this.clearInterval.bind(this),
+      setRecurring: this.setRecurring.bind(this),
+      clearRecurring: this.clearRecurring.bind(this),
+      now: () => runtimePerformance().now(),
+      get timeOrigin() {
+        return runtimePerformance().timeOrigin;
+      },
+      getEntries: () => runtimePerformance().getEntries(),
+      getEntriesByName: (name, entryType) => runtimePerformance().getEntriesByName(name, entryType),
+      getEntriesByType: (entryType) => runtimePerformance().getEntriesByType(entryType),
+      mark: (name, options) => runtimePerformance().mark(name, options),
+      measure: (name, startMarkOrOptions) => runtimePerformance().measure(name, startMarkOrOptions),
+      clearMarks: (name) => runtimePerformance().clearMarks(name),
+      clearMeasures: (name) => runtimePerformance().clearMeasures(name),
+    };
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {

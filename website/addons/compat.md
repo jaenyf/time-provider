@@ -2,7 +2,9 @@
 
 [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat)
 adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`/`setRecurring`
-call signatures on top of a Time-Provider's own timers. Like every
+call signatures on top of a Time-Provider's own timers, plus the `performance`
+members — `now`, `timeOrigin`, `mark`, `measure` and friends — flat beside
+them. Like every
 [addon](/addons/) it composes in with `.use(addon)` and ships two entry
 points — one for a system Time-Provider, one for a deterministic one:
 
@@ -58,6 +60,25 @@ manual/sequential, never firing on a fixed clock.
 `.scheduler`. Each `clear*` method is a no-op if the handle's callback already
 ran or was already cleared — it just calls `.dispose()` on the
 `IScheduledHandle` the matching `set*` method returned.
+
+## The performance members
+
+`now()`, `timeOrigin`, `getEntries()`, `getEntriesByName()`, `getEntriesByType()`,
+`mark()`, `measure()`, `clearMarks()` and `clearMeasures()` sit directly on
+`.compat` too, with the same signatures as
+[`timeProvider.performance`](/api/performance) and as the `performance` global:
+
+```ts
+timeProvider.compat.mark("request-start");
+// ...
+timeProvider.compat.measure("request", "request-start");
+console.log(timeProvider.compat.getEntriesByName("request")[0]?.duration);
+```
+
+They are pass-throughs to `timeProvider.performance`, so on a deterministic
+Time-Provider they read that runtime's simulated timeline — the point being that
+a file calling `performance.mark(...)` and `setTimeout(...)` side by side has one
+object to swap them both for.
 
 ## Naming the types
 
