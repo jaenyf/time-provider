@@ -78,4 +78,4 @@ Each of those, in turn, has its own `.create()` — see
 ---
 
 Next: [ITimeProvider](/api/time-provider) · [IClock](/api/clock) ·
-[IParser](/api/parser) · [ITimers](/api/timers) · [IPerformance](/api/performance)
+[IConverter](/api/converter) · [IScheduler](/api/scheduler) · [IPerformance](/api/performance)

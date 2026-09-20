@@ -2,7 +2,7 @@ import type { IScheduledHandle } from "@time-provider/core";
 import type { DayOfWeekName, ICronSpec, MonthName } from "./cron-parser.ts";
 
 /**
- * The shape this addon adds to a composed Time-Provider: a `cron` property exposing
+ * The shape this addon adds to a composed Time-Provider: a `scheduler.cron` property exposing
  * {@link ICronApi}. Parameterized by the calendar's month/day-of-week names, defaulting to the
  * Gregorian ones every plugin shipped today uses.
  */
@@ -11,16 +11,18 @@ export type WithCronApi<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
 > = {
-  /**
-   * Schedules and cancels callbacks running on cron schedules, evaluated in this runtime's own
-   * local timezone (`"Etc/UTC"` on a UTC-only runtime) - see {@link ICronApi}.
-   */
-  cron: ICronApi<TDate, TMonthName, TWeekdayName>;
+  scheduler: {
+    /**
+     * Schedules and cancels callbacks running on cron schedules, evaluated in this runtime's own
+     * local timezone (`"Etc/UTC"` on a UTC-only runtime) - see {@link ICronApi}.
+     */
+    cron: ICronApi<TDate, TMonthName, TWeekdayName>;
+  };
 };
 
 /**
  * The cron API facade this addon adds to a composed Time-Provider, reachable as
- * `timeProvider.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
+ * `timeProvider.scheduler.cron` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 export interface ICronApi<
   // Kept generic over TDate for symmetry with WithCronApi<TDate> and the rest of the *Api<TDate>

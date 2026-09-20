@@ -35,7 +35,7 @@ function fakeRuntime(
   };
   timestampNow: () => EpochMilliseconds;
   registerAddon: (addon: unknown) => void;
-  timers: ITimers;
+  scheduler: { timers: ITimers; cron?: { cron?: unknown } };
   recurring: { callback: () => IDurationSpec | false; initialDelay?: IDurationSpec }[];
   cleared: IScheduledHandle[];
   calendarScheme: IDefaultCalendarScheme<unknown>;
@@ -63,19 +63,21 @@ function fakeRuntime(
       return { timestampNow: timestampNowDelegate, timezone: timezoneDelegate() };
     },
     registerAddon: () => {},
-    timers: {
-      once() {
-        throw new Error("not used by CronScheduler");
-      },
-      every() {
-        throw new Error("not used by CronScheduler");
-      },
-      recurring(callback, initialDelay) {
-        recurring.push({ callback, initialDelay });
-        return handle;
-      },
-      wait() {
-        throw new Error("not used by CronScheduler");
+    scheduler: {
+      timers: {
+        once() {
+          throw new Error("not used by CronScheduler");
+        },
+        every() {
+          throw new Error("not used by CronScheduler");
+        },
+        recurring(callback, initialDelay) {
+          recurring.push({ callback, initialDelay });
+          return handle;
+        },
+        wait() {
+          throw new Error("not used by CronScheduler");
+        },
       },
     },
   };
@@ -109,18 +111,18 @@ describe("CronScheduler", () => {
       const runtime = fakeRuntime(
         () => "Etc/UTC",
         () => asEpochMilliseconds(),
-      ) as unknown as IRuntime<unknown> & { cron?: unknown };
+      ) as unknown as IRuntime<unknown> & { scheduler: { cron?: unknown } };
       sut.applyToRuntime(runtime);
-      expect(runtime.cron).toBeDefined();
+      expect(runtime.scheduler.cron).toBeDefined();
     });
     test("the facade does not recursively re-expose itself", () => {
       using sut = new CronScheduler();
       const runtime = fakeRuntime(
         () => "Etc/UTC",
         () => asEpochMilliseconds(),
-      ) as unknown as IRuntime<unknown> & { cron?: { cron?: unknown } };
+      ) as unknown as IRuntime<unknown> & { scheduler: { cron?: { cron?: unknown } } };
       sut.applyToRuntime(runtime);
-      expect(runtime.cron?.cron).toBeUndefined();
+      expect(runtime.scheduler.cron?.cron).toBeUndefined();
     });
   });
 

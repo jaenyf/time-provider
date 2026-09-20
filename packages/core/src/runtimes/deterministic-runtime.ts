@@ -6,6 +6,7 @@ import type {
   IAdvanceOptions,
   IDeterministicRuntime,
   IDeterministicMicrotasks,
+  IDeterministicScheduler,
   IManualClock,
   IManualRuntime,
   IRuntime,
@@ -730,6 +731,14 @@ export abstract class BaseDeterministicRuntime<TDate>
    */
   protected disableDueDraining(): void {
     this.#dueDrainingDisabled = true;
+  }
+
+  /**
+   * Narrows {@link BaseRuntime.scheduler}: a deterministic runtime's microtasks also expose
+   * {@link IDeterministicMicrotasks.drain}.
+   */
+  override get scheduler(): IDeterministicScheduler {
+    return this;
   }
 
   //#region microtasks management

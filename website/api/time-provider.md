@@ -3,15 +3,15 @@
 ```ts
 interface ITimeProvider<TDate> {
   get clock(): IClock<TDate>;
-  get parser(): IParser<TDate>;
-  get timers(): ITimers;
+  get converter(): IConverter<TDate>;
+  get scheduler(): IScheduler;
   get performance(): IPerformance;
 }
 
 interface IUtcOnlyTimeProvider<TDate> {
   get clock(): IUtcOnlyClock<TDate>;
-  get parser(): IUtcOnlyParser<TDate>;
-  get timers(): ITimers;
+  get converter(): IUtcOnlyConverter<TDate>;
+  get scheduler(): IScheduler;
   get performance(): IPerformance;
 }
 ```
@@ -19,11 +19,11 @@ interface IUtcOnlyTimeProvider<TDate> {
 The object returned by `.create()`. All four getters return the _same_
 underlying runtime instance, exposed through narrower interfaces — this is
 why swapping strategies never changes call sites: whatever depends on
-`ITimeProvider<TDate>` only ever sees `clock`, `parser`, `timers`, and
+`ITimeProvider<TDate>` only ever sees `clock`, `converter`, `scheduler`, and
 `performance`.
 
 `IUtcOnlyTimeProvider` is what you get from a UTC-only plugin (native
-`Date`, plain Moment.js) — same shape, but `clock`/`parser` only expose the
+`Date`, plain Moment.js) — same shape, but `clock`/`converter` only expose the
 UTC-facing methods. See [Mental Model](/guide/mental-model) for why these
 are two separate interfaces rather than one with optional members.
 
@@ -55,12 +55,14 @@ Of the clock types referenced above, only `IClock` is exported.
 `IUtcOnlyClock`, `IManualClock`, `IUtcOnlyManualClock` and `IAdvanceable` are
 documented in [IClock](/api/clock) because they are part of the public API
 surface — the shape of what `.create()` hands you — not because you can import
-them. [IParser](/api/parser) notes the same about `ILocalOnlyParser`.
+them. [IConverter](/api/converter) notes the same about `ILocalOnlyConverter`.
 
 ## Composing with an addon
 
 `.use(addon)` on the builder, before `.create()`, widens the resulting
-Time-Provider with the addon's own extra property (e.g. `.animation` from
-`@time-provider/addon-animation-frame`) — `clock`, `parser`, `timers`,
-and `performance` are always present regardless of which addons are
-composed in. See [Addons](/addons/).
+Time-Provider with the addon's own extra property. An addon that schedules
+callbacks widens the `scheduler` facet (e.g. `scheduler.animation` from
+`@time-provider/addon-animation-frame`); one that doesn't adds a root
+property of its own (e.g. `eta` from `@time-provider/addon-eta`). `clock`,
+`converter`, `scheduler` and `performance` are always present regardless of
+which addons are composed in. See [Addons](/addons/).

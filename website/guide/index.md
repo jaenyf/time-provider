@@ -8,14 +8,14 @@ process-wide, which affects unrelated code and makes tests harder to reason
 about.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
-single object — an `ITimeProvider` — exposing a **clock**, a **parser**, a
-**timers**, and a **performance** API, swappable per call site.
+single object — an `ITimeProvider` — exposing a **clock**, a **converter**, a
+**scheduler**, and a **performance** API, swappable per call site.
 
 ```ts
 interface ITimeProvider<TDate> {
   clock: IClock<TDate>; // localNow(), utcNow(), timestampNow(), withTimezone()
-  parser: IParser<TDate>; // parseToUtc(), parseToLocal()
-  timers: ITimers; // once(), every(), recurring(), wait()
+  converter: IConverter<TDate>; // convertToUtc(), convertToLocal()
+  scheduler: IScheduler; // timers (once(), every(), recurring(), wait()), microtasks
   performance: IPerformance; // now(), mark(), measure(), getEntries()
 }
 ```
@@ -37,8 +37,8 @@ time.
 ## Type-safe end-to-end
 
 Every public API is generic over the date type your plugin returns —
-`ITimeProvider<TDate>`, `IClock<TDate>`, and `IParser<TDate>` carry it
-through, so `clock.utcNow()` and `parser.parseToLocal()` come back typed as
+`ITimeProvider<TDate>`, `IClock<TDate>`, and `IConverter<TDate>` carry it
+through, so `clock.utcNow()` and `converter.convertToLocal()` come back typed as
 a native `Date`, a Luxon `DateTime`, a `Temporal.ZonedDateTime`, or
 whichever adapter you picked — no casts required. Mixing incompatible
 pieces — a `/deterministic` plugin with the system `createTimeProvider`, or
@@ -82,7 +82,7 @@ Six adapters ("plugins") plug in the date type your codebase already uses:
 A **plugin** bridges one date library to the `ITimeProvider` pipeline and
 adds no new functionality of its own. An **addon** extends a built
 Time-Provider with an extra facade — e.g.
-[`@time-provider/addon-animation-frame`](/addons/) adds an `.animation`
+[`@time-provider/addon-animation-frame`](/addons/) adds a `scheduler.animation`
 property backed by the same clock strategy. See [Addons](/addons/).
 
 Next: [Install](/guide/install) · [Quick Start](/guide/quick-start) · [Try it in the Playground](/playground)

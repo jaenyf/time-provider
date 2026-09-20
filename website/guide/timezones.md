@@ -41,7 +41,7 @@ it never silently guesses the host's timezone for you.
 
 ## DST ambiguity
 
-`localNow()`, `utcNow()`, and `parseToLocal()` never hit this: each starts
+`localNow()`, `utcNow()`, and `convertToLocal()` never hit this: each starts
 from an already-known instant and only renders it in local time, so there's
 nothing to disambiguate. The ambiguity only exists the other way around —
 turning local wall-clock fields into an instant — which today only happens

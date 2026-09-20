@@ -4,9 +4,10 @@ import type {
   ICalendarScheme,
   IClock,
   IMicrotasks,
-  IParser,
+  IConverter,
   IPerformance,
   IRuntime,
+  IScheduler,
   ITimers,
   ITimeConverter,
   TimezoneDefinition,
@@ -159,13 +160,16 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get clock(): IClock<TDate> {
     return this;
   }
+  get scheduler(): IScheduler {
+    return this;
+  }
   get timers(): ITimers {
     return this;
   }
   get microtasks(): IMicrotasks {
     return this;
   }
-  get parser(): IParser<TDate> {
+  get converter(): IConverter<TDate> {
     return this;
   }
   get performance(): IPerformance {
@@ -232,10 +236,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
 
   /**
-   * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
+   * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as UTC time.
    */
-  parseToUtc = (time: string | EpochMilliseconds | TDate) => {
+  convertToUtc = (time: string | EpochMilliseconds | TDate) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -249,10 +253,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     );
   };
   /**
-   * Parses any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
+   * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as local time.
    */
-  parseToLocal = (time: string | EpochMilliseconds | TDate) => {
+  convertToLocal = (time: string | EpochMilliseconds | TDate) => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a

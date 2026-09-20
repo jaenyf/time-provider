@@ -4,5 +4,5 @@ import { addon } from "../../../../addon-idle/dist/deterministic.mjs";
 
 const manual = createTimeProvider.for(plugin).use(addon).asManual().create();
 
-manual.idle.request(() => console.log("idle"));
-manual.idle.drain();
+manual.scheduler.idle.request(() => console.log("idle"));
+manual.scheduler.idle.drain();

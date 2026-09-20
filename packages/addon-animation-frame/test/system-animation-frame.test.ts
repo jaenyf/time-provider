@@ -10,6 +10,7 @@ describe("SystemAnimationFrameScheduler", () => {
 
   function fakeRuntime(): IRuntime<unknown> {
     return {
+      scheduler: {},
       registerAddon: () => {},
     } as unknown as IRuntime<unknown>;
   }
@@ -92,17 +93,17 @@ describe("SystemAnimationFrameScheduler", () => {
     describe("addon facade", () => {
       test("applyToRuntime exposes a dedicated facade property on the runtime", () => {
         using sut = new SystemAnimationFrameScheduler();
-        const runtime = fakeRuntime() as IRuntime<unknown> & { animation?: unknown };
+        const runtime = fakeRuntime() as IRuntime<unknown> & { scheduler: { animation?: unknown } };
         sut.applyToRuntime(runtime);
-        expect(runtime.animation).toBeDefined();
+        expect(runtime.scheduler.animation).toBeDefined();
       });
       test("the facade does not recursively re-expose itself", () => {
         using sut = new SystemAnimationFrameScheduler();
         const runtime = fakeRuntime() as IRuntime<unknown> & {
-          animation?: { animation?: unknown };
+          scheduler: { animation?: { animation?: unknown } };
         };
         sut.applyToRuntime(runtime);
-        expect(runtime.animation?.animation).toBeUndefined();
+        expect(runtime.scheduler.animation?.animation).toBeUndefined();
       });
     });
 

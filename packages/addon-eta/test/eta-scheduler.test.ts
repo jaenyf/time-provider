@@ -14,7 +14,7 @@ import { EtaTrackBuilder } from "../src/eta-tracker.ts";
 import type { IEtaDurationSnapshot } from "../src/types.ts";
 
 function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<unknown> & {
-  timers: ITimers;
+  scheduler: { timers: ITimers };
   clock: {
     get timestampNow(): EpochMilliseconds;
   };
@@ -28,23 +28,25 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
       timestampNow: timestampNowDelegate,
     },
     registerAddon: () => {},
-    timers: {
-      once() {
-        throw new Error("not used by the eta addon");
-      },
-      every(durationSpec: IDurationSpec, callback: () => void) {
-        intervals.push({ callback, delay: toDuration(durationSpec) });
-        return {} as IScheduledHandle;
-      },
-      recurring() {
-        throw new Error("not used by the eta addon");
-      },
-      wait() {
-        throw new Error("not used by the eta addon");
+    scheduler: {
+      timers: {
+        once() {
+          throw new Error("not used by the eta addon");
+        },
+        every(durationSpec: IDurationSpec, callback: () => void) {
+          intervals.push({ callback, delay: toDuration(durationSpec) });
+          return {} as IScheduledHandle;
+        },
+        recurring() {
+          throw new Error("not used by the eta addon");
+        },
+        wait() {
+          throw new Error("not used by the eta addon");
+        },
       },
     },
   } as unknown as IRuntime<unknown> & {
-    timers: ITimers;
+    scheduler: { timers: ITimers };
     clock: {
       get timestampNow(): EpochMilliseconds;
     };

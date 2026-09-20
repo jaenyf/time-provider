@@ -5,7 +5,7 @@ import "./polyfills.ts";
 
 const animationFrameAddon = addonBuilderFactory().create();
 
-type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
+type FakeRuntime = IRuntime<unknown> & { scheduler: { animation?: unknown } };
 
 /*
  * applyToSystem only touches what it's documented to (define `.animation`),
@@ -15,6 +15,7 @@ type FakeRuntime = IRuntime<unknown> & { animation?: unknown };
  */
 function fakeSystemRuntime(): FakeRuntime {
   return {
+    scheduler: {},
     registerAddon: (_addon: IAddon<unknown>) => {},
   } as FakeRuntime;
 }
@@ -23,13 +24,13 @@ describe("animationFrameAddon (system)", () => {
   test("applyToSystem defines .animation with a scheduleFrame() facade", () => {
     const runtime = fakeSystemRuntime();
     animationFrameAddon.applyToRuntime(runtime);
-    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
+    expect(runtime.scheduler.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 
   test("applyToSystem's defined property is enumerable but not writable", () => {
     const runtime = fakeSystemRuntime();
     animationFrameAddon.applyToRuntime(runtime);
-    const descriptor = Object.getOwnPropertyDescriptor(runtime, "animation");
+    const descriptor = Object.getOwnPropertyDescriptor(runtime.scheduler, "animation");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
   });
@@ -40,6 +41,6 @@ describe("animationFrameAddon (system)", () => {
     expect(first).not.toBe(second);
     const runtime = fakeSystemRuntime();
     second.applyToRuntime(runtime);
-    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
+    expect(runtime.scheduler.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 });

@@ -175,7 +175,7 @@ the chosen algorithm has enough samples to estimate anything.
 ## Timing comes from the runtime
 
 `.eta` reads time through `clock.timestampNow()` and programs its ticks on
-`timeProvider.timers`, which has two consequences worth knowing.
+`timeProvider.scheduler`, which has two consequences worth knowing.
 
 Notifications follow the [clock strategy](/guide/clock-strategies) like any
 other timer — real intervals on a system clock, in-line during `advance()` on a

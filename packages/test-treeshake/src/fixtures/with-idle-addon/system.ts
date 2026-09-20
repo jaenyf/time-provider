@@ -4,4 +4,4 @@ import { addon } from "../../../../addon-idle/dist/index.mjs";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-timeProvider.idle.request(() => console.log("idle")).dispose();
+timeProvider.scheduler.idle.request(() => console.log("idle")).dispose();

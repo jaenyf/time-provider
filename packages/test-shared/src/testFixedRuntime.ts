@@ -13,7 +13,7 @@ import {
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
-import { testParser } from "./helpers/testParser.ts";
+import { testConverter } from "./helpers/testConverter.ts";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
@@ -50,17 +50,17 @@ export function testFixedRuntime<TDate>(
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
     testTimestampNow(createSUT);
 
-    describe("parser", () => {
-      testParser(
+    describe("converter", () => {
+      testConverter(
         plugin.supportsLocalTime,
-        () => createSUT().parser,
+        () => createSUT().converter,
         parseTimeToUtc,
         parseTimeToLocal,
       );
     });
 
     describe("timers", () => {
-      testTimers(() => createSUT().timers, true);
+      testTimers(() => createSUT().scheduler.timers, true);
       describe("issue#57", () => {
         //see: https://github.com/jaenyf/time-provider/issues/57
         test.each([0, -1, -100])(
@@ -68,7 +68,7 @@ export function testFixedRuntime<TDate>(
           (delay: number) => {
             const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
             let timeoutCalled = false;
-            sut.timers.once({ milliseconds: delay }, () => {
+            sut.scheduler.timers.once({ milliseconds: delay }, () => {
               timeoutCalled = true;
             });
             expect(timeoutCalled).toBe(false);
@@ -79,7 +79,7 @@ export function testFixedRuntime<TDate>(
           (delay: number) => {
             const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
             let intervalCalled = false;
-            sut.timers.every({ milliseconds: delay }, () => {
+            sut.scheduler.timers.every({ milliseconds: delay }, () => {
               intervalCalled = true;
             });
             expect(intervalCalled).toBe(false);
@@ -88,7 +88,7 @@ export function testFixedRuntime<TDate>(
         test.each([1, 2, 100])("a positive-delay timeout should not fire", (delay: number) => {
           const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
           let timeoutCalled = false;
-          sut.timers.once({ milliseconds: delay }, () => {
+          sut.scheduler.timers.once({ milliseconds: delay }, () => {
             timeoutCalled = true;
           });
           expect(timeoutCalled).toBe(false);
@@ -96,7 +96,7 @@ export function testFixedRuntime<TDate>(
         test.each([1, 2, 100])("a positive-delay interval should not fire", (delay: number) => {
           const sut = createFixedRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
           let intervalCalled = false;
-          sut.timers.every({ milliseconds: delay }, () => {
+          sut.scheduler.timers.every({ milliseconds: delay }, () => {
             intervalCalled = true;
           });
           expect(intervalCalled).toBe(false);

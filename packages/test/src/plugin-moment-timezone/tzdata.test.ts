@@ -22,7 +22,7 @@ function firstCronFire<TDate>(
 
   let fires = 0;
   let firstFireAt: number | undefined;
-  timeProvider.cron.schedule("0 9 * * *", () => fires++);
+  timeProvider.scheduler.cron.schedule("0 9 * * *", () => fires++);
 
   // Step an hour at a time so the instant of a fire is knowable - a single big advance() would
   // drain the whole batch with the clock already parked at its final target.

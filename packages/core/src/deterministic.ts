@@ -7,6 +7,7 @@ export type {
   IDeterministicPlugin,
   IUtcOnlyDeterministicPlugin,
   IDeterministicMicrotasks,
+  IDeterministicScheduler,
   IDeterministicRuntime,
   IDeterministicTimeProvider,
   IUtcOnlyDeterministicTimeProvider,

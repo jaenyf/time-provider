@@ -32,7 +32,7 @@ export class DeterministicAnimationFrameScheduler<TDate>
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "animation",
+      "scheduler.animation",
       { scheduleFrame: this.scheduleFrame.bind(this) },
       this,
     );
@@ -58,6 +58,6 @@ export class DeterministicAnimationFrameScheduler<TDate>
   }
 
   scheduleFrame(callback: () => void): IScheduledHandle {
-    return this.runtime.timers.once({ milliseconds: this.#hostFrameDurationMs }, callback);
+    return this.runtimeTimers.once({ milliseconds: this.#hostFrameDurationMs }, callback);
   }
 }

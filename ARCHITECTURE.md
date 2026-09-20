@@ -66,11 +66,11 @@ Plugin (adapter)
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime (plugin's system.ts/deterministic-runtimes.ts, extending a
      core Base* class from system-runtime.ts/deterministic-runtime.ts)
-  -> ITimeProvider { clock, parser, timers, performance }  (core/src/runtimes/runtime-base.ts)
+  -> ITimeProvider { clock, converter, scheduler, performance }  (core/src/runtimes/runtime-base.ts)
 ```
 
-A `Runtime` is a single object that implements `IClock`, `IParser`, and
-`ITimers` at once (`BaseRuntime.clock`/`.parser`/`.timers` all return
+A `Runtime` is a single object that implements `IClock`, `IConverter`, and
+`ITimers` at once (`BaseRuntime.clock`/`.converter`/`.scheduler` all return
 `this`); `ITimeProvider` just exposes those three facets as separate
 properties. The four runtime kinds (system, fixed, manual, sequential) share
 this shape and differ only in where `timestamp()` comes from and, for

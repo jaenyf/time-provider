@@ -19,7 +19,7 @@ timeProvider.compat.timers.clearTimeout(handle);
 
 On a deterministic Time-Provider the same calls run against that runtime's own
 simulated clock, so code written against this facade is testable the same way
-as code written against `.timers`:
+as code written against `.scheduler`:
 
 ```ts
 import { createTimeProvider } from "@time-provider/core/deterministic";
@@ -36,13 +36,13 @@ console.log(ticks); // 3
 
 ## Why this facade exists
 
-`.timers` (`once`/`every`/`recurring`/`wait`) is the library's own API — see
+`.scheduler` (`once`/`every`/`recurring`/`wait`) is the library's own API — see
 [Deterministic Timers](/guide/timers). This addon exists for the codebase that
 already calls `setTimeout`/`setInterval`/`clearTimeout`/etc. directly and wants
 to migrate onto a Time-Provider incrementally: swap the call site for
 `timeProvider.compat.timers.setTimeout(...)`, without rewriting it to the
 `once`/`dispose()` shape first. Under the hood every method delegates straight
-to `.timers`, so it follows the exact same [clock strategy](/guide/clock-strategies)
+to `.scheduler`, so it follows the exact same [clock strategy](/guide/clock-strategies)
 rules — real timers on a system clock, synchronous and in-line on
 manual/sequential, never firing on a fixed clock.
 
@@ -55,7 +55,7 @@ manual/sequential, never firing on a fixed clock.
 | `setRecurring(callback, initialDelayMs?)` | `timers.recurring` | `clearRecurring(handle)` |
 
 `delayMs`/`initialDelayMs` default to `0` when omitted or negative, matching
-`.timers`. Each `clear*` method is a no-op if the handle's callback already
+`.scheduler`. Each `clear*` method is a no-op if the handle's callback already
 ran or was already cleared — it just calls `.dispose()` on the
 `IScheduledHandle` the matching `set*` method returned.
 

@@ -7,7 +7,7 @@ import {
 } from "@time-provider/core";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
-import { testParser } from "./helpers/testParser.ts";
+import { testConverter } from "./helpers/testConverter.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
   testConstructorArgs,
@@ -132,17 +132,17 @@ export function testSequentialRuntime<TDate>(
       });
     });
 
-    describe("parser", () => {
-      testParser(
+    describe("converter", () => {
+      testConverter(
         plugin.supportsLocalTime,
-        () => createSUT().parser,
+        () => createSUT().converter,
         parseTimeToUtc,
         parseTimeToLocal,
       );
     });
 
     describe("timers", () => {
-      testTimers(() => createSUT().timers);
+      testTimers(() => createSUT().scheduler.timers);
       describe("additionnal", () => {
         describe("once", () => {
           test("can be called without specified delay", () => {
@@ -489,7 +489,7 @@ export function testSequentialRuntime<TDate>(
                 expectedRetries * 1000,
               ]);
               let retries = 0;
-              sut.timers.every({ milliseconds: 1000 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 1000 }, () => {
                 retries++;
               });
               (sut.clock as IClock<TDate>).localNow();
@@ -505,7 +505,7 @@ export function testSequentialRuntime<TDate>(
                 expectedRetries * 1000,
               ]);
               let retries = 0;
-              sut.timers.every({ milliseconds: 1000 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 1000 }, () => {
                 retries++;
               });
               sut.clock.utcNow();
@@ -519,10 +519,10 @@ export function testSequentialRuntime<TDate>(
               () => {
                 const sut = createSUT();
                 let buffer: string = "";
-                sut.timers.every({ milliseconds: 100 }, () => {
+                sut.scheduler.timers.every({ milliseconds: 100 }, () => {
                   buffer += "A";
                 });
-                sut.timers.every({ milliseconds: 150 }, () => {
+                sut.scheduler.timers.every({ milliseconds: 150 }, () => {
                   buffer += "B";
                 });
                 (sut.clock as IClock<TDate>).localNow();
@@ -533,10 +533,10 @@ export function testSequentialRuntime<TDate>(
             test("scatter callbacks run in a timely fashion instead of running them multiple time individually (utcNow)", () => {
               const sut = createSUT();
               let buffer: string = "";
-              sut.timers.every({ milliseconds: 100 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 100 }, () => {
                 buffer += "A";
               });
-              sut.timers.every({ milliseconds: 150 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 150 }, () => {
                 buffer += "B";
               });
               sut.clock.utcNow();

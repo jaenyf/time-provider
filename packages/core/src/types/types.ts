@@ -419,54 +419,54 @@ export interface IDefaultCalendarScheme<TDate> extends ICalendarScheme<
 
 //#endregion
 
-//#region Parser
+//#region Converter
 // ---------------------------------------------------------------------------
-// Parser
+// Converter
 // ---------------------------------------------------------------------------
 
-interface IWithParser<TParser> {
+interface IWithConverter<TConverter> {
   /**
-   * Get the current configured parser
+   * Get the current configured converter
    */
-  get parser(): TParser;
+  get converter(): TConverter;
 }
 
 /**
- * A parser that only exposes parsing to UTC.
+ * A converter that only exposes conversion to UTC.
  */
-export interface IUtcOnlyParser<TDate> {
+export interface IUtcOnlyConverter<TDate> {
   /**
-   * Parses `time` into a UTC time `TDate` instance.
+   * Converts `time` into a UTC time `TDate` instance.
    *
-   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-parsed `TDate`.
-   * Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
+   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-converted
+   * `TDate`. Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
    * output) are not supported and may throw or produce an unspecified
    * result depending on the underlying date library.
    * @returns a TDate expressed as UTC time.
    */
-  parseToUtc(time: string | number | TDate): TDate;
+  convertToUtc(time: string | number | TDate): TDate;
 }
 
 /**
- * A parser that only exposes parsing to local time.
+ * A converter that only exposes conversion to local time.
  */
-interface ILocalOnlyParser<TDate> {
+interface ILocalOnlyConverter<TDate> {
   /**
-   * Parses `time` into a local time `TDate` instance.
+   * Converts `time` into a local time `TDate` instance.
    *
-   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-parsed `TDate`.
-   * Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
+   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-converted
+   * `TDate`. Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
    * output) are not supported and may throw or produce an unspecified
    * result depending on the underlying date library.
    * @returns a TDate expressed as local time.
    */
-  parseToLocal(time: string | number | TDate): TDate;
+  convertToLocal(time: string | number | TDate): TDate;
 }
 
 /**
- * Parses raw input into either UTC or local `TDate` instances.
+ * Converts raw input into either UTC or local `TDate` instances.
  */
-export interface IParser<TDate> extends IUtcOnlyParser<TDate>, ILocalOnlyParser<TDate> {}
+export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyConverter<TDate> {}
 //#endregion
 
 //#region Timers
@@ -632,6 +632,44 @@ interface IWithDeterministicMicrotasks {
 
 //#endregion
 
+//#region Scheduler
+// ---------------------------------------------------------------------------
+// Scheduler
+// ---------------------------------------------------------------------------
+
+/**
+ * Everything that schedules a callback to run later, in one place: the timer primitives under
+ * `timers` (see {@link ITimers}) and the microtask checkpoint under `microtasks`.
+ *
+ * Addons extend this facet rather than the root of the Time-Provider:
+ * `@time-provider/addon-cron` adds `scheduler.cron`, `@time-provider/addon-idle` adds
+ * `scheduler.idle` and `@time-provider/addon-animation-frame` adds `scheduler.animation`. Every
+ * one of them hands back the same {@link IScheduledHandle} {@link ITimers} does, so a single
+ * disposal story covers all of them.
+ */
+export interface IScheduler extends IWithTimers, IWithMicrotasks {}
+
+/**
+ * The {@link IScheduler} of a deterministic (fixed/manual/sequential) runtime, whose microtasks
+ * can additionally be run on demand - see {@link IDeterministicMicrotasks.drain}.
+ */
+export interface IDeterministicScheduler extends IWithTimers, IWithDeterministicMicrotasks {}
+
+interface IWithScheduler {
+  /**
+   * Get the current configured scheduler
+   */
+  get scheduler(): IScheduler;
+}
+
+interface IWithDeterministicScheduler {
+  /**
+   * Get the current configured deterministic scheduler
+   */
+  get scheduler(): IDeterministicScheduler;
+}
+//#endregion
+
 //#region Runtime
 // ---------------------------------------------------------------------------
 // Runtime
@@ -686,7 +724,7 @@ export interface IRuntime<TDate>
     IClearTimers,
     IMicrotasks,
     IClock<TDate>,
-    IParser<TDate>,
+    IConverter<TDate>,
     ITimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -703,7 +741,7 @@ export interface IDeterministicRuntime<TDate>
     IClearTimers,
     IDeterministicMicrotasks,
     IClock<TDate>,
-    IParser<TDate>,
+    IConverter<TDate>,
     IDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -728,7 +766,7 @@ export interface IUtcOnlyRuntime<TDate>
     IClearTimers,
     IMicrotasks,
     IUtcOnlyClock<TDate>,
-    IUtcOnlyParser<TDate>,
+    IUtcOnlyConverter<TDate>,
     IUtcOnlyTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -745,7 +783,7 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
     IClearTimers,
     IDeterministicMicrotasks,
     IUtcOnlyClock<TDate>,
-    IUtcOnlyParser<TDate>,
+    IUtcOnlyConverter<TDate>,
     IUtcOnlyDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -764,7 +802,7 @@ export interface IManualRuntime<TDate>
     IClearTimers,
     IDeterministicMicrotasks,
     IClock<TDate>,
-    IParser<TDate>,
+    IConverter<TDate>,
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -791,7 +829,7 @@ export interface IUtcOnlyManualRuntime<TDate>
     IClearTimers,
     IDeterministicMicrotasks,
     IUtcOnlyClock<TDate>,
-    IUtcOnlyParser<TDate>,
+    IUtcOnlyConverter<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
@@ -804,31 +842,29 @@ export interface IUtcOnlyManualRuntime<TDate>
 // ---------------------------------------------------------------------------
 
 /**
- * The public facade of a Time-Provider: exposes its `clock`, `timers`, `microtasks`, `parser`,
- * and `performance`, backed by a timezone-aware clock.
+ * The public facade of a Time-Provider: exposes its `clock`, `scheduler`, `converter` and
+ * `performance`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
     IWithClock<IClock<TDate>>,
-    IWithTimers,
-    IWithMicrotasks,
-    IWithParser<IParser<TDate>>,
+    IWithScheduler,
+    IWithConverter<IConverter<TDate>>,
     IWithPerformance {}
 
 /**
- * The public facade of a deterministic Time-Provider: exposes its `clock`, `timers`,
- * `microtasks`, `parser`, and `performance`, backed by a timezone-aware clock.
+ * The public facade of a deterministic Time-Provider: exposes its `clock`, `scheduler`,
+ * `converter` and `performance`, backed by a timezone-aware clock.
  */
 export interface IDeterministicTimeProvider<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
     IWithClock<IClock<TDate>>,
-    IWithTimers,
-    IWithDeterministicMicrotasks,
-    IWithParser<IParser<TDate>>,
+    IWithDeterministicScheduler,
+    IWithConverter<IConverter<TDate>>,
     IWithPerformance {}
 
 /**
@@ -839,9 +875,8 @@ export interface IUtcOnlyTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyClock<TDate>>,
-    IWithTimers,
-    IWithMicrotasks,
-    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithScheduler,
+    IWithConverter<IUtcOnlyConverter<TDate>>,
     IWithPerformance {}
 
 /**
@@ -852,9 +887,8 @@ export interface IUtcOnlyDeterministicTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyClock<TDate>>,
-    IWithTimers,
-    IWithDeterministicMicrotasks,
-    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithDeterministicScheduler,
+    IWithConverter<IUtcOnlyConverter<TDate>>,
     IWithPerformance {}
 
 /**
@@ -865,9 +899,8 @@ export interface IManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IManualClock<TDate>>,
-    IWithTimers,
-    IWithDeterministicMicrotasks,
-    IWithParser<IParser<TDate>>,
+    IWithDeterministicScheduler,
+    IWithConverter<IConverter<TDate>>,
     IWithPerformance {}
 
 /**
@@ -879,9 +912,8 @@ export interface IUtcOnlyManualTimeProvider<TDate>
     IDisposable,
     IHasAbortSignal,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    IWithTimers,
-    IWithDeterministicMicrotasks,
-    IWithParser<IUtcOnlyParser<TDate>>,
+    IWithDeterministicScheduler,
+    IWithConverter<IUtcOnlyConverter<TDate>>,
     IWithPerformance {}
 //#endregion
 

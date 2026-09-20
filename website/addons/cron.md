@@ -1,7 +1,7 @@
 # Cron Schedules
 
 [`@time-provider/addon-cron`](https://www.npmjs.com/package/@time-provider/addon-cron)
-adds a `.cron` facade that runs a callback on a
+adds a `scheduler.cron` facade that runs a callback on a
 schedule described by a standard 5-field cron expression, evaluated in the
 runtime's own local timezone. Like every [addon](/addons/), it composes in
 with `.use(addon)` and ships two entry points — one for a system
@@ -18,7 +18,9 @@ const timeProvider = createTimeProvider
   .withTimezone("Europe/Paris")
   .create();
 
-const handle = timeProvider.cron.schedule("0 9 * * MON-FRI", () => console.log("Good morning!"));
+const handle = timeProvider.scheduler.cron.schedule("0 9 * * MON-FRI", () =>
+  console.log("Good morning!"),
+);
 
 handle.dispose();
 ```
@@ -45,7 +47,7 @@ const timeProvider = createTimeProvider
   .create();
 
 let runs = 0;
-timeProvider.cron.schedule("*/15 * * * *", () => runs++);
+timeProvider.scheduler.cron.schedule("*/15 * * * *", () => runs++);
 
 timeProvider.clock.advance({ hours: 1 });
 console.log(runs); // 4
@@ -85,11 +87,11 @@ scheduled, so a typo surfaces at the call site rather than at 3 a.m.
 not write the positional syntax. Omitted fields mean "every value":
 
 ```ts
-timeProvider.cron.schedule({ hour: 9, dayOfWeek: ["MON", "WED", "FRI"] }, () =>
+timeProvider.scheduler.cron.schedule({ hour: 9, dayOfWeek: ["MON", "WED", "FRI"] }, () =>
   console.log("Good morning!"),
 );
 
-timeProvider.cron.schedule({ minute: { from: 0, to: 45, step: 15 } }, () =>
+timeProvider.scheduler.cron.schedule({ minute: { from: 0, to: 45, step: 15 } }, () =>
   console.log("Every 15 minutes"),
 );
 ```
@@ -131,7 +133,7 @@ different calendar system substitutes its own — see
 
 ## Parsing without scheduling
 
-Three functions back `.cron` and are exported for use on their own — validating
+Three functions back `scheduler.cron` and are exported for use on their own — validating
 a user-supplied expression before scheduling anything, say, or computing an
 occurrence without registering a callback.
 
@@ -175,13 +177,13 @@ A plugin that ships its own scheme has it directly, as the
 `calendarScheme` it declares on its `ITimeConverter` — see
 [Writing a Custom Plugin](/plugins/custom).
 
-`CronScheduler` is also exported — the class implementing `.cron` on top of
+`CronScheduler` is also exported — the class implementing `scheduler.cron` on top of
 `ITimers.recurring`, re-deriving the delay to the next occurrence after
 every run. Composing the addon builds one for you; construct it directly only
 if you need a cron facade outside the addon pipeline, passing it the timers,
 a `timestampNow` reader, a timezone reader, and an `ICalendarScheme`.
 
-The `.cron` property itself is typed `ICronApi`, and `WithCronApi` names a
+The `scheduler.cron` property itself is typed `ICronApi`, and `WithCronApi` names a
 Time-Provider with this addon composed in:
 
 ```ts
@@ -191,7 +193,7 @@ function everyMorning(cron: ICronApi) {
   cron.schedule("0 9 * * *", () => {});
 }
 function schedule(tp: ITimeProvider<Date> & WithCronApi) {
-  everyMorning(tp.cron);
+  everyMorning(tp.scheduler.cron);
 }
 ```
 
@@ -221,7 +223,7 @@ schedule stops, exactly as a `recurring` callback that throws does.
 If a failing run should not end the job, catch inside your own callback:
 
 ```ts
-timeProvider.cron.schedule("0 * * * *", () => {
+timeProvider.scheduler.cron.schedule("0 * * * *", () => {
   try {
     doHourlyWork();
   } catch (error) {

@@ -56,9 +56,9 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     let frameCount = 0;
     function loop() {
       frameCount++;
-      timeProvider.animation.scheduleFrame(loop);
+      timeProvider.scheduler.animation.scheduleFrame(loop);
     }
-    timeProvider.animation.scheduleFrame(loop);
+    timeProvider.scheduler.animation.scheduleFrame(loop);
 
     timeProvider.advance({ milliseconds: 1000 }); // ~60 frames at the default 60fps
 
@@ -70,9 +70,9 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     let frameCount = 0;
     function loop() {
       frameCount++;
-      timeProvider.animation.scheduleFrame(loop);
+      timeProvider.scheduler.animation.scheduleFrame(loop);
     }
-    timeProvider.animation.scheduleFrame(loop);
+    timeProvider.scheduler.animation.scheduleFrame(loop);
 
     for (let i = 0; i < 5; i++) {
       timeProvider.advance({ milliseconds: 200 });
@@ -89,9 +89,9 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     let frameCount = 0;
     function loop() {
       frameCount++;
-      timeProvider.animation.scheduleFrame(loop);
+      timeProvider.scheduler.animation.scheduleFrame(loop);
     }
-    timeProvider.animation.scheduleFrame(loop);
+    timeProvider.scheduler.animation.scheduleFrame(loop);
 
     runtime.advance({ milliseconds: 1000 }); // ~90 frames at 90fps
 

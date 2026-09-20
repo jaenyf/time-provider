@@ -57,7 +57,7 @@ export class DeterministicIdleScheduler<TDate>
   applyToRuntimeImpl(runtime: IDeterministicRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "idle",
+      "scheduler.idle",
       { request: this.request.bind(this), drain: this.drain.bind(this) },
       this,
     );

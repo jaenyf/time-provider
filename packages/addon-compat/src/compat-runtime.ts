@@ -39,19 +39,19 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
+    return this.runtimeTimers.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearTimeout(handle: IScheduledHandle): void {
     handle.dispose();
   }
   setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtime.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
+    return this.runtimeTimers.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearInterval(handle: IScheduledHandle): void {
     handle.dispose();
   }
   setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle {
-    return this.runtime.recurring(
+    return this.runtimeTimers.recurring(
       () => {
         const result = callback();
         if (result === false) {

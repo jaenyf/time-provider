@@ -24,7 +24,7 @@ export function testAddonCronManual<TDate>(
       using sut = createSUT();
 
       let fires = 0;
-      sut.cron.schedule("0 9-17 * * MON,FRI", () => {
+      sut.scheduler.cron.schedule("0 9-17 * * MON,FRI", () => {
         fires++;
       });
 
@@ -38,7 +38,7 @@ export function testAddonCronManual<TDate>(
       using sut = createSUT();
 
       let fires = 0;
-      sut.cron.schedule("0 12 * * *", () => {
+      sut.scheduler.cron.schedule("0 12 * * *", () => {
         fires++;
       });
 
@@ -53,7 +53,7 @@ export function testAddonCronManual<TDate>(
       using sut = createSUT();
 
       let fires = 0;
-      const handle = sut.cron.schedule("0 * * * *", () => {
+      const handle = sut.scheduler.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
           handle.dispose();
@@ -88,7 +88,7 @@ export function testAddonCronFixed<TDate>(
       using sut = createSUT();
 
       let fires = 0;
-      sut.cron.schedule("* * * * *", () => {
+      sut.scheduler.cron.schedule("* * * * *", () => {
         fires++;
       });
 
@@ -121,7 +121,7 @@ export function testAddonCronSequential<TDate>(
         .create();
 
       let fires = 0;
-      sut.cron.schedule("0 9-17 * * MON,FRI", () => {
+      sut.scheduler.cron.schedule("0 9-17 * * MON,FRI", () => {
         fires++;
       });
 
@@ -143,7 +143,7 @@ export function testAddonCronSequential<TDate>(
         .create();
 
       let fires = 0;
-      sut.cron.schedule("0 12 * * *", () => {
+      sut.scheduler.cron.schedule("0 12 * * *", () => {
         fires++;
       });
 
@@ -166,7 +166,7 @@ export function testAddonCronSequential<TDate>(
         .create();
 
       let fires = 0;
-      using handle = sut.cron.schedule("0 * * * *", () => {
+      using handle = sut.scheduler.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
           handle.dispose();
@@ -203,7 +203,7 @@ export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRunti
       const sut = createSUT();
 
       let fires = 0;
-      sut.cron.schedule("0 9-17 * * MON,FRI", () => {
+      sut.scheduler.cron.schedule("0 9-17 * * MON,FRI", () => {
         fires++;
       });
 
@@ -217,7 +217,7 @@ export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRunti
       const sut = createSUT();
 
       let fires = 0;
-      sut.cron.schedule("0 12 * * *", () => {
+      sut.scheduler.cron.schedule("0 12 * * *", () => {
         fires++;
       });
 
@@ -232,7 +232,7 @@ export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRunti
       const sut = createSUT();
 
       let fires = 0;
-      const handle = sut.cron.schedule("0 * * * *", () => {
+      const handle = sut.scheduler.cron.schedule("0 * * * *", () => {
         fires++;
         if (fires === 3) {
           handle.dispose();

@@ -54,6 +54,7 @@ function makeHandle(entries: TaggedEntry[], entry: TaggedEntry): IScheduledHandl
 function fakeRuntime(): IDeterministicRuntime<unknown> & { registeredCount: () => number } {
   const entries: TaggedEntry[] = [];
   return {
+    scheduler: {},
     registeredCount: () => entries.length,
     registerAddon: () => {},
     drain: () => {},

@@ -15,7 +15,7 @@ import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.t
 
 const cronAddon = addonBuilderFactory().create();
 
-type FakeRuntime = IRuntime<unknown> & { cron?: unknown };
+type FakeRuntime = IRuntime<unknown> & { scheduler: { cron?: unknown } };
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (time) => toInstant({ milliseconds: Number(time) }),
@@ -26,7 +26,7 @@ const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
 
 /*
  * applyToRuntime only touches what it's documented to (define `.cron`, read `.clock` and
- * `.scheduler`), so a minimal object satisfies it for a focused unit test without needing a real
+ * `.scheduler.timers`), so a minimal object satisfies it for a focused unit test without needing a real
  * plugin/runtime - the cast is safe because these tests never exercise anything else on the fake
  * runtime.
  */
@@ -57,7 +57,7 @@ function fakeSystemRuntime(
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };
   return {
     runtime: {
-      timers,
+      scheduler: { timers },
       clock,
       timestampNow: () => now,
       calendarScheme: defaultCalendarScheme,
@@ -71,13 +71,13 @@ describe("cronAddon (system)", () => {
   test("applyToRuntime defines .cron with a schedule() facade", () => {
     const { runtime } = fakeSystemRuntime(0, "Etc/UTC");
     cronAddon.applyToRuntime(runtime);
-    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
+    expect(runtime.scheduler.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
     const { runtime } = fakeSystemRuntime(0, "Etc/UTC");
     cronAddon.applyToRuntime(runtime);
-    const descriptor = Object.getOwnPropertyDescriptor(runtime, "cron");
+    const descriptor = Object.getOwnPropertyDescriptor(runtime.scheduler, "cron");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
   });
@@ -85,7 +85,7 @@ describe("cronAddon (system)", () => {
   test("wires .cron to the runtime's own scheduler", () => {
     const { runtime, recurring } = fakeSystemRuntime(Date.UTC(2024, 0, 1, 10, 30, 0), "Etc/UTC");
     cronAddon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("* * * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("* * * * *", () => {});
     expect(recurring).toHaveLength(1);
   });
 
@@ -93,7 +93,7 @@ describe("cronAddon (system)", () => {
     const now = Date.UTC(2024, 2, 25, 10, 0, 0);
     const { runtime, recurring } = fakeSystemRuntime(now, "Europe/Paris");
     cronAddon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
@@ -104,7 +104,7 @@ describe("cronAddon (system)", () => {
     const now = Date.UTC(2024, 2, 25, 10, 0, 0);
     const { runtime, recurring } = fakeSystemRuntime(now);
     cronAddon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
@@ -117,6 +117,6 @@ describe("cronAddon (system)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeSystemRuntime(0, "Etc/UTC");
     second.applyToRuntime(runtime);
-    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
+    expect(runtime.scheduler.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 });

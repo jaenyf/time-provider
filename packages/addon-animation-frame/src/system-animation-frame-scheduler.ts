@@ -80,7 +80,7 @@ export class SystemAnimationFrameScheduler<TDate>
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "animation",
+      "scheduler.animation",
       { scheduleFrame: this.scheduleFrame.bind(this) },
       this,
     );

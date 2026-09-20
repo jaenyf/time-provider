@@ -1,9 +1,9 @@
-import type { IParser, IUtcOnlyParser } from "@time-provider/core";
+import type { IConverter, IUtcOnlyConverter } from "@time-provider/core";
 import { describe, expect, test } from "vite-plus/test";
 
-export function testParser<TDate>(
+export function testConverter<TDate>(
   supportsLocalTime: boolean,
-  createSut: () => IParser<TDate> | IUtcOnlyParser<TDate>,
+  createSut: () => IConverter<TDate> | IUtcOnlyConverter<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
@@ -20,22 +20,22 @@ export function testParser<TDate>(
   const resolveUtc = (toParse: LocalCase): string | number | TDate =>
     toParse === roundtrip ? parseTimeToUtc("2026-01-01T00:00:00.000Z") : toParse;
 
-  describe.skipIf(!supportsLocalTime)("parseToLocal", () => {
+  describe.skipIf(!supportsLocalTime)("convertToLocal", () => {
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("doesn't throw", (toParse) => {
       expect(() =>
-        (createSut() as IParser<TDate>).parseToLocal(resolveLocal(toParse)),
+        (createSut() as IConverter<TDate>).convertToLocal(resolveLocal(toParse)),
       ).not.toThrow();
     });
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("returns a value", (toParse) => {
       const parsed = resolveLocal(toParse);
-      expect((createSut() as IParser<TDate>).parseToLocal(parsed)).not.toEqual(undefined);
-      expect((createSut() as IParser<TDate>).parseToLocal(parsed)).not.toEqual(null);
+      expect((createSut() as IConverter<TDate>).convertToLocal(parsed)).not.toEqual(undefined);
+      expect((createSut() as IConverter<TDate>).convertToLocal(parsed)).not.toEqual(null);
     });
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])(
       "aligns with native TDate construction",
       (toParse) => {
         const parsed = resolveLocal(toParse);
-        expect((createSut() as IParser<TDate>).parseToLocal(parsed)).toEqual(
+        expect((createSut() as IConverter<TDate>).convertToLocal(parsed)).toEqual(
           parseTimeToLocal(parsed),
         );
       },
@@ -57,24 +57,24 @@ export function testParser<TDate>(
       null as unknown as TDate,
     ])("throws on invalid time", (toParse: string | number | TDate) => {
       expect(() => {
-        (createSut() as IParser<TDate>).parseToLocal(toParse);
+        (createSut() as IConverter<TDate>).convertToLocal(toParse);
       }).toThrow();
     });
   });
-  describe("parseToUtc", () => {
+  describe("convertToUtc", () => {
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("doesn't throw", (toParse) => {
-      expect(() => createSut().parseToUtc(resolveUtc(toParse))).not.toThrow();
+      expect(() => createSut().convertToUtc(resolveUtc(toParse))).not.toThrow();
     });
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("returns a value", (toParse) => {
       const parsed = resolveUtc(toParse);
-      expect(createSut().parseToUtc(parsed)).not.toEqual(undefined);
-      expect(createSut().parseToUtc(parsed)).not.toEqual(null);
+      expect(createSut().convertToUtc(parsed)).not.toEqual(undefined);
+      expect(createSut().convertToUtc(parsed)).not.toEqual(null);
     });
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])(
       "aligns with native TDate construction",
       (toParse) => {
         const parsed = resolveUtc(toParse);
-        expect(createSut().parseToUtc(parsed)).toEqual(parseTimeToUtc(parsed));
+        expect(createSut().convertToUtc(parsed)).toEqual(parseTimeToUtc(parsed));
       },
     );
     test.each([
@@ -94,7 +94,7 @@ export function testParser<TDate>(
       null as unknown as TDate,
     ])("throws on invalid time", (toParse: string | number | TDate) => {
       expect(() => {
-        createSut().parseToUtc(toParse);
+        createSut().convertToUtc(toParse);
       }).toThrow();
     });
   });

@@ -1,7 +1,7 @@
 # Animation Frames
 
 [`@time-provider/addon-animation-frame`](https://www.npmjs.com/package/@time-provider/addon-animation-frame)
-adds an `.animation` facade exposing `scheduleFrame`, backed by the host's
+adds a `scheduler.animation` facade exposing `scheduleFrame`, backed by the host's
 real display refresh on a system Time-Provider and by simulated frames on a
 deterministic one. Like every [addon](/addons/) it composes in with
 `.use(addon)` and ships two entry points:
@@ -13,7 +13,7 @@ import { addon } from "@time-provider/addon-animation-frame";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-const handle = timeProvider.animation.scheduleFrame(() => draw());
+const handle = timeProvider.scheduler.animation.scheduleFrame(() => draw());
 handle.dispose();
 ```
 
@@ -46,9 +46,9 @@ const timeProvider = createTimeProvider
 let frames = 0;
 const tick = () => {
   frames++;
-  timeProvider.animation.scheduleFrame(tick);
+  timeProvider.scheduler.animation.scheduleFrame(tick);
 };
-timeProvider.animation.scheduleFrame(tick);
+timeProvider.scheduler.animation.scheduleFrame(tick);
 
 timeProvider.clock.advance({ milliseconds: 100 }); // ~9 frames at 90 FPS
 ```
@@ -95,7 +95,7 @@ const slow = createTimeProvider
 ## The types
 
 Inference covers ordinary use. If you need to write a type down, the addon
-exports `IAnimationFrameApi` (the `.animation` facade) and
+exports `IAnimationFrameApi` (the `scheduler.animation` facade) and
 `WithAnimationFrameApi` for naming a Time-Provider with this addon composed
 in. Frame handles are the same `IScheduledHandle` every `@time-provider/core`
 timer returns — there's no addon-specific handle type:
@@ -107,7 +107,7 @@ import type {
 } from "@time-provider/addon-animation-frame";
 
 function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
-  tp.animation.scheduleFrame(() => {});
+  tp.scheduler.animation.scheduleFrame(() => {});
 }
 ```
 

@@ -6,6 +6,7 @@ const NOT_SUPPORTED = "Environment does not support the Idle Callback API (are y
 
 function fakeRuntime(): IRuntime<unknown> {
   return {
+    scheduler: {},
     registerAddon: () => {},
   } as unknown as IRuntime<unknown>;
 }
@@ -81,9 +82,9 @@ describe("SystemIdleScheduler", () => {
     describe("addon facade", () => {
       test("applyToRuntime exposes a dedicated facade property on the runtime", () => {
         using sut = new SystemIdleScheduler();
-        const runtime = fakeRuntime() as IRuntime<unknown> & { idle?: unknown };
+        const runtime = fakeRuntime() as IRuntime<unknown> & { scheduler: { idle?: unknown } };
         sut.applyToRuntime(runtime);
-        expect(runtime.idle).toBeDefined();
+        expect(runtime.scheduler.idle).toBeDefined();
       });
     });
 

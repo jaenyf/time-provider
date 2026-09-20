@@ -84,7 +84,7 @@ export class SystemIdleScheduler<TDate>
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "idle",
+      "scheduler.idle",
       { request: this.request.bind(this) },
       this,
     );

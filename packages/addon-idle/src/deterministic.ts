@@ -25,7 +25,7 @@ class DeterministicIdleAddonBuilder<TDate> extends AddonBuilderBase<
 /**
  * The idle addon-builder for a deterministic Time-Provider. Compose it with
  * `createTimeProvider.for(plugin).use(addon)` to add an `idle` property backed by the runtime's
- * own tagged-timer index, drained on demand via `timeProvider.idle.drain()` rather than the
+ * own tagged-timer index, drained on demand via `timeProvider.scheduler.idle.drain()` rather than the
  * runtime's own clock.
  * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
  * `AddonBuilderFactory` in `@time-provider/core`.

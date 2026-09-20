@@ -50,7 +50,7 @@ const DETERMINISTIC_ANIMATION_MARKER = "DeterministicAnimationFrameScheduler";
 
 /*
  * Same story for @time-provider/addon-cron: never imported by core or by any plugin, so a bundle
- * that doesn't `.use()` it should carry none of its parser or scheduler.
+ * that doesn't `.use()` it should carry none of its converter or scheduler.
  */
 const CRON_ADDON_MARKERS = ["CronScheduler", "Invalid cron expression"];
 
@@ -159,7 +159,7 @@ describe("tree-shaking", () => {
 
     /*
      * Unlike the animation addon, both cron entry points share one CronScheduler - the split that
-     * matters here is which *runtime* each one drags in, since the parser is the same either way.
+     * matters here is which *runtime* each one drags in, since the converter is the same either way.
      */
     test("system entry point pulls in the cron scheduler but no deterministic runtime", async () => {
       const code = await bundle("./fixtures/with-cron-addon/system.ts");

@@ -40,29 +40,31 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
     clock: {
       timestampNow: timestampNowDelegate,
     },
-    timers: {
-      once() {
-        throw new Error("not used by the eta addon");
-      },
-      every(durationSpec: IDurationSpec, callback: () => void) {
-        const handle = {
-          kind: 1,
-          id: issued++,
-          isDisposed: false,
-          dispose: () => {
-            cleared.push(handle);
-          },
-          [Symbol.dispose](): void {},
-          signal: new AbortController().signal,
-        } as IScheduledHandle;
-        intervals.push({ callback, delay: toDuration(durationSpec), handle });
-        return handle;
-      },
-      recurring() {
-        throw new Error("not used by the eta addon");
-      },
-      wait() {
-        throw new Error("not used by the eta addon");
+    scheduler: {
+      timers: {
+        once() {
+          throw new Error("not used by the eta addon");
+        },
+        every(durationSpec: IDurationSpec, callback: () => void) {
+          const handle = {
+            kind: 1,
+            id: issued++,
+            isDisposed: false,
+            dispose: () => {
+              cleared.push(handle);
+            },
+            [Symbol.dispose](): void {},
+            signal: new AbortController().signal,
+          } as IScheduledHandle;
+          intervals.push({ callback, delay: toDuration(durationSpec), handle });
+          return handle;
+        },
+        recurring() {
+          throw new Error("not used by the eta addon");
+        },
+        wait() {
+          throw new Error("not used by the eta addon");
+        },
       },
     },
   } as unknown as IRuntime<unknown> & {

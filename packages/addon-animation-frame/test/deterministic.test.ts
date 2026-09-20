@@ -4,12 +4,12 @@ import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
-type FakeRuntime = IDeterministicRuntime<unknown> & { animation?: unknown };
+type FakeRuntime = IDeterministicRuntime<unknown> & { scheduler: { animation?: unknown } };
 type AnimationFacade = { scheduleFrame: (callback: () => void) => IScheduledHandle };
 
 /*
  * applyToRuntime only touches what it's documented to (define `.animation`,
- * read `.scheduler`), so a minimal object satisfies it for a focused unit test
+ * read `.scheduler.timers`), so a minimal object satisfies it for a focused unit test
  * without needing a real plugin/runtime - the cast is safe because these tests
  * never exercise anything else on the fake runtime.
  */
@@ -40,7 +40,7 @@ function fakeDeterministicRuntime(): {
   };
   return {
     runtime: {
-      timers: timers,
+      scheduler: { timers },
       registerAddon: (_addon: IAddon<unknown>) => {},
       drain: () => {},
       specific() {
@@ -59,14 +59,14 @@ describe("animationFrameAddon (deterministic)", () => {
   test("applyToRuntime defines .animation with a scheduleFrame() facade, not the addon itself", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    expect(runtime.animation).not.toBeInstanceOf(DeterministicAnimationFrameScheduler);
-    expect(runtime.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
+    expect(runtime.scheduler.animation).not.toBeInstanceOf(DeterministicAnimationFrameScheduler);
+    expect(runtime.scheduler.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
   });
 
   test("applyToRuntime wires .animation to the runtime's own scheduler", () => {
     const { runtime, scheduled } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    const scheduler = runtime.animation as AnimationFacade;
+    const scheduler = runtime.scheduler.animation as AnimationFacade;
     scheduler.scheduleFrame(() => {});
     expect(scheduled.size).toBe(1);
   });
@@ -75,7 +75,7 @@ describe("animationFrameAddon (deterministic)", () => {
     const instance = addonBuilderFactory().withHostFramesRate(100).create();
     const { runtime, delays } = fakeDeterministicRuntime();
     instance.applyToRuntime(runtime);
-    (runtime.animation as AnimationFacade).scheduleFrame(() => {});
+    (runtime.scheduler.animation as AnimationFacade).scheduleFrame(() => {});
     expect(delays).toStrictEqual([1000 / 100]);
   });
 
@@ -93,11 +93,11 @@ describe("animationFrameAddon (deterministic)", () => {
 
       const { runtime: configuredRuntime, delays: configuredDelays } = fakeDeterministicRuntime();
       configured.applyToRuntime(configuredRuntime);
-      (configuredRuntime.animation as AnimationFacade).scheduleFrame(() => {});
+      (configuredRuntime.scheduler.animation as AnimationFacade).scheduleFrame(() => {});
 
       const { runtime: untouchedRuntime, delays: untouchedDelays } = fakeDeterministicRuntime();
       untouched.applyToRuntime(untouchedRuntime);
-      (untouchedRuntime.animation as AnimationFacade).scheduleFrame(() => {});
+      (untouchedRuntime.scheduler.animation as AnimationFacade).scheduleFrame(() => {});
 
       expect(configuredDelays).toStrictEqual([1000 / fps]);
       expect(untouchedDelays).toStrictEqual([1000 / defaultFps]);
@@ -114,11 +114,11 @@ describe("animationFrameAddon (deterministic)", () => {
 
       const { runtime: firstRuntime, delays: firstDelays } = fakeDeterministicRuntime();
       first.applyToRuntime(firstRuntime);
-      (firstRuntime.animation as AnimationFacade).scheduleFrame(() => {});
+      (firstRuntime.scheduler.animation as AnimationFacade).scheduleFrame(() => {});
 
       const { runtime: secondRuntime, delays: secondDelays } = fakeDeterministicRuntime();
       second.applyToRuntime(secondRuntime);
-      (secondRuntime.animation as AnimationFacade).scheduleFrame(() => {});
+      (secondRuntime.scheduler.animation as AnimationFacade).scheduleFrame(() => {});
 
       expect(firstDelays).toStrictEqual([1000 / fps]);
       expect(secondDelays).toStrictEqual([1000 / fps]);

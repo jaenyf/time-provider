@@ -1,21 +1,24 @@
 import type { IScheduledHandle } from "@time-provider/core";
 
 /**
- * The shape this addon adds to a composed Time-Provider: an `animation` property exposing
- * {@link IAnimationFrameScheduler}.
+ * The shape this addon adds to a composed Time-Provider: a `scheduler.animation` property
+ * exposing {@link IAnimationFrameScheduler}.
  */
 export type WithAnimationFrameApi<TDate> = {
-  /**
-   * Schedules work to run before the next host frame update, via `requestAnimationFrame`/
-   * `cancelAnimationFrame` - the host's real frames on a system runtime, frames simulated against
-   * this runtime's own clock on a deterministic one. See {@link IAnimationFrameScheduler}.
-   */
-  animation: IAnimationFrameScheduler<TDate>;
+  scheduler: {
+    /**
+     * Schedules work to run before the next host frame update, via `requestAnimationFrame`/
+     * `cancelAnimationFrame` - the host's real frames on a system runtime, frames simulated
+     * against this runtime's own clock on a deterministic one. See
+     * {@link IAnimationFrameScheduler}.
+     */
+    animation: IAnimationFrameScheduler<TDate>;
+  };
 };
 
 /**
  * The animation-frame API facade this addon adds to a composed Time-Provider,
- * reachable as `timeProvider.animation` once composed via
+ * reachable as `timeProvider.scheduler.animation` once composed via
  * `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 // Kept generic over TDate for symmetry with WithAnimationFrameApi<TDate>, even though no member

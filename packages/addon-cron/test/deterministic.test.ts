@@ -15,7 +15,7 @@ import { computeNextOccurrence, parseCronExpression } from "../src/cron-parser.t
 
 const addon = addonBuilderFactory().create();
 
-type FakeRuntime = IDeterministicRuntime<unknown> & { cron?: unknown };
+type FakeRuntime = IDeterministicRuntime<unknown> & { scheduler: { cron?: unknown } };
 
 const identityConverter: ITimeConverter<number> = {
   convertToTimestamp: (milliseconds) => toInstant({ milliseconds: Number(milliseconds) }),
@@ -26,7 +26,7 @@ const defaultCalendarScheme = new DefaultCalendarScheme(identityConverter);
 
 /*
  * applyToRuntime only touches what it's documented to (define `.cron`, read `.clock` and
- * `.scheduler`), so a minimal object satisfies it for a focused unit test without needing a real
+ * `.scheduler.timers`), so a minimal object satisfies it for a focused unit test without needing a real
  * plugin/runtime - the cast is safe because these tests never exercise anything else on the fake
  * runtime.
  */
@@ -57,7 +57,7 @@ function fakeDeterministicRuntime(
     timezone === undefined ? { timestampNow: () => now } : { timestampNow: () => now, timezone };
   return {
     runtime: {
-      timers,
+      scheduler: { timers },
       clock,
       timestampNow: () => now,
       calendarScheme: defaultCalendarScheme,
@@ -78,13 +78,13 @@ describe("cronAddon (deterministic)", () => {
   test("applyToRuntime defines .cron with a schedule() facade", () => {
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     addon.applyToRuntime(runtime);
-    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
+    expect(runtime.scheduler.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 
   test("applyToRuntime's defined property is enumerable but not writable", () => {
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     addon.applyToRuntime(runtime);
-    const descriptor = Object.getOwnPropertyDescriptor(runtime, "cron");
+    const descriptor = Object.getOwnPropertyDescriptor(runtime.scheduler, "cron");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
   });
@@ -95,7 +95,7 @@ describe("cronAddon (deterministic)", () => {
       "Etc/UTC",
     );
     addon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("* * * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("* * * * *", () => {});
     expect(recurring).toHaveLength(1);
   });
 
@@ -103,7 +103,7 @@ describe("cronAddon (deterministic)", () => {
     const now = Date.UTC(2024, 2, 25, 10, 0, 0);
     const { runtime, recurring } = fakeDeterministicRuntime(now, "Europe/Paris");
     addon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Europe/Paris", defaultCalendarScheme) - now,
@@ -114,7 +114,7 @@ describe("cronAddon (deterministic)", () => {
     const now = Date.UTC(2024, 2, 25, 10, 0, 0);
     const { runtime, recurring } = fakeDeterministicRuntime(now);
     addon.applyToRuntime(runtime);
-    (runtime.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
+    (runtime.scheduler.cron as CronScheduler<number>).schedule("0 9 * * *", () => {});
     const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
     expect(recurring[0]?.initialDelay?.milliseconds).toBe(
       computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme) - now,
@@ -127,6 +127,6 @@ describe("cronAddon (deterministic)", () => {
     expect(first).not.toBe(second);
     const { runtime } = fakeDeterministicRuntime(0, "Etc/UTC");
     second.applyToRuntime(runtime);
-    expect(runtime.cron).toStrictEqual({ schedule: expect.any(Function) });
+    expect(runtime.scheduler.cron).toStrictEqual({ schedule: expect.any(Function) });
   });
 });
