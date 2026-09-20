@@ -97,13 +97,31 @@ applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
 ```
 
 Every segment but the last has to already exist on the runtime, so a path only
-ever extends a facet the core defines.
+ever extends a facet the core defines — or a facade another addon put there.
+That second case needs the optional flag:
+
+```ts
+AddonHelper.extendRuntimeWithProperty(
+  runtime,
+  "compat.requestGreeting",
+  this.greet.bind(this),
+  this,
+  true, // no-op when the compat addon isn't composed, instead of throwing
+);
+```
+
+Declare such a member optional in your addon's public type (`compat?: { ... }`),
+because it is only there when both addons are composed — and the other addon has
+to be composed **first**, since the facade it owns must exist by the time yours
+is applied. This is how [`addon-animation-frame`](/addons/animation-frame) and
+[`addon-idle`](/addons/idle) put `requestAnimationFrame` and
+`requestIdleCallback` on the [compat facade](/addons/compat).
 
 Reaching back into the runtime goes through the same hierarchy:
 `runtime.scheduler.timers` for the timer primitives, `runtime.clock` for the
-clock. `AddonBase` resolves both once and caches them, as `this.runtimeTimers`
-and `this.runtimeClock`, so a scheduling hot path does not walk that chain on
-every call.
+clock. `AddonBase` resolves those once and caches them, as `this.runtimeTimers`,
+`this.runtimeClock`, `this.runtimeMicrotasks` and `this.runtimePerformance`, so a
+scheduling hot path does not walk that chain on every call.
 
 Note the `IRuntime<TDate>` constraint: an addon is handed the runtime, not the
 narrower `ITimeProvider` facade a consumer holds. That's what gives it typed

@@ -116,3 +116,18 @@ facade outside the addon pipeline: `SystemAnimationFrameScheduler` from the
 root entry point, and `DeterministicAnimationFrameScheduler` from
 `/deterministic`, which takes the runtime's `ITimers` and exposes a readable
 and writable `hostFramesRate`.
+
+## With the compat addon
+
+Compose [`addon-compat`](/addons/compat) before this one and it also gets
+`requestAnimationFrame`/`cancelAnimationFrame` on its facade, delegating to
+`scheduleFrame` and to the handle's `dispose()`:
+
+```ts
+const tp = createTimeProvider.for(plugin).use(compat).use(addon).create();
+tp.compat.cancelAnimationFrame(tp.compat.requestAnimationFrame(() => draw()));
+```
+
+`WithAnimationFrameApi` declares those as an optional `compat?`, since they are
+only there when both addons are composed — and only when compat is composed
+first, because the facade they land on is its.

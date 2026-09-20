@@ -19,6 +19,13 @@ export class AddonHelper {
    * no business calling, so those shouldn't come along for the ride.
    * @param addon the addon instance itself - registered with `runtime` so it gets disposed when
    * `runtime` does, independently of whatever `facade` exposes.
+   * @param onlyIfPathExists what to do when a segment of `newPropertyPath` is missing, which
+   * happens when the property belongs to another addon's facade and that addon was not composed
+   * (or was composed after this one). `false`, the default, throws: the host is expected to be
+   * there. `true` makes the whole call a no-op instead - for a property an addon contributes to
+   * another's facade as a bonus, such as the native-shaped aliases the animation and idle addons
+   * add to `compat`. Declare such a property optional (`compat?:`) in the addon's public type,
+   * since it is only there when both addons are composed.
    * @returns `runtime`, typed as extended with the new property.
    */
   static extendRuntimeWithProperty<TDate, TAddonType>(
@@ -26,12 +33,22 @@ export class AddonHelper {
     newPropertyPath: string,
     facade: unknown,
     addon: IAddon<TDate>,
+    onlyIfPathExists = false,
   ): IRuntime<TDate> & TAddonType {
     const segments = newPropertyPath.split(".");
     const newPropertyName = segments.pop()!;
     let host: object = runtime;
     for (const segment of segments) {
-      host = (host as Record<string, object>)[segment]!;
+      const nextHost = (host as Record<string, object | undefined>)[segment];
+      if (nextHost === undefined) {
+        if (onlyIfPathExists) {
+          return runtime as IRuntime<TDate> & TAddonType;
+        }
+        throw new Error(
+          `Cannot define '${newPropertyPath}' on the runtime: '${segment}' does not exist. An addon that adds to another addon's facade has to be composed after it.`,
+        );
+      }
+      host = nextHost;
     }
     Object.defineProperty(host, newPropertyName, {
       value: facade,

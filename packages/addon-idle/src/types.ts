@@ -13,6 +13,17 @@ export type WithIdleApi = {
      */
     idle: IIdleApi;
   };
+  /**
+   * Present only when the compat addon is composed as well, and composed first: the
+   * native-shaped aliases for {@link IIdleApi.request}, sitting on that addon's `compat` facade
+   * beside `setTimeout` and friends. `cancelIdleCallback` takes the handle
+   * `requestIdleCallback` returned, not a numeric id, and is a no-op if the callback already
+   * ran.
+   */
+  compat?: {
+    requestIdleCallback(callback: () => void): IScheduledHandle;
+    cancelIdleCallback(handle: IScheduledHandle): void;
+  };
 };
 
 /**
@@ -42,6 +53,17 @@ export interface IIdleApi {
 export type WithDeterministicIdleApi = {
   scheduler: {
     idle: IDeterministicIdleApi;
+  };
+  /**
+   * Present only when the compat addon is composed as well, and composed first: the
+   * native-shaped aliases for {@link IIdleApi.request}, sitting on that addon's `compat` facade
+   * beside `setTimeout` and friends. `cancelIdleCallback` takes the handle
+   * `requestIdleCallback` returned, not a numeric id, and is a no-op if the callback already
+   * ran.
+   */
+  compat?: {
+    requestIdleCallback(callback: () => void): IScheduledHandle;
+    cancelIdleCallback(handle: IScheduledHandle): void;
   };
 };
 

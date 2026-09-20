@@ -8,7 +8,13 @@ import {
 import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 
-type FakeRuntime = IDeterministicRuntime<unknown> & { scheduler: { idle?: unknown } };
+type FakeRuntime = IDeterministicRuntime<unknown> & {
+  scheduler: { idle?: unknown };
+  compat?: {
+    requestIdleCallback?: unknown;
+    cancelIdleCallback?: (handle: { dispose: () => void }) => void;
+  };
+};
 type IdleFacade = {
   request: (callback: () => void) => { dispose(): void };
   drain: (maxCount?: number) => number;
@@ -80,6 +86,25 @@ describe("idleAddon (deterministic)", () => {
       request: expect.any(Function),
       drain: expect.any(Function),
     });
+  });
+
+  test("applyToRuntime adds the native-shaped aliases when a compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    runtime.compat = {};
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toStrictEqual({
+      requestIdleCallback: expect.any(Function),
+      cancelIdleCallback: expect.any(Function),
+    });
+    let disposed = false;
+    runtime.compat.cancelIdleCallback!({ dispose: () => (disposed = true) });
+    expect(disposed).toBe(true);
+  });
+
+  test("applyToRuntime leaves the aliases out when no compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toBeUndefined();
   });
 
   test("request() registers a real entry with the runtime immediately", () => {

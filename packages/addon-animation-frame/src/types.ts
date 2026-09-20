@@ -14,6 +14,17 @@ export type WithAnimationFrameApi<TDate> = {
      */
     animation: IAnimationFrameScheduler<TDate>;
   };
+  /**
+   * Present only when the compat addon is composed as well, and composed first: the
+   * native-shaped aliases for {@link IAnimationFrameScheduler.scheduleFrame}, sitting on that
+   * addon's `compat` facade beside `setTimeout` and friends. `cancelAnimationFrame` takes the
+   * handle `requestAnimationFrame` returned, not a numeric id, and is a no-op if the frame
+   * already ran.
+   */
+  compat?: {
+    requestAnimationFrame(callback: () => void): IScheduledHandle;
+    cancelAnimationFrame(handle: IScheduledHandle): void;
+  };
 };
 
 /**

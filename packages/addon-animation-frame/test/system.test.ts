@@ -5,7 +5,13 @@ import "./polyfills.ts";
 
 const animationFrameAddon = addonBuilderFactory().create();
 
-type FakeRuntime = IRuntime<unknown> & { scheduler: { animation?: unknown } };
+type FakeRuntime = IRuntime<unknown> & {
+  scheduler: { animation?: unknown };
+  compat?: {
+    requestAnimationFrame?: unknown;
+    cancelAnimationFrame?: (handle: { dispose: () => void }) => void;
+  };
+};
 
 /*
  * applyToSystem only touches what it's documented to (define `.animation`),
@@ -33,6 +39,31 @@ describe("animationFrameAddon (system)", () => {
     const descriptor = Object.getOwnPropertyDescriptor(runtime.scheduler, "animation");
     expect(descriptor?.enumerable).toBe(true);
     expect(descriptor?.writable).toBe(false);
+  });
+
+  test("applyToSystem adds the native-shaped aliases when a compat facade is there", () => {
+    const runtime = fakeSystemRuntime();
+    runtime.compat = {};
+    animationFrameAddon.applyToRuntime(runtime);
+    expect(runtime.compat).toStrictEqual({
+      requestAnimationFrame: expect.any(Function),
+      cancelAnimationFrame: expect.any(Function),
+    });
+  });
+
+  test("applyToSystem leaves the aliases out when no compat facade is there", () => {
+    const runtime = fakeSystemRuntime();
+    animationFrameAddon.applyToRuntime(runtime);
+    expect(runtime.compat).toBeUndefined();
+  });
+
+  test("cancelAnimationFrame disposes the handle it is given", () => {
+    const runtime = fakeSystemRuntime();
+    runtime.compat = {};
+    animationFrameAddon.applyToRuntime(runtime);
+    let disposed = false;
+    runtime.compat.cancelAnimationFrame!({ dispose: () => (disposed = true) });
+    expect(disposed).toBe(true);
   });
 
   test("addon() returns an independent builder each call", () => {

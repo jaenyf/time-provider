@@ -76,6 +76,10 @@ manual.compat.clearTimeout(handle);
 //same calls for setInterval/clearInterval...
 ```
 
+## Members other addons add
+
+Composing `@time-provider/addon-animation-frame` or `@time-provider/addon-idle` **after** this addon adds their native-shaped aliases to the same `.compat` facade: `requestAnimationFrame`/`cancelAnimationFrame` and `requestIdleCallback`/`cancelIdleCallback`. Each `cancel*` takes the handle its `request*` returned. Compose this addon first - the facade has to exist by the time they are applied, and composed the other way round the aliases are simply absent.
+
 ## License
 
 MIT

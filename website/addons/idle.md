@@ -102,3 +102,18 @@ when a test helper takes a Time-Provider and needs to drain it.
 The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemIdleScheduler` from the root entry
 point and `DeterministicIdleScheduler` from `/deterministic`.
+
+## With the compat addon
+
+Compose [`addon-compat`](/addons/compat) before this one and it also gets
+`requestIdleCallback`/`cancelIdleCallback` on its facade, delegating to
+`request` and to the handle's `dispose()`:
+
+```ts
+const tp = createTimeProvider.for(plugin).use(compat).use(addon).create();
+tp.compat.cancelIdleCallback(tp.compat.requestIdleCallback(() => reconcile()));
+```
+
+`WithIdleApi` declares those as an optional `compat?`, since they are only there
+when both addons are composed — and only when compat is composed first, because
+the facade they land on is its.

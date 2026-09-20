@@ -87,6 +87,10 @@ manual.scheduler.idle.request(() => console.log("second"));
 manual.scheduler.idle.drain(1); // "first" - "second" stays pending for the next drain
 ```
 
+## With the compat addon
+
+Compose [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat) **before** this addon and its `.compat` facade also gets `requestIdleCallback`/`cancelIdleCallback`, delegating to `request` and to the handle's `dispose()`. They are declared as an optional `compat?` on `WithIdleApi`, since they are only there when both addons are composed.
+
 ## License
 
 MIT

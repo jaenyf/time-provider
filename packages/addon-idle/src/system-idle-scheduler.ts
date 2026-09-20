@@ -88,6 +88,21 @@ export class SystemIdleScheduler<TDate>
       { request: this.request.bind(this) },
       this,
     );
+    // The native-shaped aliases, added only when the compat addon is composed before this one.
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.requestIdleCallback",
+      this.request.bind(this),
+      this,
+      true,
+    );
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.cancelIdleCallback",
+      (handle: IScheduledHandle) => handle.dispose(),
+      this,
+      true,
+    );
   }
 
   request(callback: () => void): IScheduledHandle {

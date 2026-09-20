@@ -84,6 +84,36 @@ Time-Provider they read that runtime's simulated timeline — the point being th
 a file calling `performance.mark(...)` and `setTimeout(...)` side by side has one
 object to swap them both for.
 
+## What other addons add here
+
+Composing [`addon-animation-frame`](/addons/animation-frame) or
+[`addon-idle`](/addons/idle) puts their own native-shaped aliases on this same
+facade:
+
+| Method                            | Added by                | Delegates to                        |
+| --------------------------------- | ----------------------- | ----------------------------------- |
+| `requestAnimationFrame(callback)` | `addon-animation-frame` | `scheduler.animation.scheduleFrame` |
+| `cancelAnimationFrame(handle)`    | `addon-animation-frame` | `handle.dispose()`                  |
+| `requestIdleCallback(callback)`   | `addon-idle`            | `scheduler.idle.request`            |
+| `cancelIdleCallback(handle)`      | `addon-idle`            | `handle.dispose()`                  |
+
+Each `cancel*` takes the handle its `request*` returned rather than a numeric
+id, the same swap `clearTimeout` makes.
+
+**Compose this addon first.** Those addons add to a facade this one owns, so it
+has to exist by the time they are applied — `.use(compat).use(animation)`, not
+the other way round. Composed the wrong way round the aliases are simply
+absent, with no error. Their types say so: each declares its contribution as an
+optional `compat?`, so TypeScript requires the addon that owns the facade to be
+composed too before you can reach them without a check.
+
+```ts
+const tp = createTimeProvider.for(plugin).use(compat).use(animation).use(idle).create();
+
+const frame = tp.compat.requestAnimationFrame(() => draw());
+tp.compat.cancelAnimationFrame(frame);
+```
+
 ## Naming the types
 
 The `.compat` property is typed `ICompatApi`, and `WithCompatApi` names a

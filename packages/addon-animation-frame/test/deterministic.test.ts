@@ -4,7 +4,13 @@ import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
-type FakeRuntime = IDeterministicRuntime<unknown> & { scheduler: { animation?: unknown } };
+type FakeRuntime = IDeterministicRuntime<unknown> & {
+  scheduler: { animation?: unknown };
+  compat?: {
+    requestAnimationFrame?: unknown;
+    cancelAnimationFrame?: (handle: { dispose: () => void }) => void;
+  };
+};
 type AnimationFacade = { scheduleFrame: (callback: () => void) => IScheduledHandle };
 
 /*
@@ -69,6 +75,25 @@ describe("animationFrameAddon (deterministic)", () => {
     const scheduler = runtime.scheduler.animation as AnimationFacade;
     scheduler.scheduleFrame(() => {});
     expect(scheduled.size).toBe(1);
+  });
+
+  test("applyToRuntime adds the native-shaped aliases when a compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    runtime.compat = {};
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toStrictEqual({
+      requestAnimationFrame: expect.any(Function),
+      cancelAnimationFrame: expect.any(Function),
+    });
+    let disposed = false;
+    runtime.compat.cancelAnimationFrame!({ dispose: () => (disposed = true) });
+    expect(disposed).toBe(true);
+  });
+
+  test("applyToRuntime leaves the aliases out when no compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toBeUndefined();
   });
 
   test("withHostFramesRate configures the delay scheduleFrame() schedules with", () => {

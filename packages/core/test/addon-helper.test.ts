@@ -114,5 +114,43 @@ describe("AddonHelper", () => {
       AddonHelper.extendRuntimeWithProperty(original, "scheduler.extra", { value: 1 }, addon);
       expect(registered).toBe(addon);
     });
+
+    test("throws, naming the missing segment, when the path's host is not there", () => {
+      const original = createFakeRuntime();
+      expect(() =>
+        AddonHelper.extendRuntimeWithProperty(original, "compat.extra", { value: 1 }, fakeAddon),
+      ).toThrow("'compat' does not exist");
+    });
+
+    test("does nothing at all when the host is missing and the path is optional", () => {
+      let registered = false;
+      const original = {
+        registerAddon: () => {
+          registered = true;
+        },
+      } as unknown as IRuntime<unknown> & { compat?: unknown };
+      const runtime = AddonHelper.extendRuntimeWithProperty(
+        original,
+        "compat.extra",
+        { value: 1 },
+        fakeAddon,
+        true,
+      );
+      expect(runtime).toBe(original);
+      expect(original.compat).toBeUndefined();
+      expect(registered).toBe(false);
+    });
+
+    test("still attaches when the path is optional and its host is there", () => {
+      const original = createFakeRuntimeWithOwnScheduler();
+      AddonHelper.extendRuntimeWithProperty(
+        original,
+        "scheduler.extra",
+        { value: 1 },
+        fakeAddon,
+        true,
+      );
+      expect((original.scheduler as { extra?: unknown }).extra).toStrictEqual({ value: 1 });
+    });
   });
 });

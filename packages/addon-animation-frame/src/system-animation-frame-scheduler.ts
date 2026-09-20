@@ -84,6 +84,21 @@ export class SystemAnimationFrameScheduler<TDate>
       { scheduleFrame: this.scheduleFrame.bind(this) },
       this,
     );
+    // The native-shaped aliases, added only when the compat addon is composed before this one.
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.requestAnimationFrame",
+      this.scheduleFrame.bind(this),
+      this,
+      true,
+    );
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.cancelAnimationFrame",
+      (handle: IScheduledHandle) => handle.dispose(),
+      this,
+      true,
+    );
   }
 
   scheduleFrame(callback: () => void): IScheduledHandle {

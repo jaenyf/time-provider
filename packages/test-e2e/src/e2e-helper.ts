@@ -42,17 +42,19 @@ export class E2eHelper {
   ) {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
-      .use(systemAfapi)
+      // compat first: the animation and idle addons add their native-shaped aliases to its
+      // facade, which has to already be there when they are applied.
       .use(systemCompat)
+      .use(systemAfapi)
       .use(systemCron)
       .use(systemEta)
       .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
+      .use(deterministicCompat)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
-      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta)
       .use(deterministicIdle);
@@ -105,17 +107,19 @@ export class E2eHelper {
   ) {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
-      .use(systemAfapi)
+      // compat first: the animation and idle addons add their native-shaped aliases to its
+      // facade, which has to already be there when they are applied.
       .use(systemCompat)
+      .use(systemAfapi)
       .use(systemCron)
       .use(systemEta)
       .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
+      .use(deterministicCompat)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
-      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta)
       .use(deterministicIdle);
@@ -324,8 +328,19 @@ export class E2eHelper {
   }
 
   private static testAddonCompat<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi<TDate>,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) &
+      WithCompatApi<TDate> &
+      WithAnimationFrameApi<TDate> &
+      WithIdleApi,
   ) {
+    // The aliases the animation and idle addons add to this facade, since both are composed
+    // after it here.
+    expect(() => {
+      timeProvider.compat.cancelAnimationFrame(timeProvider.compat.requestAnimationFrame(() => {}));
+    }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.cancelIdleCallback(timeProvider.compat.requestIdleCallback(() => {}));
+    }).not.toThrow("Method not implemented.");
     expect(() => {
       timeProvider.compat.clearInterval(timeProvider.compat.setInterval(() => {}));
     }).not.toThrow("Method not implemented.");
