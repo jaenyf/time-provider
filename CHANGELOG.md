@@ -4,6 +4,178 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-20
+
+### @time-provider/addon-animation-frame 0.4.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* bind an addon-builder's chain methods to the chain that used it ([ef5f7d4](https://github.com/jaenyf/time-provider/commit/ef5f7d47e016f9564f29cf6ca06c43064619e604))
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/addon-compat 0.2.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/addon-cron 0.3.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/addon-eta 0.3.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/addon-idle 0.1.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* **addon-idle:** register the package for release and document it ([787d41a](https://github.com/jaenyf/time-provider/commit/787d41a329e97fc83be09471b1403a54fd6155d6))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/core 3.0.0
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+* microtasks ([#163](https://github.com/jaenyf/time-provider/issues/163)) ([608db55](https://github.com/jaenyf/time-provider/commit/608db5535375610b3754b10618fde4643b0ca6be))
+
+
+### Bug Fixes
+
+* **addon-idle:** register the package for release and document it ([787d41a](https://github.com/jaenyf/time-provider/commit/787d41a329e97fc83be09471b1403a54fd6155d6))
+* bind an addon-builder's chain methods to the chain that used it ([ef5f7d4](https://github.com/jaenyf/time-provider/commit/ef5f7d47e016f9564f29cf6ca06c43064619e604))
+* **core:** arm system timers longer than the native 32-bit limit in chunks ([0e043d4](https://github.com/jaenyf/time-provider/commit/0e043d47b11126b0870a21d7aaaf0cee2f20bbc0))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
+### @time-provider/plugin-dayjs 0.5.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+### @time-provider/plugin-luxon 0.5.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+### @time-provider/plugin-moment 0.5.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+### @time-provider/plugin-moment-timezone 0.4.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+### @time-provider/plugin-native 0.5.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+### @time-provider/plugin-temporal 0.5.1
+
+### Bug Fixes
+
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
 ## 2026-09-14
 
 ### @time-provider/addon-animation-frame 0.3.0
