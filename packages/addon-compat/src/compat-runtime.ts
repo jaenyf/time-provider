@@ -1,12 +1,11 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { ITimers } from "./types.ts";
+import type { ICompatApi } from "./types.ts";
 
 /**
  * Implements {@link ICompatApi} that performs underlying calls to core.
  */
 export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   #isDisposed: boolean;
-  #timersFacade?: ITimers;
 
   constructor() {
     super();
@@ -24,18 +23,19 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "compat", { timers: this.timers }, this);
-  }
-
-  get timers(): ITimers {
-    return (this.#timersFacade ??= {
-      setTimeout: this.setTimeout.bind(this),
-      clearTimeout: this.clearTimeout.bind(this),
-      setInterval: this.setInterval.bind(this),
-      clearInterval: this.clearInterval.bind(this),
-      setRecurring: this.setRecurring.bind(this),
-      clearRecurring: this.clearRecurring.bind(this),
-    });
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat",
+      {
+        setTimeout: this.setTimeout.bind(this),
+        clearTimeout: this.clearTimeout.bind(this),
+        setInterval: this.setInterval.bind(this),
+        clearInterval: this.clearInterval.bind(this),
+        setRecurring: this.setRecurring.bind(this),
+        clearRecurring: this.clearRecurring.bind(this),
+      } satisfies ICompatApi<TDate>,
+      this,
+    );
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {

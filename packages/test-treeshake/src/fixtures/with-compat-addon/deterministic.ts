@@ -4,5 +4,5 @@ import { addon } from "../../../../addon-compat/dist/deterministic.mjs";
 
 const manual = createTimeProvider.for(plugin).use(addon).asManual().create();
 
-manual.compat.timers.setTimeout(() => console.log("tick"), 10);
+manual.compat.setTimeout(() => console.log("tick"), 10);
 manual.clock.advance({ seconds: 1 });

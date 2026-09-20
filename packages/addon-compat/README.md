@@ -46,11 +46,11 @@ import { addon as deterministicAddon } from "@time-provider/addon-compat/determi
 
 // System: runs on real native timers, in the runtime's local timezone.
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-const handle = timeProvider.compat.timers.setTimeout(() => {
+const handle = timeProvider.compat.setTimeout(() => {
   console.info("Native setTimeout call style");
 }, 500);
 // ...
-timeProvider.compat.timers.clearTimeout(handle);
+timeProvider.compat.clearTimeout(handle);
 //same calls for setInterval/clearInterval, setRecurring/clearRecurring...
 
 // Deterministic: runs against the runtime's own simulated clock.
@@ -60,11 +60,11 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime("2024-01-01T00:00:00.000Z")
   .create();
-const handle = manual.compat.timers.setTimeout(() => {
+const handle = manual.compat.setTimeout(() => {
   console.info("Native setTimeout call style");
 }, 500);
 // ...
-manual.compat.timers.clearTimeout(handle);
+manual.compat.clearTimeout(handle);
 //same calls for setInterval/clearInterval, setRecurring/clearRecurring...
 ```
 

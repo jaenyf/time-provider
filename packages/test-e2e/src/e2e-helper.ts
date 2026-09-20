@@ -327,15 +327,13 @@ export class E2eHelper {
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi<TDate>,
   ) {
     expect(() => {
-      timeProvider.compat.timers.clearInterval(timeProvider.compat.timers.setInterval(() => {}));
+      timeProvider.compat.clearInterval(timeProvider.compat.setInterval(() => {}));
     }).not.toThrow("Method not implemented.");
     expect(() => {
-      timeProvider.compat.timers.clearRecurring(
-        timeProvider.compat.timers.setRecurring(() => false),
-      );
+      timeProvider.compat.clearRecurring(timeProvider.compat.setRecurring(() => false));
     }).not.toThrow("Method not implemented.");
     expect(() => {
-      timeProvider.compat.timers.clearTimeout(timeProvider.compat.timers.setTimeout(() => {}));
+      timeProvider.compat.clearTimeout(timeProvider.compat.setTimeout(() => {}));
     }).not.toThrow("Method not implemented.");
   }
 
