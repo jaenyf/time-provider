@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseSystemRuntime } from "../src/runtimes/system-runtime.ts";
-import { type EpochMilliseconds, type ITimeConverter } from "../src/types/types.ts";
+import {
+  type EpochMilliseconds,
+  type IScheduledHandle,
+  type ITimeConverter,
+} from "../src/types/types.ts";
 import { ScheduledHandle } from "../src/runtimes/scheduled-handle.ts";
+
+// Mirrors the chunk size BaseSystemRuntime arms long delays in - the largest delay a native timer
+// can hold. See MAX_NATIVE_DELAY in system-runtime.ts.
+const MAX_NATIVE_DELAY = 2_147_483_647;
 
 const noopConverter: ITimeConverter<unknown> = {
   convertToTimestamp: () => 0 as EpochMilliseconds,
@@ -50,6 +58,36 @@ describe("BaseSystemRuntime", () => {
       sut.once({ milliseconds: 42 }, () => {});
       expect(spy).toHaveBeenCalledWith(expect.any(Function), 42);
     });
+
+    test("arms a delay past the native limit in chunks rather than letting the clock clamp it", () => {
+      const spy = vi.spyOn(globalThis, "setTimeout");
+      let called = false;
+      sut.once({ milliseconds: MAX_NATIVE_DELAY + 5 }, () => {
+        called = true;
+      });
+
+      expect(spy).toHaveBeenCalledWith(expect.any(Function), MAX_NATIVE_DELAY);
+      // A clamped delay is due after 1ms, so this is what firing early looks like.
+      vi.advanceTimersByTime(1);
+      expect(called).toBe(false);
+      vi.advanceTimersToNextTimer();
+      expect(called).toBe(false);
+      vi.advanceTimersToNextTimer();
+      expect(called).toBe(true);
+    });
+
+    test("cancels a chunked delay disposed before it is due", () => {
+      let called = false;
+      const handle = sut.once({ milliseconds: MAX_NATIVE_DELAY * 2 }, () => {
+        called = true;
+      });
+
+      vi.advanceTimersToNextTimer();
+      handle.dispose();
+      vi.advanceTimersToNextTimer();
+      expect(called).toBe(false);
+      expect(vi.getTimerCount()).toEqual(0);
+    });
   });
 
   describe("every", () => {
@@ -66,6 +104,39 @@ describe("BaseSystemRuntime", () => {
       const spy = vi.spyOn(globalThis, "setInterval");
       sut.every({ milliseconds: 42 }, () => {});
       expect(spy).toHaveBeenCalledWith(expect.any(Function), 42);
+    });
+
+    test("re-arms a period past the native limit rather than letting the clock clamp it", () => {
+      const spy = vi.spyOn(globalThis, "setInterval");
+      let callbackCounts = 0;
+      sut.every({ milliseconds: MAX_NATIVE_DELAY + 5 }, () => {
+        ++callbackCounts;
+      });
+
+      expect(spy).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      expect(callbackCounts).toEqual(0);
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(1);
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(2);
+    });
+
+    test("stops a re-armed period when the callback disposes its own handle", () => {
+      let callbackCounts = 0;
+      let handle: ReturnType<typeof sut.every>;
+      handle = sut.every({ milliseconds: MAX_NATIVE_DELAY + 5 }, () => {
+        ++callbackCounts;
+        handle.dispose();
+      });
+
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(0);
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(1);
+      expect(vi.getTimerCount()).toEqual(0);
     });
   });
 
@@ -112,6 +183,26 @@ describe("BaseSystemRuntime", () => {
       expect(callbackCounts).toEqual(3);
     });
 
+    test("arms a delay past the native limit in chunks, for the first run and every rearm", () => {
+      let callbackCounts = 0;
+      sut.recurring(
+        () => {
+          ++callbackCounts;
+          return { milliseconds: MAX_NATIVE_DELAY + 5 };
+        },
+        { milliseconds: MAX_NATIVE_DELAY + 5 },
+      );
+
+      vi.advanceTimersByTime(1);
+      expect(callbackCounts).toEqual(0);
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(1);
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+      expect(callbackCounts).toEqual(2);
+    });
+
     test("disposes the handle and rethrows when the callback throws, same as returning false", () => {
       const error = new Error("boom");
       const handle = sut.recurring(
@@ -154,6 +245,42 @@ describe("BaseSystemRuntime", () => {
       vi.advanceTimersByTime(1);
       expect(callbackCounts).toEqual(0);
     });
+  });
+
+  describe("on real timers", () => {
+    /*
+      The fake clock the rest of this file runs on reproduces the clamp itself, but not the
+      TimeoutOverflowWarning Node prints alongside it - which is the symptom that surfaced this,
+      out of the addon-cron e2e tests. These arm a real timer and assert the warning stays silent.
+    */
+    const arming: [string, (delay: { milliseconds: number }) => IScheduledHandle][] = [
+      ["once", (delay) => sut.once(delay, () => {})],
+      ["every", (delay) => sut.every(delay, () => {})],
+      ["recurring", (delay) => sut.recurring(() => false, delay)],
+    ];
+
+    test.each(arming)(
+      "%s keeps a delay past the native limit from being clamped",
+      async (_, arm) => {
+        vi.useRealTimers();
+        const warnings: string[] = [];
+        const onWarning = (warning: Error): void => {
+          warnings.push(`${warning.name}: ${warning.message}`);
+        };
+        process.on("warning", onWarning);
+        try {
+          arm({ milliseconds: MAX_NATIVE_DELAY + 1 }).dispose();
+          // process.emitWarning defers to the next tick, so let the loop turn before looking.
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        } finally {
+          process.off("warning", onWarning);
+        }
+
+        expect(warnings.filter((warning) => warning.startsWith("TimeoutOverflowWarning"))).toEqual(
+          [],
+        );
+      },
+    );
   });
 
   describe("clearTimer", () => {

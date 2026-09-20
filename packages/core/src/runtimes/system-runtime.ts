@@ -22,6 +22,32 @@ type ReturnTypeOfSetTimeout = ReturnType<typeof setTimeout>;
 type ReturnTypeOfTimer = ReturnTypeOfSetInterval;
 
 /**
+ * Native timers hold their delay in a 32-bit signed field. A longer delay is clamped by the host
+ * - Node clamps it to 1ms and emits a `TimeoutOverflowWarning` - so the timer fires almost
+ * immediately instead of when it is due. Anything longer is armed in chunks of this size instead.
+ */
+const MAX_NATIVE_DELAY = 2_147_483_647;
+
+/**
+ * Arms `callback` to run `msDelay` from now, splitting a delay past {@link MAX_NATIVE_DELAY} into
+ * successive native timeouts. `onRearm` is handed the native handle of every chunk after the
+ * first, so the caller's handle keeps pointing at the timeout currently pending and clearing it
+ * still cancels the whole chain.
+ */
+function armTimeout(
+  msDelay: number,
+  callback: () => void,
+  onRearm: (nativeHandle: ReturnTypeOfSetTimeout) => void,
+): ReturnTypeOfSetTimeout {
+  if (msDelay <= MAX_NATIVE_DELAY) {
+    return setTimeout(callback, msDelay);
+  }
+  return setTimeout(() => {
+    onRearm(armTimeout(msDelay - MAX_NATIVE_DELAY, callback, onRearm));
+  }, MAX_NATIVE_DELAY);
+}
+
+/**
  * Base class for a system runtime
  */
 export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
@@ -59,14 +85,18 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     }
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
-    const nativeHandle = setTimeout(() => {
-      try {
-        callback();
-      } finally {
-        // A one-shot timer has nothing left to dispose once its callback has run.
-        handle?.dispose();
-      }
-    }, msDelay);
+    const nativeHandle = armTimeout(
+      msDelay,
+      () => {
+        try {
+          callback();
+        } finally {
+          // A one-shot timer has nothing left to dispose once its callback has run.
+          handle?.dispose();
+        }
+      },
+      (rearmed) => handle?.setNativeHandle(rearmed),
+    );
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, nativeHandle);
     return this.trackHandle(handle, options);
   }
@@ -76,10 +106,31 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     if (msDelay < 1) {
       msDelay = 1 as DurationMilliseconds;
     }
-    return this.trackHandle(
-      new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
-      options,
-    );
+    if (msDelay <= MAX_NATIVE_DELAY) {
+      return this.trackHandle(
+        new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
+        options,
+      );
+    }
+    // Past the native limit there is no interval to arm: the period is re-armed one run at a time.
+    // Re-arming before the run keeps a callback that disposes its own handle from leaving the next
+    // period pending, and leaves a callback that throws still recurring, as setInterval does.
+    let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
+      undefined;
+    const rearm = (nativeHandle: ReturnTypeOfSetTimeout): void => {
+      handle?.setNativeHandle(nativeHandle);
+    };
+    const arm = (): ReturnTypeOfSetTimeout =>
+      armTimeout(
+        msDelay,
+        () => {
+          rearm(arm());
+          callback();
+        },
+        rearm,
+      );
+    handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, arm());
+    return this.trackHandle(handle, options);
   }
 
   recurring(
@@ -92,28 +143,34 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
 
+    const rearm = (nativeHandle: ReturnTypeOfSetTimeout): void => {
+      handle?.setNativeHandle(nativeHandle);
+    };
+
     const arm = (msInitialDelay: number): ReturnTypeOfSetTimeout => {
-      const nativeHandle = setTimeout(() => {
-        if (handle !== undefined && handle.isDisposed) {
-          return false;
-        }
-        let next: IDurationSpec | false;
-        try {
-          next = callback();
-        } catch (error) {
-          // Nothing left to dispose once the schedule has stopped, including by throwing.
-          handle?.dispose();
-          throw error;
-        }
-        if (next !== false) {
-          arm(toDuration(next));
-        } else {
-          handle?.dispose();
-        }
-      }, msInitialDelay);
-      if (handle !== undefined) {
-        handle.setNativeHandle(nativeHandle);
-      }
+      const nativeHandle = armTimeout(
+        msInitialDelay,
+        () => {
+          if (handle !== undefined && handle.isDisposed) {
+            return false;
+          }
+          let next: IDurationSpec | false;
+          try {
+            next = callback();
+          } catch (error) {
+            // Nothing left to dispose once the schedule has stopped, including by throwing.
+            handle?.dispose();
+            throw error;
+          }
+          if (next !== false) {
+            arm(toDuration(next));
+          } else {
+            handle?.dispose();
+          }
+        },
+        rearm,
+      );
+      rearm(nativeHandle);
       return nativeHandle;
     };
 
