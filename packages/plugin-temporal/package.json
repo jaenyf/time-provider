@@ -67,6 +67,6 @@
     "@time-provider/core": "workspace:*"
   },
   "peerDependencies": {
-    "@time-provider/core": "^2.0.0"
+    "@time-provider/core": "^3.0.0"
   }
 }

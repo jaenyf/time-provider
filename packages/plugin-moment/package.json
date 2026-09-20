@@ -68,7 +68,7 @@
     "moment": "~2.30.1"
   },
   "peerDependencies": {
-    "@time-provider/core": "^2.0.0",
+    "@time-provider/core": "^3.0.0",
     "moment": "~2.30.1"
   }
 }
