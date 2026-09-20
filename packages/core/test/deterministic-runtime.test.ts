@@ -40,6 +40,62 @@ class FakeManualRuntime extends BaseManualRuntime<number> {
   }
 }
 
+describe("BaseManualRuntime delays past the native 32-bit limit", () => {
+  /*
+    A system runtime has to arm these in chunks, or the host clamps them to 1ms and runs them at
+    once - see MAX_NATIVE_DELAY in system-runtime.ts. Virtual time has no such field, so nothing
+    here needs chunking; these pin down that the two runtimes agree on when an oversized delay is
+    due, which is what makes a deterministic runtime a faithful stand-in for a system one.
+  */
+  const OVERFLOWING_DELAY = { milliseconds: 2_147_483_648 };
+
+  test("once is due at its own time, not at once", () => {
+    const sut = new FakeManualRuntime(0);
+    let fired = 0;
+    sut.timers.once(OVERFLOWING_DELAY, () => {
+      ++fired;
+    });
+
+    sut.advance({ milliseconds: 1 });
+    expect(fired).toEqual(0);
+    sut.advance({ milliseconds: 2_147_483_646 });
+    expect(fired).toEqual(0);
+    sut.advance({ milliseconds: 1 });
+    expect(fired).toEqual(1);
+  });
+
+  test("every keeps its whole period", () => {
+    const sut = new FakeManualRuntime(0);
+    let fired = 0;
+    sut.timers.every(OVERFLOWING_DELAY, () => {
+      ++fired;
+    });
+
+    sut.advance({ milliseconds: 1 });
+    expect(fired).toEqual(0);
+    sut.advance({ milliseconds: 2_147_483_647 });
+    expect(fired).toEqual(1);
+    sut.advance({ milliseconds: 2_147_483_648 });
+    expect(fired).toEqual(2);
+  });
+
+  test("recurring rearms at its whole delay", () => {
+    const sut = new FakeManualRuntime(0);
+    let fired = 0;
+    sut.timers.recurring(() => {
+      ++fired;
+      return OVERFLOWING_DELAY;
+    }, OVERFLOWING_DELAY);
+
+    sut.advance({ milliseconds: 1 });
+    expect(fired).toEqual(0);
+    sut.advance({ milliseconds: 2_147_483_647 });
+    expect(fired).toEqual(1);
+    sut.advance({ milliseconds: 2_147_483_648 });
+    expect(fired).toEqual(2);
+  });
+});
+
 describe("BaseManualRuntime scheduling (heap internals)", () => {
   /** A cheap deterministic pseudo-random PRNG (mulberry32) generator to mimic delays induced by real scheduler calls */
   function mulberry32(seed: number): () => number {
