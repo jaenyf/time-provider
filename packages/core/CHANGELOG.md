@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.0.0](https://github.com/jaenyf/time-provider/compare/core-v2.0.0...core-v3.0.0) (2026-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+* microtasks ([#163](https://github.com/jaenyf/time-provider/issues/163)) ([608db55](https://github.com/jaenyf/time-provider/commit/608db5535375610b3754b10618fde4643b0ca6be))
+
+
+### Bug Fixes
+
+* **addon-idle:** register the package for release and document it ([787d41a](https://github.com/jaenyf/time-provider/commit/787d41a329e97fc83be09471b1403a54fd6155d6))
+* bind an addon-builder's chain methods to the chain that used it ([ef5f7d4](https://github.com/jaenyf/time-provider/commit/ef5f7d47e016f9564f29cf6ca06c43064619e604))
+* **core:** arm system timers longer than the native 32-bit limit in chunks ([0e043d4](https://github.com/jaenyf/time-provider/commit/0e043d47b11126b0870a21d7aaaf0cee2f20bbc0))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
 ## [2.0.0](https://github.com/jaenyf/time-provider/compare/core-v1.4.0...core-v2.0.0) (2026-09-14)
 
 
