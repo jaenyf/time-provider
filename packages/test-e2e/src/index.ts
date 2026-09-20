@@ -3,7 +3,9 @@ import { createTimeProvider } from "../../core/dist/deterministic.mjs";
 import { plugin } from "../../plugin-native/dist/deterministic.mjs";
 import { addon as addonAnimationFrame } from "../../addon-animation-frame/dist/deterministic.mjs";
 import { addon as addonCron } from "../../addon-cron/dist/deterministic.mjs";
+import { addon as addonCompat } from "../../addon-compat/dist/deterministic.mjs";
 import { addon as addonEta } from "../../addon-eta/dist/deterministic.mjs";
+import { addon as addonIdle } from "../../addon-idle/dist/deterministic.mjs";
 
 //other e2e tests (using e2e-helper) will be loaded by the test runner
 //this file is just a quick test playground, and avoid carying an empty file
@@ -11,15 +13,18 @@ import { addon as addonEta } from "../../addon-eta/dist/deterministic.mjs";
 
 describe("e2e", () => {
   describe("general", () => {
-    test("basic assertion", () => {
+    test("basic assertion", async () => {
       using tp = createTimeProvider
         .for(plugin)
+        .use(addonCompat)
         .use(addonAnimationFrame)
         .withHostFramesRate(42)
+        .use(addonIdle)
         .use(addonCron)
         .use(addonEta)
         .asManual()
         .create();
+
       expect(tp.clock.utcNow()).not.toBeDefined();
     });
   });
