@@ -49,8 +49,11 @@ jobs:
 
       - run: vp add -D @commitlint/cli @commitlint/config-conventional
 
+      # Dependabot keeps editing a PR body after the PR is merged, and `edited` re-runs this
+      # workflow. By then the head branch is gone, so the base..head range no longer resolves
+      # and commitlint dies on a PR that merged cleanly. Only lint a PR that is still open.
       - name: Lint commits (pull request range)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.state == 'open'
         run: vpx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
       # A squash-merge uses the PR title as the final commit message on main - release-please reads that message to classify the change.
@@ -58,7 +61,7 @@ jobs:
       # GitHub appends " (#<number>)" to that squash header, so lint the exact string it will produce: a title sitting just under
       # commitlint's 100-character header limit passes on its own, then breaks the limit on main once the suffix is added.
       - name: Lint PR title (squash-merge commit message)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.state == 'open'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
