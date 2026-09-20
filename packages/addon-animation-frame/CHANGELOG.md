@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.3.0...addon-animation-frame-v0.4.0) (2026-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170))
+
+### Features
+
+* idle callbacks ([#165](https://github.com/jaenyf/time-provider/issues/165)) ([f50df4f](https://github.com/jaenyf/time-provider/commit/f50df4f8cb52370d14e5bc11ea35e1f96131e87e))
+
+
+### Bug Fixes
+
+* bind an addon-builder's chain methods to the chain that used it ([ef5f7d4](https://github.com/jaenyf/time-provider/commit/ef5f7d47e016f9564f29cf6ca06c43064619e604))
+* require @time-provider/core ^2.0.0 in plugin and addon peer ranges ([94e07e7](https://github.com/jaenyf/time-provider/commit/94e07e7c3ebf003244ed34181a4a565ad0f67043))
+* require @time-provider/core ^3.0.0 in plugin and addon peer ranges ([cc560c8](https://github.com/jaenyf/time-provider/commit/cc560c8a66c31c02b2687a4c4fc6c579620c0a0b))
+
+
+### Code Refactoring
+
+* reshape api ([#170](https://github.com/jaenyf/time-provider/issues/170)) ([2c62f61](https://github.com/jaenyf/time-provider/commit/2c62f61a27c298513ce201f4875c90b42691f642))
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.2.0...addon-animation-frame-v0.3.0) (2026-09-14)
 
 
