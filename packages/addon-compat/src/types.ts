@@ -76,4 +76,15 @@ export interface ICompatApi<TDate> extends IPerformance {
    * A no-op if it was already cleared.
    */
   clearInterval(handle: IScheduledHandle): void;
+  /**
+   * Queues `callback` to run at the next microtask checkpoint, delegating to
+   * `timeProvider.scheduler.microtasks.queue`.
+   *
+   * Microtasks are not time-driven, so the clock strategy changes only where the checkpoint
+   * falls, never whether it happens: a system clock hands `callback` to the host's own queue,
+   * and a deterministic one keeps its own, which it drains at every point standing in for a
+   * checkpoint. There is nothing to cancel - a queued microtask always runs, exactly as with
+   * the `queueMicrotask` global.
+   */
+  queueMicrotask(callback: () => void): void;
 }

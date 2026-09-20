@@ -38,6 +38,7 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
       clearTimeout: this.clearTimeout.bind(this),
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
+      queueMicrotask: this.queueMicrotask.bind(this),
       now: () => runtimePerformance().now(),
       get timeOrigin() {
         return runtimePerformance().timeOrigin;
@@ -63,5 +64,8 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
   clearInterval(handle: IScheduledHandle): void {
     handle.dispose();
+  }
+  queueMicrotask(callback: () => void): void {
+    this.runtimeMicrotasks.queue(callback);
   }
 }

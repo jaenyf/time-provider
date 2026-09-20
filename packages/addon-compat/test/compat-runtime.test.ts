@@ -4,6 +4,7 @@ import {
   toInstant,
   type EpochMilliseconds,
   type IDurationSpec,
+  type IMicrotasks,
   type IPerformance,
   type IPerformanceEntry,
   type IRuntime,
@@ -22,7 +23,8 @@ type ScheduledCall = {
 
 type FakeRuntime = IRuntime<unknown> & {
   compat?: ICompatApi<unknown>;
-  scheduler: { timers: ITimers };
+  scheduler: { timers: ITimers; microtasks: IMicrotasks };
+  microtasks: (() => void)[];
   performance: IPerformance;
   calls: ScheduledCall[];
   performanceCalls: { method: string; args: unknown[] }[];
@@ -31,6 +33,7 @@ type FakeRuntime = IRuntime<unknown> & {
 
 function fakeRuntime(): FakeRuntime {
   const calls: ScheduledCall[] = [];
+  const microtasks: (() => void)[] = [];
   const performanceCalls: { method: string; args: unknown[] }[] = [];
   const record =
     (method: ScheduledCall["method"]) => (durationSpec: IDurationSpec, callback: () => unknown) => {
@@ -54,6 +57,7 @@ function fakeRuntime(): FakeRuntime {
     };
   const runtime = {
     calls,
+    microtasks,
     performanceCalls,
     timeOrigin: toInstant({ milliseconds: 1000 }),
     registerAddon: () => {},
@@ -67,6 +71,9 @@ function fakeRuntime(): FakeRuntime {
         wait() {
           throw new Error("not used by the compat addon");
         },
+      },
+      microtasks: {
+        queue: (callback: () => void) => microtasks.push(callback),
       },
     },
     performance: {
@@ -114,6 +121,7 @@ describe("CompatRuntime", () => {
           "mark",
           "measure",
           "now",
+          "queueMicrotask",
           "setInterval",
           "setTimeout",
           "timeOrigin",
@@ -161,6 +169,15 @@ describe("CompatRuntime", () => {
       const handle = schedule(compat);
       compat[clearMethod](handle);
       expect(handle.isDisposed).toBe(true);
+    });
+  });
+
+  describe("microtasks", () => {
+    test("queueMicrotask queues through the runtime's microtasks", () => {
+      const { runtime, compat } = composed();
+      const callback = () => {};
+      compat.queueMicrotask(callback);
+      expect(runtime.microtasks).toEqual([callback]);
     });
   });
 

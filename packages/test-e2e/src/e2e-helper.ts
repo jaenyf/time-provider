@@ -332,6 +332,9 @@ export class E2eHelper {
     expect(() => {
       timeProvider.compat.clearTimeout(timeProvider.compat.setTimeout(() => {}));
     }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.queueMicrotask(() => {});
+    }).not.toThrow("Method not implemented.");
     expect(timeProvider.compat.now()).toBeDefined();
     expect(timeProvider.compat.timeOrigin).toBeDefined();
     expect(() => {

@@ -2,6 +2,7 @@ import type { IAddon } from "../deterministic.ts";
 import type {
   IClock,
   IDeterministicRuntime,
+  IMicrotasks,
   IPerformance,
   IRuntime,
   ITimers,
@@ -15,6 +16,7 @@ export abstract class AddonBase<
   #initialized: boolean;
   #timers?: ITimers;
   #clock?: IClock<TDate>;
+  #microtasks?: IMicrotasks;
   #performance?: IPerformance;
 
   constructor() {
@@ -45,6 +47,13 @@ export abstract class AddonBase<
   }
 
   /**
+   * This runtime's microtasks, resolved once - see {@link runtimeTimers} for why it is cached.
+   */
+  protected get runtimeMicrotasks(): IMicrotasks {
+    return (this.#microtasks ??= this.runtime.scheduler.microtasks);
+  }
+
+  /**
    * This runtime's performance API, resolved once - see {@link runtimeTimers} for why it is
    * cached.
    */
@@ -57,6 +66,7 @@ export abstract class AddonBase<
     // Whatever was cached belongs to the previous runtime - see the accessors above.
     this.#timers = undefined;
     this.#clock = undefined;
+    this.#microtasks = undefined;
     this.#performance = undefined;
     this.applyToRuntimeImpl(runtime);
     this.#initialized = true;

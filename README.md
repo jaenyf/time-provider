@@ -211,7 +211,7 @@ Within the scope of this library, these two terms refer to different concepts.
 ### Available addons
 
 - [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser-specific animation frame timers
-- [Compat addon](https://www.npmjs.com/package/@time-provider/addon-compat) - keep calling native-style setTimeout/setInterval/performance while you migrate
+- [Compat addon](https://www.npmjs.com/package/@time-provider/addon-compat) - keep calling native-style setTimeout/setInterval/queueMicrotask/performance while you migrate
 - [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a JSON-friendlier one
 - [ETA addon](https://www.npmjs.com/package/@time-provider/addon-eta) - get the ETA (estimated time of arrival) for a task by notifying its progression
 - [Idle addon](https://www.npmjs.com/package/@time-provider/addon-idle) - run callbacks when the host reports itself idle, drained on demand on a deterministic clock

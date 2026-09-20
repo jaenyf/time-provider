@@ -1,7 +1,7 @@
 # Compatibility Layer
 
 [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat)
-adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`
+adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`/`queueMicrotask`
 call signatures on top of a Time-Provider's own timers, plus the `performance`
 members — `now`, `timeOrigin`, `mark`, `measure` and friends — flat beside
 them. Like every
@@ -50,10 +50,11 @@ manual/sequential, never firing on a fixed clock.
 
 ## The methods
 
-| Method                            | Delegates to             | Cancelled by            |
-| --------------------------------- | ------------------------ | ----------------------- |
-| `setTimeout(callback, delayMs?)`  | `scheduler.timers.once`  | `clearTimeout(handle)`  |
-| `setInterval(callback, delayMs?)` | `scheduler.timers.every` | `clearInterval(handle)` |
+| Method                            | Delegates to                 | Cancelled by             |
+| --------------------------------- | ---------------------------- | ------------------------ |
+| `setTimeout(callback, delayMs?)`  | `scheduler.timers.once`      | `clearTimeout(handle)`   |
+| `setInterval(callback, delayMs?)` | `scheduler.timers.every`     | `clearInterval(handle)`  |
+| `queueMicrotask(callback)`        | `scheduler.microtasks.queue` | nothing — it always runs |
 
 `delayMs` defaults to `0` when omitted or negative, matching `.scheduler`. Each
 `clear*` method is a no-op if the handle's callback already ran or was already

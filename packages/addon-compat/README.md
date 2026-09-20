@@ -53,6 +53,10 @@ const handle = timeProvider.compat.setTimeout(() => {
 timeProvider.compat.clearTimeout(handle);
 //same calls for setInterval/clearInterval...
 
+timeProvider.compat.queueMicrotask(() => {
+  console.info("Native queueMicrotask call style");
+});
+
 // The performance members are there too, with their native signatures.
 timeProvider.compat.mark("request-start");
 console.info(timeProvider.compat.now(), timeProvider.compat.timeOrigin);
