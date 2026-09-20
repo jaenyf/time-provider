@@ -551,6 +551,43 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     sut.dispose();
     expect(b.isDisposed).toBe(true);
   });
+
+  test("disposing the runtime from inside a timer callback disposes the timer running it", () => {
+    // The entry running its callback is the only one that has left the due heap without being
+    // disposed, so the runtime's sweep reaches it through the live-entry list rather than the
+    // heap array. Asserted from inside the callback: a one-shot disposes itself on the way out
+    // regardless, which would hide the difference.
+    const sut = new FakeManualRuntime(0);
+    let disposedInsideCallback: boolean | undefined;
+    const handle = sut.timers.once({ milliseconds: 100 }, () => {
+      sut.dispose();
+      disposedInsideCallback = handle.isDisposed;
+    });
+
+    sut.clock.advance({ milliseconds: 100 });
+
+    expect(disposedInsideCallback).toBe(true);
+  });
+
+  test("disposing the runtime from inside a recurring callback stops it rescheduling itself", () => {
+    // A recurring entry is reinserted after its callback returns unless it was cancelled in the
+    // meantime - so if the sweep misses the entry mid-callback, it comes back as a zombie on a
+    // runtime that is already disposed.
+    const sut = new FakeManualRuntime(0);
+    let ticks = 0;
+    sut.timers.recurring(
+      () => {
+        ticks++;
+        sut.dispose();
+        return { milliseconds: 100 };
+      },
+      { milliseconds: 100 },
+    );
+
+    sut.clock.advance({ milliseconds: 1000 });
+
+    expect(ticks).toBe(1);
+  });
 });
 
 describe("BaseManualRuntime tagged timers", () => {
