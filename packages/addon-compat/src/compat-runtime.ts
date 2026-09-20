@@ -38,8 +38,6 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
       clearTimeout: this.clearTimeout.bind(this),
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
-      setRecurring: this.setRecurring.bind(this),
-      clearRecurring: this.clearRecurring.bind(this),
       now: () => runtimePerformance().now(),
       get timeOrigin() {
         return runtimePerformance().timeOrigin;
@@ -64,21 +62,6 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
     return this.runtimeTimers.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearInterval(handle: IScheduledHandle): void {
-    handle.dispose();
-  }
-  setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle {
-    return this.runtimeTimers.recurring(
-      () => {
-        const result = callback();
-        if (result === false) {
-          return false;
-        }
-        return { milliseconds: result };
-      },
-      { milliseconds: initialDelay ?? 0 },
-    );
-  }
-  clearRecurring(handle: IScheduledHandle): void {
     handle.dispose();
   }
 }

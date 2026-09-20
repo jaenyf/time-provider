@@ -76,23 +76,4 @@ export interface ICompatApi<TDate> extends IPerformance {
    * A no-op if it was already cleared.
    */
   clearInterval(handle: IScheduledHandle): void;
-  /**
-   * Schedules `callback` to run once, `initialDelay` milliseconds from now (0 if omitted or
-   * negative), then again after whatever delay `callback` itself returns - typically computed
-   * from state the run itself just updated (a counter, remaining time, ...). Return `false` to
-   * stop recurring; any other falsy value (e.g. `0`) still schedules a run - `0` milliseconds
-   * from the previous one on a system clock, and `1` on a deterministic one, which never re-arms
-   * faster than once per millisecond.
-   *
-   * When each run happens depends on the clock strategy, exactly as for
-   * {@link ICompatApi.setTimeout}: asynchronously via real native timers on a system clock,
-   * synchronously and in-line as each run becomes due on a manual/sequential clock, and never on a
-   * fixed clock. See {@link ICompatApi} for the full model.
-   */
-  setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle;
-  /**
-   * Cancels a pending recurring schedule started via {@link ICompatApi.setRecurring}. A no-op if
-   * it already stopped (`callback` returned `false`) or was already cleared.
-   */
-  clearRecurring(handle: IScheduledHandle): void;
 }

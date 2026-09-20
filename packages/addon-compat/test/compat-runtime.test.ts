@@ -14,7 +14,7 @@ import { CompatRuntime } from "../src/compat-runtime.ts";
 import type { ICompatApi } from "../src/types.ts";
 
 type ScheduledCall = {
-  method: "once" | "every" | "recurring";
+  method: "once" | "every";
   durationSpec: IDurationSpec;
   callback: () => unknown;
   handle: IScheduledHandle;
@@ -61,9 +61,9 @@ function fakeRuntime(): FakeRuntime {
       timers: {
         once: record("once"),
         every: record("every"),
-        // `recurring` takes its callback first - see ITimers in core.
-        recurring: (callback: () => unknown, durationSpec: IDurationSpec) =>
-          record("recurring")(durationSpec, callback),
+        recurring() {
+          throw new Error("not used by the compat addon");
+        },
         wait() {
           throw new Error("not used by the compat addon");
         },
@@ -107,7 +107,6 @@ describe("CompatRuntime", () => {
           "clearInterval",
           "clearMarks",
           "clearMeasures",
-          "clearRecurring",
           "clearTimeout",
           "getEntries",
           "getEntriesByName",
@@ -116,7 +115,6 @@ describe("CompatRuntime", () => {
           "measure",
           "now",
           "setInterval",
-          "setRecurring",
           "setTimeout",
           "timeOrigin",
         ].toSorted(),
@@ -149,34 +147,15 @@ describe("CompatRuntime", () => {
       const { runtime, compat } = composed();
       compat.setTimeout(() => {});
       compat.setInterval(() => {});
-      compat.setRecurring(() => false);
       expect(runtime.calls.map((call) => call.durationSpec)).toEqual([
-        { milliseconds: 0 },
         { milliseconds: 0 },
         { milliseconds: 0 },
       ]);
     });
 
-    test("setRecurring turns the delay its callback returns into a duration", () => {
-      const { runtime, compat } = composed();
-      compat.setRecurring(() => 30, 10);
-      expect(runtime.calls[0]).toMatchObject({
-        method: "recurring",
-        durationSpec: { milliseconds: 10 },
-      });
-      expect(runtime.calls[0]!.callback()).toEqual({ milliseconds: 30 });
-    });
-
-    test("setRecurring stops when its callback returns false", () => {
-      const { runtime, compat } = composed();
-      compat.setRecurring(() => false);
-      expect(runtime.calls[0]!.callback()).toBe(false);
-    });
-
     test.each([
       ["clearTimeout", (compat: ICompatApi<unknown>) => compat.setTimeout(() => {})],
       ["clearInterval", (compat: ICompatApi<unknown>) => compat.setInterval(() => {})],
-      ["clearRecurring", (compat: ICompatApi<unknown>) => compat.setRecurring(() => false)],
     ] as const)("%s disposes the handle it is given", (clearMethod, schedule) => {
       const { compat } = composed();
       const handle = schedule(compat);

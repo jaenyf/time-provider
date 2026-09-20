@@ -1,7 +1,7 @@
 # Compatibility Layer
 
 [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat)
-adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`/`setRecurring`
+adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`
 call signatures on top of a Time-Provider's own timers, plus the `performance`
 members — `now`, `timeOrigin`, `mark`, `measure` and friends — flat beside
 them. Like every
@@ -50,16 +50,19 @@ manual/sequential, never firing on a fixed clock.
 
 ## The methods
 
-| Method                                    | Delegates to                 | Cancelled by             |
-| ----------------------------------------- | ---------------------------- | ------------------------ |
-| `setTimeout(callback, delayMs?)`          | `scheduler.timers.once`      | `clearTimeout(handle)`   |
-| `setInterval(callback, delayMs?)`         | `scheduler.timers.every`     | `clearInterval(handle)`  |
-| `setRecurring(callback, initialDelayMs?)` | `scheduler.timers.recurring` | `clearRecurring(handle)` |
+| Method                            | Delegates to             | Cancelled by            |
+| --------------------------------- | ------------------------ | ----------------------- |
+| `setTimeout(callback, delayMs?)`  | `scheduler.timers.once`  | `clearTimeout(handle)`  |
+| `setInterval(callback, delayMs?)` | `scheduler.timers.every` | `clearInterval(handle)` |
 
-`delayMs`/`initialDelayMs` default to `0` when omitted or negative, matching
-`.scheduler`. Each `clear*` method is a no-op if the handle's callback already
-ran or was already cleared — it just calls `.dispose()` on the
-`IScheduledHandle` the matching `set*` method returned.
+`delayMs` defaults to `0` when omitted or negative, matching `.scheduler`. Each
+`clear*` method is a no-op if the handle's callback already ran or was already
+cleared — it just calls `.dispose()` on the `IScheduledHandle` the matching
+`set*` method returned.
+
+There is deliberately no `setRecurring` here: nothing native ever had that
+signature, so there is no call site to migrate. Self-rescheduling callbacks go
+through [`scheduler.timers.recurring`](/api/scheduler).
 
 ## The performance members
 

@@ -330,9 +330,6 @@ export class E2eHelper {
       timeProvider.compat.clearInterval(timeProvider.compat.setInterval(() => {}));
     }).not.toThrow("Method not implemented.");
     expect(() => {
-      timeProvider.compat.clearRecurring(timeProvider.compat.setRecurring(() => false));
-    }).not.toThrow("Method not implemented.");
-    expect(() => {
       timeProvider.compat.clearTimeout(timeProvider.compat.setTimeout(() => {}));
     }).not.toThrow("Method not implemented.");
     expect(timeProvider.compat.now()).toBeDefined();
