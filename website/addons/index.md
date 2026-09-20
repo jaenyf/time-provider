@@ -13,20 +13,21 @@ import { addon } from "@time-provider/addon-animation-frame";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
+timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 ```
 
 `timeProvider` above is still a plain `ITimeProvider<Date>` — `clock`,
-`parser`, `timers`, `performance` — plus whatever the addon adds, here an
-`.animation` facade exposing `scheduleFrame`.
+`converter`, `scheduler`, `performance` — plus whatever the addon adds, here a
+`scheduler.animation` facade exposing `scheduleFrame`. An addon that schedules
+callbacks extends `scheduler`; one that doesn't adds a root property of its own.
 
-| Addon                                              | Property     | Adds                                                                                           | Contributed type        | npm                                                                       |
-| -------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
-| [`addon-animation-frame`](/addons/animation-frame) | `.animation` | `scheduleFrame` — the host's real frames, or simulated ones                                    | `WithAnimationFrameApi` | [npm](https://www.npmjs.com/package/@time-provider/addon-animation-frame) |
-| [`addon-cron`](/addons/cron)                       | `.cron`      | callbacks on 5-field cron schedules, read in the runtime's own timezone                        | `WithCronApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-cron)            |
-| [`addon-eta`](/addons/eta)                         | `.eta`       | estimates of when a job finishes, from reported progress or a fixed expected duration          | `WithEtaApi`            | [npm](https://www.npmjs.com/package/@time-provider/addon-eta)             |
-| [`addon-idle`](/addons/idle)                       | `.idle`      | `request` - callbacks run when the host reports itself idle, or on demand in a test            | `WithIdleApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-idle)            |
-| [`addon-compat`](/addons/compat)                   | `.compat`    | native-style `setTimeout`/`setInterval`/`setRecurring` signatures, for migrating incrementally | `WithCompatApi`         | [npm](https://www.npmjs.com/package/@time-provider/addon-compat)          |
+| Addon                                              | Property              | Adds                                                                                                               | Contributed type        | npm                                                                       |
+| -------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------------- |
+| [`addon-animation-frame`](/addons/animation-frame) | `scheduler.animation` | `scheduleFrame` — the host's real frames, or simulated ones                                                        | `WithAnimationFrameApi` | [npm](https://www.npmjs.com/package/@time-provider/addon-animation-frame) |
+| [`addon-cron`](/addons/cron)                       | `scheduler.cron`      | callbacks on 5-field cron schedules, read in the runtime's own timezone                                            | `WithCronApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-cron)            |
+| [`addon-eta`](/addons/eta)                         | `.eta`                | estimates of when a job finishes, from reported progress or a fixed expected duration                              | `WithEtaApi`            | [npm](https://www.npmjs.com/package/@time-provider/addon-eta)             |
+| [`addon-idle`](/addons/idle)                       | `scheduler.idle`      | `request` - callbacks run when the host reports itself idle, or on demand in a test                                | `WithIdleApi`           | [npm](https://www.npmjs.com/package/@time-provider/addon-idle)            |
+| [`addon-compat`](/addons/compat)                   | `.compat`             | native-style `setTimeout`/`setInterval`/`queueMicrotask` and `performance` signatures, for migrating incrementally | `WithCompatApi`         | [npm](https://www.npmjs.com/package/@time-provider/addon-compat)          |
 
 Each one peer-depends on `@time-provider/core` and nothing else, so composing
 an addon adds no third-party package to your dependency tree.
@@ -41,7 +42,7 @@ shape it contributes, to intersect with the provider type:
 import type { WithAnimationFrameApi } from "@time-provider/addon-animation-frame";
 
 function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
-  tp.animation.scheduleFrame(() => {});
+  tp.scheduler.animation.scheduleFrame(() => {});
 }
 ```
 
@@ -68,13 +69,13 @@ const timeProvider = createTimeProvider
   .withInitialTime(0)
   .create();
 
-timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
+timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 timeProvider.clock.advance({ milliseconds: 20 }); // simulated frame duration elapses
 ```
 
 `@time-provider/addon-cron` and `@time-provider/addon-eta` behave the same on
 both sides — they read time through `clock.timestampNow()` and program timers on
-`timeProvider.timers`, so the clock strategy already decides when their
+`timeProvider.scheduler`, so the clock strategy already decides when their
 callbacks run. Two addons differ.
 `@time-provider/addon-animation-frame` calls the host's
 `requestAnimationFrame` on the system side and simulates frames against the
@@ -93,7 +94,7 @@ import { addon as eta } from "@time-provider/addon-eta";
 
 const timeProvider = createTimeProvider.for(plugin).use(cron).use(eta).create();
 
-timeProvider.cron.schedule("0 9 * * *", () => reindex());
+timeProvider.scheduler.cron.schedule("0 9 * * *", () => reindex());
 timeProvider.eta.estimate();
 ```
 

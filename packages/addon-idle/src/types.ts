@@ -1,21 +1,34 @@
 import type { IScheduledHandle } from "@time-provider/core";
 
 /**
- * The shape this addon adds to a composed Time-Provider: an `idle` property exposing
+ * The shape this addon adds to a composed Time-Provider: a `scheduler.idle` property exposing
  * {@link IIdleApi}.
  */
 export type WithIdleApi = {
+  scheduler: {
+    /**
+     * Schedules work to run when the host has spare time, via `request` - the host's real idle
+     * periods on a system runtime, requests held pending until explicitly drained on a
+     * deterministic one. See {@link IIdleApi}.
+     */
+    idle: IIdleApi;
+  };
   /**
-   * Schedules work to run when the host has spare time, via `request` - the host's real idle
-   * periods on a system runtime, requests held pending until explicitly drained on a
-   * deterministic one. See {@link IIdleApi}.
+   * Present only when the compat addon is composed as well, and composed first: the
+   * native-shaped aliases for {@link IIdleApi.request}, sitting on that addon's `compat` facade
+   * beside `setTimeout` and friends. `cancelIdleCallback` takes the handle
+   * `requestIdleCallback` returned, not a numeric id, and is a no-op if the callback already
+   * ran.
    */
-  idle: IIdleApi;
+  compat?: {
+    requestIdleCallback(callback: () => void): IScheduledHandle;
+    cancelIdleCallback(handle: IScheduledHandle): void;
+  };
 };
 
 /**
  * The idle API facade this addon adds to a composed Time-Provider, reachable as
- * `timeProvider.idle` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
+ * `timeProvider.scheduler.idle` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  */
 export interface IIdleApi {
   /**
@@ -33,12 +46,25 @@ export interface IIdleApi {
 }
 
 /**
- * The shape the deterministic idle addon adds to a composed Time-Provider: an `idle` property
- * exposing {@link IDeterministicIdleApi}, which additionally lets a test declare the runtime
- * idle on demand.
+ * The shape the deterministic idle addon adds to a composed Time-Provider: a `scheduler.idle`
+ * property exposing {@link IDeterministicIdleApi}, which additionally lets a test declare the
+ * runtime idle on demand.
  */
 export type WithDeterministicIdleApi = {
-  idle: IDeterministicIdleApi;
+  scheduler: {
+    idle: IDeterministicIdleApi;
+  };
+  /**
+   * Present only when the compat addon is composed as well, and composed first: the
+   * native-shaped aliases for {@link IIdleApi.request}, sitting on that addon's `compat` facade
+   * beside `setTimeout` and friends. `cancelIdleCallback` takes the handle
+   * `requestIdleCallback` returned, not a numeric id, and is a no-op if the callback already
+   * ran.
+   */
+  compat?: {
+    requestIdleCallback(callback: () => void): IScheduledHandle;
+    cancelIdleCallback(handle: IScheduledHandle): void;
+  };
 };
 
 /**

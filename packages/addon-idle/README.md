@@ -22,7 +22,7 @@
 ## Description
 
 This is the [Idle](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-It adds an `.idle` facade exposing the idle callback API (`request`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.timers`, `.microtasks`, `.parser` and `.performance` ones.
+It adds a `scheduler.idle` facade exposing the idle callback API (`request`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.scheduler`, `.converter` and `.performance` ones.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
@@ -49,7 +49,7 @@ import { addon as deterministicAddon } from "@time-provider/addon-idle/determini
 
 // System: real requestIdleCallback under the hood (or a clear error if not available)
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-timeProvider.idle.request(() => console.log("Idle!"));
+timeProvider.scheduler.idle.request(() => console.log("Idle!"));
 
 // Deterministic: requests stay pending until you declare the runtime idle
 const manual = createDeterministicTimeProvider
@@ -58,8 +58,8 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-manual.idle.request(() => console.log("Idle!"));
-manual.idle.drain(); // the idle callback runs here
+manual.scheduler.idle.request(() => console.log("Idle!"));
+manual.scheduler.idle.drain(); // the idle callback runs here
 ```
 
 ### Simulated idle periods
@@ -72,20 +72,24 @@ pending requests (oldest first) directly through that tag - without scanning any
 timer/interval/recurring entry sharing the heap:
 
 ```ts
-manual.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
-manual.idle.request(() => console.log("Idle!"));
+manual.scheduler.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
+manual.scheduler.idle.request(() => console.log("Idle!"));
 manual.clock.advance({ milliseconds: 50 }); // "Busy!" - the idle request is still pending
-manual.idle.drain(); // "Idle!"
+manual.scheduler.idle.drain(); // "Idle!"
 ```
 
 Omit `maxCount` to run everything currently pending, or pass it to cap how much idle work a
 single idle period allows through:
 
 ```ts
-manual.idle.request(() => console.log("first"));
-manual.idle.request(() => console.log("second"));
-manual.idle.drain(1); // "first" - "second" stays pending for the next drain
+manual.scheduler.idle.request(() => console.log("first"));
+manual.scheduler.idle.request(() => console.log("second"));
+manual.scheduler.idle.drain(1); // "first" - "second" stays pending for the next drain
 ```
+
+## With the compat addon
+
+Compose [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat) **before** this addon and its `.compat` facade also gets `requestIdleCallback`/`cancelIdleCallback`, delegating to `request` and to the handle's `dispose()`. They are declared as an optional `compat?` on `WithIdleApi`, since they are only there when both addons are composed.
 
 ## License
 

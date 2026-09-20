@@ -52,7 +52,7 @@ describe("BaseManualRuntime delays past the native 32-bit limit", () => {
   test("once is due at its own time, not at once", () => {
     const sut = new FakeManualRuntime(0);
     let fired = 0;
-    sut.timers.once(OVERFLOWING_DELAY, () => {
+    sut.scheduler.timers.once(OVERFLOWING_DELAY, () => {
       ++fired;
     });
 
@@ -67,7 +67,7 @@ describe("BaseManualRuntime delays past the native 32-bit limit", () => {
   test("every keeps its whole period", () => {
     const sut = new FakeManualRuntime(0);
     let fired = 0;
-    sut.timers.every(OVERFLOWING_DELAY, () => {
+    sut.scheduler.timers.every(OVERFLOWING_DELAY, () => {
       ++fired;
     });
 
@@ -82,7 +82,7 @@ describe("BaseManualRuntime delays past the native 32-bit limit", () => {
   test("recurring rearms at its whole delay", () => {
     const sut = new FakeManualRuntime(0);
     let fired = 0;
-    sut.timers.recurring(() => {
+    sut.scheduler.timers.recurring(() => {
       ++fired;
       return OVERFLOWING_DELAY;
     }, OVERFLOWING_DELAY);
@@ -121,7 +121,7 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
       const sut = new FakeManualRuntime(0);
       const fired: number[] = [];
       const handles: IScheduledHandle[] = uniqueDelays.map((delay) =>
-        sut.timers.once({ milliseconds: delay }, () => fired.push(delay)),
+        sut.scheduler.timers.once({ milliseconds: delay }, () => fired.push(delay)),
       );
 
       // Cancel roughly a third of them, scattered across the whole insertion order (and so
@@ -146,9 +146,9 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
   test("clearing the current root while other entries remain re-seats the heap from a leaf", () => {
     const sut = new FakeManualRuntime(0);
     const fired: string[] = [];
-    const root = sut.timers.once({ milliseconds: 1 }, () => fired.push("a"));
-    sut.timers.once({ milliseconds: 100 }, () => fired.push("b"));
-    sut.timers.once({ milliseconds: 50 }, () => fired.push("c"));
+    const root = sut.scheduler.timers.once({ milliseconds: 1 }, () => fired.push("a"));
+    sut.scheduler.timers.once({ milliseconds: 100 }, () => fired.push("b"));
+    sut.scheduler.timers.once({ milliseconds: 50 }, () => fired.push("c"));
 
     // "a" is the earliest-due entry (heap root) at the moment it's cleared, with two other
     // entries still pending - unlike clearing a non-root entry, there's no parent to compare
@@ -163,7 +163,7 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
     const sut = new FakeManualRuntime(0);
     const fired: number[] = [];
     const makeTimeout = (id: number) =>
-      sut.timers.once({ milliseconds: 100 }, () => fired.push(id));
+      sut.scheduler.timers.once({ milliseconds: 100 }, () => fired.push(id));
 
     const root = makeTimeout(0);
     const toClear = makeTimeout(1);
@@ -195,9 +195,9 @@ describe("issue#147", () => {
       let fires = 0;
       function tick() {
         fires++;
-        sut.timers.once({ milliseconds: delay }, tick);
+        sut.scheduler.timers.once({ milliseconds: delay }, tick);
       }
-      sut.timers.once({ milliseconds: delay }, tick);
+      sut.scheduler.timers.once({ milliseconds: delay }, tick);
       return { fireCount: () => fires };
     }
 
@@ -231,7 +231,7 @@ describe("issue#147", () => {
       const sut = new FakeManualRuntime(0);
       let fires = 0;
       const delay = 1000 / 60;
-      sut.timers.every({ milliseconds: delay }, () => fires++);
+      sut.scheduler.timers.every({ milliseconds: delay }, () => fires++);
 
       sut.advance({ milliseconds: 1000 });
 
@@ -257,10 +257,10 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.once({ milliseconds: 10 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {
         throw error;
       });
-      sut.timers.once({ milliseconds: 20 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 20 })).toThrow(error);
       expect(otherFired).toBe(false);
@@ -272,11 +272,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let intervalFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.every({ milliseconds: 10 }, () => {
+      sut.scheduler.timers.every({ milliseconds: 10 }, () => {
         intervalFires++;
         throw error;
       });
-      sut.timers.once({ milliseconds: 15 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 15 }, () => (otherFired = true));
 
       // Due at 10 within this batch - throws immediately, stopping before the timeout due at 15
       // ever gets a turn.
@@ -295,18 +295,18 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
       const error = new Error("boom");
-      sut.microtasks.queue(() => {
+      sut.scheduler.microtasks.queue(() => {
         log.push("throwing");
         throw error;
       });
-      sut.microtasks.queue(() => log.push("after"));
+      sut.scheduler.microtasks.queue(() => log.push("after"));
 
       // The checkpoint stops where it threw, exactly as a due callback batch does.
-      expect(() => sut.microtasks.drain()).toThrow(error);
+      expect(() => sut.scheduler.microtasks.drain()).toThrow(error);
       expect(log).toEqual(["throwing"]);
 
       // The one that threw already ran, so only what is genuinely still pending resumes.
-      expect(() => sut.microtasks.drain()).not.toThrow();
+      expect(() => sut.scheduler.microtasks.drain()).not.toThrow();
       expect(log).toEqual(["throwing", "after"]);
     });
 
@@ -315,8 +315,8 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
       const error = new Error("boom");
-      sut.timers.once({ milliseconds: 10 }, () => {
-        sut.microtasks.queue(() => log.push("microtask"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {
+        sut.scheduler.microtasks.queue(() => log.push("microtask"));
         throw error;
       });
 
@@ -328,14 +328,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
-      sut.microtasks.queue(() => {
+      sut.scheduler.microtasks.queue(() => {
         runCount++;
         // Scheduling a timer runs mayRunDueCallbacks, which would restart the checkpoint on the
         // same, not-yet-cleared queue without the reentrancy guard.
-        sut.timers.once({ milliseconds: 1000 }, () => {});
+        sut.scheduler.timers.once({ milliseconds: 1000 }, () => {});
       });
 
-      sut.microtasks.drain();
+      sut.scheduler.microtasks.drain();
 
       expect(runCount).toBe(1);
     });
@@ -344,13 +344,13 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
-      sut.microtasks.queue(() => {
+      sut.scheduler.microtasks.queue(() => {
         runCount++;
         // A sequential/manual clock read also runs mayRunDueCallbacks.
         sut.clock.utcNow();
       });
 
-      sut.microtasks.drain();
+      sut.scheduler.microtasks.drain();
 
       expect(runCount).toBe(1);
     });
@@ -359,8 +359,8 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let runCount = 0;
-      sut.timers.once({ milliseconds: 10 }, () => {
-        sut.microtasks.queue(() => {
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {
+        sut.scheduler.microtasks.queue(() => {
           runCount++;
           sut.clock.utcNow();
         });
@@ -375,15 +375,15 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
-      sut.microtasks.queue(() => {
+      sut.scheduler.microtasks.queue(() => {
         log.push("m1");
         // The nested checkpoint this triggers is a no-op, but m2 must still be picked up by the
         // outer, still-running checkpoint loop.
-        sut.timers.once({ milliseconds: 1000 }, () => {});
-        sut.microtasks.queue(() => log.push("m2"));
+        sut.scheduler.timers.once({ milliseconds: 1000 }, () => {});
+        sut.scheduler.microtasks.queue(() => log.push("m2"));
       });
 
-      sut.microtasks.drain();
+      sut.scheduler.microtasks.drain();
 
       expect(log).toEqual(["m1", "m2"]);
     });
@@ -396,11 +396,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
-      sut.timers.once({ milliseconds: 5 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 5 }, () => {
         log.push("t1");
-        sut.microtasks.queue(() => log.push("m1"));
+        sut.scheduler.microtasks.queue(() => log.push("m1"));
       });
-      sut.timers.once({ milliseconds: 5 }, () => log.push("t2"));
+      sut.scheduler.timers.once({ milliseconds: 5 }, () => log.push("t2"));
 
       sut.advance({ milliseconds: 5 });
 
@@ -414,11 +414,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
-      sut.timers.once({ milliseconds: 5 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 5 }, () => {
         log.push("t1");
-        sut.microtasks.queue(() => log.push("m1"));
+        sut.scheduler.microtasks.queue(() => log.push("m1"));
       });
-      sut.timers.once({ milliseconds: 10 }, () => log.push("t2"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => log.push("t2"));
 
       sut.advance({ milliseconds: 15 });
 
@@ -433,7 +433,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let ran = false;
-      sut.microtasks.queue(() => (ran = true));
+      sut.scheduler.microtasks.queue(() => (ran = true));
 
       sut.advance({ milliseconds: 100 });
 
@@ -446,14 +446,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let recurringFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.recurring(
+      sut.scheduler.timers.recurring(
         () => {
           recurringFires++;
           throw error;
         },
         { milliseconds: 10 },
       );
-      sut.timers.once({ milliseconds: 15 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 15 }, () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 25 })).toThrow(error);
       expect(recurringFires).toBe(1);
@@ -478,10 +478,10 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.once({ milliseconds: 10 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {
         throw error;
       });
-      sut.timers.once({ milliseconds: 20 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 20 })).not.toThrow();
       expect(otherFired).toBe(true);
@@ -495,12 +495,12 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
       const error = new Error("boom");
-      sut.microtasks.queue(() => {
+      sut.scheduler.microtasks.queue(() => {
         throw error;
       });
-      sut.microtasks.queue(() => log.push("after"));
+      sut.scheduler.microtasks.queue(() => log.push("after"));
 
-      expect(() => sut.microtasks.drain()).not.toThrow();
+      expect(() => sut.scheduler.microtasks.drain()).not.toThrow();
       expect(log).toEqual(["after"]);
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(error);
@@ -513,11 +513,11 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let intervalFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.every({ milliseconds: 10 }, () => {
+      sut.scheduler.timers.every({ milliseconds: 10 }, () => {
         intervalFires++;
         throw error;
       });
-      sut.timers.once({ milliseconds: 15 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 15 }, () => (otherFired = true));
 
       // Due at both 10 and 20 within the advance() below - throws twice, logged each time, and
       // the whole batch (including the unrelated timeout due at 15) still runs to completion.
@@ -536,14 +536,14 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let recurringFires = 0;
       let otherFired = false;
       const error = new Error("boom");
-      sut.timers.recurring(
+      sut.scheduler.timers.recurring(
         () => {
           recurringFires++;
           throw error;
         },
         { milliseconds: 10 },
       );
-      sut.timers.once({ milliseconds: 15 }, () => (otherFired = true));
+      sut.scheduler.timers.once({ milliseconds: 15 }, () => (otherFired = true));
 
       expect(() => sut.advance({ milliseconds: 25 })).not.toThrow();
       expect(recurringFires).toBe(1); // never re-armed after throwing once
@@ -567,26 +567,26 @@ describe("BaseManualRuntime drainDue exception handling", () => {
 describe("BaseManualRuntime timer handle signal/dispose", () => {
   test("signal is not aborted by default", () => {
     const sut = new FakeManualRuntime(0);
-    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    const handle = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
     expect(handle.signal.aborted).toBe(false);
   });
 
   test("signal is already aborted for a handle disposed before signal was ever accessed", () => {
     const sut = new FakeManualRuntime(0);
-    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    const handle = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
     handle.dispose();
     expect(handle.signal.aborted).toBe(true);
   });
 
   test("accessing signal a second time returns the same signal instead of recreating it", () => {
     const sut = new FakeManualRuntime(0);
-    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    const handle = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
     expect(handle.signal).toBe(handle.signal);
   });
 
   test("dispatching abort on a lazily-created signal disposes the handle", () => {
     const sut = new FakeManualRuntime(0);
-    const handle = sut.timers.once({ milliseconds: 100 }, () => {});
+    const handle = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
     handle.signal.dispatchEvent(new Event("abort"));
     expect(handle.isDisposed).toBe(true);
   });
@@ -597,8 +597,8 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     // that reentrant call before reaching the heap's live-entry list, the second (redundant) unlink
     // corrupted the list, silently orphaning any other live entry from runtime.dispose()'s sweep.
     const sut = new FakeManualRuntime(0);
-    const a = sut.timers.once({ milliseconds: 100 }, () => {});
-    const b = sut.timers.once({ milliseconds: 200 }, () => {});
+    const a = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
+    const b = sut.scheduler.timers.once({ milliseconds: 200 }, () => {});
     const lazyLoad = a.signal; // trigger the lazy load
     a.dispose();
     expect(lazyLoad).not.toBe(undefined);
@@ -615,7 +615,7 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     // regardless, which would hide the difference.
     const sut = new FakeManualRuntime(0);
     let disposedInsideCallback: boolean | undefined;
-    const handle = sut.timers.once({ milliseconds: 100 }, () => {
+    const handle = sut.scheduler.timers.once({ milliseconds: 100 }, () => {
       sut.dispose();
       disposedInsideCallback = handle.isDisposed;
     });
@@ -631,7 +631,7 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     // runtime that is already disposed.
     const sut = new FakeManualRuntime(0);
     let ticks = 0;
-    sut.timers.recurring(
+    sut.scheduler.timers.recurring(
       () => {
         ticks++;
         sut.dispose();
@@ -782,7 +782,7 @@ describe("BaseManualRuntime tagged timers", () => {
     sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 100000 }, () =>
       order.push("tagged"),
     );
-    sut.timers.once({ milliseconds: 10 }, () => order.push("timeout"));
+    sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("timeout"));
 
     sut.advance({ milliseconds: 20 });
 
@@ -872,10 +872,10 @@ describe("BaseManualRuntime tagged timers", () => {
           order.push(`tagged${i}`),
         );
       }
-      sut.timers.once({ milliseconds: 30 }, () => order.push("d"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("c"));
-      sut.timers.once({ milliseconds: 15 }, () => order.push("b"));
+      sut.scheduler.timers.once({ milliseconds: 30 }, () => order.push("d"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("c"));
+      sut.scheduler.timers.once({ milliseconds: 15 }, () => order.push("b"));
 
       for (const callback of sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY))
         callback();
@@ -907,11 +907,11 @@ describe("BaseManualRuntime tagged timers", () => {
       // stays a physical tombstone in the heap - registered first, so it's the heap root - when
       // advance() reaches it, exercising drainDue's isDisposed skip rather than compaction.
       sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => order.push("a"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("f"));
 
       const [aCallback] = sut.takeOutSpecificCallbacks("tag", 1);
       aCallback!();
@@ -930,12 +930,12 @@ describe("BaseManualRuntime tagged timers", () => {
       // Six total entries keeps the disposed one below the 50% compaction threshold, so it stays
       // a physical tombstone - registered first, so it's the heap root - when advance() reaches
       // it, exercising drainDue's TIMEOUT isDisposed skip for a plain (non-tagged) once().
-      const toCancel = sut.timers.once({ milliseconds: 10 }, () => order.push("a"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+      const toCancel = sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("a"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("f"));
 
       toCancel.dispose();
       sut.advance({ milliseconds: 20 });
@@ -946,12 +946,12 @@ describe("BaseManualRuntime tagged timers", () => {
     test("disposing a regular every() interval before its first tick stops it for good, without disturbing siblings", () => {
       const sut = new FakeManualRuntime(0);
       const order: string[] = [];
-      const toCancel = sut.timers.every({ milliseconds: 10 }, () => order.push("a"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+      const toCancel = sut.scheduler.timers.every({ milliseconds: 10 }, () => order.push("a"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("f"));
 
       toCancel.dispose();
       // Advancing well past several would-be ticks confirms the interval doesn't just skip once -
@@ -968,8 +968,8 @@ describe("BaseManualRuntime tagged timers", () => {
       // the 50% compaction threshold, so it stays a tombstone - the siblings fire and leave the
       // heap first (all due earlier), so by the time drainDue reaches this interval's own due
       // time it's the sole remaining entry, exercising the lastIndex === 0 pop branch.
-      const handle = sut.timers.every({ milliseconds: 100 }, () => fireCount++);
-      for (let i = 0; i < 5; i++) sut.timers.once({ milliseconds: 10 + i }, () => {});
+      const handle = sut.scheduler.timers.every({ milliseconds: 100 }, () => fireCount++);
+      for (let i = 0; i < 5; i++) sut.scheduler.timers.once({ milliseconds: 10 + i }, () => {});
       handle.dispose();
 
       sut.advance({ milliseconds: 100 });
@@ -980,18 +980,18 @@ describe("BaseManualRuntime tagged timers", () => {
     test("disposing a regular recurring() registration before its first tick stops it for good, without disturbing siblings", () => {
       const sut = new FakeManualRuntime(0);
       const order: string[] = [];
-      const toCancel = sut.timers.recurring(
+      const toCancel = sut.scheduler.timers.recurring(
         () => {
           order.push("a");
           return { milliseconds: 10 };
         },
         { milliseconds: 10 },
       );
-      sut.timers.once({ milliseconds: 10 }, () => order.push("b"));
-      sut.timers.once({ milliseconds: 10 }, () => order.push("c"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("d"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("e"));
-      sut.timers.once({ milliseconds: 20 }, () => order.push("f"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("b"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("c"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("d"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("e"));
+      sut.scheduler.timers.once({ milliseconds: 20 }, () => order.push("f"));
 
       toCancel.dispose();
       sut.advance({ milliseconds: 100 });
@@ -1005,10 +1005,10 @@ describe("BaseManualRuntime microtasks and dispose", () => {
   test("disposing the runtime discards still-queued microtasks", () => {
     const sut = new FakeManualRuntime(0);
     let called = false;
-    sut.microtasks.queue(() => (called = true));
+    sut.scheduler.microtasks.queue(() => (called = true));
 
     sut.dispose();
-    sut.microtasks.drain();
+    sut.scheduler.microtasks.drain();
 
     expect(called).toBe(false);
   });
@@ -1016,13 +1016,13 @@ describe("BaseManualRuntime microtasks and dispose", () => {
   test("a microtask that disposes its own runtime doesn't crash the still-running checkpoint", () => {
     const sut = new FakeManualRuntime(0);
     const log: string[] = [];
-    sut.microtasks.queue(() => {
+    sut.scheduler.microtasks.queue(() => {
       log.push("m1");
       sut.dispose();
     });
-    sut.microtasks.queue(() => log.push("m2"));
+    sut.scheduler.microtasks.queue(() => log.push("m2"));
 
-    expect(() => sut.microtasks.drain()).not.toThrow();
+    expect(() => sut.scheduler.microtasks.drain()).not.toThrow();
     // m1 disposed the runtime mid-checkpoint, clearing the queue before m2 got its turn.
     expect(log).toEqual(["m1"]);
   });

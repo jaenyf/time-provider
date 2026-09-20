@@ -90,11 +90,11 @@ export function testBuilder<
 }
 
 export function testDefaultEpochTime<TDate>(
-  getSut: () => { clock: { utcNow(): TDate }; parser: { parseToUtc(value: number): TDate } },
+  getSut: () => { clock: { utcNow(): TDate }; converter: { convertToUtc(value: number): TDate } },
 ) {
   test("uses default epoch time", () => {
     const sut = getSut();
-    expect(sut.clock.utcNow()).toEqual(sut.parser.parseToUtc(0));
+    expect(sut.clock.utcNow()).toEqual(sut.converter.convertToUtc(0));
   });
 }
 

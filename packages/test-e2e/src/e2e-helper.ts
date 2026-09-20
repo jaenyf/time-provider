@@ -42,17 +42,19 @@ export class E2eHelper {
   ) {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
-      .use(systemAfapi)
+      // compat first: the animation and idle addons add their native-shaped aliases to its
+      // facade, which has to already be there when they are applied.
       .use(systemCompat)
+      .use(systemAfapi)
       .use(systemCron)
       .use(systemEta)
       .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
+      .use(deterministicCompat)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
-      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta)
       .use(deterministicIdle);
@@ -105,17 +107,19 @@ export class E2eHelper {
   ) {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
-      .use(systemAfapi)
+      // compat first: the animation and idle addons add their native-shaped aliases to its
+      // facade, which has to already be there when they are applied.
       .use(systemCompat)
+      .use(systemAfapi)
       .use(systemCron)
       .use(systemEta)
       .use(systemIdle);
 
     const deterministicBuilder = createDeterministicTimeProvider
       .for(deterministicPlugin)
+      .use(deterministicCompat)
       .use(deterministicAfapi)
       .withHostFramesRate(50)
-      .use(deterministicCompat)
       .use(deterministicCron)
       .use(deterministicEta)
       .use(deterministicIdle);
@@ -170,8 +174,8 @@ export class E2eHelper {
   ) {
     E2eHelper.testUtcClock(timeProvider, underlyingStringifier);
     E2eHelper.testLocalClock(timeProvider, underlyingStringifier);
-    E2eHelper.testUtcParser(timeProvider, underlyingISOString, underlyingToMs);
-    E2eHelper.testLocalParser(timeProvider, underlyingISOString, underlyingToMs);
+    E2eHelper.testUtcConverter(timeProvider, underlyingISOString, underlyingToMs);
+    E2eHelper.testLocalConverter(timeProvider, underlyingISOString, underlyingToMs);
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testMicrotasks(timeProvider);
@@ -195,8 +199,8 @@ export class E2eHelper {
   ) {
     E2eHelper.testUtcClock(timeProvider, underlyingStringifier);
     E2eHelper.testInexistantLocalClock(timeProvider);
-    E2eHelper.testUtcParser(timeProvider, underlyingISOString, underlyingToMs);
-    E2eHelper.testInexistantLocalParser(timeProvider);
+    E2eHelper.testUtcConverter(timeProvider, underlyingISOString, underlyingToMs);
+    E2eHelper.testInexistantLocalConverter(timeProvider);
     E2eHelper.testPerformance(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testMicrotasks(timeProvider);
@@ -242,35 +246,35 @@ export class E2eHelper {
     });
   }
 
-  private static testUtcParser<TDate>(
+  private static testUtcConverter<TDate>(
     timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
     getISOString: () => string,
     underlyingToMs: (time: TDate) => number,
   ) {
-    describe("parser", () => {
+    describe("converter", () => {
       test("utc", () => {
-        expect(underlyingToMs(timeProvider.parser.parseToUtc(getISOString()))).toBeDefined();
+        expect(underlyingToMs(timeProvider.converter.convertToUtc(getISOString()))).toBeDefined();
       });
     });
   }
 
-  private static testLocalParser<TDate>(
+  private static testLocalConverter<TDate>(
     timeProvider: ITimeProvider<TDate>,
     getISOString: () => string,
     underlyingToMs: (time: TDate) => number,
   ) {
-    describe("parser", () => {
+    describe("converter", () => {
       test("local", () => {
-        expect(underlyingToMs(timeProvider.parser.parseToLocal(getISOString()))).toBeDefined();
+        expect(underlyingToMs(timeProvider.converter.convertToLocal(getISOString()))).toBeDefined();
       });
     });
   }
 
-  private static testInexistantLocalParser<TDate>(timeProvider: IUtcOnlyTimeProvider<TDate>) {
+  private static testInexistantLocalConverter<TDate>(timeProvider: IUtcOnlyTimeProvider<TDate>) {
     describe("clock", () => {
       test("inexistant local", () => {
         //@ts-expect-error: localNow does not exist
-        expect(timeProvider.parser.parseToLocal).toBeTypeOf("function");
+        expect(timeProvider.converter.convertToLocal).toBeTypeOf("function");
       });
     });
   }
@@ -286,13 +290,13 @@ export class E2eHelper {
     timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
   ) {
     expect(() => {
-      timeProvider.timers.every(asap(), () => {}).dispose();
+      timeProvider.scheduler.timers.every(asap(), () => {}).dispose();
     }).not.toThrow();
     expect(() => {
-      timeProvider.timers.recurring(() => false).dispose();
+      timeProvider.scheduler.timers.recurring(() => false).dispose();
     }).not.toThrow();
     expect(() => {
-      timeProvider.timers.once(asap(), () => {}).dispose();
+      timeProvider.scheduler.timers.once(asap(), () => {}).dispose();
     }).not.toThrow();
   }
 
@@ -300,7 +304,7 @@ export class E2eHelper {
     timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
   ) {
     expect(() => {
-      timeProvider.microtasks.queue(() => {});
+      timeProvider.scheduler.microtasks.queue(() => {});
     }).not.toThrow();
   }
 
@@ -310,7 +314,7 @@ export class E2eHelper {
     describe("microtasks", () => {
       test("drain", () => {
         expect(() => {
-          timeProvider.microtasks.drain();
+          timeProvider.scheduler.microtasks.drain();
         }).not.toThrow();
       });
     });
@@ -320,30 +324,50 @@ export class E2eHelper {
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) &
       WithAnimationFrameApi<TDate>,
   ) {
-    expect(() => timeProvider.animation.scheduleFrame(() => {}).dispose()).not.toThrow();
+    expect(() => timeProvider.scheduler.animation.scheduleFrame(() => {}).dispose()).not.toThrow();
   }
 
   private static testAddonCompat<TDate>(
-    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCompatApi<TDate>,
+    timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) &
+      WithCompatApi<TDate> &
+      WithAnimationFrameApi<TDate> &
+      WithIdleApi,
   ) {
+    // The aliases the animation and idle addons add to this facade, since both are composed
+    // after it here.
     expect(() => {
-      timeProvider.compat.timers.clearInterval(timeProvider.compat.timers.setInterval(() => {}));
+      timeProvider.compat.cancelAnimationFrame(timeProvider.compat.requestAnimationFrame(() => {}));
     }).not.toThrow("Method not implemented.");
     expect(() => {
-      timeProvider.compat.timers.clearRecurring(
-        timeProvider.compat.timers.setRecurring(() => false),
-      );
+      timeProvider.compat.cancelIdleCallback(timeProvider.compat.requestIdleCallback(() => {}));
     }).not.toThrow("Method not implemented.");
     expect(() => {
-      timeProvider.compat.timers.clearTimeout(timeProvider.compat.timers.setTimeout(() => {}));
+      timeProvider.compat.clearInterval(timeProvider.compat.setInterval(() => {}));
     }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.clearTimeout(timeProvider.compat.setTimeout(() => {}));
+    }).not.toThrow("Method not implemented.");
+    expect(() => {
+      timeProvider.compat.queueMicrotask(() => {});
+    }).not.toThrow("Method not implemented.");
+    expect(timeProvider.compat.now()).toBeDefined();
+    expect(timeProvider.compat.timeOrigin).toBeDefined();
+    expect(() => {
+      timeProvider.compat.mark("e2e");
+      timeProvider.compat.measure("e2e-measure", "e2e");
+      timeProvider.compat.clearMeasures("e2e-measure");
+      timeProvider.compat.clearMarks("e2e");
+    }).not.toThrow("Method not implemented.");
+    expect(timeProvider.compat.getEntries()).toBeDefined();
+    expect(timeProvider.compat.getEntriesByName("e2e")).toBeDefined();
+    expect(timeProvider.compat.getEntriesByType("mark")).toBeDefined();
   }
 
   private static testAddonCron<TDate>(
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithCronApi<TDate>,
   ) {
     expect(
-      timeProvider.cron
+      timeProvider.scheduler.cron
         .schedule(
           {
             month: { from: "JAN", to: "FEB" },
@@ -404,7 +428,7 @@ export class E2eHelper {
     timeProvider: (ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>) & WithIdleApi,
   ) {
     expect(() => {
-      timeProvider.idle.request(() => {}).dispose();
+      timeProvider.scheduler.idle.request(() => {}).dispose();
     }).not.toThrow();
   }
 }

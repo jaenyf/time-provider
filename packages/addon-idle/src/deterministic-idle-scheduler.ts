@@ -57,9 +57,24 @@ export class DeterministicIdleScheduler<TDate>
   applyToRuntimeImpl(runtime: IDeterministicRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "idle",
+      "scheduler.idle",
       { request: this.request.bind(this), drain: this.drain.bind(this) },
       this,
+    );
+    // The native-shaped aliases, added only when the compat addon is composed before this one.
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.requestIdleCallback",
+      this.request.bind(this),
+      this,
+      true,
+    );
+    AddonHelper.extendRuntimeWithProperty(
+      runtime,
+      "compat.cancelIdleCallback",
+      (handle: IScheduledHandle) => handle.dispose(),
+      this,
+      true,
     );
   }
 

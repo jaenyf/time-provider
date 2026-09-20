@@ -39,7 +39,7 @@ export class CronScheduler<
   }
 
   private getClockTimezone(): string {
-    const clock = this.runtime.clock;
+    const clock = this.runtimeClock;
     return "timezone" in clock ? clock.timezone : "Etc/UTC";
   }
 
@@ -57,7 +57,7 @@ export class CronScheduler<
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
-      "cron",
+      "scheduler.cron",
       { schedule: this.schedule.bind(this) },
       this,
     );
@@ -82,7 +82,7 @@ export class CronScheduler<
       advance()'s final target - not the instant this particular occurrence is actually due at.
       Re-querying it there would skip every occurrence between "now" and that final target.
     */
-    let lastOccurrence = calendarScheme.fromTimestamp(this.runtime.timestampNow());
+    let lastOccurrence = calendarScheme.fromTimestamp(this.runtimeClock.timestampNow());
     const nextDelay = (): IDurationSpec => {
       const next = computeNextOccurrence(parsed, lastOccurrence, timezone, calendarScheme);
       const delay = calendarScheme.toTimestamp(next) - calendarScheme.toTimestamp(lastOccurrence);
@@ -97,7 +97,7 @@ export class CronScheduler<
       throws stops the schedule, exactly as `setRecurring` documents; catch inside your own callback
       if a failing run should not end the job.
     */
-    return this.runtime.timers.recurring(() => {
+    return this.runtimeTimers.recurring(() => {
       callback();
       return nextDelay();
     }, nextDelay());

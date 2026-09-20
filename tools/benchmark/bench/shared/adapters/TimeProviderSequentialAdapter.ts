@@ -9,23 +9,25 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   readonly #delays: AdvanceDelayQueue;
   readonly #plannedTimestamps: number[];
   #runtime!: {
-    timers: {
-      once(ms: IDurationSpec, callback: () => void): unknown;
-      every(ms: IDurationSpec, callback: () => void): unknown;
-    };
-    microtasks: {
-      queue(callback: () => void): void;
-      drain(): void;
-    };
-    /*
-      The idle addon's placeholder `drain()` only fires anything on a manual runtime (it needs
-      an on-demand `advance()`, which sequential doesn't have - its future instants are fixed up
-      front via withSequentialTime()). So drainIdleCallbacks() below is a documented no-op here
-      for now - see DeterministicIdleScheduler.drain.
-    */
-    idle: {
-      request(callback: () => void): unknown;
-      drain(maxCount?: number): number;
+    scheduler: {
+      timers: {
+        once(ms: IDurationSpec, callback: () => void): unknown;
+        every(ms: IDurationSpec, callback: () => void): unknown;
+      };
+      microtasks: {
+        queue(callback: () => void): void;
+        drain(): void;
+      };
+      /*
+        The idle addon's placeholder `drain()` only fires anything on a manual runtime (it needs
+        an on-demand `advance()`, which sequential doesn't have - its future instants are fixed up
+        front via withSequentialTime()). So drainIdleCallbacks() below is a documented no-op here
+        for now - see DeterministicIdleScheduler.drain.
+      */
+      idle: {
+        request(callback: () => void): unknown;
+        drain(maxCount?: number): number;
+      };
     };
     clock: { utcNow(): unknown };
   };
@@ -63,16 +65,16 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     return this.#runtime.clock.utcNow();
   }
   setTimeout(callback: () => void, delayMs: number): void {
-    this.#runtime.timers.once({ milliseconds: delayMs }, callback);
+    this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
   }
   setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.timers.every({ milliseconds: delayMs }, callback);
+    this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
   }
   drainMicrotasks(): void {
-    this.#runtime.microtasks.drain();
+    this.#runtime.scheduler.microtasks.drain();
   }
   queueMicrotask(callback: () => void): void {
-    this.#runtime.microtasks.queue(callback);
+    this.#runtime.scheduler.microtasks.queue(callback);
   }
   advance(): void {
     this.#delays.next();
@@ -85,9 +87,9 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime.clock.utcNow();
   }
   requestIdleCallback(callback: () => void): void {
-    this.#runtime.idle.request(callback);
+    this.#runtime.scheduler.idle.request(callback);
   }
   drainIdleCallbacks(ms: number): void {
-    this.#runtime.idle.drain(ms);
+    this.#runtime.scheduler.idle.drain(ms);
   }
 }

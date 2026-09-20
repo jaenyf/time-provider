@@ -13,7 +13,7 @@ type FakeRuntime = IDeterministicRuntime<unknown> & {
 
 /*
  * applyToRuntime only touches what it's documented to (define `.eta`, read `.clock` and
- * `.scheduler`), so a minimal object satisfies it for a focused unit test without needing a real
+ * `.scheduler.timers`), so a minimal object satisfies it for a focused unit test without needing a real
  * deterministic runtime.
  */
 function fakeDeterministicRuntime(now: number): {
@@ -39,7 +39,7 @@ function fakeDeterministicRuntime(now: number): {
   const clock = { timestampNow: () => now };
   return {
     runtime: {
-      timers,
+      scheduler: { timers },
       clock,
       timestampNow: () => now,
       registerAddon: (_addon: IAddon<unknown>) => {},

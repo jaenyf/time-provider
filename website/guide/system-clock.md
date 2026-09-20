@@ -12,7 +12,7 @@ import { plugin } from "@time-provider/plugin-native";
 const timeProvider = createTimeProvider.for(plugin).create();
 
 timeProvider.clock.utcNow(); // real "now", as a Date
-timeProvider.timers.once({ seconds: 1 }, () => console.log("fired")); // fires ~1s later, for real
+timeProvider.scheduler.timers.once({ seconds: 1 }, () => console.log("fired")); // fires ~1s later, for real
 ```
 
 This is what production code should be constructed with. Everywhere else in

@@ -5,7 +5,7 @@ import { addon } from "../../../../addon-animation-frame/dist/deterministic.mjs"
 const manual = createTimeProvider.for(plugin).use(addon).asManual().create();
 
 {
-  using handle = manual.animation.scheduleFrame(() => console.log("frame"));
+  using handle = manual.scheduler.animation.scheduleFrame(() => console.log("frame"));
   manual.clock.advance({ milliseconds: 20 });
   handle.dispose();
 }

@@ -1,7 +1,7 @@
 # Testing With Time-Provider
 
 The pattern across all four strategies: production code depends on
-`ITimeProvider<TDate>` (or the narrower `IClock`/`IParser`/`ITimers`
+`ITimeProvider<TDate>` (or the narrower `IClock`/`IConverter`/`ITimers`
 facets), never on `Date.now()` or timers directly. Tests construct the
 same object with a different strategy.
 
@@ -11,7 +11,7 @@ class RetryJob {
 
   scheduleRetries(times: number, everyMs: number, onRetry: () => void) {
     let count = 0;
-    const handle = this.timeProvider.timers.every({ milliseconds: everyMs }, () => {
+    const handle = this.timeProvider.scheduler.timers.every({ milliseconds: everyMs }, () => {
       onRetry();
       if (++count >= times) handle.dispose();
     });
@@ -49,7 +49,7 @@ expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teard
   callback, and any microtask it queues, has already run by the time
   `advance()` returns. A microtask your test queues directly (not from
   inside a due callback) is the one exception: it needs an explicit
-  `timeProvider.microtasks.drain()` to observe, since there's no other
+  `timeProvider.scheduler.microtasks.drain()` to observe, since there's no other
   checkpoint boundary for the runtime to hook a drain to — see
   [Microtasks](/guide/microtasks).
 

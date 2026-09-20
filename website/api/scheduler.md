@@ -1,4 +1,4 @@
-# ITimers
+# IScheduler
 
 ```ts
 /**
@@ -20,6 +20,13 @@ interface IScheduledHandle extends IHasAbortSignal, IDisposable {
 export interface ITimerOptions {
   /** External cancellation */
   signal?: AbortSignal;
+}
+
+interface IScheduler {
+  /** The timer primitives below. */
+  get timers(): ITimers;
+  /** The microtask checkpoint - see [IMicrotasks](/api/microtasks). */
+  get microtasks(): IMicrotasks;
 }
 
 interface ITimers {
@@ -58,7 +65,7 @@ breakdown:
 - Fixed → never.
 
 ```ts
-const handle = timeProvider.timers.every({ seconds: 1 }, () => tick());
+const handle = timeProvider.scheduler.timers.every({ seconds: 1 }, () => tick());
 // ...
 handle.dispose(); // no-op if already fired/cleared
 ```
@@ -70,7 +77,7 @@ computed fresh after every run, from `callback`'s own return value:
 
 ```ts
 let remainingMs = 5 * 60_000;
-const handle = timeProvider.timers.recurring(
+const handle = timeProvider.scheduler.timers.recurring(
   () => {
     notifyRemaining(remainingMs);
     if (remainingMs <= 0) return false;
@@ -86,7 +93,15 @@ handle.dispose(); // no-op if already fired/cleared
 `initialDelay` (asap() or { milliseconds: 0 } if omitted or negative) is the initial delay to
 the very first run. Every run after that is scheduled from `callback`'s own return value.
 
-## Microtasks
+## What else lives on the scheduler
 
-Queuing a callback to run at the next microtask checkpoint isn't a timer -
-see [IMicrotasks](/api/microtasks) for `timeProvider.microtasks`.
+`scheduler` is where everything that schedules a callback to run later sits,
+so the addons that schedule extend this facet rather than the root of the
+Time-Provider. Each one hands back the same `IScheduledHandle` the
+primitives above do, so one `dispose()` story covers all of them:
+
+- `scheduler.timers` - the primitives above.
+- `scheduler.microtasks` - the microtask checkpoint, see [IMicrotasks](/api/microtasks).
+- `scheduler.animation` - [Animation Frames](/addons/animation-frame).
+- `scheduler.cron` - [Cron Schedules](/addons/cron).
+- `scheduler.idle` - [Idle Callbacks](/addons/idle).

@@ -33,34 +33,36 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & {
     takeOutSpecificCallbacks() {
       throw new Error("not used by DeterministicAnimationFrameScheduler");
     },
-    timers: {
-      once(durationSpec: IDurationSpec, callback: () => void) {
-        const handle = {
-          id: nextHandle++,
-          kind: 2,
-          isDisposed: false,
-          dispose: () => {
-            cleared.add(handle.id);
-          },
-        };
-        scheduled.set((handle as unknown as { id: number }).id, {
-          callback,
-          delayMs: toDuration(durationSpec),
-          dispose: () => {
-            cleared.add(handle.id);
-          },
-          isDisposed: false,
-        });
-        return handle as unknown as IScheduledHandle;
-      },
-      every() {
-        throw new Error("not used by DeterministicAnimationFrameScheduler");
-      },
-      recurring() {
-        throw new Error("not used by DeterministicAnimationFrameScheduler");
-      },
-      wait() {
-        throw new Error("not used by DeterministicAnimationFrameScheduler");
+    scheduler: {
+      timers: {
+        once(durationSpec: IDurationSpec, callback: () => void) {
+          const handle = {
+            id: nextHandle++,
+            kind: 2,
+            isDisposed: false,
+            dispose: () => {
+              cleared.add(handle.id);
+            },
+          };
+          scheduled.set((handle as unknown as { id: number }).id, {
+            callback,
+            delayMs: toDuration(durationSpec),
+            dispose: () => {
+              cleared.add(handle.id);
+            },
+            isDisposed: false,
+          });
+          return handle as unknown as IScheduledHandle;
+        },
+        every() {
+          throw new Error("not used by DeterministicAnimationFrameScheduler");
+        },
+        recurring() {
+          throw new Error("not used by DeterministicAnimationFrameScheduler");
+        },
+        wait() {
+          throw new Error("not used by DeterministicAnimationFrameScheduler");
+        },
       },
     },
   } as unknown as IDeterministicRuntime<unknown> & {

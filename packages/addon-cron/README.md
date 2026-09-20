@@ -22,7 +22,7 @@
 ## Description
 
 This is the cron scheduling addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-Extends the library with a `.cron` facade that runs a callback on a schedule described by a
+Extends the library with a `scheduler.cron` facade that runs a callback on a schedule described by a
 standard 5-field cron expression (`minute hour day-of-month month day-of-week`), evaluated in the
 runtime's own local timezone.
 
@@ -59,7 +59,9 @@ const timeProvider = createTimeProvider
   .use(addon)
   .withTimezone("Europe/Paris")
   .create();
-const handle = timeProvider.cron.schedule("0 9 * * MON-FRI", () => console.log("Good morning!"));
+const handle = timeProvider.scheduler.cron.schedule("0 9 * * MON-FRI", () =>
+  console.log("Good morning!"),
+);
 // ...
 handle.dispose();
 
@@ -70,7 +72,9 @@ using manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime("2024-01-01T00:00:00.000Z")
   .create();
-using handle = manual.cron.schedule("*/15 * * * *", () => console.log("Every 15 minutes"));
+using handle = manual.scheduler.cron.schedule("*/15 * * * *", () =>
+  console.log("Every 15 minutes"),
+);
 manual.clock.advance({ minutes: 15 });
 ```
 
@@ -85,11 +89,11 @@ name to `hour`, or a month name to `dayOfWeek`, is a compile-time type error, no
 one:
 
 ```ts
-timeProvider.cron.schedule({ hour: 9, dayOfWeek: ["MON", "WED", "FRI"] }, () =>
+timeProvider.scheduler.cron.schedule({ hour: 9, dayOfWeek: ["MON", "WED", "FRI"] }, () =>
   console.log("Good morning!"),
 );
 
-timeProvider.cron.schedule({ minute: { from: 0, to: 45, step: 15 } }, () =>
+timeProvider.scheduler.cron.schedule({ minute: { from: 0, to: 45, step: 15 } }, () =>
   console.log("Every 15 minutes"),
 );
 ```

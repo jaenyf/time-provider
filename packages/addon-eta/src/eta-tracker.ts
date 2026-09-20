@@ -3,6 +3,7 @@ import {
   type DurationMilliseconds,
   type EpochMilliseconds,
   epochArithmetic,
+  type IClock,
   type IRuntime,
 } from "@time-provider/core";
 import { createRateEstimator, type IRateEstimator } from "./rate-estimator.ts";
@@ -63,7 +64,12 @@ function stageFraction(stage: NormalizedStage, completed: number): number {
  * exposed through two narrower public types depending on which entry point built it.
  */
 class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
-  #runtime: IRuntime<TDate>;
+  /*
+    The clock is reached through `runtime.clock` and the timers through
+    `runtime.scheduler.timers`. Both are resolved once here rather than walked on every tick and
+    every progress report, which are this tracker's hot paths.
+  */
+  #clock: IClock<TDate>;
   #stages: readonly NormalizedStage[];
   #notify: (snapshot: IStagedEtaProgressSnapshot) => void;
   #startTime: EpochMilliseconds;
@@ -81,13 +87,13 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
     algorithm: EtaRateAlgorithm,
     notify: (snapshot: IStagedEtaProgressSnapshot) => void,
   ) {
-    this.#runtime = runtime;
+    this.#clock = runtime.clock;
     this.#stages = stages;
     this.#notify = notify;
-    this.#startTime = this.#runtime.clock.timestampNow();
+    this.#startTime = this.#clock.timestampNow();
     this.#rateEstimator = createRateEstimator(algorithm);
     this.#rateEstimator.addSample(this.#startTime, 0);
-    this.#timerHandle = this.#runtime.timers.every(
+    this.#timerHandle = runtime.scheduler.timers.every(
       { milliseconds: notificationIntervalMilliseconds },
       () => this.#tick(),
     );
@@ -105,7 +111,7 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   }
 
   #buildSnapshot(status: "in-progress" | "done" | "abandoned"): StagedEtaProgressSnapshot {
-    const now = this.#runtime.clock.timestampNow();
+    const now = this.#clock.timestampNow();
     return new StagedEtaProgressSnapshot(
       status,
       this.#startTime,
@@ -124,7 +130,7 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   }
 
   #recordSample(): void {
-    this.#rateEstimator.addSample(this.#runtime.clock.timestampNow(), this.#overallFraction());
+    this.#rateEstimator.addSample(this.#clock.timestampNow(), this.#overallFraction());
   }
 
   #terminate(status: "done" | "abandoned"): void {
@@ -214,7 +220,8 @@ class ProgressEtaTrackBuilder<TDate>
 }
 
 class DurationEtaTracker<TDate> implements IDurationEtaTracker {
-  #runtime: IRuntime<TDate>;
+  /* Resolved once - see ProgressEtaTracker for why. */
+  #clock: IClock<TDate>;
   #notify: (snapshot: IEtaDurationSnapshot) => void;
   #startTime: EpochMilliseconds;
   #eta: EpochMilliseconds;
@@ -227,18 +234,18 @@ class DurationEtaTracker<TDate> implements IDurationEtaTracker {
     notificationIntervalMilliseconds: DurationMilliseconds,
     notify: (snapshot: IEtaDurationSnapshot) => void,
   ) {
-    this.#runtime = runtime;
+    this.#clock = runtime.clock;
     this.#notify = notify;
-    this.#startTime = this.#runtime.clock.timestampNow();
+    this.#startTime = this.#clock.timestampNow();
     this.#eta = epochArithmetic.addDuration(this.#startTime, expectedDurationMilliseconds);
-    this.#timerHandle = this.#runtime.timers.every(
+    this.#timerHandle = runtime.scheduler.timers.every(
       { milliseconds: notificationIntervalMilliseconds },
       () =>
         this.#notify(
           new EtaDurationSnapshot(
             "in-progress",
             this.#startTime,
-            this.#runtime.timestampNow(),
+            this.#clock.timestampNow(),
             this.#eta,
           ),
         ),
@@ -252,7 +259,7 @@ class DurationEtaTracker<TDate> implements IDurationEtaTracker {
     this.#status = status;
     this.#timerHandle.dispose();
 
-    const now = this.#runtime.clock.timestampNow();
+    const now = this.#clock.timestampNow();
     const eta = status === "done" ? now : undefined;
     this.#notify(new EtaDurationSnapshot(status, this.#startTime, now, eta));
   }

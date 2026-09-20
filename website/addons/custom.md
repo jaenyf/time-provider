@@ -79,12 +79,56 @@ The helper defines the property as enumerable but non-writable and
 non-configurable, so nothing downstream can swap the facade out and a second
 addon claiming the same name fails rather than replacing the first.
 
+## Addons that schedule
+
+If your addon schedules callbacks — anything handing back an
+`IScheduledHandle` — give the helper a dotted path instead of a bare name. It
+walks the facets first, so your addon sits beside `timers`, `microtasks` and
+the built-in `cron`, `idle` and `animation` rather than at the root:
+
+```ts
+export type WithGreetingApi = {
+  scheduler: { greeting: IGreetingApi };
+};
+
+applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+  AddonHelper.extendRuntimeWithProperty(runtime, "scheduler.greeting", this);
+}
+```
+
+Every segment but the last has to already exist on the runtime, so a path only
+ever extends a facet the core defines — or a facade another addon put there.
+That second case needs the optional flag:
+
+```ts
+AddonHelper.extendRuntimeWithProperty(
+  runtime,
+  "compat.requestGreeting",
+  this.greet.bind(this),
+  this,
+  true, // no-op when the compat addon isn't composed, instead of throwing
+);
+```
+
+Declare such a member optional in your addon's public type (`compat?: { ... }`),
+because it is only there when both addons are composed — and the other addon has
+to be composed **first**, since the facade it owns must exist by the time yours
+is applied. This is how [`addon-animation-frame`](/addons/animation-frame) and
+[`addon-idle`](/addons/idle) put `requestAnimationFrame` and
+`requestIdleCallback` on the [compat facade](/addons/compat).
+
+Reaching back into the runtime goes through the same hierarchy:
+`runtime.scheduler.timers` for the timer primitives, `runtime.clock` for the
+clock. `AddonBase` resolves those once and caches them, as `this.runtimeTimers`,
+`this.runtimeClock`, `this.runtimeMicrotasks` and `this.runtimePerformance`, so a
+scheduling hot path does not walk that chain on every call.
+
 Note the `IRuntime<TDate>` constraint: an addon is handed the runtime, not the
 narrower `ITimeProvider` facade a consumer holds. That's what gives it typed
 access to everything a runtime carries beyond the four public facades — the
 [cron addon](/addons/cron) reads `runtime.calendarScheme` this way, which is
 how the same cron syntax describes whatever calendar the plugin uses. Both
-cron and [ETA](/addons/eta) also build on `runtime.timers`, which is what
+cron and [ETA](/addons/eta) also build on `runtime.scheduler`, which is what
 makes their callbacks follow the [clock strategy](/guide/clock-strategies)
 instead of the real event loop.
 
@@ -120,7 +164,7 @@ deterministic one.
 
 The two halves only need separate implementations when the behavior differs.
 An addon that reads time with `runtime.clock.timestampNow()` and schedules on
-`runtime.timers` already follows the clock strategy, so it can write the
+`runtime.scheduler` already follows the clock strategy, so it can write the
 factory once, in a shared `addon.ts`, and re-export it under both entry
 points — the shape `@time-provider/addon-cron` and `@time-provider/addon-eta`
 use:

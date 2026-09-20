@@ -8,35 +8,35 @@ import { DateTime } from "luxon";
 describe("plugin-luxon", () => {
   testAll<DateTime>(systemPlugin, deterministicPlugin);
   describe("additionals", () => {
-    describe("parseToLocal", () => {
+    describe("convertToLocal", () => {
       test.each([null, undefined, {}, true, false])(
         "throws when forcing illegal objects",
         (illegal) => {
           const sut = createTimeProvider.for(systemPlugin).create();
           expect(() => {
-            sut.parser.parseToLocal(illegal as string | number | DateTime<boolean>);
+            sut.converter.convertToLocal(illegal as string | number | DateTime<boolean>);
           }).toThrow(`Invalid time value (value was '${illegal as string}')`);
         },
       );
     });
-    describe("parseToUtc", () => {
+    describe("convertToUtc", () => {
       test.each([null, undefined, {}, true, false])(
         "throws when forcing illegal objects",
         (illegal) => {
           const sut = createTimeProvider.for(systemPlugin).create();
           expect(() => {
-            sut.parser.parseToUtc(illegal as string | number | DateTime<boolean>);
+            sut.converter.convertToUtc(illegal as string | number | DateTime<boolean>);
           }).toThrow(`Invalid time value (value was '${illegal as string}')`);
         },
       );
     });
-    describe("parseToLocal", () => {
+    describe("convertToLocal", () => {
       describe("issue#127", () => {
         test("throws timezone-related error when the timezone is invalid", () => {
           const sut = createTimeProvider.for(systemPlugin).create();
           sut.clock.withTimezone("Not/A_Real_Zone");
           expect(() => {
-            sut.parser.parseToLocal("2026-01-01T00:00:00.000Z");
+            sut.converter.convertToLocal("2026-01-01T00:00:00.000Z");
           }).toThrow("Invalid timezone value (value was 'Not/A_Real_Zone')");
         });
       });

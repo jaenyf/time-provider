@@ -25,12 +25,12 @@ synchronously, before `advance()` returns:
 
 ```ts
 let ticks = 0;
-timeProvider.timers.every({ seconds: 1 }, () => ticks++);
+timeProvider.scheduler.timers.every({ seconds: 1 }, () => ticks++);
 timeProvider.clock.advance({ seconds: 5 });
 ticks; // 5
 ```
 
-`recurring` (see [ITimers](/api/timers)) shares a heap with
+`recurring` (see [IScheduler](/api/scheduler)) shares a heap with
 `once`/`every`, so it fires in the same true chronological order
 as the other two. A due `recurring` entry is pulled out of the heap
 before its run happens, and only reinserted afterward if the run's return
@@ -40,7 +40,7 @@ drains the same heap) without the entry being visible to that nested drain
 while its own fate is still being decided.
 
 Microtasks are a separate facet from timers - see
-[Microtasks](/guide/microtasks) for `timeProvider.microtasks`.
+[Microtasks](/guide/microtasks) for `timeProvider.scheduler.microtasks`.
 
 ## Errors in callbacks
 

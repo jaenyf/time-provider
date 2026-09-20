@@ -1,7 +1,7 @@
 # Idle Callbacks
 
 [`@time-provider/addon-idle`](https://www.npmjs.com/package/@time-provider/addon-idle)
-adds an `.idle` facade exposing `request`, backed by the host's native
+adds a `scheduler.idle` facade exposing `request`, backed by the host's native
 `requestIdleCallback` on a system Time-Provider and by an explicit `drain()`
 on a deterministic one. Like every [addon](/addons/) it composes in with
 `.use(addon)` and ships two entry points:
@@ -13,7 +13,7 @@ import { addon } from "@time-provider/addon-idle";
 
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
 
-const handle = timeProvider.idle.request(() => reindexSearchCache());
+const handle = timeProvider.scheduler.idle.request(() => reindexSearchCache());
 handle.dispose();
 ```
 
@@ -45,16 +45,16 @@ const timeProvider = createTimeProvider
   .create();
 
 const ran: string[] = [];
-timeProvider.idle.request(() => ran.push("first"));
-timeProvider.idle.request(() => ran.push("second"));
+timeProvider.scheduler.idle.request(() => ran.push("first"));
+timeProvider.scheduler.idle.request(() => ran.push("second"));
 
 timeProvider.clock.advance({ hours: 1 });
 console.log(ran); // [] - moving the clock is not an idle period
 
-timeProvider.idle.drain(1); // returns 1
+timeProvider.scheduler.idle.drain(1); // returns 1
 console.log(ran); // ["first"]
 
-timeProvider.idle.drain(); // returns 1, running everything still pending
+timeProvider.scheduler.idle.drain(); // returns 1, running everything still pending
 console.log(ran); // ["first", "second"]
 ```
 
@@ -78,20 +78,20 @@ and neither does Node.js, which exposes no such global. That surfaces at
 you are building the Time-Provider rather than much later.
 
 The deterministic addon never touches the host API, so it works everywhere.
-Logic written against `.idle` stays testable on a runtime that could not run
+Logic written against `scheduler.idle` stays testable on a runtime that could not run
 it for real.
 
 ## The types
 
 Inference covers ordinary use. If you need to write a type down, the root
-entry point exports `IIdleApi` (the `.idle` facade) and `WithIdleApi` for
+entry point exports `IIdleApi` (the `scheduler.idle` facade) and `WithIdleApi` for
 naming a Time-Provider with this addon composed in:
 
 ```ts
 import type { IIdleApi, WithIdleApi } from "@time-provider/addon-idle";
 
 function scheduleCleanup(tp: ITimeProvider<Date> & WithIdleApi) {
-  tp.idle.request(() => {});
+  tp.scheduler.idle.request(() => {});
 }
 ```
 
@@ -102,3 +102,18 @@ when a test helper takes a Time-Provider and needs to drain it.
 The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemIdleScheduler` from the root entry
 point and `DeterministicIdleScheduler` from `/deterministic`.
+
+## With the compat addon
+
+Compose [`addon-compat`](/addons/compat) before this one and it also gets
+`requestIdleCallback`/`cancelIdleCallback` on its facade, delegating to
+`request` and to the handle's `dispose()`:
+
+```ts
+const tp = createTimeProvider.for(plugin).use(compat).use(addon).create();
+tp.compat.cancelIdleCallback(tp.compat.requestIdleCallback(() => reconcile()));
+```
+
+`WithIdleApi` declares those as an optional `compat?`, since they are only there
+when both addons are composed — and only when compat is composed first, because
+the facade they land on is its.

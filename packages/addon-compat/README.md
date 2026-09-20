@@ -22,7 +22,7 @@
 ## Description
 
 This is the compatibility addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-Extends the library with a `.compat` facade that exposes low-level-like methods signatures.
+Extends the library with a `.compat` facade that exposes low-level-like methods signatures - the native-style timer calls and the `performance` members, flat on the same object.
 This is usefull if you want to migrate your codebase to TimeProvider while keeping your native low-level methods signatures.
 
 Just like the plugin packages, this addon is tree-shakable.  
@@ -46,12 +46,20 @@ import { addon as deterministicAddon } from "@time-provider/addon-compat/determi
 
 // System: runs on real native timers, in the runtime's local timezone.
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-const handle = timeProvider.compat.timers.setTimeout(() => {
+const handle = timeProvider.compat.setTimeout(() => {
   console.info("Native setTimeout call style");
 }, 500);
 // ...
-timeProvider.compat.timers.clearTimeout(handle);
-//same calls for setInterval/clearInterval, setRecurring/clearRecurring...
+timeProvider.compat.clearTimeout(handle);
+//same calls for setInterval/clearInterval...
+
+timeProvider.compat.queueMicrotask(() => {
+  console.info("Native queueMicrotask call style");
+});
+
+// The performance members are there too, with their native signatures.
+timeProvider.compat.mark("request-start");
+console.info(timeProvider.compat.now(), timeProvider.compat.timeOrigin);
 
 // Deterministic: runs against the runtime's own simulated clock.
 const manual = createDeterministicTimeProvider
@@ -60,13 +68,17 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime("2024-01-01T00:00:00.000Z")
   .create();
-const handle = manual.compat.timers.setTimeout(() => {
+const handle = manual.compat.setTimeout(() => {
   console.info("Native setTimeout call style");
 }, 500);
 // ...
-manual.compat.timers.clearTimeout(handle);
-//same calls for setInterval/clearInterval, setRecurring/clearRecurring...
+manual.compat.clearTimeout(handle);
+//same calls for setInterval/clearInterval...
 ```
+
+## Members other addons add
+
+Composing `@time-provider/addon-animation-frame` or `@time-provider/addon-idle` **after** this addon adds their native-shaped aliases to the same `.compat` facade: `requestAnimationFrame`/`cancelAnimationFrame` and `requestIdleCallback`/`cancelIdleCallback`. Each `cancel*` takes the handle its `request*` returned. Compose this addon first - the facade has to exist by the time they are applied, and composed the other way round the aliases are simply absent.
 
 ## License
 

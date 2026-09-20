@@ -1,12 +1,11 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { ITimers } from "./types.ts";
+import type { ICompatApi } from "./types.ts";
 
 /**
  * Implements {@link ICompatApi} that performs underlying calls to core.
  */
 export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   #isDisposed: boolean;
-  #timersFacade?: ITimers;
 
   constructor() {
     super();
@@ -24,45 +23,49 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(runtime, "compat", { timers: this.timers }, this);
+    AddonHelper.extendRuntimeWithProperty(runtime, "compat", this.#createFacade(), this);
   }
 
-  get timers(): ITimers {
-    return (this.#timersFacade ??= {
+  /**
+   * The performance members are pass-throughs, so they read the runtime's own performance API at
+   * call time rather than capturing it here: an addon has no runtime to read it from until
+   * `applyToRuntime` - which builds this facade - has returned.
+   */
+  #createFacade(): ICompatApi<TDate> {
+    const runtimePerformance = () => this.runtimePerformance;
+    return {
       setTimeout: this.setTimeout.bind(this),
       clearTimeout: this.clearTimeout.bind(this),
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
-      setRecurring: this.setRecurring.bind(this),
-      clearRecurring: this.clearRecurring.bind(this),
-    });
+      queueMicrotask: this.queueMicrotask.bind(this),
+      now: () => runtimePerformance().now(),
+      get timeOrigin() {
+        return runtimePerformance().timeOrigin;
+      },
+      getEntries: () => runtimePerformance().getEntries(),
+      getEntriesByName: (name, entryType) => runtimePerformance().getEntriesByName(name, entryType),
+      getEntriesByType: (entryType) => runtimePerformance().getEntriesByType(entryType),
+      mark: (name, options) => runtimePerformance().mark(name, options),
+      measure: (name, startMarkOrOptions) => runtimePerformance().measure(name, startMarkOrOptions),
+      clearMarks: (name) => runtimePerformance().clearMarks(name),
+      clearMeasures: (name) => runtimePerformance().clearMeasures(name),
+    };
   }
 
   setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtime.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
+    return this.runtimeTimers.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearTimeout(handle: IScheduledHandle): void {
     handle.dispose();
   }
   setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtime.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
+    return this.runtimeTimers.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
   }
   clearInterval(handle: IScheduledHandle): void {
     handle.dispose();
   }
-  setRecurring(callback: () => number | false, initialDelay?: number): IScheduledHandle {
-    return this.runtime.recurring(
-      () => {
-        const result = callback();
-        if (result === false) {
-          return false;
-        }
-        return { milliseconds: result };
-      },
-      { milliseconds: initialDelay ?? 0 },
-    );
-  }
-  clearRecurring(handle: IScheduledHandle): void {
-    handle.dispose();
+  queueMicrotask(callback: () => void): void {
+    this.runtimeMicrotasks.queue(callback);
   }
 }

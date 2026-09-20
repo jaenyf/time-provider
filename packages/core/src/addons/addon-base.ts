@@ -1,5 +1,12 @@
 import type { IAddon } from "../deterministic.ts";
-import type { IDeterministicRuntime, IRuntime } from "../types/types.ts";
+import type {
+  IClock,
+  IDeterministicRuntime,
+  IMicrotasks,
+  IPerformance,
+  IRuntime,
+  ITimers,
+} from "../types/types.ts";
 
 export abstract class AddonBase<
   TDate,
@@ -7,6 +14,10 @@ export abstract class AddonBase<
 > implements IAddon<TDate> {
   #runtime!: TRuntime;
   #initialized: boolean;
+  #timers?: ITimers;
+  #clock?: IClock<TDate>;
+  #microtasks?: IMicrotasks;
+  #performance?: IPerformance;
 
   constructor() {
     this.#initialized = false;
@@ -19,8 +30,44 @@ export abstract class AddonBase<
     return this.#runtime;
   }
 
+  /**
+   * This runtime's timers, resolved once. An addon reaches them through the `scheduler` facet
+   * (`runtime.scheduler.timers`), so caching the result keeps a scheduling hot path from walking
+   * that chain on every call.
+   */
+  protected get runtimeTimers(): ITimers {
+    return (this.#timers ??= this.runtime.scheduler.timers);
+  }
+
+  /**
+   * This runtime's clock, resolved once - see {@link runtimeTimers} for why it is cached.
+   */
+  protected get runtimeClock(): IClock<TDate> {
+    return (this.#clock ??= this.runtime.clock);
+  }
+
+  /**
+   * This runtime's microtasks, resolved once - see {@link runtimeTimers} for why it is cached.
+   */
+  protected get runtimeMicrotasks(): IMicrotasks {
+    return (this.#microtasks ??= this.runtime.scheduler.microtasks);
+  }
+
+  /**
+   * This runtime's performance API, resolved once - see {@link runtimeTimers} for why it is
+   * cached.
+   */
+  protected get runtimePerformance(): IPerformance {
+    return (this.#performance ??= this.runtime.performance);
+  }
+
   applyToRuntime(runtime: TRuntime): void {
     this.#runtime = runtime;
+    // Whatever was cached belongs to the previous runtime - see the accessors above.
+    this.#timers = undefined;
+    this.#clock = undefined;
+    this.#microtasks = undefined;
+    this.#performance = undefined;
     this.applyToRuntimeImpl(runtime);
     this.#initialized = true;
   }

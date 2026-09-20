@@ -78,7 +78,7 @@ measure.duration; // milliseconds between the "start" mark and now
 
 ## Backed by the clock strategy
 
-Like `clock` and `timers`, `performance` is driven by whichever strategy
+Like `clock` and `scheduler`, `performance` is driven by whichever strategy
 built the Time-Provider:
 
 - **System** — every method passes straight through to the host's real

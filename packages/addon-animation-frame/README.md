@@ -22,17 +22,17 @@
 ## Description
 
 This is the [Animation Frame API](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-Extends the library by exposing the animation frame API (`scheduleFrame`) through a dedicated (`.animation`) facade.
+Extends the library by exposing the animation frame API (`scheduleFrame`) through a dedicated (`scheduler.animation`) facade.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
 
 - `@time-provider/addon-animation-frame` - for a **system** (real time) Time-Provider
-  created via `@time-provider/core`. `.animation` passes through to the real
+  created via `@time-provider/core`. `scheduler.animation` passes through to the real
   `requestAnimationFrame`/`cancelAnimationFrame` or throws a clear error otherwise (e.g. plain Node.js, which has no native equivalent).
 - `@time-provider/addon-animation-frame/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
-  `@time-provider/core/deterministic`. `.animation` is simulated against that
+  `@time-provider/core/deterministic`. `scheduler.animation` is simulated against that
   runtime's own clock.  
   Registered callbacks fires once this runtime's own
   "now" has moved forward by at least one simulated frame duration.
@@ -49,7 +49,7 @@ import { addon as deterministicAddon } from "@time-provider/addon-animation-fram
 
 // System: real requestAnimationFrame (or a clear error outside a browser)
 const timeProvider = createTimeProvider.for(plugin).use(addon).create();
-timeProvider.animation.scheduleFrame(() => console.log("Frame!"));
+timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 
 // Deterministic: simulated against the runtime's own clock
 const manual = createDeterministicTimeProvider
@@ -58,7 +58,7 @@ const manual = createDeterministicTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-manual.animation.scheduleFrame(() => console.log("Frame!"));
+manual.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 manual.clock.advance({ milliseconds: 20 });
 ```
 
@@ -74,6 +74,10 @@ const manual = createDeterministicTimeProvider
   .withInitialTime(0)
   .create();
 ```
+
+## With the compat addon
+
+Compose [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat) **before** this addon and its `.compat` facade also gets `requestAnimationFrame`/`cancelAnimationFrame`, delegating to `scheduleFrame` and to the handle's `dispose()`. They are declared as an optional `compat?` on `WithAnimationFrameApi`, since they are only there when both addons are composed.
 
 ## License
 

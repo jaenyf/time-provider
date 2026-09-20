@@ -118,7 +118,7 @@ export class RuntimeHelper {
 
 ## Validating time inputs
 
-Your converter receives whatever a caller passed to `parseToUtc`, `withFixedTime`
+Your converter receives whatever a caller passed to `convertToUtc`, `withFixedTime`
 and friends, so it has to reject nonsense before handing it to the date library.
 `@time-provider/core` exports `TimeInputValidator` for that, with static guards
 the built-in plugins use:

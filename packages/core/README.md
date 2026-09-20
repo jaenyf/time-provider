@@ -50,7 +50,7 @@ which affects unrelated code and makes tests harder to reason about.
 vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
-single object exposing a clock, a parser, timers, and a performance API swappable per
+single object exposing a clock, a converter, a scheduler, and a performance API swappable per
 call site.  
 Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
 
@@ -106,7 +106,7 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
   let retries = 0;
   {
     //timers are cleared when disposing their handles
-    using timerHandle = timeProvider.timers.every({ seconds: 1 }, () => retries++);
+    using timerHandle = timeProvider.scheduler.timers.every({ seconds: 1 }, () => retries++);
     timeProvider.clock.advance({ seconds: 3 });
   }
 
@@ -124,7 +124,7 @@ class RetryingOperation {
 
   run(operation: () => boolean, onGiveUp: () => void, maxAttempts = 3) {
     let attempt = 0;
-    this.timeProvider.timers.recurring(() => {
+    this.timeProvider.scheduler.timers.recurring(() => {
       attempt++;
       if (operation()) return false; // succeeded, stop retrying
       if (attempt >= maxAttempts) {
@@ -162,17 +162,20 @@ Every time provider exposes the same four-part surface:
 ```typescript
 interface ITimeProvider<TDate> extends IHasAbortSignal, IDisposable {
   clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
-  parser: IParser<TDate>; // parseToUtc, parseToLocal
-  timers: ITimers; // once, every, recurring, wait
+  converter: IConverter<TDate>; // convertToUtc, convertToLocal
+  scheduler: IScheduler; // timers (once, every, recurring, wait), microtasks
   performance: IPerformance; //now, getEntries, measure,...
 }
 ```
 
-Animation-Frame API comes with [its addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) that extends ITimeProvider with:
+`scheduler` is where everything that schedules a callback to run later sits, so the
+scheduling addons extend that facet rather than the root. Animation-Frame comes with
+[its addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) that
+extends ITimeProvider with:
 
 ```typescript
 interface ITimeProvider<TDate> {
-  animation: IAnimationFrameApi; //scheduleFrame
+  scheduler: { animation: IAnimationFrameApi }; //scheduleFrame
 }
 ```
 
@@ -208,7 +211,7 @@ Within the scope of this library, these two terms refer to different concepts.
 ### Available addons
 
 - [Animation-frame API addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame) - access browser-specific animation frame timers
-- [Compat addon](https://www.npmjs.com/package/@time-provider/addon-compat) - keep calling native-style setTimeout/setInterval/setRecurring while you migrate
+- [Compat addon](https://www.npmjs.com/package/@time-provider/addon-compat) - keep calling native-style setTimeout/setInterval/queueMicrotask/performance while you migrate
 - [Cron addon](https://www.npmjs.com/package/@time-provider/addon-cron) - schedule recurring callbacks with the cron syntax or a JSON-friendlier one
 - [ETA addon](https://www.npmjs.com/package/@time-provider/addon-eta) - get the ETA (estimated time of arrival) for a task by notifying its progression
 - [Idle addon](https://www.npmjs.com/package/@time-provider/addon-idle) - run callbacks when the host reports itself idle, drained on demand on a deterministic clock

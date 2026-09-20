@@ -23,11 +23,11 @@ export function testAll<TDate>(
 
   const parseTimeToUtc = (initialValue: number | string | TDate) =>
     systemPlugin.supportsLocalTime
-      ? systemPlugin.createSystemRuntime("Pacific/Kiritimati").parseToUtc(initialValue)
-      : systemPlugin.createSystemRuntime().parseToUtc(initialValue);
+      ? systemPlugin.createSystemRuntime("Pacific/Kiritimati").convertToUtc(initialValue)
+      : systemPlugin.createSystemRuntime().convertToUtc(initialValue);
   const parseTimeToLocal = (initialValue: number | string | TDate) =>
     systemPlugin.supportsLocalTime
-      ? systemPlugin.createSystemRuntime("Pacific/Kiritimati").parseToLocal(initialValue)
+      ? systemPlugin.createSystemRuntime("Pacific/Kiritimati").convertToLocal(initialValue)
       : throwInvalidOperation();
 
   describe("Runtimes", () => {

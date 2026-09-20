@@ -1,10 +1,10 @@
 # Microtasks
 
-`timeProvider.microtasks.queue` queues a callback to run at the next
+`timeProvider.scheduler.microtasks.queue` queues a callback to run at the next
 microtask checkpoint, before control returns to the event loop - like the
 native `queueMicrotask`, but routed through the strategy's own clock. It's
-a separate facet from `timers` (see [ITimers](/api/timers)): a microtask
-isn't a scheduled timer, it's not time-driven, and it runs on every
+its own facet under the scheduler (see [IScheduler](/api/scheduler)): a
+microtask isn't a scheduled timer, it's not time-driven, and it runs on every
 strategy, including a fixed one that never runs a single timer.
 
 - **System** — hands `callback` straight to the host's own microtask queue,
@@ -18,11 +18,11 @@ strategy, including a fixed one that never runs a single timer.
   fixed clock still runs them even though it never runs a timer.
 
 ```ts
-timeProvider.timers.once({ milliseconds: 0 }, () => {
+timeProvider.scheduler.timers.once({ milliseconds: 0 }, () => {
   log.push("t1");
-  timeProvider.microtasks.queue(() => log.push("m1"));
+  timeProvider.scheduler.microtasks.queue(() => log.push("m1"));
 });
-timeProvider.timers.once({ milliseconds: 0 }, () => log.push("t2"));
+timeProvider.scheduler.timers.once({ milliseconds: 0 }, () => log.push("t2"));
 timeProvider.clock.advance({ milliseconds: 1 });
 log; // ["t1", "m1", "t2"] - m1 runs before t2, exactly as a real host would
 ```
@@ -38,9 +38,9 @@ call, so this is only needed to observe a microtask queued from your own
 code directly — there's no other boundary to hook a drain to:
 
 ```ts
-timeProvider.microtasks.queue(() => log.push("m1"));
+timeProvider.scheduler.microtasks.queue(() => log.push("m1"));
 log; // [] - nothing has triggered a checkpoint yet
-timeProvider.microtasks.drain();
+timeProvider.scheduler.microtasks.drain();
 log; // ["m1"]
 ```
 

@@ -41,7 +41,7 @@ const timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-timeProvider.timers.every({ seconds: 1 }, () => retries++);
+timeProvider.scheduler.timers.every({ seconds: 1 }, () => retries++);
 timeProvider.clock.advance({ seconds: 3 });
 
 expect(retries).toBe(3);

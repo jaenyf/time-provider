@@ -16,7 +16,7 @@ using timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-using handle = timeProvider.timers.every({ seconds: 1 }, () => retries++);
+using handle = timeProvider.scheduler.timers.every({ seconds: 1 }, () => retries++);
 
 timeProvider.clock.advance({ seconds: 3 });
 retries; // 3 — three 1s ticks fit in a 3s advance, run synchronously in-line

@@ -8,11 +8,11 @@ Plugin (adapter)
   -> createTimeProvider.for(plugin)     a PluggedRuntimeBuilder
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime
-  -> ITimeProvider { clock, parser, timers, performance }
+  -> ITimeProvider { clock, converter, scheduler, performance }
 ```
 
-A `Runtime` is a single object that implements `IClock`, `IParser`, and
-`ITimers` at once — `ITimeProvider.clock`/`.parser`/`.timers` all
+A `Runtime` is a single object that implements `IClock`, `IConverter`, and
+`ITimers` at once — `ITimeProvider.clock`/`.converter`/`.scheduler` all
 return that same instance wearing three different interface hats. The four
 runtime kinds (system, fixed, manual, sequential) share this shape and
 differ only in where the current timestamp comes from and, for manual, how
@@ -79,9 +79,11 @@ methods don't exist on the type, rather than throwing at runtime. See
 
 `.use(addon)`, available on either entry point's builder before `.create()`
 (or before picking a deterministic strategy), extends the resulting
-Time-Provider with an extra property beyond `clock`/`parser`/`timers`/
-`performance` — e.g. `.animation` from
-[`@time-provider/addon-animation-frame`](/addons/). A plugin only ever
+Time-Provider with an extra property beyond `clock`/`converter`/`scheduler`/
+`performance` — e.g. `scheduler.animation` from
+[`@time-provider/addon-animation-frame`](/addons/). An addon that schedules
+callbacks extends the `scheduler` facet rather than the root, so everything
+handing back an `IScheduledHandle` stays in one place. A plugin only ever
 bridges a date library in; an addon adds new surface area to what
 `.create()` returns.
 

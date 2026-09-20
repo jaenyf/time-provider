@@ -8,7 +8,13 @@ import {
 import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 
-type FakeRuntime = IDeterministicRuntime<unknown> & { idle?: unknown };
+type FakeRuntime = IDeterministicRuntime<unknown> & {
+  scheduler: { idle?: unknown };
+  compat?: {
+    requestIdleCallback?: unknown;
+    cancelIdleCallback?: (handle: { dispose: () => void }) => void;
+  };
+};
 type IdleFacade = {
   request: (callback: () => void) => { dispose(): void };
   drain: (maxCount?: number) => number;
@@ -27,6 +33,7 @@ function fakeDeterministicRuntime(): {
   const entries: { tag: unknown; callback: () => void }[] = [];
   return {
     runtime: {
+      scheduler: {},
       registerAddon: (_addon: IAddon<unknown>) => {},
       drain: () => {},
       specific(
@@ -75,16 +82,35 @@ describe("idleAddon (deterministic)", () => {
   test("applyToRuntime defines .idle with a request/drain facade", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    expect(runtime.idle).toStrictEqual({
+    expect(runtime.scheduler.idle).toStrictEqual({
       request: expect.any(Function),
       drain: expect.any(Function),
     });
   });
 
+  test("applyToRuntime adds the native-shaped aliases when a compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    runtime.compat = {};
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toStrictEqual({
+      requestIdleCallback: expect.any(Function),
+      cancelIdleCallback: expect.any(Function),
+    });
+    let disposed = false;
+    runtime.compat.cancelIdleCallback!({ dispose: () => (disposed = true) });
+    expect(disposed).toBe(true);
+  });
+
+  test("applyToRuntime leaves the aliases out when no compat facade is there", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    expect(runtime.compat).toBeUndefined();
+  });
+
   test("request() registers a real entry with the runtime immediately", () => {
     const { runtime, registeredCount } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    (runtime.idle as IdleFacade).request(() => {});
+    (runtime.scheduler.idle as IdleFacade).request(() => {});
     expect(registeredCount()).toBe(1);
   });
 
@@ -92,9 +118,9 @@ describe("idleAddon (deterministic)", () => {
     const { runtime, registeredCount } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     let called = false;
-    (runtime.idle as IdleFacade).request(() => (called = true));
+    (runtime.scheduler.idle as IdleFacade).request(() => (called = true));
 
-    (runtime.idle as IdleFacade).drain();
+    (runtime.scheduler.idle as IdleFacade).drain();
 
     expect(called).toBe(true);
     expect(registeredCount()).toBe(0);
@@ -103,7 +129,7 @@ describe("idleAddon (deterministic)", () => {
   test("disposing the returned handle before drain prevents the callback from running", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    const facade = runtime.idle as IdleFacade;
+    const facade = runtime.scheduler.idle as IdleFacade;
     let called = false;
     const handle = facade.request(() => (called = true));
     handle.dispose();
@@ -116,7 +142,7 @@ describe("idleAddon (deterministic)", () => {
   test("drain(maxCount) runs at most maxCount pending requests, oldest first", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    const facade = runtime.idle as IdleFacade;
+    const facade = runtime.scheduler.idle as IdleFacade;
     const order: number[] = [];
     facade.request(() => order.push(1));
     facade.request(() => order.push(2));
@@ -136,8 +162,8 @@ describe("idleAddon (deterministic)", () => {
     const { runtime: firstRuntime, registeredCount: firstRegisteredCount } =
       fakeDeterministicRuntime();
     first.applyToRuntime(firstRuntime);
-    (firstRuntime.idle as IdleFacade).request(() => {});
-    (firstRuntime.idle as IdleFacade).drain();
+    (firstRuntime.scheduler.idle as IdleFacade).request(() => {});
+    (firstRuntime.scheduler.idle as IdleFacade).drain();
 
     const { runtime: secondRuntime, registeredCount: secondRegisteredCount } =
       fakeDeterministicRuntime();

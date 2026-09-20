@@ -5,7 +5,7 @@ import type {
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
-import { testParser } from "./helpers/testParser.ts";
+import { testConverter } from "./helpers/testConverter.ts";
 import { testPerformance } from "./helpers/testPerformance.ts";
 import {
   testConstructorArgs,
@@ -50,10 +50,10 @@ export function testManualRuntime<TDate>(
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
     testTimestampNow(createSUT);
 
-    describe("parser", () => {
-      testParser(
+    describe("converter", () => {
+      testConverter(
         plugin.supportsLocalTime,
-        () => createSUT().parser,
+        () => createSUT().converter,
         parseTimeToUtc,
         parseTimeToLocal,
       );
@@ -164,7 +164,7 @@ export function testManualRuntime<TDate>(
             (_label, advanceConfiguration) => {
               const sut = createSUT(); // 2026-01-01T00:00:00.000Z
               let callbackCount = 0;
-              sut.timers.once({ milliseconds: 1 }, () => {
+              sut.scheduler.timers.once({ milliseconds: 1 }, () => {
                 ++callbackCount;
               });
               sut.advance(advanceConfiguration);
@@ -183,7 +183,7 @@ export function testManualRuntime<TDate>(
             (_label, advanceConfiguration) => {
               const sut = createSUT(); // 2026-01-01T00:00:00.000Z
               let callbackCount = 0;
-              sut.timers.every({ milliseconds: 1 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 1 }, () => {
                 ++callbackCount;
               });
               sut.advance(advanceConfiguration);
@@ -226,9 +226,9 @@ export function testManualRuntime<TDate>(
             const delay = 100;
             function tick() {
               ++fireCount;
-              sut.timers.once({ milliseconds: delay }, tick);
+              sut.scheduler.timers.once({ milliseconds: delay }, tick);
             }
-            sut.timers.once({ milliseconds: delay }, tick);
+            sut.scheduler.timers.once({ milliseconds: delay }, tick);
 
             sut.advance({ seconds: 1 }); // 1000ms at 100ms/tick
 
@@ -241,9 +241,9 @@ export function testManualRuntime<TDate>(
             const delay = 100;
             function tick() {
               ++fireCount;
-              sut.timers.once({ milliseconds: delay }, tick);
+              sut.scheduler.timers.once({ milliseconds: delay }, tick);
             }
-            sut.timers.once({ milliseconds: delay }, tick);
+            sut.scheduler.timers.once({ milliseconds: delay }, tick);
 
             for (let i = 0; i < 5; i++) {
               sut.advance({ milliseconds: 200 });
@@ -256,7 +256,7 @@ export function testManualRuntime<TDate>(
     });
 
     describe("timers", () => {
-      testTimers(() => createSUT().timers);
+      testTimers(() => createSUT().scheduler.timers);
       describe("additionnal", () => {
         describe("setTimeout", () => {
           test("can be called without specified delay", () => {
@@ -424,7 +424,7 @@ export function testManualRuntime<TDate>(
             (expectedRetries: number) => {
               const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let retries = 0;
-              sut.timers.every({ milliseconds: 1000 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 1000 }, () => {
                 retries++;
               });
               sut.advance({
@@ -437,10 +437,10 @@ export function testManualRuntime<TDate>(
             test("scatter callbacks run in a timely fashion instead of running them multiple time individually", () => {
               const sut = createManualRuntime("Pacific/Kiritimati", 0);
               let buffer: string = "";
-              sut.timers.every({ milliseconds: 10 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 10 }, () => {
                 buffer += "A";
               });
-              sut.timers.every({ milliseconds: 15 }, () => {
+              sut.scheduler.timers.every({ milliseconds: 15 }, () => {
                 buffer += "B";
               });
               sut.advance({
@@ -580,7 +580,7 @@ export function testManualRuntime<TDate>(
           test("stops once callback returns false, instead of continuing to recur", () => {
             const sut = createManualRuntime("Pacific/Kiritimati", 0);
             let runs = 0;
-            sut.timers.recurring(
+            sut.scheduler.timers.recurring(
               () => {
                 runs++;
                 return runs < 3 ? { milliseconds: 10 } : false;
@@ -595,7 +595,7 @@ export function testManualRuntime<TDate>(
             const delays = [10, 5, 1]; // due at +10, +15, +16
             let calls = 1; // delays[0] is consumed as the initial delay below
             let runs = 0;
-            sut.timers.recurring(
+            sut.scheduler.timers.recurring(
               () => {
                 runs++;
                 return calls < delays.length ? { milliseconds: delays[calls++] } : false;
@@ -719,7 +719,7 @@ export function testManualRuntime<TDate>(
       test("advance() drains pending microtasks even when nothing ends up due", () => {
         const sut = createSUT();
         let ran = false;
-        sut.microtasks.queue(() => (ran = true));
+        sut.scheduler.microtasks.queue(() => (ran = true));
 
         sut.advance({ milliseconds: 100 });
 
