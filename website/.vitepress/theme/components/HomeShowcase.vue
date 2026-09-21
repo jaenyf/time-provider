@@ -90,7 +90,7 @@ using timeProvider = createTimeProvider
   .create();
 
 let retries = 0;
-using handle = timeProvider.timers.every({seconds: 1}, () => retries++);
+using handle = timeProvider.scheduler.timers.every({seconds: 1}, () => retries++);
 timeProvider.clock.advance({ seconds: 3 });
 
 expect(retries).toBe(3); // synchronous — no await, no real timers`;

@@ -836,12 +836,18 @@ import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/determi
 import { addon as idleAddon } from "@time-provider/addon-idle";
 import { addon as idleDeterministicAddon } from "@time-provider/addon-idle/deterministic";
 import { highlightTs } from "../shiki";
+import type { IManualTimeProvider } from "@time-provider/core/deterministic";
+import type { WithAnimationFrameApi } from "@time-provider/addon-animation-frame";
+import type { ICronSpec, WithCronApi } from "@time-provider/addon-cron";
+import type { WithEtaApi } from "@time-provider/addon-eta";
+import type { WithIdleApi } from "@time-provider/addon-idle";
 
 type Strategy = "system" | "fixed" | "manual" | "sequential";
 // What the Scheduler panel's own dropdown offers - one entry per ITimers method.
 type SchedulerTimerKind = "once" | "every" | "recurring";
-// Plus the addon-backed panels, which register through their own facade rather than
-// `.scheduler`, but end up in the same row list so a rebuild can clear everything at once.
+// Plus the addon-backed panels, which schedule through their addon's own entry on `.scheduler`
+// (`.scheduler.cron`, `.scheduler.idle`, `.scheduler.animation`) rather than `.scheduler.timers`,
+// but end up in the same row list so a rebuild can clear everything at once.
 type TimerKind = SchedulerTimerKind | "raf" | "cron" | "idle";
 
 interface PluginOption {
@@ -1114,13 +1120,15 @@ function cronFieldSpecValue(field: CronFieldMeta, state: CronFieldState): any {
 const cronBuilderExpression = computed(() =>
   CRON_FIELDS.map((f) => cronFieldExpression(cronBuilder[f.key])).join(" "),
 );
-const cronBuilderSpec = computed(() => {
+const cronBuilderSpec = computed<ICronSpec>(() => {
+  // Assembled by field key from the panel's own state - CRON_FIELDS' keys are exactly
+  // ICronSpec's, so it is built untyped and handed over as one once complete.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const spec: Record<string, any> = {};
   for (const f of CRON_FIELDS) {
     spec[f.key] = cronFieldSpecValue(f, cronBuilder[f.key]);
   }
-  return spec;
+  return spec as ICronSpec;
 });
 const cronBuilderJson = computed(() => JSON.stringify(cronBuilderSpec.value, null, 2));
 
@@ -1168,10 +1176,10 @@ const enabledAddonList = computed(() =>
 );
 const addonsHint = computed(() => {
   const hints: string[] = [];
-  if (hasAnimationFrameAddon.value) hints.push(".animation in the Animation Frame panel");
-  if (hasCronAddon.value) hints.push(".cron in the Cron panel");
+  if (hasAnimationFrameAddon.value) hints.push(".scheduler.animation in the Animation Frame panel");
+  if (hasCronAddon.value) hints.push(".scheduler.cron in the Cron panel");
   if (hasEtaAddon.value) hints.push(".eta in the ETA panel");
-  if (hasIdleAddon.value) hints.push(".idle in the Idle Callback panel");
+  if (hasIdleAddon.value) hints.push(".scheduler.idle in the Idle Callback panel");
   return hints.length > 0 ? hints.join(" · ") : "Adds extra facades to the built provider";
 });
 const strategyHint = computed(() => strategyHints[selectedStrategy.value]);
@@ -1196,8 +1204,18 @@ function togglePane(key: keyof typeof openPanes) {
   openPanes[key] = !openPanes[key];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const timeProvider = shallowRef<any>(null);
+// The builder chain is assembled from runtime choices - plugin, strategy, addons - so no static
+// type follows it. This is the widest shape the panels reach for: a manual provider, the strategy
+// with the largest surface (local time, `advance`, microtasks that drain), plus every addon's
+// facet. A narrower type would need the union of all four strategies narrowed at each call site,
+// while every panel already guards itself on the flag that decided whether it renders at all.
+type PlaygroundProvider = IManualTimeProvider<unknown> &
+  WithAnimationFrameApi<unknown> &
+  WithCronApi<unknown> &
+  WithEtaApi<unknown> &
+  WithIdleApi;
+
+const timeProvider = shallowRef<PlaygroundProvider | null>(null);
 const buildError = ref("");
 const utcReadout = ref("—");
 const localReadout = ref("—");
@@ -1425,7 +1443,7 @@ function enqueueMicrotask() {
   if (!timeProvider.value) return;
   const label = microtaskLabel.value.trim() || "microtask";
   try {
-    timeProvider.value.microtasks.queue(() => {
+    timeProvider.value.scheduler.microtasks.queue(() => {
       pushLog("microtask", `"${label}" ran`);
     });
     pushLog("tick", `Queued microtask "${label}"`);
@@ -1437,7 +1455,7 @@ function enqueueMicrotask() {
 function drainMicrotasks() {
   if (!timeProvider.value) return;
   try {
-    timeProvider.value.microtasks.drain();
+    timeProvider.value.scheduler.microtasks.drain();
     pushLog("tick", "microtasks.drain()");
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
@@ -1474,8 +1492,8 @@ function addSchedulerTimer() {
     };
     const handle =
       kind === "every"
-        ? timeProvider.value.timers.every({ milliseconds: delay }, callback)
-        : timeProvider.value.timers.once({ milliseconds: delay }, callback);
+        ? timeProvider.value.scheduler.timers.every({ milliseconds: delay }, callback)
+        : timeProvider.value.scheduler.timers.once({ milliseconds: delay }, callback);
 
     timerRows.value.push({
       id,
@@ -1491,6 +1509,7 @@ function addSchedulerTimer() {
 }
 
 function addRecurringTimer(id: number, label: string) {
+  if (!timeProvider.value) return;
   const initialDelay = { milliseconds: positiveNumber(recurringInitialDelay.value, 0) };
   const factor = positiveNumber(recurringFactor.value, 1);
   const maxRuns = Math.min(
@@ -1532,7 +1551,7 @@ function addRecurringTimer(id: number, label: string) {
     nextDelayMs: initialDelay.milliseconds,
     handle: null,
   });
-  const handle = timeProvider.value.timers.recurring(callback, initialDelay);
+  const handle = timeProvider.value.scheduler.timers.recurring(callback, initialDelay);
   const row = timerRows.value.find((r) => r.id === id);
   if (row) row.handle = markRaw(handle);
   pushLog(
@@ -1546,7 +1565,7 @@ function requestFrame() {
   const label = frameLabel.value.trim() || "frame";
   const id = nextId++;
   try {
-    const handle = timeProvider.value.animation.scheduleFrame(() => {
+    const handle = timeProvider.value.scheduler.animation.scheduleFrame(() => {
       pushLog("raf", `"${label}" frame fired`);
       dropTimerRow(id);
     });
@@ -1562,7 +1581,7 @@ function requestIdle() {
   const label = idleLabel.value.trim() || "idle";
   const id = nextId++;
   try {
-    const handle = timeProvider.value.idle.request(() => {
+    const handle = timeProvider.value.scheduler.idle.request(() => {
       pushLog("idle", `"${label}" idle callback fired`);
       dropTimerRow(id);
     });
@@ -1582,10 +1601,13 @@ function addCronSchedule() {
     : cronExpression.value.trim() || "* * * * *";
   const id = nextId++;
   try {
-    const handle = timeProvider.value.cron.schedule(
-      isBuilder ? cronBuilderSpec.value : expression,
-      () => pushLog("cron", `"${label}" fired (${expression})`),
-    );
+    // `schedule` is overloaded on expression vs. spec, so the two modes call it separately
+    // rather than handing one union to an overload that takes either.
+    const onFire = () => pushLog("cron", `"${label}" fired (${expression})`);
+    const cron = timeProvider.value.scheduler.cron;
+    const handle = isBuilder
+      ? cron.schedule(cronBuilderSpec.value, onFire)
+      : cron.schedule(expression, onFire);
     timerRows.value.push({
       id,
       kind: "cron",
@@ -1647,7 +1669,7 @@ const canStartEta = computed(() => {
 });
 
 function startEtaTracker() {
-  if (!canStartEta.value) return;
+  if (!timeProvider.value || !canStartEta.value) return;
   etaSnapshot.value = null;
   try {
     const builder = timeProvider.value.eta.estimate();
