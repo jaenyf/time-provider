@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea, API addition, or a new date-library adapter
+description: Suggest an idea, API addition, or a new date-library adapter or addon
 labels: ["enhancement"]
 body:
   - type: dropdown
@@ -10,6 +10,8 @@ body:
         - "@time-provider/core"
         - An existing plugin
         - A new plugin/adapter
+        - An existing addon
+        - A new addon
         - Not sure / repo-wide
     validations:
       required: true

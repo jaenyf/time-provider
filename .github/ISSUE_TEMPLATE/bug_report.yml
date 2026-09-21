@@ -15,6 +15,11 @@ body:
         - "@time-provider/plugin-moment"
         - "@time-provider/plugin-moment-timezone"
         - "@time-provider/plugin-temporal"
+        - "@time-provider/addon-animation-frame"
+        - "@time-provider/addon-compat"
+        - "@time-provider/addon-cron"
+        - "@time-provider/addon-eta"
+        - "@time-provider/addon-idle"
         - Not sure
     validations:
       required: true

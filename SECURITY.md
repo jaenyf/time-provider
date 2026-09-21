@@ -5,16 +5,16 @@
 `time-provider` is a library for injecting time, timers, and timezone
 handling into applications; it has no network, filesystem, or process
 surface of its own. Reports about the packages under `packages/*`
-(`@time-provider/core` and the `@time-provider/plugin-*` adapters) are in
-scope. Reports about a third-party date library a plugin adapts (`dayjs`,
+(`@time-provider/core`, the `@time-provider/plugin-*` adapters and the
+`@time-provider/addon-*` packages) are in scope. Reports about a third-party date library a plugin adapts (`dayjs`,
 `luxon`, `moment`, `moment-timezone`, `@js-temporal/polyfill`) should go to
 that project instead, unless the issue is specifically in how
 `time-provider` uses it.
 
 ## Supported Versions
 
-`@time-provider/core` and each `@time-provider/plugin-*` package are
-versioned and released independently (see
+`@time-provider/core` and each `@time-provider/plugin-*` and
+`@time-provider/addon-*` package are versioned and released independently (see
 [CONTRIBUTING.md#releasing](./CONTRIBUTING.md#releasing)). Only the
 **latest published version of each package** is supported with security
 fixes; there are no maintained long-term-support branches.

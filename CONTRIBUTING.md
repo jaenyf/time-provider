@@ -149,6 +149,6 @@ independently of whatever is queued on `main`.
 ## Project Structure
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for how the packages fit together:
-the core abstractions, the plugin/adapter pattern, why "full" and "UTC-only"
-plugins are separate interface hierarchies, and how the test suites are
-organized.
+the core abstractions, the plugin/adapter pattern, how an addon attaches its
+facade to a runtime, why "full" and "UTC-only" plugins are separate interface
+hierarchies, and how the test suites are organized.
