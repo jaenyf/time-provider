@@ -185,7 +185,7 @@ describe("CronScheduler", () => {
     expect(runtime.recurring).toHaveLength(0);
   });
 
-  test("schedule() arms setRecurring with the delay to the first matching occurrence", () => {
+  test("schedule() arms recurring with the delay to the first matching occurrence", () => {
     const now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
@@ -275,7 +275,7 @@ describe("CronScheduler", () => {
     expect(() => runtime.recurring[0]?.callback()).toThrow(error);
   });
 
-  test("disposing scheduled handle delegates to the runtime timers's clearRecurring with the same handle", () => {
+  test("disposing the scheduled handle disposes the timer handle underneath it", () => {
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
       () => "Etc/UTC",

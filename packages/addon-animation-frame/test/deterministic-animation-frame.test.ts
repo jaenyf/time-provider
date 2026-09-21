@@ -114,7 +114,7 @@ describe("DeterministicAnimationFrameScheduler", () => {
   });
 
   describe("requestAnimationFrame", () => {
-    test("delegates to the runtime scheduler's setTimeout with the default ~16.67ms frame duration", () => {
+    test("delegates to the runtime scheduler's once with the default ~16.67ms frame duration", () => {
       using sut = new DeterministicAnimationFrameScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
@@ -145,7 +145,7 @@ describe("DeterministicAnimationFrameScheduler", () => {
     });
   });
 
-  test("disposing handle delegates to the runtime scheduler's clearTimeout with the same handle", () => {
+  test("disposing the handle disposes the timer handle underneath it", () => {
     using sut = new DeterministicAnimationFrameScheduler();
     const runtime = fakeRuntime();
     sut.applyToRuntime(runtime);

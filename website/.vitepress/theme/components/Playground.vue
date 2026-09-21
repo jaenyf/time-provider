@@ -267,7 +267,7 @@
             On <strong>system</strong>, timers fire for real, asynchronously. On
             <strong>manual</strong>/<strong>sequential</strong>, they fire synchronously, in-line,
             the moment <code>advance()</code>/<code>utcNow()</code>/<code>localNow()</code> makes
-            them due. On <strong>fixed</strong>, they never fire. <code>setRecurring</code> re-reads
+            them due. On <strong>fixed</strong>, they never fire. <code>recurring</code> re-reads
             its period from what the run itself returns — here, the previous delay times the backoff
             factor — and returns <code>false</code> on the last run to stop.
           </p>
@@ -1544,7 +1544,7 @@ function addRecurringTimer(id: number, label: string) {
   };
 
   // Pushed before scheduling: on a manual/sequential clock an initial delay of 0 is already due,
-  // so `setRecurring` runs the callback in-line before it ever returns a handle - the row has to
+  // so `recurring` runs the callback in-line before it ever returns a handle - the row has to
   // exist by then for that first run to be counted against it.
   timerRows.value.push({
     id,

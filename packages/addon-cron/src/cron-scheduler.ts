@@ -94,7 +94,7 @@ export class CronScheduler<
       throwing scheduler callback, and the runtime already has one policy for those - rethrow in a
       Node-like environment, log and carry on in a browser-like one (see ITimers). Catching here
       would put cron on a third path of its own, invisible to that policy. It does mean a run that
-      throws stops the schedule, exactly as `setRecurring` documents; catch inside your own callback
+      throws stops the schedule, exactly as `recurring` documents; catch inside your own callback
       if a failing run should not end the job.
     */
     return this.runtimeTimers.recurring(() => {

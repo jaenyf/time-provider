@@ -258,7 +258,7 @@ export function testManualRuntime<TDate>(
     describe("timers", () => {
       testTimers(() => createSUT().scheduler.timers);
       describe("additionnal", () => {
-        describe("setTimeout", () => {
+        describe("once", () => {
           test("can be called without specified delay", () => {
             const sut = createSUT();
             let callbackCalled = false;
@@ -499,7 +499,7 @@ export function testManualRuntime<TDate>(
             expect(order.join(",")).toBe("A,B,A,B,A,B,A,B");
           });
         });
-        describe("setRecurring", () => {
+        describe("recurring", () => {
           test.each([1, 20, 100])(
             "executes next callbacks when time advance",
             (futureDelay: number) => {
@@ -626,7 +626,7 @@ export function testManualRuntime<TDate>(
               sut.advance({ milliseconds: 30 });
               expect(callbackBCallCount).toBe(0);
             });
-            test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
+            test("a dispose() reentrant to its own callback stops the schedule immediately", () => {
               const sut = createSUT();
               let runs = 0;
               let handle: IScheduledHandle;

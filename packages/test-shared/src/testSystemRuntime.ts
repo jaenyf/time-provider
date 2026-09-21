@@ -254,7 +254,7 @@ export function testSystemRuntime<TDate>(
             vi.advanceTimersByTime(30);
             expect(callbackBCallCount).toBe(0);
           });
-          test("a clearRecurring reentrant to its own callback stops the schedule immediately", () => {
+          test("a dispose() reentrant to its own callback stops the schedule immediately", () => {
             const sut = plugin.createSystemRuntime("Pacific/Kiritimati").scheduler.timers;
             let runs = 0;
             let handle: IScheduledHandle;

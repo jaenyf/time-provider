@@ -252,7 +252,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       vi.stubGlobal("process", { versions: { node: "20.11.0" } });
     }
 
-    test("a throwing setTimeout callback rethrows synchronously and stops the rest of that batch", () => {
+    test("a throwing once callback rethrows synchronously and stops the rest of that batch", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let otherFired = false;
@@ -440,7 +440,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(ran).toBe(true);
     });
 
-    test("a throwing setRecurring callback rethrows and doesn't re-arm (same as returning false)", () => {
+    test("a throwing recurring callback rethrows and doesn't re-arm (same as returning false)", () => {
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       let recurringFires = 0;
@@ -472,7 +472,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       vi.stubGlobal("process", undefined);
     }
 
-    test("a throwing setTimeout callback doesn't block another due timeout in the same batch", () => {
+    test("a throwing once callback doesn't block another due timeout in the same batch", () => {
       stubBrowserLike();
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const sut = new FakeManualRuntime(0);
@@ -529,7 +529,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       expect(consoleErrorSpy).toHaveBeenNthCalledWith(2, error);
     });
 
-    test("a throwing setRecurring callback doesn't re-arm (same as returning false), and doesn't block others", () => {
+    test("a throwing recurring callback doesn't re-arm (same as returning false), and doesn't block others", () => {
       stubBrowserLike();
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const sut = new FakeManualRuntime(0);
