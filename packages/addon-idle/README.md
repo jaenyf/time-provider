@@ -22,20 +22,20 @@
 ## Description
 
 This is the [Idle](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback) addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-It adds a `scheduler.idle` facade exposing the idle callback API (`request`, cancelled via `dispose()` on the returned handle), alongside the existing `.clock`, `.scheduler`, `.converter` and `.performance` ones.
+It adds a `scheduler.idle` facade exposing the idle callback API (`request`, cancelled via `dispose()` on the returned handle), beside the `scheduler.timers` and `scheduler.microtasks` that core already provides.
 
 Just like the plugin packages, this addon is tree-shakable.  
 It is split into a default (system/real-time) entry point and a deterministic one, so each import pulls in only the code it needs:
 
 - `@time-provider/addon-idle` - for a **system** (real time) Time-Provider
-  created via `@time-provider/core`. `.idle.request` passes through to the real
+  created via `@time-provider/core`. `.scheduler.idle.request` passes through to the real
   `requestIdleCallback`, or throws a clear error when the host has no native equivalent (e.g.
   Safari) - `cancelIdleCallback` itself stays an internal detail; cancel by calling `dispose()` on
-  the handle `.idle.request` returns.
+  the handle `.scheduler.idle.request` returns.
 - `@time-provider/addon-idle/deterministic` - for a **deterministic**
   Time-Provider (fixed/manual/sequential) created via
-  `@time-provider/core/deterministic`. Requests made through `.idle.request` stay pending until
-  a test declares the runtime idle via `.idle.drain()`.
+  `@time-provider/core/deterministic`. Requests made through `.scheduler.idle.request` stay
+  pending until a test declares the runtime idle via `.scheduler.idle.drain()`.
 
 ## Usage
 
