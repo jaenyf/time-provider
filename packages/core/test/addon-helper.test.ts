@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { AddonHelper, IAddon, IRuntime } from "@time-provider/core";
+import { AddonHelper, type IAddon, type IRuntime } from "@time-provider/core";
 
 describe("AddonHelper", () => {
   function createFakeRuntime(): IRuntime<unknown> {

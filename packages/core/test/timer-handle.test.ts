@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
 import { ScheduledHandle } from "../src/runtimes/scheduled-handle.ts";
-import { IRuntime, IScheduledHandle, SCHEDULED_TIMER_KIND_TIMEOUT } from "../src/types/types.ts";
+import {
+  type IRuntime,
+  type IScheduledHandle,
+  SCHEDULED_TIMER_KIND_TIMEOUT,
+} from "../src/types/types.ts";
 
 function createFakeRuntime(): IRuntime<unknown> {
   return { clearTimer(_handle) {} } as IRuntime<unknown>;

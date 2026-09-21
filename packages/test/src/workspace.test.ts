@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vite-plus/test";
 
@@ -101,6 +101,20 @@ describe("workspace manifests", () => {
         expect(new Set(badgeRefsOf(packageName))).toEqual(new Set([manifest.name.split("/")[1]]));
       },
     );
+  });
+
+  describe("tsconfig includes", () => {
+    test.each(
+      manifests.filter(([packageName]) => existsSync(join(packagesDir, packageName, "test"))),
+    )("%s type-checks its test directory", (packageName) => {
+      // A package whose tsconfig covers only src/ still gets its test files linted, but with
+      // the default compiler options rather than its own - so a test could reach for a DOM
+      // global the package deliberately leaves out of `lib` and nothing would say so.
+      const tsconfig = JSON.parse(
+        readFileSync(join(packagesDir, packageName, "tsconfig.json"), "utf8"),
+      );
+      expect(tsconfig.include).toContain("test/**/*.ts");
+    });
   });
 
   describe("branch types", () => {
