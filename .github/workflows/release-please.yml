@@ -60,6 +60,13 @@ jobs:
       - run: vp install --frozen-lockfile
       - run: vp run build
 
+      # Check runs this on the merge commit, but release-please has bumped the versions since,
+      # and package.json is what the script reads. This is the only run against the tree that
+      # actually gets published. publish waits on this job, so a failure here stops the upload -
+      # leaving a tag with nothing published, which workflow_dispatch's `paths` input rescues.
+      - name: Verify the packed packages
+        run: node scripts/verify-packages.ts
+
       - name: Aggregate changelog
         run: node scripts/aggregate-changelog.ts
 
