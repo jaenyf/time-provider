@@ -8,7 +8,7 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp run build && vp run check && vp run test && vp run stryker",
+    "ready": "vp run build && vp run check && node scripts/verify-packages.ts && vp run test && vp run stryker",
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",

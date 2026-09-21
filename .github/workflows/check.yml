@@ -99,6 +99,11 @@ jobs:
       - run: vp install --frozen-lockfile
       - run: vp run build
       - run: vp run check
+
+      # The test suites import the build output by path, so they never see the
+      # tarball npm would actually publish. Pack it and check it here instead.
+      - run: node scripts/verify-packages.ts
+
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 
