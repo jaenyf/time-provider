@@ -18,13 +18,30 @@
 //
 // The publishable set comes from release-please-config.json, which is the
 // same list the release workflow publishes from - a package missing there
-// cannot ship, so it has nothing to verify.
+// cannot ship, so it has nothing to verify. That makes the release config
+// itself worth checking, which this also does:
+//   5. every package under packages/ that isn't private is in both the
+//      release config and the manifest, and both describe packages that
+//      exist - a package missing from either silently never publishes;
+//   6. the manifest version and the package.json version agree;
+//   7. a publishable package isn't marked private and has the `release`
+//      script the publish job runs;
+//   8. each plugin's and addon's `@time-provider/core` peer range still
+//      admits the core version in this repo.
 //
 // Needs `vp run build` to have run first. Run it with Node 24+:
 // node scripts/verify-packages.ts
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -63,6 +80,8 @@ interface PackResult {
 interface PackageJson {
   name: string;
   version: string;
+  private?: boolean;
+  scripts?: Record<string, string>;
   exports?: Record<string, string>;
   types?: string;
   peerDependencies?: Record<string, string>;
@@ -74,15 +93,133 @@ function fail(pkg: string, message: string): void {
   failures.push(`${pkg}: ${message}`);
 }
 
+function readJson<T>(path: string): T {
+  return JSON.parse(readFileSync(join(ROOT, path), "utf8")) as T;
+}
+
 function publishablePackageDirs(): string[] {
-  const config = JSON.parse(readFileSync(join(ROOT, "release-please-config.json"), "utf8")) as {
-    packages: Record<string, unknown>;
-  };
+  const config = readJson<{ packages: Record<string, unknown> }>("release-please-config.json");
   return Object.keys(config.packages).sort();
+}
+
+function readManifest(): Record<string, string> {
+  return readJson<Record<string, string>>(".release-please-manifest.json");
 }
 
 function readPackageJson(dir: string): PackageJson {
   return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as PackageJson;
+}
+
+/** Every packages/<name>/ that holds a package.json, released or not. */
+function workspacePackageDirs(): string[] {
+  return readdirSync(join(ROOT, "packages"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `packages/${entry.name}`)
+    .filter((dir) => existsSync(join(ROOT, dir, "package.json")))
+    .sort();
+}
+
+/**
+ * The release config, the manifest and the workspace have to describe the same set of
+ * packages. A package missing from either file is never released and never complains.
+ */
+function checkReleaseConfig(configured: string[], manifest: Record<string, string>): void {
+  const inConfig = new Set(configured);
+  const inManifest = new Set(Object.keys(manifest));
+
+  for (const dir of workspacePackageDirs()) {
+    const pkg = readPackageJson(join(ROOT, dir));
+    if (pkg.private === true) continue;
+    if (!inConfig.has(dir)) {
+      fail(
+        pkg.name,
+        "is publishable but missing from release-please-config.json, so it never ships",
+      );
+    } else if (!inManifest.has(dir)) {
+      fail(
+        pkg.name,
+        "is in release-please-config.json but missing from .release-please-manifest.json",
+      );
+    }
+  }
+
+  for (const dir of inConfig) {
+    if (!existsSync(join(ROOT, dir, "package.json"))) {
+      failures.push(`release-please-config.json lists "${dir}", which has no package.json`);
+    }
+  }
+  for (const dir of inManifest) {
+    if (!inConfig.has(dir)) {
+      failures.push(
+        `.release-please-manifest.json lists "${dir}", which release-please-config.json doesn't`,
+      );
+    }
+  }
+}
+
+/** What release-please and the publish job assume about a package it is going to release. */
+function checkReleaseMetadata(
+  dir: string,
+  pkg: PackageJson,
+  manifest: Record<string, string>,
+): void {
+  const released = manifest[dir];
+  if (released !== undefined && released !== pkg.version) {
+    fail(
+      pkg.name,
+      `is ${pkg.version} in package.json but ${released} in .release-please-manifest.json`,
+    );
+  }
+  if (pkg.private === true) {
+    fail(
+      pkg.name,
+      "is in release-please-config.json but marked private, so npm refuses to publish it",
+    );
+  }
+  if (pkg.scripts?.release === undefined) {
+    fail(pkg.name, "has no `release` script, which is what the publish job runs");
+  }
+}
+
+/**
+ * Whether `version` falls in a caret range, which is the only shape the core peer uses.
+ * Returns undefined for anything this can't read, so an unknown range is reported rather
+ * than quietly passing.
+ */
+function satisfiesCaret(version: string, range: string): boolean | undefined {
+  const parse = (text: string): number[] | undefined =>
+    /^(\d+)\.(\d+)\.(\d+)$/.exec(text)?.slice(1).map(Number);
+
+  const lower = range.startsWith("^") ? parse(range.slice(1)) : undefined;
+  const actual = parse(version);
+  if (lower === undefined || actual === undefined) return undefined;
+
+  // A caret allows everything up to a change in the leftmost non-zero component:
+  // ^3.1.0 is <4.0.0, ^0.5.1 is <0.6.0, ^0.0.3 is <0.0.4.
+  const pinned = lower.findIndex((part) => part !== 0);
+  if (pinned === -1) return undefined;
+  const upper = lower.map((part, index) => (index === pinned ? part + 1 : 0));
+
+  const compare = (a: number[], b: number[]): number => {
+    for (const [index, part] of a.entries()) {
+      if (part !== b[index]) return part - b[index];
+    }
+    return 0;
+  };
+  return compare(actual, lower) >= 0 && compare(actual, upper) < 0;
+}
+
+/** AGENTS.md asks for this range to track the core version; nothing enforced it. */
+function checkCorePeerRange(pkg: PackageJson, coreVersion: string): void {
+  const range = pkg.peerDependencies?.["@time-provider/core"];
+  if (range === undefined) return;
+
+  const satisfied = satisfiesCaret(coreVersion, range);
+  if (satisfied === undefined) {
+    fail(pkg.name, `declares core peer range "${range}", which this script can't read - extend it`);
+  } else if (!satisfied) {
+    fail(pkg.name, `requires core "${range}", which doesn't admit this repo's core ${coreVersion}`);
+  }
 }
 
 function pack(dir: string, destination: string): PackResult {
@@ -192,12 +329,22 @@ function main(): void {
 
   try {
     const dirs = publishablePackageDirs();
+    const manifest = readManifest();
+    const coreVersion = readPackageJson(resolve(ROOT, "packages/core")).version;
     const pkgs: PackageJson[] = [];
+
+    checkReleaseConfig(dirs, manifest);
 
     for (const dir of dirs) {
       const absolute = resolve(ROOT, dir);
+      // checkReleaseConfig already reported this one; don't crash reading it.
+      if (!existsSync(join(absolute, "package.json"))) continue;
+
       const pkg = readPackageJson(absolute);
       pkgs.push(pkg);
+
+      checkReleaseMetadata(dir, pkg, manifest);
+      checkCorePeerRange(pkg, coreVersion);
 
       if (!existsSync(join(absolute, "dist"))) {
         fail(pkg.name, "has no dist/ - run `vp run build` first");
@@ -224,7 +371,7 @@ function main(): void {
       process.exitCode = 1;
       return;
     }
-    console.log(`Verified ${String(dirs.length)} packed packages.`);
+    console.log(`Verified ${String(dirs.length)} packed packages and their release config.`);
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
