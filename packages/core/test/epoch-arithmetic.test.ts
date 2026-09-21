@@ -113,6 +113,15 @@ describe("toDuration", () => {
       toDuration({ days: Number.MAX_VALUE, hours: Number.MAX_VALUE });
     }).toThrow("Invalid duration value (value was 'Infinity')");
   });
+
+  // SECURITY.md says the magnitude of a finite duration is not checked, only its finiteness.
+  // These pin that: the line is drawn at Infinity, not at some maximum nobody agreed on.
+  test("accepts the largest finite value", () => {
+    expect(toDuration({ milliseconds: Number.MAX_VALUE })).toEqual(Number.MAX_VALUE);
+  });
+  test("accepts an absurd but finite number of days", () => {
+    expect(toDuration({ days: 1_000_000 })).toEqual(86_400_000_000_000);
+  });
 });
 
 describe("epoch-arithmetic", () => {
