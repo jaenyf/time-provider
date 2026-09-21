@@ -4,9 +4,10 @@ import { describe, expect, test } from "vite-plus/test";
 
 /**
  * Guards the workspace metadata that nothing else checks: the peer ranges every plugin and
- * addon declares on `@time-provider/core`, the Node floor every published package states, and
- * the release registration a package needs to be publishable at all. These tests prevent them
- * from drifting.
+ * addon declares on `@time-provider/core`, the Node floor every published package states, the
+ * keyword and README badges each one needs to be findable and correct on npm, and the release
+ * registration a package needs to be publishable at all. These tests prevent them from
+ * drifting.
  */
 
 const packagesDir = join(import.meta.dirname, "..", "..");
@@ -67,6 +68,39 @@ describe("workspace manifests", () => {
       // without hard-coding the value.
       expect(new Set(published.map(([, manifest]) => manifest.engines.node)).size).toBe(1);
     });
+  });
+
+  describe("keywords", () => {
+    const subjectOf = (packageName: string) => packageName.replace(/^(plugin|addon)-/, "");
+
+    test.each(manifests.filter(([name]) => name !== subjectOf(name)))(
+      "%s names its own subject",
+      (packageName, manifest) => {
+        // Every package repeats the same generic list, so the one term that tells them apart is
+        // the thing it adapts or adds. Missing it, the package is unfindable by the only word
+        // someone would search for; `addon-compat` shipped with `addon-cron`'s terms instead.
+        expect(manifest.keywords).toContain(subjectOf(packageName));
+      },
+    );
+  });
+
+  describe("readme badges", () => {
+    const badgeRefsOf = (packageName: string) =>
+      readFileSync(join(packagesDir, packageName, "README.md"), "utf8")
+        .split("\n")
+        .filter((line) => line.startsWith("[!["))
+        .join("\n")
+        .match(/(?<=(?:@|%40)time-provider(?:\/|%2F))[a-z-]+/g);
+
+    test.each(manifests.filter(([, manifest]) => manifest.private === false))(
+      "%s links its badges to itself",
+      (packageName, manifest) => {
+        // These render on the package's own npm page, so one pointing elsewhere advertises
+        // another package's version, size and downloads as this one's. Seven READMEs did,
+        // copied wholesale from the package they were started from.
+        expect(new Set(badgeRefsOf(packageName))).toEqual(new Set([manifest.name.split("/")[1]]));
+      },
+    );
   });
 
   describe("release registration", () => {
