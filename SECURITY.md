@@ -11,6 +11,34 @@ surface of its own. Reports about the packages under `packages/*`
 that project instead, unless the issue is specifically in how
 `time-provider` uses it.
 
+## Input validation and the trust boundary
+
+`time-provider` is not a validation layer. Validate untrusted date, duration
+and timezone input in your application, before it reaches the library.
+
+What the library does check:
+
+- `TimeInputValidator.assertValid()` rejects `undefined`, `null`, `NaN` and
+  empty or whitespace-only strings for a time value.
+- `toDuration()` and `toInstant()` reject a spec whose fields don't add up to
+  a finite number of milliseconds; `toInstant()` also rejects a negative field.
+- A plugin rejects a timezone its own date library can't resolve.
+- `@time-provider/addon-cron` parses expressions strictly: it never evaluates
+  them, and it rejects a field that is malformed or out of range for the
+  calendar behind the runtime.
+
+What it does not check:
+
+- Whether an arbitrary `TDate` value is semantically valid. That belongs to
+  the date library a plugin adapts, and is reported however that library
+  reports it.
+- The magnitude of a finite duration. A caller can schedule a timer an
+  arbitrary distance into the future.
+
+The branded `DurationMilliseconds` and `EpochMilliseconds` types are
+compile-time constructs. They disappear at runtime and stop nothing that
+reaches the library from JavaScript, from `any`, or across a network boundary.
+
 ## Supported Versions
 
 `@time-provider/core` and each `@time-provider/plugin-*` and
