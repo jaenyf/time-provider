@@ -48,7 +48,7 @@ type-check or run, since workspace packages resolve through their built
 - Conventional Commits, enforced by commitlint (commit-msg hook + CI), driving
   automated versioning and the changelog — e.g. `fix(core): ...`,
   `feat(plugin-luxon): ...`.
-- Branch names matching `<type>/<description>` (`ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor`),
+- Branch names matching `<type>/<description>` (`ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor|test`),
   enforced by `validate-branch-name` in the pre-commit hook and CI.
 - Every bug fix needs a regression test. A change to a plugin's _runtime
   behavior_ belongs in the shared spec (`packages/test-shared`, run against

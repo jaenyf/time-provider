@@ -5,9 +5,9 @@ import { describe, expect, test } from "vite-plus/test";
 /**
  * Guards the workspace metadata that nothing else checks: the peer ranges every plugin and
  * addon declares on `@time-provider/core`, the Node floor every published package states, the
- * keyword and README badges each one needs to be findable and correct on npm, and the release
- * registration a package needs to be publishable at all. These tests prevent them from
- * drifting.
+ * keyword and README badges each one needs to be findable and correct on npm, the release
+ * registration a package needs to be publishable at all, and the branch types the docs promise
+ * against the pattern that enforces them. These tests prevent them from drifting.
  */
 
 const packagesDir = join(import.meta.dirname, "..", "..");
@@ -101,6 +101,40 @@ describe("workspace manifests", () => {
         expect(new Set(badgeRefsOf(packageName))).toEqual(new Set([manifest.name.split("/")[1]]));
       },
     );
+  });
+
+  describe("branch types", () => {
+    const rootManifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
+    const pattern = rootManifest["validate-branch-name"].pattern as string;
+    const types = pattern.match(/\(((?:[a-z]+\|)+[a-z]+)\)\//)![1].split("|");
+
+    // The list is written out in prose in three more places than the pattern itself, so a type
+    // added to the pattern alone leaves a contributor reading a list that turns their branch
+    // away. Each prose copy is read back as the set of bare lowercase words it quotes - in the
+    // block that mentions `validate-branch-name`, for the two docs - rather than by searching
+    // for each type, since a word like "test" occurs in that prose for other reasons.
+    const namedIn = (text: string) =>
+      new Set(
+        (text.match(/`[^`]+`/g) ?? [])
+          .flatMap((span) => span.slice(1, -1).split("|"))
+          .filter((word) => /^[a-z]+$/.test(word)),
+      );
+
+    const blockOf = (docFile: string) =>
+      readFileSync(join(repoRoot, docFile), "utf8")
+        .split("\n\n")
+        .find((block) => block.includes("validate-branch-name"))!;
+
+    test.each(["AGENTS.md", "CONTRIBUTING.md"])("%s lists every accepted type", (docFile) => {
+      const named = namedIn(blockOf(docFile));
+      expect(types.filter((type) => !named.has(type))).toEqual([]);
+    });
+
+    test("the error message lists every accepted type", () => {
+      const errorMsg = rootManifest["validate-branch-name"].errorMsg as string;
+      const named = new Set(errorMsg.match(/[a-z]+/g));
+      expect(types.filter((type) => !named.has(type))).toEqual([]);
+    });
   });
 
   describe("release registration", () => {

@@ -62,10 +62,13 @@ from the repo root.
 ## Making Changes
 
 1. Fork the repository and create a branch from `main`.
-2. Name the branch `<type>/<description>`, where `<type>` is one of `bugfix`, `chore`, `ci`, `docs`, `feat`, `feature`, `fix`, `hotfix`, `perf`,
-   `release`, `refactor` (see [conventionalbranch.org](https://conventionalbranch.org)).
-   This is enforced by `validate-branch-name` (configured in the root
-   `package.json`), both locally by the `pre-commit` hook
+2. Name the branch `<type>/<description>`, where `<type>` is one of `bugfix`,
+   `chore`, `ci`, `docs`, `feat`, `feature`, `fix`, `hotfix`, `perf`,
+   `release`, `refactor` or `test` (see
+   [conventionalbranch.org](https://conventionalbranch.org)). `ai` and
+   `dependabot` are accepted too, but they belong to this repo's automated
+   contributors. This is enforced by `validate-branch-name` (configured in
+   the root `package.json`), both locally by the `pre-commit` hook
    (`.vite-hooks/pre-commit`) and again in CI.
 3. Write or update tests for your change. New code is expected to keep
    coverage where it is; see [ARCHITECTURE.md](./ARCHITECTURE.md#testing) for
