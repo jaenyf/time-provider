@@ -33,7 +33,7 @@ interface ITimers {
   /** One-shot timer. */
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
-  /** A "promise” variant of the `once` one-shot. */
+  /** A "promise" variant of the `once` one-shot. */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /** Fixed-interval timer. */

@@ -6,13 +6,13 @@ export class ScheduledHandle<TDate, TNativeHandle> implements IScheduledHandle {
   #owner: IRuntime<TDate>;
   #nativeHandle: TNativeHandle | undefined;
   #disposed: boolean;
-  #abortControler?: AbortController;
+  #abortController?: AbortController;
   constructor(kind: ScheduledHandleKind, owner: IRuntime<TDate>, nativeHandle: TNativeHandle) {
     this.#kind = kind;
     this.#owner = owner;
     this.#nativeHandle = nativeHandle;
     this.#disposed = false;
-    this.#abortControler = undefined;
+    this.#abortController = undefined;
   }
 
   get kind(): ScheduledHandleKind {
@@ -39,8 +39,8 @@ export class ScheduledHandle<TDate, TNativeHandle> implements IScheduledHandle {
     if (this.#disposed) {
       return;
     }
-    if (this.#abortControler !== undefined) {
-      this.#abortControler.abort("Timer handle is being disposed");
+    if (this.#abortController !== undefined) {
+      this.#abortController.abort("Timer handle is being disposed");
     }
     this.#owner.clearTimer(this);
     this.#nativeHandle = undefined;
@@ -55,12 +55,12 @@ export class ScheduledHandle<TDate, TNativeHandle> implements IScheduledHandle {
     if (this.#disposed === true) {
       return BaseRuntime.ABORTED_SIGNAL;
     }
-    if (this.#abortControler === undefined) {
-      this.#abortControler = new AbortController();
-      this.#abortControler.signal.addEventListener("abort", () => {
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      this.#abortController.signal.addEventListener("abort", () => {
         this.dispose();
       });
     }
-    return this.#abortControler.signal;
+    return this.#abortController.signal;
   }
 }

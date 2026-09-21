@@ -257,7 +257,7 @@ export function testManualRuntime<TDate>(
 
     describe("timers", () => {
       testTimers(() => createSUT().scheduler.timers);
-      describe("additionnal", () => {
+      describe("additional", () => {
         describe("once", () => {
           test("can be called without specified delay", () => {
             const sut = createSUT();

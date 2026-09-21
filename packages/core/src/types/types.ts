@@ -497,7 +497,7 @@ export enum ScheduledHandleKind {
 export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}
 
 /**
- * Additionnal options to create a timer.
+ * Additional options to create a timer.
  */
 export interface ITimerOptions {
   signal?: AbortSignal;
@@ -529,7 +529,7 @@ export interface ITimers {
   /** One-shot timer. */
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
-  /** A "promise” variant of the `once` one-shot. */
+  /** A "promise" variant of the `once` one-shot. */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /** Fixed-interval timer. */

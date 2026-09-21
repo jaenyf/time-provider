@@ -7,7 +7,7 @@ import { plugin as deterministicPlugin } from "@time-provider/plugin-native/dete
 
 describe("plugin-native", () => {
   testAll<Date>(systemPlugin, deterministicPlugin);
-  describe("additionnals", () => {
+  describe("additional", () => {
     test("forcing access to deterministic localNow throws", () => {
       const sut = createDeterministicTimeProvider.for(deterministicPlugin).asManual().create();
       expect(() => (sut.clock as unknown as IClock<Date>).localNow()).toThrow(

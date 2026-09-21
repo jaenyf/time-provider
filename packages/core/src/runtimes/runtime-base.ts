@@ -74,7 +74,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   #performance: IPerformance;
   #calendarScheme: ICalendarScheme<TDate>;
   #isDisposed: boolean;
-  #abortControler?: AbortController;
+  #abortController?: AbortController;
   #timersHandles: Set<IScheduledHandle>;
   #appliedAddons: Set<IAddon<TDate>>;
   protected constructor(
@@ -83,7 +83,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     performance: IPerformance,
   ) {
     this.#isDisposed = false;
-    this.#abortControler = undefined;
+    this.#abortController = undefined;
     this.#timersHandles = new Set<IScheduledHandle>();
     this.#appliedAddons = new Set<IAddon<TDate>>();
     this.#localTimezone = localTimezone;
@@ -114,13 +114,13 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     if (this.#isDisposed === true) {
       return BaseRuntime.ABORTED_SIGNAL;
     }
-    if (this.#abortControler === undefined) {
-      this.#abortControler = new AbortController();
-      this.#abortControler.signal.addEventListener("abort", () => {
+    if (this.#abortController === undefined) {
+      this.#abortController = new AbortController();
+      this.#abortController.signal.addEventListener("abort", () => {
         this.dispose();
       });
     }
-    return this.#abortControler.signal;
+    return this.#abortController.signal;
   }
 
   protected disposeTimersHandles(): void {
@@ -141,8 +141,8 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     if (this.#isDisposed) {
       return;
     }
-    if (this.#abortControler !== undefined) {
-      this.#abortControler.abort("Time-Provider runtime is being disposed");
+    if (this.#abortController !== undefined) {
+      this.#abortController.abort("Time-Provider runtime is being disposed");
     }
     this.disposeTimersHandles();
     this.disposeAddons();

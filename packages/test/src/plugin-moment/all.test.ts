@@ -8,7 +8,7 @@ import { createTimeProvider as createDeterministicTimeProvider } from "@time-pro
 
 describe("plugin-moment", () => {
   testAll<moment.Moment>(systemPlugin, deterministicPlugin);
-  describe("additionnals", () => {
+  describe("additional", () => {
     test("forcing access to deterministic localNow throws", () => {
       const sut = createDeterministicTimeProvider.for(deterministicPlugin).asManual().create();
       expect(() => (sut.clock as unknown as IClock<Date>).localNow()).toThrow(
