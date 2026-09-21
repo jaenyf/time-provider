@@ -98,7 +98,7 @@ jobs:
 
       - run: vp install --frozen-lockfile
       - run: vp run build
-      - run: vp check
+      - run: vp run check
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 

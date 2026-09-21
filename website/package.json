@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "vp check && vue-tsc --noEmit",
     "dev": "vitepress dev .",
     "build": "vitepress build .",
     "preview": "vitepress preview ."
@@ -28,6 +29,7 @@
   "devDependencies": {
     "shiki": "4.4.3",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-tsc": "^3.3.11"
   }
 }

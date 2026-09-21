@@ -1074,12 +1074,17 @@ function makeCronAtom(field: CronFieldMeta): CronAtom {
   const initial = field.names ? field.names[0] : String(field.min);
   return { id: cronAtomId++, mode: "value", value: initial, from: initial, to: initial, step: "" };
 }
-const cronBuilder = reactive<Record<CronFieldMeta["key"], CronFieldState>>(
-  Object.fromEntries(CRON_FIELDS.map((f) => [f.key, { wildcard: true, atoms: [] }])) as Record<
-    CronFieldMeta["key"],
-    CronFieldState
-  >,
-);
+// Spelled out rather than built from CRON_FIELDS: `Object.fromEntries` can only produce an index
+// signature, so keying it off the field list needed a cast that hid whether every field was
+// actually covered. Written this way the compiler is the one checking.
+const emptyCronField = (): CronFieldState => ({ wildcard: true, atoms: [] });
+const cronBuilder = reactive<Record<CronFieldMeta["key"], CronFieldState>>({
+  minute: emptyCronField(),
+  hour: emptyCronField(),
+  dayOfMonth: emptyCronField(),
+  month: emptyCronField(),
+  dayOfWeek: emptyCronField(),
+});
 function addCronAtom(field: CronFieldMeta) {
   cronBuilder[field.key].atoms.push(makeCronAtom(field));
 }
