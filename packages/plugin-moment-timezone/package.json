@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-moment-timezone",
   "version": "0.4.1",
   "private": false,
-  "description": "Time-Provider : Moment.js plugin ~ Your single time interface for all your JavaScript / TypeScript projects.",
+  "description": "Time-Provider : Moment.js + moment-timezone plugin ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
     "clock",
     "date",
@@ -16,6 +16,8 @@
     "frozen",
     "injection",
     "manual",
+    "moment",
+    "moment-timezone",
     "provider",
     "running",
     "sequential",
@@ -23,7 +25,8 @@
     "solid principles",
     "system",
     "time",
-    "timers"
+    "timers",
+    "timezone"
   ],
   "homepage": "https://jaenyf.github.io/time-provider/",
   "bugs": {

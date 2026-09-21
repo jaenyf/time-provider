@@ -6,6 +6,7 @@
   "keywords": [
     "clock",
     "date",
+    "dayjs",
     "dependency injection",
     "dependency inversion principle",
     "deterministic",

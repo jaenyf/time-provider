@@ -4,6 +4,8 @@
   "private": false,
   "description": "Time-Provider : Animation Frame API addon ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
+    "animation",
+    "animation-frame",
     "clock",
     "date",
     "dependency injection",
@@ -17,6 +19,7 @@
     "injection",
     "manual",
     "provider",
+    "raf",
     "running",
     "sequential",
     "solid",

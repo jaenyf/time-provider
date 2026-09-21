@@ -16,6 +16,7 @@
     "frozen",
     "injection",
     "manual",
+    "moment",
     "provider",
     "running",
     "sequential",
