@@ -56,11 +56,13 @@ type-check or run, since workspace packages resolve through their built
   is genuinely plugin-specific.
 - A new plugin needs both a `packages/test` entry (unit-level, against
   source) and a `packages/test-e2e` entry (smoke test against the built
-  `dist` output).
+  `dist` output). A new addon needs its own suite under
+  `packages/<addon>/test/` and a `packages/test-treeshake` fixture pair under
+  `fixtures/with-<addon>-addon/`.
 - `@time-provider/core` has zero runtime dependencies. Each plugin depends
   only on `core` and the one date library it adapts, declared as a
-  `peerDependency` (never bundled as a `dependency`) — don't add a new
-  runtime dependency without a strong reason.
+  `peerDependency` (never bundled as a `dependency`); each addon depends only
+  on `core` — don't add a new runtime dependency without a strong reason.
 - Packages under `packages/*` are versioned and released **independently**
   (see [SECURITY.md](./SECURITY.md)) — don't assume `core` and the plugins
   share a version number.
@@ -68,9 +70,10 @@ type-check or run, since workspace packages resolve through their built
 ## Architecture
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full picture: the core
-abstractions (clock/timers/parser/performance), the plugin/adapter
-pattern, why "full" (timezone-aware) and "UTC-only" plugins are separate
-interface hierarchies, and how the test suites are organized.
+abstractions (clock/timers/converter/performance), the plugin/adapter
+pattern, how an addon attaches its facade to a runtime, why "full"
+(timezone-aware) and "UTC-only" plugins are separate interface hierarchies,
+and how the test suites are organized.
 
 ## Gotchas
 

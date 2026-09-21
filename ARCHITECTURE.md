@@ -6,8 +6,9 @@ the motivation behind it, see the [README](./README.md).
 
 ## Packages
 
-The library is a monorepo split into one core package and one adapter
-("plugin") package per supported date library:
+The library is a monorepo split into one core package, one adapter
+("plugin") package per supported date library, and one "addon" package per
+capability layered on top of a runtime:
 
 ```
 packages/
@@ -18,19 +19,24 @@ packages/
   plugin-moment/           @time-provider/plugin-moment - Moment.js (UTC-only)
   plugin-moment-timezone/  @time-provider/plugin-moment-timezone - Moment.js + moment-timezone
   plugin-temporal/         @time-provider/plugin-temporal - Temporal (@js-temporal/polyfill)
+  addon-animation-frame/   @time-provider/addon-animation-frame - scheduler.animation
+  addon-compat/            @time-provider/addon-compat - compat, the native-shaped surface
+  addon-cron/              @time-provider/addon-cron   - scheduler.cron
+  addon-eta/               @time-provider/addon-eta    - eta
+  addon-idle/              @time-provider/addon-idle   - scheduler.idle
   test-shared/             behavior specs shared by every plugin's test suite
   test/                    per-plugin test entry points, each running the shared specs
   test-e2e/                one smoke test per plugin against its built dist output
-  test-treeshake/          per-plugin bundle assertions - see "Tree-shaking" below
+  test-treeshake/          per-plugin and per-addon bundle assertions - see "Tree-shaking" below
 ```
 
 `core` has no runtime dependencies. Each plugin depends only on `core` and
-its own date library.
+its own date library; each addon depends only on `core`.
 
 ## File layout
 
-Both `core` and every plugin package split their `src/` into exactly two
-kinds of file, and no more than that:
+`core`, every plugin package and every addon package split their `src/` into
+exactly two kinds of file, and no more than that:
 
 - **`index.ts` / `deterministic.ts`** - the two public entry points (see
   "Tree-shaking" below). Thin: a handful of re-exports plus, for a plugin,
@@ -151,6 +157,67 @@ also means that method is intentionally never exercised by the test suite.
 If you're looking at coverage and wondering why `plugin-native` and
 `plugin-moment` aren't at 100%, this is why.
 
+## Addons
+
+A plugin adapts a date library. An addon adds a capability the core knows
+nothing about: cron schedules, idle callbacks, animation frames, ETA
+estimates, or a native-shaped `compat` surface. A consumer composes one with
+`.use(addon)` on the builder, before choosing the strategy:
+
+```typescript
+createTimeProvider.for(plugin).use(cronAddon).asManual().create();
+```
+
+Each addon package exports an `addon()` factory from both entry points -
+`addon.ts` behind `index.ts` for the system one, `deterministic.ts` for the
+deterministic one - returning an `IAddonBuilder` whose `create()` builds the
+addon instance. The two build the same class when the behavior is identical
+either way (`CronScheduler`, `CompatRuntime`, `EtaScheduler`), and different
+ones when it isn't: the idle and animation addons need the host's real
+`requestIdleCallback` on a system runtime and a drainable queue on a
+deterministic one, so they ship a `system-*-scheduler.ts` and a
+`deterministic-*-scheduler.ts` side by side.
+
+An addon extends `AddonBase` and does its work in `applyToRuntimeImpl`, which
+calls `AddonHelper.extendRuntimeWithProperty` once per property it
+contributes:
+
+```typescript
+applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+  AddonHelper.extendRuntimeWithProperty(
+    runtime,
+    "scheduler.cron",
+    { schedule: this.schedule.bind(this) },
+    this,
+  );
+}
+```
+
+Three things about that call decide how the addon behaves:
+
+- **The path is dotted, and where it points is not a style choice.**
+  `scheduler` groups the members that return an `IScheduledHandle`, so cron,
+  idle and animation pass `"scheduler.cron"`, `"scheduler.idle"` and
+  `"scheduler.animation"`, landing beside `timers` and `microtasks`. ETA
+  returns no handle, and `compat` mirrors what a host global already offers,
+  so both pass a bare name and stay at the root.
+- **The facade is not the addon.** The third argument is the object a
+  consumer reaches through `runtime.scheduler.cron`. The addon instance
+  itself also carries `.runtime`, `.applyToRuntime` and `.dispose`, which a
+  consumer has no business calling, so it goes in separately as the fourth
+  argument - which is also what registers it to be disposed with the runtime.
+- **One addon can contribute to another's facade**, via the optional fifth
+  argument. The animation and idle addons add native-shaped aliases to
+  `compat` (`requestAnimationFrame`, `requestIdleCallback`), passing `true` so
+  the call turns into a no-op when the compat addon was not composed, or was
+  composed after them. A property added that way is declared optional
+  (`compat?:`) in the addon's public type, since whether it exists depends on
+  what else the consumer composed.
+
+`AddonBase` caches `runtime.scheduler.timers`, `.clock`,
+`.scheduler.microtasks` and `.performance` behind protected getters, so an
+addon scheduling on a hot path doesn't walk the facet chain on every call.
+
 ## Tree-shaking
 
 `index.ts` (the production, system (real-time) entry) and
@@ -166,6 +233,14 @@ Every package is tested to be tree-shakable by `packages/test-treeshake` which c
   those same markers.
 
 Those checks also ensure the core package itself is correctly tree-shaked.
+
+Addons are checked from their own fixtures (`fixtures/with-<addon>-addon/`,
+one `system.ts` and one `deterministic.ts` each). An addon that splits its
+scheduler in two - animation and idle - has to contribute only the class its
+entry point names; one that shares a single class between both entries - cron,
+eta and compat - still has to drag in only the matching runtime. The plugin
+fixtures carry the reverse assertion: none of them imports an addon, so their
+bundles must contain none of an addon's code.
 
 ## Scheduling
 
@@ -204,6 +279,11 @@ interval behaves when the event loop was blocked past a firing.
 - `packages/test-e2e` has one smoke test per plugin, run against the built
   `dist` output rather than source, to catch packaging/export mistakes that
   a source-level test wouldn't.
+- Each addon has its own suite under `packages/addon-*/test/`, run against
+  source. Behavior a plugin has to keep working once an addon is composed
+  belongs in the shared spec instead, the way the cron addon's does:
+  `test-shared/src/helpers/testCron.ts` is imported by all four runtime specs,
+  so every plugin is exercised with the cron addon composed onto it.
 
 Coverage (`vp test --coverage`) is enforced in CI; see the `build-test` job
 in [`.github/workflows/check.yml`](.github/workflows/check.yml).

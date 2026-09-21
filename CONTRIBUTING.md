@@ -20,9 +20,10 @@ first to avoid filing a duplicate, then:
   [Feature request](https://github.com/jaenyf/time-provider/issues/new?template=feature_request.yml).
   Describe the problem you're trying to solve rather than just the API you
   have in mind - it's easier to evaluate and may already be solvable another
-  way. Requesting a new date-library adapter fits here too; see
-  [ARCHITECTURE.md](./ARCHITECTURE.md) for what a plugin needs to implement
-  if you want to gauge the shape of the work yourself.
+  way. Requesting a new date-library adapter, or a new addon, fits here too;
+  see [ARCHITECTURE.md](./ARCHITECTURE.md) for what a plugin has to implement
+  and how an addon attaches to a runtime, if you want to gauge the shape of
+  the work yourself.
 - **Something else, or neither template fits:** open a blank issue.
 
 ## Setup
@@ -88,9 +89,10 @@ from the repo root.
   (per package) or `vp run -r check` (whole repo). Fix everything it
   reports; `vp check --fix` will auto-fix what it can, and the pre-commit
   hook already runs it on staged files.
-- **`@time-provider/core` has zero runtime dependencies**, and each plugin
-  depends only on `core` and the date library it adapts. Don't add a new
-  runtime dependency without a strong reason.
+- **`@time-provider/core` has zero runtime dependencies**, each plugin
+  depends only on `core` and the date library it adapts, and each addon
+  depends only on `core`. Don't add a new runtime dependency without a strong
+  reason.
 
 ## Testing
 
@@ -104,6 +106,11 @@ We use [Vitest](https://vitest.dev/) via `vp test`.
 - A new plugin needs an entry in `packages/test` (unit-level, against
   source) and `packages/test-e2e` (a smoke test against the built `dist`
   output).
+- A new addon needs its own suite under `packages/<addon>/test/` and a
+  `packages/test-treeshake` fixture pair (`fixtures/with-<addon>-addon/`),
+  proving each entry point pulls in only its own code. Behavior every plugin
+  has to keep working once the addon is composed belongs in the shared spec,
+  next to the cron addon's.
 
 ## Pull Request Guidelines
 
