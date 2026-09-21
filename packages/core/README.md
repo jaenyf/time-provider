@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@time-provider%2Fcore.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core)
 [![types](https://img.shields.io/npm/types/@time-provider/core?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core?activeTab=code)
+[![Node.js >=20.4](https://img.shields.io/badge/node-%3E%3D20.4-blue?logo=node.js&logoColor=white&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/package.json)
 [![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=86400)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)

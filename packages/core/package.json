@@ -62,5 +62,8 @@
     "check": "vp check",
     "prepublishOnly": "vp run build",
     "release": "npm stage publish --provenance"
+  },
+  "engines": {
+    "node": ">=20.4.0"
   }
 }

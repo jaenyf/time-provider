@@ -71,5 +71,8 @@
   "peerDependencies": {
     "@time-provider/core": "^3.0.0",
     "luxon": "^3.7.2"
+  },
+  "engines": {
+    "node": ">=20.4.0"
   }
 }

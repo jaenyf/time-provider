@@ -60,5 +60,8 @@
   },
   "peerDependencies": {
     "@time-provider/core": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.4.0"
   }
 }

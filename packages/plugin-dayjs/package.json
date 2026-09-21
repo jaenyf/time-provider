@@ -69,5 +69,8 @@
   "peerDependencies": {
     "@time-provider/core": "^3.0.0",
     "dayjs": "~1.8.15"
+  },
+  "engines": {
+    "node": ">=20.4.0"
   }
 }
