@@ -41,6 +41,7 @@ describe("BaseSystemRuntime", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   describe("once", () => {
@@ -213,6 +214,31 @@ describe("BaseSystemRuntime", () => {
       );
       expect(() => vi.advanceTimersByTime(10)).toThrow(error);
       expect(handle.isDisposed).toBe(true);
+    });
+
+    test("still rethrows in a browser-like environment, unlike a deterministic runtime", () => {
+      /*
+        A deterministic runtime reads shouldRethrowTimerErrors() and emulates the host: it
+        rethrows under Node and logs via console.error under a browser. A system runtime never
+        consults it, because the callback already runs inside a native timer and the host's own
+        semantics apply on their own. Rethrowing here is how that reaches the host, so the
+        asymmetry is the point, not an oversight.
+      */
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("process", undefined);
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const error = new Error("boom");
+      const handle = sut.recurring(
+        () => {
+          throw error;
+        },
+        { milliseconds: 10 },
+      );
+
+      expect(() => vi.advanceTimersByTime(10)).toThrow(error);
+      expect(handle.isDisposed).toBe(true);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -240,6 +240,35 @@ describe("issue#147", () => {
   });
 });
 
+describe("BaseManualRuntime extreme but finite delays", () => {
+  /*
+    toDuration() rejects a non-finite delay, which is what used to hang a runtime, but it
+    deliberately puts no ceiling on a finite one - see SECURITY.md. So the largest delays
+    the type system allows still reach a timer, and have to degrade into "never due" rather
+    than into anything worse.
+  */
+  test("a delay of MAX_VALUE is accepted and simply never comes due", () => {
+    const sut = new FakeManualRuntime(0);
+    let fired = 0;
+    sut.scheduler.timers.once({ milliseconds: Number.MAX_VALUE }, () => ++fired);
+
+    expect(() => sut.advance({ days: 365_000 })).not.toThrow();
+    expect(fired).toBe(0);
+  });
+
+  test("a finite now plus a finite delay that overflows to infinity never comes due either", () => {
+    // Only a clock already sitting near MAX_VALUE can do this, which needs a custom converter,
+    // and drainDue breaks on `runAt > now`. Infinity is greater than any finite now, so the
+    // timer is simply never due - unlike NaN, which compared false and spun.
+    const sut = new FakeManualRuntime(Number.MAX_VALUE);
+    let fired = 0;
+    sut.scheduler.timers.once({ milliseconds: Number.MAX_VALUE }, () => ++fired);
+
+    expect(() => sut.advance({ milliseconds: 1 })).not.toThrow();
+    expect(fired).toBe(0);
+  });
+});
+
 describe("BaseManualRuntime drainDue exception handling", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

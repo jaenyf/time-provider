@@ -6,6 +6,17 @@ export const MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE;
 export const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR;
 
 /**
+ * Guards a spec total against `NaN` and `±Infinity`, which the `number` fields of a spec accept
+ * and the branded return types cannot reject.
+ * @throws if `milliseconds` is not a finite number.
+ */
+function assertFiniteMilliseconds(milliseconds: number, kind: "duration" | "instant"): void {
+  if (!Number.isFinite(milliseconds)) {
+    throw new Error(`Invalid ${kind} value (value was '${String(milliseconds)}')`);
+  }
+}
+
+/**
  * Describe a duration in terms of its number of days, hours, minutes, seconds and milliseconds.
  */
 export interface IDurationSpec {
@@ -18,8 +29,12 @@ export interface IDurationSpec {
 
 /**
  * Convert a duration spec to a branded duration expressed in milliseconds.
+ *
+ * A fractional value is kept as given rather than rounded - a deterministic runtime honours it
+ * exactly, while a system runtime hands it to the host timer, which truncates it.
  * @param durationSpec the spec describing the duration.
  * @returns a branded DurationMilliseconds type
+ * @throws if the fields don't add up to a finite number of milliseconds.
  */
 export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
   let ms: number = 0;
@@ -43,6 +58,12 @@ export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
   if (durationSpec.days !== undefined) {
     ms += durationSpec.days * MILLISECONDS_PER_DAY;
   }
+
+  // `NaN` and `Infinity` are not rejected by the branded type, which is a compile-time construct,
+  // and every runtime mishandles them differently once they reach a timer: a deterministic one
+  // treats a `NaN` delay as perpetually due and spins forever, a system one chunks an infinite
+  // delay into 24.8-day timeouts that never end. Reject them here, where the value is built.
+  assertFiniteMilliseconds(ms, "duration");
 
   return ms as DurationMilliseconds;
 }
@@ -74,6 +95,7 @@ export interface IEpochInstantSpec {
  * Convert the given instant spec to a branded instant expressed as the number of milliseconds since epoch.
  * @param instantSpec the spec describing the instant compared to the epoch time.
  * @returns a branded EpochMilliseconds type
+ * @throws if any field is negative, or if the fields don't add up to a finite number of milliseconds.
  */
 export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
   let ms: number = 0;
@@ -112,6 +134,8 @@ export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
     }
     ms += instantSpec.days * MILLISECONDS_PER_DAY;
   }
+
+  assertFiniteMilliseconds(ms, "instant");
 
   return ms as EpochMilliseconds;
 }

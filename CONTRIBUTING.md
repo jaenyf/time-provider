@@ -46,15 +46,16 @@ vp install
 
 ## Development Commands
 
-| Command              | What it does                                              |
-| -------------------- | --------------------------------------------------------- |
-| `vp test`            | Run all tests                                             |
-| `vp test --coverage` | Run all tests with coverage (also runs in CI)             |
-| `vp run build`       | Build every package                                       |
-| `vp check`           | Format, lint, and type-check the current package          |
-| `vp run -r check`    | Format, lint, and type-check every package                |
-| `vp run stryker`     | Run mutation testing (Stryker)                            |
-| `vp run ready`       | Run test, build, check, and stryker - the full local gate |
+| Command                           | What it does                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `vp test`                         | Run all tests                                                                                       |
+| `vp test --coverage`              | Run all tests with coverage (also runs in CI)                                                       |
+| `vp run build`                    | Build every package                                                                                 |
+| `vp check`                        | Format, lint, and type-check the current package                                                    |
+| `vp run -r check`                 | Format, lint, and type-check every package                                                          |
+| `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first) |
+| `vp run stryker`                  | Run mutation testing (Stryker)                                                                      |
+| `vp run ready`                    | Run test, build, check, and stryker - the full local gate                                           |
 
 Run a command for a single package from its directory, or use `vp run <pkg>#<script>`
 from the repo root.

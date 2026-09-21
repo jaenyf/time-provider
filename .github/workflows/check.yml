@@ -23,8 +23,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: voidzero-dev/setup-vp@v1.20.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: voidzero-dev/setup-vp@9fd26ff49f9b5e6276c2b493da4454ad4527f7f4 # v1.20.0
         with:
           node-version: "24"
       - run: vp add -D validate-branch-name
@@ -39,11 +39,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
-      - uses: voidzero-dev/setup-vp@v1.20.0
+      - uses: voidzero-dev/setup-vp@9fd26ff49f9b5e6276c2b493da4454ad4527f7f4 # v1.20.0
         with:
           node-version: "24"
 
@@ -79,6 +79,32 @@ jobs:
         if: github.event_name == 'push' && (github.event.before == '0000000000000000000000000000000000000000' || github.event.forced == true)
         run: git log -1 --format=%B ${{ github.sha }} | vpx commitlint --verbose
 
+  dependency-review:
+    # Fails a pull request that pulls in a dependency with a known advisory.
+    # Deliberately scoped to the diff: the tree already carries advisories in build
+    # tooling (vite and esbuild through vite-plus and vitepress, qs through Stryker),
+    # none of which reach a published package, so gating on the whole tree would mean
+    # a permanently red check or an ignore list to maintain. The audit step below
+    # keeps those visible without blocking.
+    needs: commitlint
+    # Nothing about a PR title edit can change a dependency.
+    if: github.event_name == 'pull_request' && github.event.action != 'edited'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - name: Audit the whole tree (report only)
+        continue-on-error: true
+        run: bun audit
+
+      - name: Review dependencies this pull request adds
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+
   build-test:
     # Ensure project build, tests pass and forward coverage to codecov
     needs: commitlint
@@ -89,9 +115,9 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: voidzero-dev/setup-vp@v1.20.0
+      - uses: voidzero-dev/setup-vp@9fd26ff49f9b5e6276c2b493da4454ad4527f7f4 # v1.20.0
         with:
           node-version: "24"
           cache: true
@@ -99,19 +125,24 @@ jobs:
       - run: vp install --frozen-lockfile
       - run: vp run build
       - run: vp run check
+
+      # The test suites import the build output by path, so they never see the
+      # tarball npm would actually publish. Pack it and check it here instead.
+      - run: node scripts/verify-packages.ts
+
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 
       - name: Upload coverage to Codecov
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: test-report.junit.xml
@@ -124,7 +155,7 @@ jobs:
 
       - name: Update tests count badge
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: schneegans/dynamic-badges-action@v1.9.0
+        uses: schneegans/dynamic-badges-action@28b0fa8bdeb46170ac397105ece0c1fe58f68910 # v1.9.0
         with:
           auth: ${{ secrets.GIST_TESTS_COUNTER_SECRET }}
           gistID: 5c996e614c598efb1231d96c28444493

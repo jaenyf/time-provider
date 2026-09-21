@@ -1,5 +1,5 @@
 /**
- * Wheter or not an uncaught exception in a timer callback should be rethrown rather than logged and swallowed.
+ * Whether or not an uncaught exception in a timer callback should be rethrown rather than logged and swallowed.
  * This is intended to mimic the behavior of a browser or a node-like environment.
  */
 export function shouldRethrowTimerErrors(): boolean {

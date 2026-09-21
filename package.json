@@ -8,11 +8,11 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp run build && vp run check && vp run test && vp run stryker",
+    "ready": "vp run build && vp run check && node scripts/verify-packages.ts && vp run test && vp run stryker",
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
-    "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports bun.lock",
+    "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports",
     "test": "vp test",
     "check": "vp check && vp run -r check",
     "stryker": "stryker run"
@@ -22,11 +22,11 @@
     "@js-temporal/polyfill": "~0.5.1",
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.0.0",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
+    "@types/node": "26.1.2",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "4.1.11",
     "rimraf": "^6.1.3",
-    "typescript": "catalog:",
+    "typescript": "^6.0.3",
     "validate-branch-name": "^1.3.2",
     "vite-plus": "catalog:",
     "vitest": "catalog:"
@@ -36,11 +36,8 @@
   },
   "packageManager": "bun@1.3.14",
   "catalog": {
-    "vite-plus": "latest",
-    "vitest": "4.1.11",
-    "typescript": "^6.0.3",
-    "@types/node": "26.1.2",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2"
+    "vite-plus": "0.3.3",
+    "vitest": "4.1.11"
   },
   "validate-branch-name": {
     "pattern": "^(main)$|^(ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor|test)/.+$|^release-please--branches--.+$",
