@@ -2,6 +2,8 @@ import { describe, expect, test } from "vite-plus/test";
 import { asEpoch, epochArithmetic, toDuration, toInstant } from "../src/helpers/branded-types.ts";
 import type { EpochMilliseconds, DurationMilliseconds } from "../src/types/types.ts";
 
+const FIELDS = ["milliseconds", "seconds", "minutes", "hours", "days"] as const;
+
 describe("asEpoch", () => {
   test("returns a spec with 0 milliseconds", () => {
     expect(asEpoch().milliseconds).toBe(0);
@@ -50,6 +52,22 @@ describe("toInstant", () => {
       toInstant({ days: negativeValue });
     }).toThrow("Invalid operation");
   });
+
+  test.each(FIELDS)("throws with a NaN %s", (field) => {
+    expect(() => {
+      toInstant({ [field]: Number.NaN });
+    }).toThrow("Invalid instant value (value was 'NaN')");
+  });
+  test.each(FIELDS)("throws with an infinite %s", (field) => {
+    expect(() => {
+      toInstant({ [field]: Number.POSITIVE_INFINITY });
+    }).toThrow("Invalid instant value (value was 'Infinity')");
+  });
+  test("throws when the fields overflow to infinity", () => {
+    expect(() => {
+      toInstant({ days: Number.MAX_VALUE, hours: Number.MAX_VALUE });
+    }).toThrow("Invalid instant value (value was 'Infinity')");
+  });
 });
 
 describe("toDuration", () => {
@@ -67,6 +85,33 @@ describe("toDuration", () => {
   });
   test("days converts to milliseconds", () => {
     expect(toDuration({ days: 1 })).toEqual(1000 * 60 * 60 * 24);
+  });
+  test("keeps a fractional value as given", () => {
+    expect(toDuration({ milliseconds: 0.5 })).toEqual(0.5);
+  });
+
+  // A non-finite delay reaches a timer and hangs it: a deterministic runtime reads a NaN due
+  // time as perpetually due and spins inside advance(), a system runtime chunks an infinite
+  // delay into 24.8-day timeouts forever. Reject the value where it is built instead.
+  test.each(FIELDS)("throws with a NaN %s", (field) => {
+    expect(() => {
+      toDuration({ [field]: Number.NaN });
+    }).toThrow("Invalid duration value (value was 'NaN')");
+  });
+  test.each(FIELDS)("throws with an infinite %s", (field) => {
+    expect(() => {
+      toDuration({ [field]: Number.POSITIVE_INFINITY });
+    }).toThrow("Invalid duration value (value was 'Infinity')");
+  });
+  test.each(FIELDS)("throws with a negatively infinite %s", (field) => {
+    expect(() => {
+      toDuration({ [field]: Number.NEGATIVE_INFINITY });
+    }).toThrow("Invalid duration value (value was '-Infinity')");
+  });
+  test("throws when the fields overflow to infinity", () => {
+    expect(() => {
+      toDuration({ days: Number.MAX_VALUE, hours: Number.MAX_VALUE });
+    }).toThrow("Invalid duration value (value was 'Infinity')");
   });
 });
 
