@@ -9,8 +9,8 @@
 [![tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-tests-count-badge.json&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/core?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
-[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core?cacheSeconds=86400)](https://bundlephobia.com/package/%40time-provider%2Fcore)
-[![minzipped size](https://img.shields.io/bundlephobia/minzip/@time-provider/core?cacheSeconds=86400)](https://bundlephobia.com/package/%40time-provider%2Fcore)
+[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Fcore)
+[![minified size](https://img.shields.io/bundlejs/size/@time-provider/core?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Fcore)
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
 [![license](https://img.shields.io/npm/l/@time-provider/core?cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
