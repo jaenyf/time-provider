@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.3.0...addon-cron-v0.3.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.2.0...addon-cron-v0.3.0) (2026-09-20)
 
 

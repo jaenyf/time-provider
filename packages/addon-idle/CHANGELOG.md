@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.1.0...addon-idle-v0.1.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **core:** throw on a disposed runtime ([cd8311e](https://github.com/jaenyf/time-provider/commit/cd8311e018a058a18e678b1360bc03383ef6c712))
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
 ## [0.1.0](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.0.1...addon-idle-v0.1.0) (2026-09-20)
 
 
