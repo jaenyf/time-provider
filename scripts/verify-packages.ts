@@ -7,7 +7,8 @@
 //
 // For every publishable package this:
 //   1. runs `npm pack` and checks the file list against an allowlist, so
-//      nothing outside dist/, README.md and package.json can be published;
+//      nothing outside dist/, README.md, LICENSE and package.json can be
+//      published, and the LICENSE is there;
 //   2. extracts the tarballs side by side into a staging node_modules, with
 //      the peer date libraries linked in from this repo;
 //   3. imports every subpath in each package's `exports` from that staging
@@ -30,7 +31,10 @@
 //      admits the core version in this repo;
 //   9. no publishable package declares runtime dependencies, which is what
 //      lets SECURITY.md say a vulnerability in this repo's tooling cannot
-//      reach a consumer.
+//      reach a consumer;
+//  10. each package's LICENSE is byte-identical to the repository's, since
+//      npm only packs one sitting in the package directory and twelve
+//      copies drift without being read.
 //
 // Needs `vp run build` to have run first. Run it with Node 24+:
 // node scripts/verify-packages.ts
@@ -51,7 +55,7 @@ import { dirname, join, resolve } from "node:path";
 const ROOT = process.cwd();
 
 /** Everything a published tarball is allowed to contain. */
-const ALLOWED = [/^package\.json$/, /^README\.md$/, /^dist\/.+$/];
+const ALLOWED = [/^package\.json$/, /^README\.md$/, /^LICENSE$/, /^dist\/.+$/];
 
 /** Paths that must never be published, checked separately so the error says why. */
 const FORBIDDEN: ReadonlyArray<{ pattern: RegExp; reason: string }> = [
@@ -271,6 +275,23 @@ function checkContents(pkg: PackageJson, files: PackedFile[]): void {
   if (!files.some(({ path }) => path.startsWith("dist/"))) {
     fail(pkg.name, "tarball has no dist/ output");
   }
+  if (!files.some(({ path }) => path === "LICENSE")) {
+    fail(pkg.name, "tarball has no LICENSE - the MIT notice has to travel with the copy");
+  }
+}
+
+/**
+ * npm only picks up a LICENSE sitting in the package directory, so each package carries
+ * its own copy of the repository's. Twelve copies drift silently - a new year on the
+ * root notice and nowhere else - so they are compared rather than trusted.
+ */
+function checkLicense(dir: string, pkg: PackageJson, rootLicense: string): void {
+  const path = join(dir, "LICENSE");
+  if (!existsSync(path)) {
+    fail(pkg.name, "has no LICENSE, so the tarball would ship none - copy the root one");
+  } else if (readFileSync(path, "utf8") !== rootLicense) {
+    fail(pkg.name, "has a LICENSE that differs from the repository's - copy the root one");
+  }
 }
 
 /** Every file an exports/types entry points at has to be in the tarball. */
@@ -354,6 +375,7 @@ function main(): void {
     const dirs = publishablePackageDirs();
     const manifest = readManifest();
     const coreVersion = readPackageJson(resolve(ROOT, "packages/core")).version;
+    const rootLicense = readFileSync(join(ROOT, "LICENSE"), "utf8");
     const pkgs: PackageJson[] = [];
 
     checkReleaseConfig(dirs, manifest);
@@ -369,6 +391,7 @@ function main(): void {
       checkReleaseMetadata(dir, pkg, manifest);
       checkCorePeerRange(pkg, coreVersion);
       checkNoRuntimeDependencies(pkg);
+      checkLicense(absolute, pkg, rootLicense);
 
       if (!existsSync(join(absolute, "dist"))) {
         fail(pkg.name, "has no dist/ - run `vp run build` first");
