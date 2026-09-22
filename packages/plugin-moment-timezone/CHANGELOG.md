@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.2](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.4.1...plugin-moment-timezone-v0.4.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
 ## [0.4.1](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.4.0...plugin-moment-timezone-v0.4.1) (2026-09-20)
 
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.0.1](https://github.com/jaenyf/time-provider/compare/core-v3.0.0...core-v3.0.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **core:** throw on a disposed runtime ([cd8311e](https://github.com/jaenyf/time-provider/commit/cd8311e018a058a18e678b1360bc03383ef6c712))
+* correct the misspellings in the timer types, docs and test names ([dd42256](https://github.com/jaenyf/time-provider/commit/dd42256094c9478a439237cfb0cd9b93c9b60a3d))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
 ## [3.0.0](https://github.com/jaenyf/time-provider/compare/core-v2.0.0...core-v3.0.0) (2026-09-20)
 
 

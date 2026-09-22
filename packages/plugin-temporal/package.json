@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-temporal",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": false,
   "description": "Time-Provider : Temporal plugin ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
