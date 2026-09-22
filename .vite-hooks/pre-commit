@@ -1,2 +1,2 @@
 vp staged
-vpx validate-branch-name
+validate-branch-name
