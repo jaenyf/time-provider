@@ -39,6 +39,28 @@ The branded `DurationMilliseconds` and `EpochMilliseconds` types are
 compile-time constructs. They disappear at runtime and stop nothing that
 reaches the library from JavaScript, from `any`, or across a network boundary.
 
+## Dependencies
+
+Every published package declares **no runtime dependencies**. A plugin or addon
+declares only peer dependencies - `@time-provider/core`, and the date library it
+adapts - which your application installs and picks the version of. Nothing this
+repository installs to build and test itself is reachable from a published package.
+`scripts/verify-packages.ts` enforces that: it fails if a publishable package declares
+`dependencies` or `optionalDependencies`, and it runs in CI and again before publishing.
+
+That is why the two dependency checks in CI are deliberately asymmetric:
+
+- `dependency-review` **blocks** a pull request that introduces a vulnerable
+  dependency, so the tree does not get worse.
+- `bun audit` over the whole tree is **report-only**. Its findings are in build and
+  test tooling (`vite` and `esbuild` through `vite-plus` and `vitepress`, `qs` through
+  Stryker), which no published package pulls in. Gating on them would mean a
+  permanently red check or an ignore list to maintain, so they are accepted and left
+  visible instead.
+
+Packages are published from CI with npm provenance, so each published version carries
+a signed attestation tying it to the commit and workflow that built it.
+
 ## Supported Versions
 
 `@time-provider/core` and each `@time-provider/plugin-*` and

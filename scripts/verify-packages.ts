@@ -27,7 +27,10 @@
 //   7. a publishable package isn't marked private and has the `release`
 //      script the publish job runs;
 //   8. each plugin's and addon's `@time-provider/core` peer range still
-//      admits the core version in this repo.
+//      admits the core version in this repo;
+//   9. no publishable package declares runtime dependencies, which is what
+//      lets SECURITY.md say a vulnerability in this repo's tooling cannot
+//      reach a consumer.
 //
 // Needs `vp run build` to have run first. Run it with Node 24+:
 // node scripts/verify-packages.ts
@@ -85,6 +88,8 @@ interface PackageJson {
   exports?: Record<string, string>;
   types?: string;
   peerDependencies?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
 }
 
 const failures: string[] = [];
@@ -207,6 +212,24 @@ function satisfiesCaret(version: string, range: string): boolean | undefined {
     return 0;
   };
   return compare(actual, lower) >= 0 && compare(actual, upper) < 0;
+}
+
+/**
+ * A published package installs nothing of its own: it declares peers the application
+ * resolves, so no dependency of this repository reaches a consumer. SECURITY.md states
+ * that, and the report-only `bun audit` in CI rests on it, so it is checked rather than
+ * left as a habit.
+ */
+function checkNoRuntimeDependencies(pkg: PackageJson): void {
+  for (const field of ["dependencies", "optionalDependencies"] as const) {
+    const declared = Object.keys(pkg[field] ?? {});
+    if (declared.length > 0) {
+      fail(
+        pkg.name,
+        `declares ${field} (${declared.join(", ")}) - a published package takes peers only, see SECURITY.md#dependencies`,
+      );
+    }
+  }
 }
 
 /** AGENTS.md asks for this range to track the core version; nothing enforced it. */
@@ -345,6 +368,7 @@ function main(): void {
 
       checkReleaseMetadata(dir, pkg, manifest);
       checkCorePeerRange(pkg, coreVersion);
+      checkNoRuntimeDependencies(pkg);
 
       if (!existsSync(join(absolute, "dist"))) {
         fail(pkg.name, "has no dist/ - run `vp run build` first");
