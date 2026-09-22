@@ -4,6 +4,112 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-22
+
+### @time-provider/addon-animation-frame 0.4.1
+
+### Bug Fixes
+
+* **core:** throw on a disposed runtime ([cd8311e](https://github.com/jaenyf/time-provider/commit/cd8311e018a058a18e678b1360bc03383ef6c712))
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/addon-compat 0.2.1
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/addon-cron 0.3.1
+
+### Bug Fixes
+
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/addon-eta 0.3.1
+
+### Bug Fixes
+
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/addon-idle 0.1.1
+
+### Bug Fixes
+
+* **core:** throw on a disposed runtime ([cd8311e](https://github.com/jaenyf/time-provider/commit/cd8311e018a058a18e678b1360bc03383ef6c712))
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/core 3.0.1
+
+### Bug Fixes
+
+* **core:** throw on a disposed runtime ([cd8311e](https://github.com/jaenyf/time-provider/commit/cd8311e018a058a18e678b1360bc03383ef6c712))
+* correct the misspellings in the timer types, docs and test names ([dd42256](https://github.com/jaenyf/time-provider/commit/dd42256094c9478a439237cfb0cd9b93c9b60a3d))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-dayjs 0.5.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-luxon 0.5.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-moment 0.5.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-moment-timezone 0.4.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-native 0.5.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
+### @time-provider/plugin-temporal 0.5.2
+
+### Bug Fixes
+
+* correct the npm keywords and the moment-timezone description ([1befcbe](https://github.com/jaenyf/time-provider/commit/1befcbec2e65577f819bdf4af761be0129b9c2fc))
+* declare node &gt;=20.4.0 in every published package's engines ([58ad7e7](https://github.com/jaenyf/time-provider/commit/58ad7e7ab8b60abc123c937a7de8cb32038e5682))
+* point every package's readme badges at its own package ([fddacae](https://github.com/jaenyf/time-provider/commit/fddacae809f6f6d973327be72e96f92a52bd7e23))
+* review implementation ([#172](https://github.com/jaenyf/time-provider/issues/172)) ([10ed757](https://github.com/jaenyf/time-provider/commit/10ed7571a2ebd4395e2733705fe29898f9f15dc1))
+
 ## 2026-09-20
 
 ### @time-provider/addon-animation-frame 0.4.0
