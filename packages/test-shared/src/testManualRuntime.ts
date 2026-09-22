@@ -43,6 +43,14 @@ export function testManualRuntime<TDate>(
   );
 
   describe("manual", () => {
+    test("advancing a disposed clock throws", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.clock.advance({ milliseconds: 10 })).toThrow(
+        "Invalid operation on a disposed runtime",
+      );
+    });
+
     testLocalNow(plugin.supportsLocalTime, createSUT, () =>
       parseTimeToLocal("2026-01-01T14:00+14:00"),
     );

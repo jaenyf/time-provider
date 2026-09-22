@@ -106,6 +106,7 @@ export class SystemIdleScheduler<TDate>
   }
 
   request(callback: () => void): IScheduledHandle {
+    this.runtime.assertIsNotDisposed();
     return new SystemIdleHandle(requestIdleCallback(callback));
   }
 }

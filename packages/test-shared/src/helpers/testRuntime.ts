@@ -99,6 +99,58 @@ export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRu
     expect(handleRef.isDisposed).toBe(true);
   });
 
+  describe("arming throws on a disposed runtime", () => {
+    /*
+      A disposed runtime used to keep accepting timers: dispose() cleared what it held, but
+      nothing refused a later registration, so a timer armed by late teardown code ran against
+      a runtime everything else considered gone, and was never swept. Both runtime kinds did it,
+      which is why this lives in the shared spec: the refusal has to be the same everywhere.
+    */
+    const DISPOSED = "Invalid operation on a disposed runtime";
+
+    test("once throws", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.once({ milliseconds: 10 }, () => {})).toThrow(DISPOSED);
+    });
+    test("every throws", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.every({ milliseconds: 10 }, () => {})).toThrow(DISPOSED);
+    });
+    test("recurring throws", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.recurring(() => ({ milliseconds: 10 }), asap())).toThrow(DISPOSED);
+    });
+    test("wait throws rather than handing back a rejected promise", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.wait({ milliseconds: 10 })).toThrow(DISPOSED);
+    });
+    test("queueing a microtask throws", () => {
+      const sut = createSUT();
+      sut.dispose();
+      expect(() => sut.scheduler.microtasks.queue(() => {})).toThrow(DISPOSED);
+    });
+    test("assertIsNotDisposed is on the runtime itself, for an addon to call", () => {
+      // Addons that arm the host directly reach it this way, so it is part of the runtime
+      // interface rather than something internal - see SystemIdleScheduler.request().
+      const sut = createSUT();
+      expect(() => sut.assertIsNotDisposed()).not.toThrow();
+      sut.dispose();
+      expect(() => sut.assertIsNotDisposed()).toThrow(DISPOSED);
+    });
+    test("tearing down twice still works", () => {
+      // Teardown stays available: only arming new work is refused.
+      const sut = createSUT();
+      const handle = sut.once({ milliseconds: 10 }, () => {});
+      sut.dispose();
+      expect(() => handle.dispose()).not.toThrow();
+      expect(() => sut.clearTimer(handle)).not.toThrow();
+    });
+  });
+
   test("calling explicit dispose also dispose created recurring-handles", () => {
     const sut = createSUT();
     const handle = sut.recurring(() => {

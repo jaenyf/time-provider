@@ -8,10 +8,14 @@ describe("SystemAnimationFrameScheduler", () => {
     delete (globalThis as unknown as { cancelAnimationFrame?: unknown }).cancelAnimationFrame;
   }
 
-  function fakeRuntime(): IRuntime<unknown> {
+  function fakeRuntime(isDisposed = false): IRuntime<unknown> {
     return {
       scheduler: {},
       registerAddon: () => {},
+      isDisposed,
+      assertIsNotDisposed: () => {
+        if (isDisposed) throw new Error("Invalid operation on a disposed runtime");
+      },
     } as unknown as IRuntime<unknown>;
   }
 
@@ -105,6 +109,12 @@ describe("SystemAnimationFrameScheduler", () => {
         sut.applyToRuntime(runtime);
         expect(runtime.scheduler.animation?.animation).toBeUndefined();
       });
+    });
+
+    test("scheduling a frame on a disposed runtime throws", () => {
+      using sut = new SystemAnimationFrameScheduler();
+      sut.applyToRuntime(fakeRuntime(true));
+      expect(() => sut.scheduleFrame(() => {})).toThrow("Invalid operation on a disposed runtime");
     });
 
     describe("dispose", () => {

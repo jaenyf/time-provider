@@ -239,6 +239,7 @@ interface IAdvanceable<TSelf> {
    * any of them that become due as a result are run
    * synchronously, in-line, before `advance()` returns - see
    * {@link ITimers} for details on this execution model.
+   * @throws if the runtime has been disposed.
    */
   advance(advanceOptions: IAdvanceOptions): TSelf;
 }
@@ -526,16 +527,31 @@ export interface ITimerOptions {
  * browser-like one.
  */
 export interface ITimers {
-  /** One-shot timer. */
+  /**
+   * One-shot timer.
+   * @throws if the runtime has been disposed.
+   */
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
-  /** A "promise" variant of the `once` one-shot. */
+  /**
+   * A "promise" variant of the `once` one-shot.
+   *
+   * A disposed runtime is reported by throwing, as the other timers do, rather than by handing
+   * back a rejected promise.
+   * @throws if the runtime has been disposed.
+   */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
-  /** Fixed-interval timer. */
+  /**
+   * Fixed-interval timer.
+   * @throws if the runtime has been disposed.
+   */
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
-  /** Dynamic recurrence: The callback determines the next interval; `false` stops it. */
+  /**
+   * Dynamic recurrence: The callback determines the next interval; `false` stops it.
+   * @throws if the runtime has been disposed.
+   */
   recurring(
     callback: () => IDurationSpec | false,
     initialDelay?: IDurationSpec,
@@ -590,6 +606,7 @@ export interface IMicrotasks {
   /**
    * Queues `callback` to run at the next microtask checkpoint.
    * @param callback the function to run at the next checkpoint.
+   * @throws if the runtime has been disposed.
    */
   queue(callback: () => void): void;
 }
@@ -728,6 +745,10 @@ export interface IRuntime<TDate>
     ITimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
 }
 
 /**
@@ -745,6 +766,10 @@ export interface IDeterministicRuntime<TDate>
     IDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
   specific(
     tag: unknown,
     kind: ScheduledHandleKind,
@@ -770,6 +795,10 @@ export interface IUtcOnlyRuntime<TDate>
     IUtcOnlyTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
 }
 
 /**
@@ -787,6 +816,10 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
     IUtcOnlyDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
 }
 
 /**
@@ -806,6 +839,10 @@ export interface IManualRuntime<TDate>
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
   specific(
     tag: unknown,
     kind: ScheduledHandleKind,
@@ -833,6 +870,10 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
+  /**
+   * @throws if this runtime has been disposed.
+   */
+  assertIsNotDisposed(): void;
 }
 //#endregion
 

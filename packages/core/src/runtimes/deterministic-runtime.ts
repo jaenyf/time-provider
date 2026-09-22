@@ -754,6 +754,7 @@ export abstract class BaseDeterministicRuntime<TDate>
    * Queues `callback` on this runtime's own microtask queue. See {@link IMicrotasks.queue}.
    */
   queue(callback: () => void): void {
+    this.assertIsNotDisposed();
     this.#microtasks.push(callback);
   }
   /**
@@ -818,6 +819,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     }
   }
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
@@ -828,6 +830,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
@@ -842,6 +845,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.timestampNow();
     const entry = this.#dueQueue.registerRecurring(this, now + msInitialDelay, callback);
@@ -858,6 +862,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     callback: () => void,
     intervalDelay?: number,
   ): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msDelay = toDuration(initialDelay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.timestampNow();
@@ -996,6 +1001,7 @@ export abstract class BaseManualRuntime<TDate>
    * returns, per {@link ITimers}.
    */
   advance(advanceConfiguration: IAdvanceOptions): IManualRuntime<TDate> {
+    this.assertIsNotDisposed();
     // Pure read: getting a TDate to feed the calendar-arithmetic helpers below must not itself
     // drain the due queue (this.utcNow() would, uselessly, since nothing is newly due yet).
     let time = this.convertToUtcDateImpl(this.timestampNow());

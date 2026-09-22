@@ -102,6 +102,7 @@ export class SystemAnimationFrameScheduler<TDate>
   }
 
   scheduleFrame(callback: () => void): IScheduledHandle {
+    this.runtime.assertIsNotDisposed();
     return new SystemAnimationFrameHandle(requestAnimationFrame(callback));
   }
 }

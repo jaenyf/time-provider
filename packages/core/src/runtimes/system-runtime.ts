@@ -79,6 +79,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   }
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions) {
+    this.assertIsNotDisposed();
     let msDelay = toDuration(delay);
     if (msDelay < 0) {
       msDelay = 0 as DurationMilliseconds;
@@ -102,6 +103,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msDelay = toDuration(delay);
     if (msDelay < 1) {
       msDelay = 1 as DurationMilliseconds;
@@ -138,6 +140,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): IScheduledHandle {
+    this.assertIsNotDisposed();
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
 
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
@@ -186,6 +189,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
    * runtime, which discards its still-queued microtasks on {@link BaseRuntime.dispose}.
    */
   queue(callback: () => void): void {
+    this.assertIsNotDisposed();
     queueMicrotask(callback);
   }
 }

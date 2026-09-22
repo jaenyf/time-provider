@@ -110,6 +110,12 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     return this.#isDisposed;
   }
 
+  assertIsNotDisposed(): void {
+    if (this.#isDisposed) {
+      throw new Error("Invalid operation on a disposed runtime");
+    }
+  }
+
   get signal(): AbortSignal {
     if (this.#isDisposed === true) {
       return BaseRuntime.ABORTED_SIGNAL;
@@ -204,6 +210,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     options?: ITimerOptions,
   ): IScheduledHandle;
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void> {
+    this.assertIsNotDisposed();
     return new Promise((resolve) => {
       this.once(delay, () => resolve(), options);
     });
