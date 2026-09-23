@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vite-plus/test";
 import { DeterministicPerformance } from "../src/performance/deterministic-performance.ts";
 import type { BaseDeterministicRuntime } from "../src/runtimes/deterministic-runtime.ts";
-import { asEpochMilliseconds, toDuration, toInstant } from "../src/helpers/branded-types.ts";
+import { toDuration, toInstant, toMonotonic } from "../src/helpers/branded-types.ts";
 
 function fakeRuntimeWithTimestamps(
   timestamps: readonly number[],
@@ -49,6 +49,18 @@ describe("DeterministicPerformance", () => {
     });
   });
 
+  describe("mark", () => {
+    test("positions are points on the performance timeline, not epoch timestamps", () => {
+      const sut = new DeterministicPerformance();
+      sut.initialize(fakeRuntimeWithTimestamps([1000, 1600]));
+      expect(sut.timeOrigin).toBe(1000);
+      const mark = sut.mark("a");
+      expect(mark.startTime).toBe(600);
+      // @ts-expect-error - an epoch timestamp is not a point on the performance timeline.
+      sut.mark("b", { startTime: toInstant({ milliseconds: 1 }) });
+    });
+  });
+
   describe("measure", () => {
     test("reports the specific missing start mark in the error message", () => {
       const sut = new DeterministicPerformance();
@@ -61,15 +73,15 @@ describe("DeterministicPerformance", () => {
     test("reports the specific missing options.start mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() =>
-        sut.measure("m", { start: "missing-start", end: asEpochMilliseconds() }),
-      ).toThrow("The performance mark 'missing-start' does not exist.");
+      expect(() => sut.measure("m", { start: "missing-start", end: toMonotonic({}) })).toThrow(
+        "The performance mark 'missing-start' does not exist.",
+      );
     });
 
     test("reports the specific missing options.end mark in the error message", () => {
       const sut = new DeterministicPerformance();
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
-      expect(() => sut.measure("m", { start: asEpochMilliseconds(), end: "missing-end" })).toThrow(
+      expect(() => sut.measure("m", { start: toMonotonic({}), end: "missing-end" })).toThrow(
         "The performance mark 'missing-end' does not exist.",
       );
     });
@@ -79,8 +91,8 @@ describe("DeterministicPerformance", () => {
       sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
       expect(() =>
         sut.measure("m", {
-          start: asEpochMilliseconds(),
-          end: toInstant({ milliseconds: 10 }),
+          start: toMonotonic({}),
+          end: toMonotonic({ milliseconds: 10 }),
           duration: toDuration({ milliseconds: 10 }),
         }),
       ).toThrow("The performance measure options are over-determined");

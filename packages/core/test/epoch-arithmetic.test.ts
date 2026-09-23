@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { asEpoch, epochArithmetic, toDuration, toInstant } from "../src/helpers/branded-types.ts";
+import {
+  asEpoch,
+  epochArithmetic,
+  monotonicArithmetic,
+  toDuration,
+  toInstant,
+  toMonotonic,
+} from "../src/helpers/branded-types.ts";
 import type { EpochMilliseconds, DurationMilliseconds } from "../src/types/types.ts";
 
 const FIELDS = ["milliseconds", "seconds", "minutes", "hours", "days"] as const;
@@ -178,4 +185,40 @@ describe("epoch-arithmetic", () => {
       expect(epochArithmetic.subtract(testCase.a, testCase.b)).toEqual(testCase.r);
     },
   );
+});
+
+describe("toMonotonic", () => {
+  test("adds up the fields like toInstant", () => {
+    expect(toMonotonic({ seconds: 1, milliseconds: 5 })).toEqual(1005);
+  });
+  test("throws with a negative field", () => {
+    expect(() => toMonotonic({ milliseconds: -1 })).toThrow("Invalid operation");
+  });
+});
+
+describe("monotonic-arithmetic", () => {
+  test("addDuration", () => {
+    expect(
+      monotonicArithmetic.addDuration(
+        toMonotonic({ milliseconds: 1 }),
+        toDuration({ milliseconds: 2 }),
+      ),
+    ).toEqual(3);
+  });
+  test("subtractDuration", () => {
+    expect(
+      monotonicArithmetic.subtractDuration(
+        toMonotonic({ milliseconds: 3 }),
+        toDuration({ milliseconds: 1 }),
+      ),
+    ).toEqual(2);
+  });
+  test("subtract", () => {
+    expect(
+      monotonicArithmetic.subtract(
+        toMonotonic({ milliseconds: 3 }),
+        toMonotonic({ milliseconds: 1 }),
+      ),
+    ).toEqual(2);
+  });
 });

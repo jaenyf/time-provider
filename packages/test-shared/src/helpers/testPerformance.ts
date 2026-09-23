@@ -1,11 +1,5 @@
 import { describe, test, expect } from "vite-plus/test";
-import {
-  asEpochMilliseconds,
-  toDuration,
-  toInstant,
-  type IPerformance,
-  type ITimers,
-} from "@time-provider/core";
+import { toDuration, toMonotonic, type IPerformance, type ITimers } from "@time-provider/core";
 
 type PerformanceTestSUT<TDate> = ITimers & {
   performance: IPerformance;
@@ -95,7 +89,7 @@ export function testPerformance<TDate>(
 
     test("uses an explicit startTime when given", () => {
       const sut = createCleanSUT();
-      const mark = sut.performance.mark("a", { startTime: toInstant({ milliseconds: 12345 }) });
+      const mark = sut.performance.mark("a", { startTime: toMonotonic({ milliseconds: 12345 }) });
       expect(mark.startTime).toBe(12345);
     });
   });
@@ -231,8 +225,8 @@ export function testPerformance<TDate>(
     test("computes the duration between two numeric bounds", () => {
       const sut = createCleanSUT();
       const measure = sut.performance.measure("m", {
-        start: toInstant({ milliseconds: 10 }),
-        end: toInstant({ milliseconds: 25 }),
+        start: toMonotonic({ milliseconds: 10 }),
+        end: toMonotonic({ milliseconds: 25 }),
       });
       expect(measure.startTime).toBe(10);
       expect(measure.duration).toBe(15);
@@ -240,8 +234,8 @@ export function testPerformance<TDate>(
 
     test("resolves start/end options by mark name", () => {
       const sut = createCleanSUT();
-      sut.performance.mark("a", { startTime: toInstant({ milliseconds: 5 }) });
-      sut.performance.mark("b", { startTime: toInstant({ milliseconds: 20 }) });
+      sut.performance.mark("a", { startTime: toMonotonic({ milliseconds: 5 }) });
+      sut.performance.mark("b", { startTime: toMonotonic({ milliseconds: 20 }) });
       const measure = sut.performance.measure("a-to-b", { start: "a", end: "b" });
       expect(measure.startTime).toBe(5);
       expect(measure.duration).toBe(15);
@@ -250,21 +244,21 @@ export function testPerformance<TDate>(
     test("throws when options.start names a mark that does not exist", () => {
       const sut = createCleanSUT();
       expect(() =>
-        sut.performance.measure("m", { start: "missing", end: asEpochMilliseconds() }),
+        sut.performance.measure("m", { start: "missing", end: toMonotonic({}) }),
       ).toThrow();
     });
 
     test("throws when options.end names a mark that does not exist", () => {
       const sut = createCleanSUT();
       expect(() =>
-        sut.performance.measure("m", { start: asEpochMilliseconds(), end: "missing" }),
+        sut.performance.measure("m", { start: toMonotonic({}), end: "missing" }),
       ).toThrow();
     });
 
     test("computes end from start + duration", () => {
       const sut = createCleanSUT();
       const measure = sut.performance.measure("m", {
-        start: toInstant({ milliseconds: 10 }),
+        start: toMonotonic({ milliseconds: 10 }),
         duration: toDuration({ milliseconds: 5 }),
       });
       expect(measure.startTime).toBe(10);
@@ -274,7 +268,7 @@ export function testPerformance<TDate>(
     test("computes start from end - duration", () => {
       const sut = createCleanSUT();
       const measure = sut.performance.measure("m", {
-        end: toInstant({ milliseconds: 100 }),
+        end: toMonotonic({ milliseconds: 100 }),
         duration: toDuration({ milliseconds: 5 }),
       });
       expect(measure.startTime).toBe(95);
@@ -285,8 +279,8 @@ export function testPerformance<TDate>(
       const sut = createCleanSUT();
       expect(() =>
         sut.performance.measure("m", {
-          start: asEpochMilliseconds(),
-          end: toInstant({ milliseconds: 10 }),
+          start: toMonotonic({}),
+          end: toMonotonic({ milliseconds: 10 }),
           duration: toDuration({ milliseconds: 10 }),
         }),
       ).toThrow(TypeError);

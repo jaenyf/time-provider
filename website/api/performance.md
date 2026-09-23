@@ -3,6 +3,7 @@
 ```ts
 type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
 type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+type MonotonicMilliseconds = Brand<number, "MonotonicMilliseconds">; // a point since timeOrigin
 
 type PerformanceEntryType =
   "mark" | "measure" | "resource" | "dns" | "function" | "gc" | "http" | "http2" | "net" | "node";
@@ -10,7 +11,7 @@ type PerformanceEntryType =
 interface IPerformanceEntry {
   readonly name: string;
   readonly entryType: PerformanceEntryType;
-  readonly startTime: EpochMilliseconds;
+  readonly startTime: MonotonicMilliseconds;
   readonly duration: DurationMilliseconds;
 }
 
@@ -23,19 +24,19 @@ interface IPerformanceMeasure extends IPerformanceEntry {
 }
 
 interface IPerformanceMarkOptions {
-  startTime?: EpochMilliseconds;
+  startTime?: MonotonicMilliseconds;
   detail?: unknown;
 }
 
 interface IPerformanceMeasureOptions {
-  start?: string | EpochMilliseconds;
-  end?: string | EpochMilliseconds;
+  start?: string | MonotonicMilliseconds;
+  end?: string | MonotonicMilliseconds;
   duration?: DurationMilliseconds;
   detail?: unknown;
 }
 
 interface IPerformance {
-  now(): DurationMilliseconds;
+  now(): MonotonicMilliseconds;
   readonly timeOrigin: EpochMilliseconds;
   getEntries(): readonly IPerformanceEntry[];
   getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];

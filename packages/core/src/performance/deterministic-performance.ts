@@ -1,4 +1,4 @@
-import { asEpochMilliseconds, toInstant } from "../helpers/branded-types.ts";
+import { monotonicArithmetic, toInstant, toMonotonic } from "../helpers/branded-types.ts";
 import type { BaseDeterministicRuntime } from "../runtimes/deterministic-runtime.ts";
 import type {
   DurationMilliseconds,
@@ -9,9 +9,9 @@ import type {
   IPerformanceMarkOptions,
   IPerformanceMeasure,
   IPerformanceMeasureOptions,
+  MonotonicMilliseconds,
   PerformanceEntryType,
 } from "../types/types.ts";
-import { epochArithmetic } from "../helpers/branded-types.ts";
 
 class PerformanceError extends DOMException {
   /*
@@ -57,9 +57,9 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     return timeOrigin;
   }
 
-  now(): DurationMilliseconds {
+  now(): MonotonicMilliseconds {
     this.assertInitialization();
-    return epochArithmetic.subtract(this.#runtime.timestampNow(), this.assertAndGetTimeOrigin());
+    return (this.#runtime.timestampNow() - this.assertAndGetTimeOrigin()) as MonotonicMilliseconds;
   }
 
   get timeOrigin(): EpochMilliseconds {
@@ -88,7 +88,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     const entry: IPerformanceMark = {
       name,
       entryType: "mark",
-      startTime: options?.startTime ?? toInstant({ milliseconds: this.now() as number }),
+      startTime: options?.startTime ?? this.now(),
       duration: 0 as DurationMilliseconds,
     };
 
@@ -102,8 +102,8 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     startMarkOrOptions?: string | IPerformanceMeasureOptions,
   ): IPerformanceMeasure => {
     this.assertInitialization();
-    let startTime: EpochMilliseconds = asEpochMilliseconds();
-    let endTime: EpochMilliseconds = toInstant({ milliseconds: this.now() as number });
+    let startTime: MonotonicMilliseconds = toMonotonic({});
+    let endTime: MonotonicMilliseconds = this.now();
 
     if (typeof startMarkOrOptions === "string") {
       const startMark = this.#findMark(startMarkOrOptions);
@@ -160,9 +160,9 @@ export class DeterministicPerformance<TDate> implements IPerformance {
 
       if (options.duration !== undefined) {
         if (options.start !== undefined) {
-          endTime = epochArithmetic.addDuration(startTime, options.duration);
+          endTime = monotonicArithmetic.addDuration(startTime, options.duration);
         } else {
-          startTime = epochArithmetic.subtractDuration(endTime, options.duration);
+          startTime = monotonicArithmetic.subtractDuration(endTime, options.duration);
         }
       }
     }
@@ -171,7 +171,7 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       name,
       entryType: "measure",
       startTime,
-      duration: epochArithmetic.subtract(endTime, startTime),
+      duration: monotonicArithmetic.subtract(endTime, startTime),
     };
 
     this.#entries.push(entry);

@@ -1,4 +1,4 @@
-import { toDuration, toInstant } from "../helpers/branded-types.ts";
+import { toInstant } from "../helpers/branded-types.ts";
 import type {
   EpochMilliseconds,
   IPerformance,
@@ -7,6 +7,7 @@ import type {
   IPerformanceMarkOptions,
   IPerformanceMeasure,
   IPerformanceMeasureOptions,
+  MonotonicMilliseconds,
   PerformanceEntryType,
 } from "../types/types.ts";
 
@@ -14,7 +15,7 @@ import type {
  * Pass-through for the system performance API
  */
 export class SystemPerformance implements IPerformance {
-  now = () => toDuration({ milliseconds: performance.now() });
+  now = () => performance.now() as MonotonicMilliseconds;
   get timeOrigin(): EpochMilliseconds {
     return toInstant({ milliseconds: performance.timeOrigin });
   }

@@ -15,6 +15,10 @@ declare const __brand: unique symbol;
 type Brand<T, B> = T & { readonly [__brand]: B };
 export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+/**
+ * A point on a runtime's monotonic timeline, in milliseconds since its time origin.
+ */
+export type MonotonicMilliseconds = Brand<number, "MonotonicMilliseconds">;
 //#endregion
 
 //#region Disposable / IHasAbortSignal
@@ -69,9 +73,9 @@ export interface IPerformanceEntry {
    */
   readonly entryType: PerformanceEntryType;
   /**
-   * The timestamp, relative to {@link IPerformance.timeOrigin}, at which the entry starts.
+   * The point, relative to {@link IPerformance.timeOrigin}, at which the entry starts.
    */
-  readonly startTime: EpochMilliseconds;
+  readonly startTime: MonotonicMilliseconds;
   /**
    * The duration of the entry, in milliseconds. Always `0` for a mark.
    */
@@ -98,7 +102,7 @@ export interface IPerformanceMarkOptions {
    *
    * If omitted, the current performance timestamp is used.
    */
-  startTime?: EpochMilliseconds;
+  startTime?: MonotonicMilliseconds;
 
   /**
    * Arbitrary metadata associated with the mark.
@@ -114,7 +118,7 @@ export interface IPerformanceMeasureOptions {
    * - a mark name
    * - an explicit performance timestamp
    */
-  start?: string | EpochMilliseconds;
+  start?: string | MonotonicMilliseconds;
 
   /**
    * The end point of the measurement.
@@ -123,7 +127,7 @@ export interface IPerformanceMeasureOptions {
    * - a mark name
    * - an explicit performance timestamp
    */
-  end?: string | EpochMilliseconds;
+  end?: string | MonotonicMilliseconds;
 
   /**
    * Duration to use instead of calculating from start/end.
@@ -144,7 +148,7 @@ export interface IPerformance {
    * Returns the current high-resolution timestamp in milliseconds
    * relative to timeOrigin.
    */
-  now(): DurationMilliseconds;
+  now(): MonotonicMilliseconds;
 
   /**
    * The Unix timestamp at which this performance timeline started.
