@@ -15,6 +15,9 @@ curl -fsSL https://vite.plus | bash   # macOS/Linux
 irm https://vite.plus/ps1 | iex       # Windows (PowerShell)
 ```
 
+[Deno](https://deno.com/) 2 is also needed for `vp run check` (and so `vp run ready`), which dry-runs
+every package's JSR publish. See the [installation guide](https://docs.deno.com/runtime/getting_started/installation/).
+
 Then, from the repo root:
 
 ```bash
@@ -31,7 +34,7 @@ This is a Bun workspace monorepo (`packages/*`, `website`, `tools/*`).
 | `vp test --coverage`              | Run all tests with coverage (matches CI)                                                            |
 | `vp run build`                    | Build every package                                                                                 |
 | `vp check`                        | Format, lint, and type-check the **current** package (run it from inside `packages/<name>/`)        |
-| `vp run -r check`                 | Same, for every package                                                                             |
+| `vp run -r check`                 | Same, for every package, plus a JSR publish dry run of each publishable one (needs Deno)            |
 | `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first) |
 | `vp run stryker`                  | Mutation testing (Stryker)                                                                          |
 | `vp run ready`                    | Full local gate: build, check, test, stryker — run before considering a change done                 |

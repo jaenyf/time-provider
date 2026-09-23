@@ -67,7 +67,7 @@
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
-    "check": "vp check",
+    "check": "vp check && deno publish --dry-run --allow-dirty",
     "prepublishOnly": "vp run build",
     "release": "vp pm stage publish --provenance && deno publish",
     "release:dry-run": "vp pm stage publish --dry-run && deno publish --dry-run"

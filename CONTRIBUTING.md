@@ -36,6 +36,9 @@ curl -fsSL https://vite.plus | bash   # macOS/Linux
 irm https://vite.plus/ps1 | iex       # Windows (PowerShell)
 ```
 
+[Deno](https://deno.com/) 2 is also needed for `vp run check` (and so `vp run ready`), which dry-runs
+every package's JSR publish. See the [installation guide](https://docs.deno.com/runtime/getting_started/installation/).
+
 _Note: Vite+ will automatically download the pinned package manager version (currently [Bun](https://bun.com/)) and a compatible [Node.js](https://nodejs.org/) runtime if they aren't already available on your system._
 
 ```bash
@@ -52,7 +55,7 @@ vp install
 | `vp test --coverage`              | Run all tests with coverage (also runs in CI)                                                       |
 | `vp run build`                    | Build every package                                                                                 |
 | `vp check`                        | Format, lint, and type-check the current package                                                    |
-| `vp run -r check`                 | Format, lint, and type-check every package                                                          |
+| `vp run -r check`                 | Format, lint, and type-check every package, and dry-run each JSR publish (needs Deno)               |
 | `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first) |
 | `vp run stryker`                  | Run mutation testing (Stryker)                                                                      |
 | `vp run ready`                    | Run test, build, check, and stryker - the full local gate                                           |
