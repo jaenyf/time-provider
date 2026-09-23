@@ -64,6 +64,6 @@
     "release": "npm stage publish --provenance"
   },
   "engines": {
-    "node": ">=20.4.0"
+    "node": "^18.18.0 || >=20.4.0"
   }
 }

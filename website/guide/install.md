@@ -33,8 +33,8 @@ date library? See [Addons](/addons/) — e.g.
 
 ## Requirements
 
-- Node.js `>= 20.4.0` (the first release exposing `Symbol.dispose`, which
-  `using` relies on), or any modern browser/bundler target.
+- Node.js `^18.18.0 || >= 20.4.0` (the releases exposing `Symbol.dispose`,
+  which `using` relies on), or any modern browser/bundler target.
 - TypeScript is not required, but every type is exported and the whole
   library is written in it.
 
