@@ -23,7 +23,8 @@ export class RuntimeHelper {
         returnTime = DateTime.fromISO(time, { zone: "UTC" });
         break;
       case "object":
-        if (time instanceof DateTime) {
+        // `isDateTime` (luxon 1.6+) also accepts a DateTime from another copy of luxon, such as its CJS build.
+        if (time instanceof DateTime || DateTime.isDateTime?.(time)) {
           returnTime = time;
         }
         break;
