@@ -9,7 +9,7 @@ import { Temporal } from "@js-temporal/polyfill";
  * Node/Bun don't ship Temporal natively yet, so this seeds it for the monorepo's own test run only
  */
 if (!("Temporal" in globalThis)) {
-  (globalThis as { Temporal?: unknown }).Temporal = Temporal;
+  (globalThis as { Temporal?: unknown }).Temporal = { ...Temporal };
 }
 
 describe("plugin-temporal", () => {

@@ -1,4 +1,4 @@
-import { bench, describe } from "vite-plus/test";
+import { test } from "vite-plus/test";
 import { schedulingScenarios } from "./shared/scenarios.ts";
 import { GlobalGuard } from "./shared/globalGuard.ts";
 import { recordSample } from "./shared/measure.ts";
@@ -10,25 +10,27 @@ import { realNow } from "./shared/realNow.ts";
 const guard = new GlobalGuard();
 
 for (const scenario of schedulingScenarios) {
-  describe(scenario.name, () => {
+  test(scenario.name, async ({ bench }) => {
     const adapters = [
       new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? []),
       new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
       new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
     ];
-    for (const adapter of adapters) {
-      bench(adapter.name, () => {
-        adapter.setup();
-        const start = realNow();
-        try {
-          scenario.run(adapter);
-        } finally {
-          const elapsedMs = realNow() - start;
-          adapter.teardown();
-          guard.assertPristine(adapter.name);
-          recordSample(adapter.name, scenario.name, elapsedMs);
-        }
-      });
-    }
+    await bench.compare(
+      ...adapters.map((adapter) =>
+        bench(adapter.name, () => {
+          adapter.setup();
+          const start = realNow();
+          try {
+            scenario.run(adapter);
+          } finally {
+            const elapsedMs = realNow() - start;
+            adapter.teardown();
+            guard.assertPristine(adapter.name);
+            recordSample(adapter.name, scenario.name, elapsedMs);
+          }
+        }),
+      ),
+    );
   });
 }

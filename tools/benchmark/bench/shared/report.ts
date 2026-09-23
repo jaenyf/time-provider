@@ -3,7 +3,7 @@
  * written to bench-results/*.ndjson
  * These results are independent of vitest/tinybench's own timing, and safe even when each *.bench.ts file ran in its own isolated
  * worker/process.
- * Run after `vitest bench` completes: `node bench/shared/report.ts`
+ * Run after `vp test bench` completes: `node bench/shared/report.ts`
  */
 import {
   buildScenarioRows,
