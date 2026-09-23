@@ -45,17 +45,25 @@
   ],
   "type": "module",
   "sideEffects": false,
-  "types": "./dist/index.d.mts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "typesVersions": {
     "*": {
-      "*": [
-        "./dist/*"
+      "deterministic": [
+        "./dist/deterministic.d.cts"
       ]
     }
   },
   "exports": {
-    ".": "./dist/index.mjs",
-    "./deterministic": "./dist/deterministic.mjs",
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./deterministic": {
+      "import": "./dist/deterministic.mjs",
+      "require": "./dist/deterministic.cjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

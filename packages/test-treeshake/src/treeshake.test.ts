@@ -75,11 +75,24 @@ const COMPAT_ADDON_MARKERS = ["CompatRuntime"];
  */
 const ETA_ADDON_MARKERS = ["EtaScheduler"];
 
-async function bundle(entry: string): Promise<string> {
+/*
+ * Every published package ships an ESM and a CJS build. The fixtures import the ESM files; for
+ * the CJS run they are rewritten to the matching .cjs files, so each check holds for both.
+ */
+const FORMATS = ["mjs", "cjs"] as const;
+
+async function bundle(entry: string, format: (typeof FORMATS)[number]): Promise<string> {
   const result = await build({
     // prevent vite-plus from trying to load this package's own vite.config.ts
     configFile: false,
     logLevel: "silent",
+    plugins: [
+      {
+        name: "use-cjs-build",
+        transform: (code, id) =>
+          format === "cjs" && id.includes("/fixtures/") ? code.replaceAll('.mjs"', '.cjs"') : null,
+      },
+    ],
     build: {
       write: false,
       minify: false,
@@ -104,23 +117,23 @@ async function bundle(entry: string): Promise<string> {
   return chunk.code;
 }
 
-describe("tree-shaking", () => {
+describe.each(FORMATS)("tree-shaking of the %s build", (format) => {
   describe.each(PLUGIN_PACKAGES)("%s", (pluginPackage) => {
     test("system-only bundle excludes deterministic runtime code", async () => {
-      const code = await bundle(`./fixtures/system-only/${pluginPackage}.ts`);
+      const code = await bundle(`./fixtures/system-only/${pluginPackage}.ts`, format);
       for (const marker of DETERMINISTIC_MARKERS) {
         expect(code).not.toContain(marker);
       }
     });
     test("deterministic runtimes are all included when used", async () => {
-      const code = await bundle(`./fixtures/deterministic/${pluginPackage}.ts`);
+      const code = await bundle(`./fixtures/deterministic/${pluginPackage}.ts`, format);
       for (const marker of DETERMINISTIC_MARKERS) {
         expect(code).toContain(marker);
       }
     });
     test("neither fixture pulls in the animation addon - it's never imported", async () => {
       for (const fixture of ["system-only", "deterministic"]) {
-        const code = await bundle(`./fixtures/${fixture}/${pluginPackage}.ts`);
+        const code = await bundle(`./fixtures/${fixture}/${pluginPackage}.ts`, format);
         for (const marker of ANIMATION_ADDON_MARKERS) {
           expect(code).not.toContain(marker);
         }
@@ -130,20 +143,20 @@ describe("tree-shaking", () => {
 
   describe("animation addon", () => {
     test("is entirely absent from a bundle that never imports it", async () => {
-      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts", format);
       for (const marker of ANIMATION_ADDON_MARKERS) {
         expect(code).not.toContain(marker);
       }
     });
 
     test("system entry point includes only the system scheduler, never the deterministic one", async () => {
-      const code = await bundle("./fixtures/with-animation-addon/system.ts");
+      const code = await bundle("./fixtures/with-animation-addon/system.ts", format);
       expect(code).toContain(SYSTEM_ANIMATION_MARKER);
       expect(code).not.toContain(DETERMINISTIC_ANIMATION_MARKER);
     });
 
     test("deterministic entry point includes only the deterministic scheduler, never the system one", async () => {
-      const code = await bundle("./fixtures/with-animation-addon/deterministic.ts");
+      const code = await bundle("./fixtures/with-animation-addon/deterministic.ts", format);
       expect(code).toContain(DETERMINISTIC_ANIMATION_MARKER);
       expect(code).not.toContain(SYSTEM_ANIMATION_MARKER);
     });
@@ -151,7 +164,7 @@ describe("tree-shaking", () => {
 
   describe("cron addon", () => {
     test("is entirely absent from a bundle that never imports it", async () => {
-      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts", format);
       for (const marker of CRON_ADDON_MARKERS) {
         expect(code).not.toContain(marker);
       }
@@ -162,7 +175,7 @@ describe("tree-shaking", () => {
      * matters here is which *runtime* each one drags in, since the converter is the same either way.
      */
     test("system entry point pulls in the cron scheduler but no deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-cron-addon/system.ts");
+      const code = await bundle("./fixtures/with-cron-addon/system.ts", format);
       for (const marker of CRON_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -172,7 +185,7 @@ describe("tree-shaking", () => {
     });
 
     test("deterministic entry point pulls in the cron scheduler and the deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-cron-addon/deterministic.ts");
+      const code = await bundle("./fixtures/with-cron-addon/deterministic.ts", format);
       for (const marker of CRON_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -181,7 +194,7 @@ describe("tree-shaking", () => {
 
     test("neither cron entry point drags in the animation addon", async () => {
       for (const fixture of ["system", "deterministic"]) {
-        const code = await bundle(`./fixtures/with-cron-addon/${fixture}.ts`);
+        const code = await bundle(`./fixtures/with-cron-addon/${fixture}.ts`, format);
         for (const marker of ANIMATION_ADDON_MARKERS) {
           expect(code).not.toContain(marker);
         }
@@ -191,27 +204,27 @@ describe("tree-shaking", () => {
 
   describe("idle addon", () => {
     test("is entirely absent from a bundle that never imports it", async () => {
-      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts", format);
       for (const marker of IDLE_ADDON_MARKERS) {
         expect(code).not.toContain(marker);
       }
     });
 
     test("system entry point includes only the system scheduler, never the deterministic one", async () => {
-      const code = await bundle("./fixtures/with-idle-addon/system.ts");
+      const code = await bundle("./fixtures/with-idle-addon/system.ts", format);
       expect(code).toContain(SYSTEM_IDLE_MARKER);
       expect(code).not.toContain(DETERMINISTIC_IDLE_MARKER);
     });
 
     test("deterministic entry point includes only the deterministic scheduler, never the system one", async () => {
-      const code = await bundle("./fixtures/with-idle-addon/deterministic.ts");
+      const code = await bundle("./fixtures/with-idle-addon/deterministic.ts", format);
       expect(code).toContain(DETERMINISTIC_IDLE_MARKER);
       expect(code).not.toContain(SYSTEM_IDLE_MARKER);
     });
 
     test("neither idle entry point drags in the animation addon", async () => {
       for (const fixture of ["system", "deterministic"]) {
-        const code = await bundle(`./fixtures/with-idle-addon/${fixture}.ts`);
+        const code = await bundle(`./fixtures/with-idle-addon/${fixture}.ts`, format);
         for (const marker of ANIMATION_ADDON_MARKERS) {
           expect(code).not.toContain(marker);
         }
@@ -221,7 +234,7 @@ describe("tree-shaking", () => {
 
   describe("compat addon", () => {
     test("is entirely absent from a bundle that never imports it", async () => {
-      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts", format);
       for (const marker of COMPAT_ADDON_MARKERS) {
         expect(code).not.toContain(marker);
       }
@@ -232,7 +245,7 @@ describe("tree-shaking", () => {
      * split that matters here is which *runtime* each one drags in.
      */
     test("system entry point pulls in the compat runtime but no deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-compat-addon/system.ts");
+      const code = await bundle("./fixtures/with-compat-addon/system.ts", format);
       for (const marker of COMPAT_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -242,7 +255,7 @@ describe("tree-shaking", () => {
     });
 
     test("deterministic entry point pulls in the compat runtime and the deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-compat-addon/deterministic.ts");
+      const code = await bundle("./fixtures/with-compat-addon/deterministic.ts", format);
       for (const marker of COMPAT_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -251,7 +264,7 @@ describe("tree-shaking", () => {
 
     test("neither compat entry point drags in the animation addon", async () => {
       for (const fixture of ["system", "deterministic"]) {
-        const code = await bundle(`./fixtures/with-compat-addon/${fixture}.ts`);
+        const code = await bundle(`./fixtures/with-compat-addon/${fixture}.ts`, format);
         for (const marker of ANIMATION_ADDON_MARKERS) {
           expect(code).not.toContain(marker);
         }
@@ -261,7 +274,7 @@ describe("tree-shaking", () => {
 
   describe("eta addon", () => {
     test("is entirely absent from a bundle that never imports it", async () => {
-      const code = await bundle("./fixtures/deterministic/plugin-native.ts");
+      const code = await bundle("./fixtures/deterministic/plugin-native.ts", format);
       for (const marker of ETA_ADDON_MARKERS) {
         expect(code).not.toContain(marker);
       }
@@ -272,7 +285,7 @@ describe("tree-shaking", () => {
      * that matters here is which *runtime* each one drags in.
      */
     test("system entry point pulls in the eta scheduler but no deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-eta-addon/system.ts");
+      const code = await bundle("./fixtures/with-eta-addon/system.ts", format);
       for (const marker of ETA_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -282,7 +295,7 @@ describe("tree-shaking", () => {
     });
 
     test("deterministic entry point pulls in the eta scheduler and the deterministic runtime", async () => {
-      const code = await bundle("./fixtures/with-eta-addon/deterministic.ts");
+      const code = await bundle("./fixtures/with-eta-addon/deterministic.ts", format);
       for (const marker of ETA_ADDON_MARKERS) {
         expect(code).toContain(marker);
       }
@@ -291,7 +304,7 @@ describe("tree-shaking", () => {
 
     test("neither eta entry point drags in the animation addon", async () => {
       for (const fixture of ["system", "deterministic"]) {
-        const code = await bundle(`./fixtures/with-eta-addon/${fixture}.ts`);
+        const code = await bundle(`./fixtures/with-eta-addon/${fixture}.ts`, format);
         for (const marker of ANIMATION_ADDON_MARKERS) {
           expect(code).not.toContain(marker);
         }

@@ -44,8 +44,8 @@ type-check or run, since workspace packages resolve through their built
 
 ## Conventions
 
-- TypeScript, ESM-only. Each package's source lives in its own
-  `packages/<name>/src/`.
+- TypeScript, written as ESM. Each package's source lives in its own
+  `packages/<name>/src/`, and is published as both an ESM and a CJS build.
 - Conventional Commits, enforced by commitlint (commit-msg hook + CI), driving
   automated versioning and the changelog — e.g. `fix(core): ...`,
   `feat(plugin-luxon): ...`.

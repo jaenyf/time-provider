@@ -11,11 +11,13 @@
 //      published, and the LICENSE is there;
 //   2. extracts the tarballs side by side into a staging node_modules, with
 //      the peer date libraries linked in from this repo;
-//   3. imports every subpath in each package's `exports` from that staging
-//      tree, which is Node's own resolver reading the packed package.json,
-//      and checks the module has something on it;
-//   4. checks every file an `exports` or `types` entry points at is
-//      actually inside the tarball.
+//   3. imports and requires every subpath in each package's `exports` from
+//      that staging tree, which is Node's own resolver reading the packed
+//      package.json, and checks the module has something on it and that
+//      `require` got the CJS build rather than Node's require(esm) fallback;
+//   4. checks the package declares `types`, and every file an `exports`,
+//      `main`, `types` or `typesVersions` entry points at is actually inside
+//      the tarball.
 //
 // The publishable set comes from release-please-config.json, which is the
 // same list the release workflow publishes from - a package missing there
@@ -89,8 +91,10 @@ interface PackageJson {
   version: string;
   private?: boolean;
   scripts?: Record<string, string>;
-  exports?: Record<string, string>;
+  exports?: Record<string, string | Record<string, string>>;
+  main?: string;
   types?: string;
+  typesVersions?: Record<string, Record<string, string[]>>;
   peerDependencies?: Record<string, string>;
   dependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
@@ -294,15 +298,28 @@ function checkLicense(dir: string, pkg: PackageJson, rootLicense: string): void 
   }
 }
 
-/** Every file an exports/types entry points at has to be in the tarball. */
+/** A package declares its types, and every file its manifest points at is in the tarball. */
 function checkDeclaredFiles(pkg: PackageJson, files: PackedFile[]): void {
   const packed = new Set(files.map(({ path }) => path));
   const declared = new Set<string>();
 
   for (const [subpath, target] of Object.entries(pkg.exports ?? {})) {
-    if (subpath !== "./package.json") declared.add(target);
+    if (subpath === "./package.json") continue;
+    for (const file of typeof target === "string" ? [target] : Object.values(target)) {
+      declared.add(file);
+    }
   }
-  if (pkg.types !== undefined) declared.add(pkg.types);
+  if (pkg.main !== undefined) declared.add(pkg.main);
+  for (const file of Object.values(pkg.typesVersions ?? {})
+    .flatMap(Object.values)
+    .flat()) {
+    declared.add(file);
+  }
+  if (pkg.types === undefined) {
+    fail(pkg.name, "declares no `types`, so older TypeScript setups and the types badge miss them");
+  } else {
+    declared.add(pkg.types);
+  }
 
   for (const target of declared) {
     const normalized = target.replace(/^\.\//, "");
@@ -341,15 +358,28 @@ function linkPeers(pkgs: PackageJson[], stagingModules: string): void {
 }
 
 /** Imports a subpath through Node's resolver, from the staging tree. */
-function checkImport(pkg: PackageJson, subpath: string, staging: string): void {
+function checkImport(
+  pkg: PackageJson,
+  subpath: string,
+  staging: string,
+  loader: "import" | "require",
+): void {
   const specifier = subpath === "." ? pkg.name : `${pkg.name}/${subpath.replace(/^\.\//, "")}`;
-  const source = `
-    const module = await import(${JSON.stringify(specifier)});
-    const names = Object.keys(module);
-    if (names.length === 0) throw new Error("resolved but exports nothing");
+  const quoted = JSON.stringify(specifier);
+  const source =
+    loader === "import"
+      ? `
+    const module = await import(${quoted});
+    if (Object.keys(module).length === 0) throw new Error("resolved but exports nothing");
+  `
+      : `
+    // Node 20.19+ can require() an ES module, which would hide a missing CJS build.
+    if (!require.resolve(${quoted}).endsWith(".cjs")) throw new Error("resolved to the ES module");
+    if (Object.keys(require(${quoted})).length === 0) throw new Error("resolved but exports nothing");
   `;
+  const inputType = loader === "import" ? "module" : "commonjs";
   try {
-    execFileSync(process.execPath, ["--input-type=module", "--eval", source], {
+    execFileSync(process.execPath, [`--input-type=${inputType}`, "--eval", source], {
       cwd: staging,
       stdio: ["ignore", "ignore", "pipe"],
       encoding: "utf8",
@@ -362,7 +392,7 @@ function checkImport(pkg: PackageJson, subpath: string, staging: string): void {
       stderr.split("\n").find((line) => /^\w*Error\b[^:]*:/.test(line.trim())) ??
       stderr.trim().split("\n")[0] ??
       "no output";
-    fail(pkg.name, `importing "${specifier}" from a packed install failed: ${details.trim()}`);
+    fail(pkg.name, `${loader} "${specifier}" from a packed install failed: ${details.trim()}`);
   }
 }
 
@@ -409,7 +439,8 @@ function main(): void {
     for (const pkg of pkgs) {
       for (const subpath of Object.keys(pkg.exports ?? { ".": "" })) {
         if (subpath === "./package.json") continue;
-        checkImport(pkg, subpath, staging);
+        checkImport(pkg, subpath, staging, "import");
+        checkImport(pkg, subpath, staging, "require");
       }
     }
 

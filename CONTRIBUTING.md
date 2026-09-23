@@ -87,8 +87,8 @@ from the repo root.
 
 ## Code Style
 
-- **TypeScript, ESM-only.** Each package's source lives in its own
-  `packages/<name>/src/`.
+- **TypeScript, written as ESM.** Each package's source lives in its own
+  `packages/<name>/src/`, and is published as both an ESM and a CJS build.
 - **Formatting, linting, and type-checking** are all driven by `vp check`
   (per package) or `vp run -r check` (whole repo). Fix everything it
   reports; `vp check --fix` will auto-fix what it can, and the pre-commit

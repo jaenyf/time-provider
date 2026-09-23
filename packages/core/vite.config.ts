@@ -5,6 +5,7 @@ export default defineConfig({
     exports: true,
     clean: true,
     entry: ["src/index.ts", "src/deterministic.ts"],
+    format: ["esm", "cjs"],
   },
   lint: {
     options: {
