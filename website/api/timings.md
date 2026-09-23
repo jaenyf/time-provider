@@ -72,6 +72,8 @@ measure.duration; // milliseconds between the "start" mark and now
   matches everything.
 - **`clear(filter?)`** — removes exactly the entries `entries(filter)` returns.
 
+See [Timings](/guide/timings) for how they behave on each clock strategy.
+
 To make a point from a number, use `toMonotonic({ milliseconds })`;
 `monotonicArithmetic` adds and subtracts durations the way `epochArithmetic`
 does for epoch instants.
