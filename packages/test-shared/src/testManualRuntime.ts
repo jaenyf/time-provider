@@ -737,6 +737,14 @@ export function testManualRuntime<TDate>(
 
     describe("performance", () => {
       testPerformance(createSUT);
+
+      test("timeOrigin is the clock at creation, not at the first performance read", () => {
+        const sut = createSUT();
+        const createdAt = sut.clock.timestampNow();
+        sut.advance({ hours: 1 });
+        expect(sut.performance.timeOrigin).toBe(createdAt);
+        expect(sut.performance.now()).toBe(3_600_000);
+      });
     });
 
     describe("addon-cron", () => {

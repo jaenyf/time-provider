@@ -1,4 +1,4 @@
-import { monotonicArithmetic, toInstant, toMonotonic } from "../helpers/branded-types.ts";
+import { monotonicArithmetic, toMonotonic } from "../helpers/branded-types.ts";
 import type { BaseDeterministicRuntime } from "../runtimes/deterministic-runtime.ts";
 import type {
   DurationMilliseconds,
@@ -58,20 +58,18 @@ class DeterministicPerformanceEntry<TEntryType extends "mark" | "measure"> {
  * A deterministic performance class
  */
 export class DeterministicPerformance<TDate> implements IPerformance {
-  private static uninitializedTimeOrigin: EpochMilliseconds = toInstant({
-    milliseconds: Number.MAX_VALUE,
-  });
-
   #runtime!: BaseDeterministicRuntime<TDate>;
-  #timeOrigin: EpochMilliseconds = DeterministicPerformance.uninitializedTimeOrigin;
+  #timeOrigin!: EpochMilliseconds;
   #entries: IPerformanceEntry[] = [];
   #initialized: boolean = false;
 
+  /**
+   * Starts the timeline: its origin is the runtime's clock at this call, as a native `timeOrigin`
+   * is the moment its context started. Must be called once the runtime's clock is set up.
+   */
   initialize(runtime: BaseDeterministicRuntime<TDate>) {
-    /**
-     * Note: clock.timestampNow() may not be available at this point
-     */
     this.#runtime = runtime;
+    this.#timeOrigin = runtime.timestampNow();
     this.#initialized = true;
   }
 
@@ -81,25 +79,14 @@ export class DeterministicPerformance<TDate> implements IPerformance {
     }
   }
 
-  private assertAndGetTimeOrigin(): EpochMilliseconds {
-    let timeOrigin = this.#timeOrigin;
-    if (timeOrigin != DeterministicPerformance.uninitializedTimeOrigin) {
-      return timeOrigin;
-    }
-
-    timeOrigin = this.#runtime.timestampNow();
-    this.#timeOrigin = timeOrigin;
-    return timeOrigin;
-  }
-
   now(): MonotonicMilliseconds {
     this.assertInitialization();
-    return (this.#runtime.timestampNow() - this.assertAndGetTimeOrigin()) as MonotonicMilliseconds;
+    return (this.#runtime.timestampNow() - this.#timeOrigin) as MonotonicMilliseconds;
   }
 
   get timeOrigin(): EpochMilliseconds {
     this.assertInitialization();
-    return this.assertAndGetTimeOrigin();
+    return this.#timeOrigin;
   }
 
   getEntries = (): readonly IPerformanceEntry[] => {

@@ -686,14 +686,23 @@ export abstract class BaseDeterministicRuntime<TDate>
   #dueDrainingDisabled = false;
   #microtasks: MicrotaskQueue;
   #rethrowTimerErrors: boolean;
+  #performance: DeterministicPerformance<TDate>;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     const performance = new DeterministicPerformance<TDate>();
     super(localTimezone, converter, performance);
+    this.#performance = performance;
     this.#dueQueue = new DueHeap<TDate>();
     this.#microtasks = new MicrotaskQueue();
     this.#rethrowTimerErrors = shouldRethrowTimerErrors();
-    performance.initialize(this);
+  }
+
+  /**
+   * Starts the performance timeline at the clock's current time. Called by a subclass once its
+   * clock is set up, which this constructor runs too early to see.
+   */
+  protected startPerformanceTimeline(): void {
+    this.#performance.initialize(this);
   }
 
   /**
@@ -906,6 +915,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   ) {
     super(localTimezone, converter);
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
+    this.startPerformanceTimeline();
   }
 
   localNowImpl(): TDate {
