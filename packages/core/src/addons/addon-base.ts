@@ -3,7 +3,7 @@ import type {
   IClock,
   IDeterministicRuntime,
   IMicrotasks,
-  IPerformance,
+  ITimings,
   IRuntime,
   ITimers,
 } from "../types/types.ts";
@@ -17,7 +17,7 @@ export abstract class AddonBase<
   #timers?: ITimers;
   #clock?: IClock<TDate>;
   #microtasks?: IMicrotasks;
-  #performance?: IPerformance;
+  #timings?: ITimings;
 
   constructor() {
     this.#initialized = false;
@@ -54,11 +54,10 @@ export abstract class AddonBase<
   }
 
   /**
-   * This runtime's performance API, resolved once - see {@link runtimeTimers} for why it is
-   * cached.
+   * This runtime's timings, resolved once - see {@link runtimeTimers} for why it is cached.
    */
-  protected get runtimePerformance(): IPerformance {
-    return (this.#performance ??= this.runtime.performance);
+  protected get runtimeTimings(): ITimings {
+    return (this.#timings ??= this.runtime.timings);
   }
 
   applyToRuntime(runtime: TRuntime): void {
@@ -67,7 +66,7 @@ export abstract class AddonBase<
     this.#timers = undefined;
     this.#clock = undefined;
     this.#microtasks = undefined;
-    this.#performance = undefined;
+    this.#timings = undefined;
     this.applyToRuntimeImpl(runtime);
     this.#initialized = true;
   }

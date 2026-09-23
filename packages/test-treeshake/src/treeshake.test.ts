@@ -27,7 +27,7 @@ const DETERMINISTIC_MARKERS = [
   "BaseFixedRuntime",
   "BaseManualRuntime",
   "BaseSequentialRuntime",
-  "DeterministicPerformance",
+  "DeterministicTimings",
 ];
 
 /*

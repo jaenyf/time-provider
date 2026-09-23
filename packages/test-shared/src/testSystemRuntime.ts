@@ -15,7 +15,7 @@ import {
   getBuilderFor,
 } from "./helpers/testHelpers.ts";
 import { testConverter } from "./helpers/testConverter.ts";
-import { testPerformance } from "./helpers/testPerformance.ts";
+import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import { testAddonCronSystem } from "./helpers/testCron.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
@@ -340,8 +340,12 @@ export function testSystemRuntime<TDate>(
       });
     });
 
-    describe("performance", () => {
-      testPerformance(createSUT, true);
+    describe("monotonic clock", () => {
+      testMonotonicClock(createSUT);
+    });
+
+    describe("timings", () => {
+      testTimings(createSUT);
     });
 
     describe("addon-cron", () => {

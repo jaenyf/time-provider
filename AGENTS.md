@@ -74,7 +74,7 @@ type-check or run, since workspace packages resolve through their built
 ## Architecture
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full picture: the core
-abstractions (clock/timers/converter/performance), the plugin/adapter
+abstractions (clock/timers/converter/timings), the plugin/adapter
 pattern, how an addon attaches its facade to a runtime, why "full"
 (timezone-aware) and "UTC-only" plugins are separate interface hierarchies,
 and how the test suites are organized.

@@ -17,7 +17,7 @@ timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 ```
 
 `timeProvider` above is still a plain `ITimeProvider<Date>` — `clock`,
-`converter`, `scheduler`, `performance` — plus whatever the addon adds, here a
+`converter`, `scheduler`, `timings` — plus whatever the addon adds, here a
 `scheduler.animation` facade exposing `scheduleFrame`. An addon that schedules
 callbacks extends `scheduler`; one that doesn't adds a root property of its own.
 

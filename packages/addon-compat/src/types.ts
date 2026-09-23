@@ -1,4 +1,40 @@
-import type { IPerformance, IScheduledHandle } from "@time-provider/core";
+import type {
+  DurationMilliseconds,
+  EpochMilliseconds,
+  IScheduledHandle,
+  ITimingMark,
+  ITimingMarkOptions,
+  ITimingMeasure,
+  ITimingMeasureOptions,
+  MonotonicMilliseconds,
+} from "@time-provider/core";
+
+/**
+ * The kind of a {@link IPerformanceEntry}.
+ */
+export type PerformanceEntryType =
+  | "dns" // Node.js only
+  | "function" // Node.js only
+  | "gc" // Node.js only
+  | "http2" // Node.js only
+  | "http" // Node.js only
+  | "mark" // available on the Web
+  | "measure" // available on the Web
+  | "net" // Node.js only
+  | "node" // Node.js only
+  | "resource"; // available on the Web
+
+/**
+ * A single entry on the performance timeline, as {@link ICompatApi.getEntries} returns it: a mark
+ * or a measure, or on a system Time-Provider any entry the host recorded.
+ */
+export interface IPerformanceEntry {
+  readonly name: string;
+  readonly entryType: PerformanceEntryType;
+  readonly startTime: MonotonicMilliseconds;
+  readonly duration: DurationMilliseconds;
+  toJSON(): unknown;
+}
 
 /**
  * The shape this addon adds to a composed Time-Provider: a `compat` property exposing
@@ -15,10 +51,10 @@ export type WithCompatApi<TDate> = {
  * The compat API facade this addon adds to a composed Time-Provider, reachable as
  * `timeProvider.compat` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
  *
- * Schedules and cancels timeouts/intervals, and mirrors the native `performance` members the
- * runtime exposes under `timeProvider.performance` - `now`, `timeOrigin`, `mark`, `measure`,
- * the `getEntries*` readers and the `clear*` methods - flat alongside them, so migrating code
- * that calls both keeps one facade to reach for.
+ * Schedules and cancels timeouts/intervals, and exposes the native `performance` members - `now`,
+ * `timeOrigin`, `mark`, `measure`, the `getEntries*` readers and the `clear*` methods - flat
+ * alongside them, so migrating code that calls both keeps one facade to reach for. They are
+ * backed by `timeProvider.clock.monotonicNow()`/`monotonicOrigin` and `timeProvider.timings`.
  *
  * Execution model depends on the clock strategy backing these timers:
  * - On a **system** clock, callbacks run asynchronously via the real, native
@@ -42,7 +78,46 @@ export type WithCompatApi<TDate> = {
 // Kept generic over TDate for symmetry with WithCompatApi<TDate>, even though no member here
 // happens to reference it.
 // oxlint-disable-next-line no-unused-vars
-export interface ICompatApi<TDate> extends IPerformance {
+export interface ICompatApi<TDate> {
+  /**
+   * Returns the current high-resolution timestamp in milliseconds relative to
+   * {@link ICompatApi.timeOrigin}.
+   */
+  now(): MonotonicMilliseconds;
+  /**
+   * The Unix timestamp at which this performance timeline started.
+   */
+  readonly timeOrigin: EpochMilliseconds;
+  /**
+   * Returns all performance entries. On a system Time-Provider that is the host's whole timeline,
+   * including entries it records itself (`resource`, `navigation`...); on a deterministic one, the
+   * marks and measures recorded on it.
+   */
+  getEntries(): readonly IPerformanceEntry[];
+  /**
+   * Returns performance entries with a specific name.
+   */
+  getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];
+  /**
+   * Returns performance entries of a specific type.
+   */
+  getEntriesByType(entryType: PerformanceEntryType): readonly IPerformanceEntry[];
+  /**
+   * Creates a timestamp marker.
+   */
+  mark(name: string, options?: ITimingMarkOptions): ITimingMark;
+  /**
+   * Creates a measured duration between marks or timestamps.
+   */
+  measure(name: string, startMarkOrOptions?: string | ITimingMeasureOptions): ITimingMeasure;
+  /**
+   * Removes marks.
+   */
+  clearMarks(name?: string): void;
+  /**
+   * Removes measures.
+   */
+  clearMeasures(name?: string): void;
   /**
    * Schedules `callback` to run once, `millisecondsDelay` milliseconds from
    * now (0 if omitted or negative).

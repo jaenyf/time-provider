@@ -2,16 +2,22 @@
 
 ```ts
 type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
+type MonotonicMilliseconds = Brand<number, "MonotonicMilliseconds">; // a point since monotonicOrigin
 
 interface ITimestampClock {
   timestampNow(): EpochMilliseconds;
 }
 
-interface IUtcOnlyClock<TDate> extends ITimestampClock {
+interface IMonotonicClock {
+  monotonicNow(): MonotonicMilliseconds;
+  readonly monotonicOrigin: EpochMilliseconds;
+}
+
+interface IUtcOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
   utcNow(): TDate;
 }
 
-interface ILocalOnlyClock<TDate> extends ITimestampClock {
+interface ILocalOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
   localNow(): TDate;
   withTimezone(timezone: TimezoneDefinition): this;
   hostTimezone(): TimezoneDefinition;
@@ -22,7 +28,7 @@ interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 ```
 
 `IClock` is exported from `@time-provider/core`. `ITimestampClock`,
-`IUtcOnlyClock` and `ILocalOnlyClock` are **not exported** — they are shown here
+`IMonotonicClock`, `IUtcOnlyClock` and `ILocalOnlyClock` are **not exported** — they are shown here
 because they are part of the public API surface, not because you can import
 them: they are the shape your `timeProvider.clock` actually has, and which of
 their members exists depends on the plugin. You will see these names in editor
@@ -43,6 +49,16 @@ one down, derive it — see [Naming these types](#naming-these-types).
   when "now" is only needed to compute something (a delay, an elapsed
   duration) rather than to observe time passing. Always available, on both
   clock kinds.
+- **`monotonicNow()`** — milliseconds elapsed since `monotonicOrigin`, as a
+  `MonotonicMilliseconds` point: the read [`timings`](/api/timings) records
+  marks and measures against. On a system clock it is the host's
+  `performance.now()`, which wall-clock corrections never move. On a
+  deterministic clock it follows the clock, so a manual clock moved backward
+  with `advance()` moves it backward too. Free of side effects, like
+  `timestampNow()`.
+- **`.monotonicOrigin`** — the epoch timestamp `monotonicNow()` counts from:
+  the host's `performance.timeOrigin` on a system clock, the clock's time at
+  creation on a deterministic one. It never changes.
 - **`withTimezone(tz)`** — reconfigures the local timezone on an
   already-built clock, returning `this` for chaining.
 - **`hostTimezone()`** — the IANA timezone of the current host machine,

@@ -1,4 +1,8 @@
-import type { DurationMilliseconds, EpochMilliseconds } from "../types/types.ts";
+import type {
+  DurationMilliseconds,
+  EpochMilliseconds,
+  MonotonicMilliseconds,
+} from "../types/types.ts";
 
 export const MILLISECONDS_PER_SECOND = 1_000;
 export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND;
@@ -156,4 +160,23 @@ export const epochArithmetic = {
   addDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a + b) as EpochMilliseconds,
   subtract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
   subtractDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a - b) as EpochMilliseconds,
+};
+
+/**
+ * Convert the given spec to a branded point on a monotonic timeline, expressed as the number of
+ * milliseconds since that timeline's origin.
+ * @param instantSpec the spec describing the point compared to the timeline's origin.
+ * @returns a branded MonotonicMilliseconds type
+ * @throws if any field is negative, or if the fields don't add up to a finite number of milliseconds.
+ */
+export function toMonotonic(instantSpec: IEpochInstantSpec): MonotonicMilliseconds {
+  return toInstant(instantSpec) as number as MonotonicMilliseconds;
+}
+
+export const monotonicArithmetic = {
+  addDuration: (a: MonotonicMilliseconds, b: DurationMilliseconds) =>
+    (a + b) as MonotonicMilliseconds,
+  subtract: (a: MonotonicMilliseconds, b: MonotonicMilliseconds) => (a - b) as DurationMilliseconds,
+  subtractDuration: (a: MonotonicMilliseconds, b: DurationMilliseconds) =>
+    (a - b) as MonotonicMilliseconds,
 };

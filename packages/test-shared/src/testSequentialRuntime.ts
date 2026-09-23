@@ -8,7 +8,7 @@ import {
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testConverter } from "./helpers/testConverter.ts";
-import { testPerformance } from "./helpers/testPerformance.ts";
+import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import {
   testConstructorArgs,
   testTimestampNow,
@@ -784,23 +784,27 @@ export function testSequentialRuntime<TDate>(
       testMicrotasks(createSUT);
     });
 
-    describe("performance", () => {
-      testPerformance(createSUT);
+    describe("monotonic clock", () => {
+      testMonotonicClock(createSUT);
 
-      test("reads do not consume the sequential timestamps", () => {
+      test("monotonic reads and timings do not consume the sequential timestamps", () => {
         const sut = createSUT();
         expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:01.000Z"));
-        sut.performance.now();
-        sut.performance.mark("m");
-        sut.performance.measure("measure", "m");
+        sut.clock.monotonicNow();
+        sut.timings.mark("m");
+        sut.timings.measure("measure", { start: "m" });
         expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:02.000Z"));
-        sut.performance.now();
+        sut.clock.monotonicNow();
         expect(sut.clock.utcNow()).toEqual(parseTimeToUtc("2026-01-01T00:00:03.000Z"));
       });
-      test("now() falls back to 0 when no sequential time is configured", () => {
+      test("monotonicNow() falls back to 0 when no sequential time is configured", () => {
         const sut = createSequentialRuntime("Pacific/Kiritimati", []);
-        expect(sut.performance.now()).toBe(0);
+        expect(sut.clock.monotonicNow()).toBe(0);
       });
+    });
+
+    describe("timings", () => {
+      testTimings(createSUT);
     });
 
     describe("addon-cron", () => {

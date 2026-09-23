@@ -1,14 +1,13 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
-  toDuration,
   toInstant,
+  toMonotonic,
   type EpochMilliseconds,
   type IDurationSpec,
   type IMicrotasks,
-  type IPerformance,
-  type IPerformanceEntry,
   type IRuntime,
   type IScheduledHandle,
+  type ITimingEntry,
   type ITimers,
 } from "@time-provider/core";
 import { CompatRuntime } from "../src/compat-runtime.ts";
@@ -25,10 +24,10 @@ type FakeRuntime = IRuntime<unknown> & {
   compat?: ICompatApi<unknown>;
   scheduler: { timers: ITimers; microtasks: IMicrotasks };
   microtasks: (() => void)[];
-  performance: IPerformance;
   calls: ScheduledCall[];
   performanceCalls: { method: string; args: unknown[] }[];
-  timeOrigin: EpochMilliseconds;
+  monotonicOrigin: EpochMilliseconds;
+  entries: ITimingEntry[];
 };
 
 function fakeRuntime(): FakeRuntime {
@@ -59,7 +58,8 @@ function fakeRuntime(): FakeRuntime {
     calls,
     microtasks,
     performanceCalls,
-    timeOrigin: toInstant({ milliseconds: 1000 }),
+    monotonicOrigin: toInstant({ milliseconds: 1000 }),
+    entries: [],
     registerAddon: () => {},
     scheduler: {
       timers: {
@@ -76,26 +76,28 @@ function fakeRuntime(): FakeRuntime {
         queue: (callback: () => void) => microtasks.push(callback),
       },
     },
-    performance: {
-      now: track("now", toDuration({ milliseconds: 42 })),
-      get timeOrigin() {
-        return runtime.timeOrigin;
+    clock: {
+      monotonicNow: track("monotonicNow", toMonotonic({ milliseconds: 42 })),
+      get monotonicOrigin() {
+        return runtime.monotonicOrigin;
       },
-      getEntries: track<readonly IPerformanceEntry[]>("getEntries", []),
-      getEntriesByName: track<readonly IPerformanceEntry[]>("getEntriesByName", []),
-      getEntriesByType: track<readonly IPerformanceEntry[]>("getEntriesByType", []),
+    },
+    timings: {
+      entries: () => runtime.entries,
       mark: track("mark", { name: "mark" } as never),
       measure: track("measure", { name: "measure" } as never),
-      clearMarks: track("clearMarks", undefined),
-      clearMeasures: track("clearMeasures", undefined),
+      clear: track("clear", undefined),
     },
   } as unknown as FakeRuntime;
   return runtime;
 }
 
-function composed(): { runtime: FakeRuntime; compat: ICompatApi<unknown> } {
+function composed(readsHostTimeline = false): {
+  runtime: FakeRuntime;
+  compat: ICompatApi<unknown>;
+} {
   const runtime = fakeRuntime();
-  const sut = new CompatRuntime<unknown>();
+  const sut = new CompatRuntime<unknown>(readsHostTimeline);
   sut.applyToRuntime(runtime);
   return { runtime, compat: runtime.compat! };
 }
@@ -183,23 +185,26 @@ describe("CompatRuntime", () => {
 
   describe("performance", () => {
     test.each([
-      ["now", (compat: ICompatApi<unknown>) => compat.now(), []],
-      ["getEntries", (compat: ICompatApi<unknown>) => compat.getEntries(), []],
-      [
-        "getEntriesByName",
-        (compat: ICompatApi<unknown>) => compat.getEntriesByName("a", "mark"),
-        ["a", "mark"],
-      ],
-      [
-        "getEntriesByType",
-        (compat: ICompatApi<unknown>) => compat.getEntriesByType("measure"),
-        ["measure"],
-      ],
+      ["monotonicNow", (compat: ICompatApi<unknown>) => compat.now(), []],
       ["mark", (compat: ICompatApi<unknown>) => compat.mark("a"), ["a", undefined]],
-      ["measure", (compat: ICompatApi<unknown>) => compat.measure("a", "b"), ["a", "b"]],
-      ["clearMarks", (compat: ICompatApi<unknown>) => compat.clearMarks("a"), ["a"]],
-      ["clearMeasures", (compat: ICompatApi<unknown>) => compat.clearMeasures("a"), ["a"]],
-    ] as const)("%s delegates to the runtime's performance API", (method, call, args) => {
+      ["measure", (compat: ICompatApi<unknown>) => compat.measure("a"), ["a", undefined]],
+      ["measure", (compat: ICompatApi<unknown>) => compat.measure("a", "b"), ["a", { start: "b" }]],
+      [
+        "measure",
+        (compat: ICompatApi<unknown>) => compat.measure("a", { end: "b" }),
+        ["a", { end: "b" }],
+      ],
+      [
+        "clear",
+        (compat: ICompatApi<unknown>) => compat.clearMarks("a"),
+        [{ kind: "mark", name: "a" }],
+      ],
+      [
+        "clear",
+        (compat: ICompatApi<unknown>) => compat.clearMeasures(),
+        [{ kind: "measure", name: undefined }],
+      ],
+    ] as const)("%s is called on the runtime (%#)", (method, call, args) => {
       const { runtime, compat } = composed();
       call(compat);
       expect(runtime.performanceCalls).toEqual([{ method, args }]);
@@ -208,14 +213,59 @@ describe("CompatRuntime", () => {
     test("timeOrigin is read from the runtime on every access, not captured once", () => {
       const { runtime, compat } = composed();
       expect(compat.timeOrigin).toBe(1000);
-      runtime.timeOrigin = toInstant({ milliseconds: 2000 });
+      runtime.monotonicOrigin = toInstant({ milliseconds: 2000 });
       expect(compat.timeOrigin).toBe(2000);
+    });
+
+    describe("on the runtime's timings", () => {
+      const entry = (name: string, entryType: "mark" | "measure") =>
+        ({ name, entryType }) as ITimingEntry;
+      const withEntries = () => {
+        const { runtime, compat } = composed();
+        runtime.entries = [entry("a", "mark"), entry("a", "measure"), entry("b", "mark")];
+        return compat;
+      };
+
+      test("getEntries lists the runtime's entries", () => {
+        expect(withEntries().getEntries()).toHaveLength(3);
+      });
+
+      test("getEntriesByName filters by name, then by type", () => {
+        const compat = withEntries();
+        expect(compat.getEntriesByName("a")).toHaveLength(2);
+        expect(compat.getEntriesByName("a", "measure")).toEqual([entry("a", "measure")]);
+      });
+
+      test("getEntriesByType filters by type", () => {
+        expect(withEntries().getEntriesByType("mark")).toEqual([
+          entry("a", "mark"),
+          entry("b", "mark"),
+        ]);
+      });
+    });
+
+    describe("on the host timeline", () => {
+      test("the getEntries readers list what the host recorded", () => {
+        const { compat } = composed(true);
+        performance.mark("compat-host-mark");
+        try {
+          expect(compat.getEntries()).toContainEqual(
+            expect.objectContaining({ name: "compat-host-mark" }),
+          );
+          expect(compat.getEntriesByName("compat-host-mark", "mark")).toHaveLength(1);
+          expect(compat.getEntriesByType("mark")).toContainEqual(
+            expect.objectContaining({ name: "compat-host-mark" }),
+          );
+        } finally {
+          performance.clearMarks("compat-host-mark");
+        }
+      });
     });
   });
 
   describe("dispose", () => {
     test("explicit dispose call disposes instance", () => {
-      const sut = new CompatRuntime<unknown>();
+      const sut = new CompatRuntime<unknown>(false);
       sut.applyToRuntime(fakeRuntime());
       sut.dispose();
       expect(sut.isDisposed).toBe(true);
@@ -224,7 +274,7 @@ describe("CompatRuntime", () => {
     test("implicit dispose call disposes instance", () => {
       let sutRef: CompatRuntime<unknown> | undefined = undefined;
       {
-        using sut = new CompatRuntime<unknown>();
+        using sut = new CompatRuntime<unknown>(false);
         sut.applyToRuntime(fakeRuntime());
         sutRef = sut;
       }

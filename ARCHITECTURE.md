@@ -72,7 +72,7 @@ Plugin (adapter)
   -> .create() / .asFixed() / .asManual() / .asSequential()
   -> a Runtime (plugin's system.ts/deterministic-runtimes.ts, extending a
      core Base* class from system-runtime.ts/deterministic-runtime.ts)
-  -> ITimeProvider { clock, converter, scheduler, performance }  (core/src/runtimes/runtime-base.ts)
+  -> ITimeProvider { clock, converter, scheduler, timings }  (core/src/runtimes/runtime-base.ts)
 ```
 
 A `Runtime` is a single object that implements `IClock`, `IConverter`, and
@@ -215,7 +215,7 @@ Three things about that call decide how the addon behaves:
   what else the consumer composed.
 
 `AddonBase` caches `runtime.scheduler.timers`, `.clock`,
-`.scheduler.microtasks` and `.performance` behind protected getters, so an
+`.scheduler.microtasks` and `.timings` behind protected getters, so an
 addon scheduling on a hot path doesn't walk the facet chain on every call.
 
 ## Tree-shaking

@@ -52,7 +52,7 @@ which affects unrelated code and makes tests harder to reason about.
 vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
-single object exposing a clock, a converter, a scheduler, and a performance API swappable per
+single object exposing a clock, a converter, a scheduler, and timings, swappable per
 call site.  
 Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
 
@@ -163,10 +163,10 @@ Every time provider exposes the same four-part surface:
 
 ```typescript
 interface ITimeProvider<TDate> extends IHasAbortSignal, IDisposable {
-  clock: IClock<TDate>; // localNow, utcNow, timestampNow, withTimezone
+  clock: IClock<TDate>; // localNow, utcNow, timestampNow, monotonicNow, withTimezone
   converter: IConverter<TDate>; // convertToUtc, convertToLocal
   scheduler: IScheduler; // timers (once, every, recurring, wait), microtasks
-  performance: IPerformance; //now, getEntries, measure,...
+  timings: ITimings; // mark, measure, entries, clear
 }
 ```
 
