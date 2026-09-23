@@ -1,5 +1,7 @@
 [![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-native.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-native)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-native?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-native?activeTab=code)
+[![Node.js ^18.18 || >=20.4](https://img.shields.io/badge/node-%5E18.18%20%7C%7C%20%3E%3D20.4-blue?logo=node.js&logoColor=white&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/package.json)
+[![module ESM + CJS](https://img.shields.io/badge/module-ESM%20%2B%20CJS-blue?logo=javascript&logoColor=white&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-native/package.json)
 [![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=86400)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
