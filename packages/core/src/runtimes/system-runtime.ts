@@ -78,7 +78,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     this.untrackHandle(scheduledHandle);
   }
 
-  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions) {
+  once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
     let msDelay = toDuration(delay);
     if (msDelay < 0) {

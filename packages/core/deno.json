@@ -1,0 +1,11 @@
+{
+  "name": "@time-provider/core",
+  "version": "3.0.1",
+  "exports": {
+    ".": "./src/index.ts",
+    "./deterministic": "./src/deterministic.ts"
+  },
+  "publish": {
+    "include": ["src", "LICENSE", "README.md"]
+  }
+}

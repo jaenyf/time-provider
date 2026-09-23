@@ -105,8 +105,41 @@ jobs:
           fi
           echo "paths=$PATHS" >> "$GITHUB_OUTPUT"
 
+  # Every package must pass the npm and JSR publish dry runs before any of them is published,
+  # so one broken package stops the whole release instead of leaving it half-published.
+  publish-dry-run:
+    needs: resolve-publish-targets
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJson(needs.resolve-publish-targets.outputs.paths) }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: voidzero-dev/setup-vp@9fd26ff49f9b5e6276c2b493da4454ad4527f7f4 # v1.20.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@time-provider"
+          cache: false
+          run-install: false
+
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - run: vp install --frozen-lockfile
+
+      - name: Dry-run publish ${{ matrix.path }}
+        working-directory: ${{ matrix.path }}
+        run: vp run release:dry-run
+
   publish:
-    needs: [release, post-release-updates, resolve-publish-targets]
+    needs: [release, post-release-updates, resolve-publish-targets, publish-dry-run]
     permissions:
       contents: read
       id-token: write
@@ -127,12 +160,15 @@ jobs:
           cache: false
           run-install: false
 
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
       - run: vp install --frozen-lockfile
 
       - name: Publish ${{ matrix.path }}
-        env:
-          PACKAGE_PATH: ${{ matrix.path }}
-        run: npm run -w "$PACKAGE_PATH" release
+        working-directory: ${{ matrix.path }}
+        run: vp run release
 
   close-released-issues:
     needs: publish

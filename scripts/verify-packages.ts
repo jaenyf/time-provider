@@ -192,6 +192,13 @@ function checkReleaseMetadata(
   if (pkg.scripts?.release === undefined) {
     fail(pkg.name, "has no `release` script, which is what the publish job runs");
   }
+  const jsr = readJson<{ name?: string; version?: string }>(join(dir, "deno.json"));
+  if (jsr.name !== pkg.name || jsr.version !== pkg.version) {
+    fail(
+      pkg.name,
+      `is ${pkg.version} in package.json but ${jsr.name}@${jsr.version} in deno.json, which JSR publishes`,
+    );
+  }
 }
 
 /**

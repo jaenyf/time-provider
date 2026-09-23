@@ -1,0 +1,14 @@
+{
+  "name": "@time-provider/plugin-moment",
+  "version": "0.5.2",
+  "exports": {
+    ".": "./src/index.ts",
+    "./deterministic": "./src/deterministic.ts"
+  },
+  "publish": {
+    "include": ["src", "LICENSE", "README.md"]
+  },
+  "imports": {
+    "moment": "npm:moment@^2.11.1"
+  }
+}

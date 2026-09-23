@@ -106,7 +106,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     this.#timersHandles.delete(handle);
   }
 
-  get isDisposed() {
+  get isDisposed(): boolean {
     return this.#isDisposed;
   }
 
@@ -246,7 +246,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
    * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as UTC time.
    */
-  convertToUtc = (time: string | EpochMilliseconds | TDate) => {
+  convertToUtc = (time: string | EpochMilliseconds | TDate): TDate => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a
@@ -263,7 +263,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
    * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
    * @returns a TDate expressed as local time.
    */
-  convertToLocal = (time: string | EpochMilliseconds | TDate) => {
+  convertToLocal = (time: string | EpochMilliseconds | TDate): TDate => {
     /*
      * The input is first converted to a TDate (accepting any of the three
      * input shapes), then round-tripped through a timestamp and back to a

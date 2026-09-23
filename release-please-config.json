@@ -4,6 +4,13 @@
   "separate-pull-requests": false,
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
+  "extra-files": [
+    {
+      "type": "json",
+      "path": "deno.json",
+      "jsonpath": "$.version"
+    }
+  ],
   "packages": {
     "packages/addon-animation-frame": {
       "release-type": "node",

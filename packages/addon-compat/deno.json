@@ -1,0 +1,11 @@
+{
+  "name": "@time-provider/addon-compat",
+  "version": "0.2.1",
+  "exports": {
+    ".": "./src/index.ts",
+    "./deterministic": "./src/deterministic.ts"
+  },
+  "publish": {
+    "include": ["src", "LICENSE", "README.md"]
+  }
+}

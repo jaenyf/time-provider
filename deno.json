@@ -1,0 +1,20 @@
+{
+  "workspace": [
+    "./packages/addon-animation-frame",
+    "./packages/addon-compat",
+    "./packages/addon-cron",
+    "./packages/addon-eta",
+    "./packages/addon-idle",
+    "./packages/core",
+    "./packages/plugin-dayjs",
+    "./packages/plugin-luxon",
+    "./packages/plugin-moment-timezone",
+    "./packages/plugin-moment",
+    "./packages/plugin-native",
+    "./packages/plugin-temporal"
+  ],
+  "compilerOptions": {
+    "noImplicitOverride": false,
+    "lib": ["deno.ns", "dom", "esnext"]
+  }
+}

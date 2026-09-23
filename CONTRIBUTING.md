@@ -138,13 +138,17 @@ manual version bump or changelog edit.
    (`release-please-config.json`), keeping an open "release PR" per package
    up to date with the next version number and changelog entry.
 2. Merging a release PR triggers the changelog and `BENCHMARK.md`
-   aggregation, then a per-package publish job that runs `npm stage publish
---provenance`. This stages the package on npm via OIDC trusted publishing
-   (no npm token is stored in this repository) rather than publishing it
-   directly.
+   aggregation and a dry run of every released package's publish, to both
+   npm and [JSR](https://jsr.io/@time-provider). Only once all of them pass
+   does a per-package publish job run the package's `release` script. It
+   stages the package on npm with `vp pm stage publish --provenance`, then
+   publishes it to JSR with `deno publish`. Both authenticate through GitHub
+   OIDC, so no registry token is stored in this repository.
 3. A maintainer approves the staged version from npm (2FA required) before
-   it becomes installable. An untrusted or compromised CI run can therefore
-   queue a release but never make one live on its own.
+   it becomes installable there. JSR has no staging, so the JSR version is
+   live as soon as the publish job succeeds. If JSR fails after npm staged
+   the version, reject it with `npm stage reject` so neither registry ships
+   it.
 
 `hotfix/*` branches follow the same pipeline against
 `release-please-config.hotfix.json` instead, for versioning a fix

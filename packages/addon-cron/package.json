@@ -74,7 +74,8 @@
     "dev": "vp pack --watch",
     "check": "vp check",
     "prepublishOnly": "vp run build",
-    "release": "npm stage publish --provenance"
+    "release": "vp pm stage publish --provenance && deno publish",
+    "release:dry-run": "vp pm stage publish --dry-run && deno publish --dry-run"
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*"
