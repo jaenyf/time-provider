@@ -307,6 +307,109 @@
         </div>
       </div>
 
+      <div class="pg-panel" :class="{ 'pg-panel-collapsed': !openPanes.timings }">
+        <div class="pg-panel-header">
+          <button
+            type="button"
+            class="pg-panel-toggle"
+            :aria-expanded="openPanes.timings"
+            aria-controls="pg-pane-timings"
+            @click="togglePane('timings')"
+          >
+            <span class="pg-panel-chevron" aria-hidden="true"></span>
+            <span>Timings</span>
+          </button>
+          <span class="pg-badge">{{ strategyLabel }}</span>
+        </div>
+        <div class="pg-panel-body" id="pg-pane-timings" v-show="openPanes.timings">
+          <div class="pg-readout pg-clock-readout">
+            <div class="pg-readout-item">
+              <div class="pg-label">clock.monotonicNow()</div>
+              <div class="pg-value">{{ monotonicReadout }}</div>
+              <button
+                class="pg-btn"
+                style="margin-top: 8px"
+                :disabled="!timeProvider"
+                @click="readMonotonic"
+              >
+                Read monotonicNow()
+              </button>
+            </div>
+            <div class="pg-readout-item">
+              <div class="pg-label">clock.monotonicOrigin</div>
+              <div class="pg-value">{{ monotonicOriginReadout }}</div>
+            </div>
+          </div>
+
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>mark name</span>
+              <input type="text" v-model="markName" placeholder="start" style="width: 110px" />
+            </label>
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="addMark">
+              timings.mark
+            </button>
+          </div>
+          <div class="pg-timer-form">
+            <label class="pg-input-label">
+              <span>measure name</span>
+              <input type="text" v-model="measureName" placeholder="work" style="width: 110px" />
+            </label>
+            <label class="pg-input-label">
+              <span>start mark</span>
+              <select v-model="measureStart">
+                <option value="">origin</option>
+                <option v-for="name in markNames" :key="name" :value="name">{{ name }}</option>
+              </select>
+            </label>
+            <label class="pg-input-label">
+              <span>end mark</span>
+              <select v-model="measureEnd">
+                <option value="">now</option>
+                <option v-for="name in markNames" :key="name" :value="name">{{ name }}</option>
+              </select>
+            </label>
+            <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="addMeasure">
+              timings.measure
+            </button>
+            <button
+              class="pg-btn"
+              :disabled="!timeProvider || timingEntries.length === 0"
+              @click="clearTimings()"
+            >
+              timings.clear
+            </button>
+          </div>
+          <div class="pg-timer-list">
+            <div
+              class="pg-timer-row"
+              v-for="entry in timingEntries"
+              :key="`${entry.entryType}:${entry.name}:${entry.startTime}`"
+            >
+              <span
+                ><span class="pg-timer-kind">{{ entry.entryType }}</span
+                >{{ describeTimingEntry(entry) }}</span
+              >
+              <button
+                class="pg-btn"
+                @click="clearTimings({ name: entry.name, kind: entry.entryType })"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <p class="pg-note">
+            Marks and measures are points on <code>clock.monotonicNow()</code>, in milliseconds
+            since <code>clock.monotonicOrigin</code>. On <strong>system</strong>, they go to the
+            host's own <code>performance</code> timeline, shared by every system provider in the
+            page, so they outlive a rebuild. On
+            <strong>fixed</strong>/<strong>manual</strong>/<strong>sequential</strong>, the provider
+            keeps its own list, and the monotonic clock follows the simulated one: advance a manual
+            clock between two marks and the measure shows the simulated time.
+          </p>
+        </div>
+      </div>
+
       <div
         class="pg-panel"
         v-if="hasAnimationFrameAddon"
@@ -836,6 +939,7 @@ import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/determi
 import { addon as idleAddon } from "@time-provider/addon-idle";
 import { addon as idleDeterministicAddon } from "@time-provider/addon-idle/deterministic";
 import { highlightTs } from "../shiki";
+import type { ITimingEntry, ITimingsFilter } from "@time-provider/core";
 import type { IManualTimeProvider } from "@time-provider/core/deterministic";
 import type { WithAnimationFrameApi } from "@time-provider/addon-animation-frame";
 import type { ICronSpec, WithCronApi } from "@time-provider/addon-cron";
@@ -1199,6 +1303,7 @@ const schedulerModeLabel = computed(() => schedulerModeLabels[selectedStrategy.v
 const openPanes = reactive({
   clock: true,
   scheduler: true,
+  timings: true,
   frame: true,
   cron: true,
   eta: true,
@@ -1358,6 +1463,7 @@ function buildProvider() {
   utcReadout.value = "—";
   localReadout.value = "—";
   remainingSequential.value = null;
+  monotonicReadout.value = "—";
   log.value = [];
 
   try {
@@ -1394,6 +1500,7 @@ function buildProvider() {
     }
 
     timeProvider.value = builder.create();
+    refreshTimings();
     const addonSuffix = enabledAddonList.value.map((a) => ` + ${a.label} addon`).join("");
     pushLog(
       "tick",
@@ -1402,6 +1509,7 @@ function buildProvider() {
   } catch (e) {
     buildError.value = e instanceof Error ? e.message : String(e);
     timeProvider.value = null;
+    refreshTimings();
   }
 }
 
@@ -1417,6 +1525,77 @@ function readUtc() {
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }
+}
+
+const monotonicReadout = ref("—");
+const monotonicOriginReadout = ref("—");
+const markName = ref("start");
+const measureName = ref("work");
+const measureStart = ref("");
+const measureEnd = ref("");
+// `timings` is not reactive, so the list is re-read after every call that can change it.
+const timingEntries = shallowRef<readonly ITimingEntry[]>([]);
+const markNames = computed(() => [
+  ...new Set(
+    timingEntries.value.filter((entry) => entry.entryType === "mark").map((entry) => entry.name),
+  ),
+]);
+
+function refreshTimings() {
+  timingEntries.value = timeProvider.value?.timings.entries() ?? [];
+  monotonicOriginReadout.value = timeProvider.value
+    ? new Date(timeProvider.value.clock.monotonicOrigin).toISOString()
+    : "—";
+}
+
+function describeTimingEntry(entry: ITimingEntry): string {
+  return entry.entryType === "mark"
+    ? `"${entry.name}" at ${entry.startTime.toFixed(1)}ms`
+    : `"${entry.name}" from ${entry.startTime.toFixed(1)}ms, lasting ${entry.duration.toFixed(1)}ms`;
+}
+
+function readMonotonic() {
+  if (!timeProvider.value) return;
+  monotonicReadout.value = `${timeProvider.value.clock.monotonicNow().toFixed(1)}ms`;
+  pushLog("tick", `monotonicNow() → ${monotonicReadout.value}`);
+}
+
+function addMark() {
+  if (!timeProvider.value) return;
+  const name = markName.value.trim() || "mark";
+  try {
+    const mark = timeProvider.value.timings.mark(name);
+    pushLog("tick", `mark("${name}") → ${describeTimingEntry(mark)}`);
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+  refreshTimings();
+}
+
+function addMeasure() {
+  if (!timeProvider.value) return;
+  const name = measureName.value.trim() || "measure";
+  const options = {
+    ...(measureStart.value && { start: measureStart.value }),
+    ...(measureEnd.value && { end: measureEnd.value }),
+  };
+  try {
+    const measure = timeProvider.value.timings.measure(name, options);
+    pushLog(
+      "tick",
+      `measure("${name}", ${JSON.stringify(options)}) → ${describeTimingEntry(measure)}`,
+    );
+  } catch (e) {
+    pushLog("error", e instanceof Error ? e.message : String(e));
+  }
+  refreshTimings();
+}
+
+function clearTimings(filter?: ITimingsFilter) {
+  if (!timeProvider.value) return;
+  timeProvider.value.timings.clear(filter);
+  pushLog("tick", `timings.clear(${filter ? JSON.stringify(filter) : ""})`);
+  refreshTimings();
 }
 
 function readLocal() {
