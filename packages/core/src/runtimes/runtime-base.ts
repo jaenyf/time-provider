@@ -5,7 +5,7 @@ import type {
   IClock,
   IMicrotasks,
   IConverter,
-  IPerformance,
+  ITimings,
   IRuntime,
   IScheduler,
   ITimers,
@@ -13,6 +13,7 @@ import type {
   TimezoneDefinition,
   ITimerOptions,
   EpochMilliseconds,
+  MonotonicMilliseconds,
 } from "../types/types.ts";
 import { type IDurationSpec } from "../helpers/branded-types.ts";
 import type { IAddon } from "../deterministic.ts";
@@ -71,24 +72,18 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   static readonly ABORTED_SIGNAL: AbortSignal = AbortSignal.abort();
   #localTimezone: TimezoneDefinition;
   #converter: ITimeConverter<TDate>;
-  #performance: IPerformance;
   #calendarScheme: ICalendarScheme<TDate>;
   #isDisposed: boolean;
   #abortController?: AbortController;
   #timersHandles: Set<IScheduledHandle>;
   #appliedAddons: Set<IAddon<TDate>>;
-  protected constructor(
-    localTimezone: TimezoneDefinition,
-    converter: ITimeConverter<TDate>,
-    performance: IPerformance,
-  ) {
+  protected constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     this.#isDisposed = false;
     this.#abortController = undefined;
     this.#timersHandles = new Set<IScheduledHandle>();
     this.#appliedAddons = new Set<IAddon<TDate>>();
     this.#localTimezone = localTimezone;
     this.#converter = converter;
-    this.#performance = performance;
     this.#calendarScheme = converter.calendarScheme ?? new DefaultCalendarScheme(converter);
   }
 
@@ -178,9 +173,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   get converter(): IConverter<TDate> {
     return this;
   }
-  get performance(): IPerformance {
-    return this.#performance;
-  }
+  abstract get timings(): ITimings;
 
   protected static ensureTimerDisposalOnAbort(handle: IScheduledHandle, options?: ITimerOptions) {
     if (options?.signal) {
@@ -226,6 +219,8 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
 
   abstract timestampNow(): EpochMilliseconds;
+  abstract monotonicNow(): MonotonicMilliseconds;
+  abstract get monotonicOrigin(): EpochMilliseconds;
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
 

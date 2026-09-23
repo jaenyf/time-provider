@@ -1,15 +1,21 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { ICompatApi } from "./types.ts";
+import type { ICompatApi, IPerformanceEntry } from "./types.ts";
 
 /**
  * Implements {@link ICompatApi} that performs underlying calls to core.
  */
 export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   #isDisposed: boolean;
+  #readsHostTimeline: boolean;
 
-  constructor() {
+  /**
+   * @param readsHostTimeline whether the `getEntries*` readers list the host's whole performance
+   * timeline, as on a system Time-Provider, rather than only the runtime's marks and measures.
+   */
+  constructor(readsHostTimeline: boolean) {
     super();
     this.#isDisposed = false;
+    this.#readsHostTimeline = readsHostTimeline;
   }
 
   dispose(): void {
@@ -27,29 +33,44 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   }
 
   /**
-   * The performance members are pass-throughs, so they read the runtime's own performance API at
-   * call time rather than capturing it here: an addon has no runtime to read it from until
-   * `applyToRuntime` - which builds this facade - has returned.
+   * The performance members read the runtime's clock and timings at call time rather than
+   * capturing them here: an addon has no runtime to read them from until `applyToRuntime` - which
+   * builds this facade - has returned.
    */
   #createFacade(): ICompatApi<TDate> {
-    const runtimePerformance = () => this.runtimePerformance;
+    const clock = () => this.runtimeClock;
+    const timings = () => this.runtimeTimings;
+    const entries = (): readonly IPerformanceEntry[] =>
+      this.#readsHostTimeline
+        ? (performance.getEntries() as unknown as IPerformanceEntry[])
+        : timings().entries();
     return {
       setTimeout: this.setTimeout.bind(this),
       clearTimeout: this.clearTimeout.bind(this),
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
       queueMicrotask: this.queueMicrotask.bind(this),
-      now: () => runtimePerformance().now(),
+      now: () => clock().monotonicNow(),
       get timeOrigin() {
-        return runtimePerformance().timeOrigin;
+        return clock().monotonicOrigin;
       },
-      getEntries: () => runtimePerformance().getEntries(),
-      getEntriesByName: (name, entryType) => runtimePerformance().getEntriesByName(name, entryType),
-      getEntriesByType: (entryType) => runtimePerformance().getEntriesByType(entryType),
-      mark: (name, options) => runtimePerformance().mark(name, options),
-      measure: (name, startMarkOrOptions) => runtimePerformance().measure(name, startMarkOrOptions),
-      clearMarks: (name) => runtimePerformance().clearMarks(name),
-      clearMeasures: (name) => runtimePerformance().clearMeasures(name),
+      getEntries: entries,
+      getEntriesByName: (name, entryType) =>
+        entries().filter(
+          (entry) =>
+            entry.name === name && (entryType === undefined || entry.entryType === entryType),
+        ),
+      getEntriesByType: (entryType) => entries().filter((entry) => entry.entryType === entryType),
+      mark: (name, options) => timings().mark(name, options),
+      measure: (name, startMarkOrOptions) =>
+        timings().measure(
+          name,
+          typeof startMarkOrOptions === "string"
+            ? { start: startMarkOrOptions }
+            : startMarkOrOptions,
+        ),
+      clearMarks: (name) => timings().clear({ kind: "mark", name }),
+      clearMeasures: (name) => timings().clear({ kind: "measure", name }),
     };
   }
 

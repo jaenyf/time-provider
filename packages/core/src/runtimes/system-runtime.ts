@@ -1,11 +1,13 @@
 import { toDuration, type IDurationSpec } from "../helpers/branded-types.ts";
-import { SystemPerformance } from "../performance/system-performance.ts";
+import { SystemTimings } from "../timings/system-timings.ts";
 import type {
   DurationMilliseconds,
   EpochMilliseconds,
   ITimeConverter,
+  ITimings,
   IScheduledHandle,
   ITimerOptions,
+  MonotonicMilliseconds,
   TimezoneDefinition,
 } from "../types/types.ts";
 import {
@@ -51,12 +53,26 @@ function armTimeout(
  * Base class for a system runtime
  */
 export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
+  #timings = new SystemTimings();
+
   /**
    * @param localTimezone the local timezone this runtime is configured with.
    * @param converter the time converter for this runtime's date library, provided by the concrete subclass.
    */
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
-    super(localTimezone, converter, new SystemPerformance());
+    super(localTimezone, converter);
+  }
+
+  get timings(): ITimings {
+    return this.#timings;
+  }
+
+  monotonicNow(): MonotonicMilliseconds {
+    return performance.now() as MonotonicMilliseconds;
+  }
+
+  get monotonicOrigin(): EpochMilliseconds {
+    return performance.timeOrigin as EpochMilliseconds;
   }
 
   clearTimer(handle: IScheduledHandle): void {

@@ -120,7 +120,7 @@ is applied. This is how [`addon-animation-frame`](/addons/animation-frame) and
 Reaching back into the runtime goes through the same hierarchy:
 `runtime.scheduler.timers` for the timer primitives, `runtime.clock` for the
 clock. `AddonBase` resolves those once and caches them, as `this.runtimeTimers`,
-`this.runtimeClock`, `this.runtimeMicrotasks` and `this.runtimePerformance`, so a
+`this.runtimeClock`, `this.runtimeMicrotasks` and `this.runtimeTimings`, so a
 scheduling hot path does not walk that chain on every call.
 
 Note the `IRuntime<TDate>` constraint: an addon is handed the runtime, not the

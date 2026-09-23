@@ -176,7 +176,7 @@ export class E2eHelper {
     E2eHelper.testLocalClock(timeProvider, underlyingStringifier);
     E2eHelper.testUtcConverter(timeProvider, underlyingISOString, underlyingToMs);
     E2eHelper.testLocalConverter(timeProvider, underlyingISOString, underlyingToMs);
-    E2eHelper.testPerformance(timeProvider);
+    E2eHelper.testTimings(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testMicrotasks(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
@@ -201,7 +201,7 @@ export class E2eHelper {
     E2eHelper.testInexistantLocalClock(timeProvider);
     E2eHelper.testUtcConverter(timeProvider, underlyingISOString, underlyingToMs);
     E2eHelper.testInexistantLocalConverter(timeProvider);
-    E2eHelper.testPerformance(timeProvider);
+    E2eHelper.testTimings(timeProvider);
     E2eHelper.testTimers(timeProvider);
     E2eHelper.testMicrotasks(timeProvider);
     E2eHelper.testAddonAnimation(timeProvider);
@@ -279,11 +279,14 @@ export class E2eHelper {
     });
   }
 
-  private static testPerformance<TDate>(
+  private static testTimings<TDate>(
     timeProvider: ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
   ) {
-    expect(timeProvider.performance.now()).toBeDefined();
-    expect(timeProvider.performance.timeOrigin).toBeDefined();
+    expect(timeProvider.clock.monotonicNow()).toBeDefined();
+    expect(timeProvider.clock.monotonicOrigin).toBeDefined();
+    timeProvider.timings.mark("e2e-timings");
+    expect(timeProvider.timings.entries({ name: "e2e-timings" })).toHaveLength(1);
+    timeProvider.timings.clear({ name: "e2e-timings" });
   }
 
   private static testTimers<TDate>(

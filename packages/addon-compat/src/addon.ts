@@ -6,7 +6,7 @@ type CompatAddon<TDate> = WithCompatApi<TDate> & ISystemAddon<TDate>;
 
 class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatAddon<TDate>> {
   create(): CompatAddon<TDate> {
-    return new CompatRuntime<TDate>() as unknown as CompatAddon<TDate>;
+    return new CompatRuntime<TDate>(true) as unknown as CompatAddon<TDate>;
   }
 }
 

@@ -145,7 +145,7 @@ export default defineConfig({
           { text: "IConverter", link: "/api/converter" },
           { text: "IScheduler", link: "/api/scheduler" },
           { text: "IMicrotasks", link: "/api/microtasks" },
-          { text: "IPerformance", link: "/api/performance" },
+          { text: "ITimings", link: "/api/timings" },
         ],
       },
     ],

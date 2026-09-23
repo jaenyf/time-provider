@@ -33,53 +33,48 @@ export interface IHasAbortSignal {
 }
 //#endregion
 
-//#region Performance
+//#region Timings
 // ---------------------------------------------------------------------------
-// Performance
+// Timings
 // ---------------------------------------------------------------------------
 
-interface IWithPerformance {
+interface IWithTimings {
   /**
-   * Get the current configured performance API.
+   * Get the marks and measures recorded on this runtime's monotonic clock.
    */
-  get performance(): IPerformance;
+  get timings(): ITimings;
 }
 
 /**
- * The kind of a {@link IPerformanceEntry}.
+ * The kind of a {@link ITimingEntry}.
  */
-export type PerformanceEntryType =
-  | "dns" // Node.js only
-  | "function" // Node.js only
-  | "gc" // Node.js only
-  | "http2" // Node.js only
-  | "http" // Node.js only
-  | "mark" // available on the Web
-  | "measure" // available on the Web
-  | "net" // Node.js only
-  | "node" // Node.js only
-  | "resource"; // available on the Web
+export type TimingKind = "mark" | "measure";
 
 /**
- * A single entry recorded on a {@link IPerformance} timeline, such as a mark or a measure.
+ * A single entry recorded by {@link ITimings}: a mark or a measure.
  */
-export interface IPerformanceEntry {
+export interface ITimingEntry {
   /**
    * The name given to the entry when it was created.
    */
   readonly name: string;
   /**
-   * The kind of entry this is.
+   * The kind of entry this is. Named as on a native entry, so an entry can be passed where one
+   * is expected.
    */
-  readonly entryType: PerformanceEntryType;
+  readonly entryType: TimingKind;
   /**
-   * The point, relative to {@link IPerformance.timeOrigin}, at which the entry starts.
+   * The point, relative to {@link IMonotonicClock.monotonicOrigin}, at which the entry starts.
    */
   readonly startTime: MonotonicMilliseconds;
   /**
    * The duration of the entry, in milliseconds. Always `0` for a mark.
    */
   readonly duration: DurationMilliseconds;
+  /**
+   * The metadata given when the entry was created, or `null`.
+   */
+  readonly detail: unknown;
   /**
    * Returns the entry's fields as a plain object, as the native entries do, so that
    * `JSON.stringify` gives the same output for both.
@@ -88,32 +83,22 @@ export interface IPerformanceEntry {
 }
 
 /**
- * A single instant recorded via {@link IPerformance.mark}.
+ * A named instant recorded via {@link ITimings.mark}.
  */
-export interface IPerformanceMark extends IPerformanceEntry {
+export interface ITimingMark extends ITimingEntry {
   readonly entryType: "mark";
-  /**
-   * The metadata given when the mark was created, or `null`.
-   */
-  readonly detail: unknown;
 }
 
 /**
- * A duration recorded via {@link IPerformance.measure}.
+ * A named timespan recorded via {@link ITimings.measure}: a start instant plus a duration.
  */
-export interface IPerformanceMeasure extends IPerformanceEntry {
+export interface ITimingMeasure extends ITimingEntry {
   readonly entryType: "measure";
-  /**
-   * The metadata given when the measure was created, or `null`.
-   */
-  readonly detail: unknown;
 }
 
-export interface IPerformanceMarkOptions {
+export interface ITimingMarkOptions {
   /**
-   * Optional start time for the mark.
-   *
-   * If omitted, the current performance timestamp is used.
+   * The instant to record. Defaults to {@link IMonotonicClock.monotonicNow}.
    */
   startTime?: MonotonicMilliseconds;
 
@@ -123,22 +108,15 @@ export interface IPerformanceMarkOptions {
   detail?: unknown;
 }
 
-export interface IPerformanceMeasureOptions {
+export interface ITimingMeasureOptions {
   /**
-   * The start point of the measurement.
-   *
-   * Can be:
-   * - a mark name
-   * - an explicit performance timestamp
+   * The start of the timespan: a mark name or an instant. Defaults to the monotonic origin.
    */
   start?: string | MonotonicMilliseconds;
 
   /**
-   * The end point of the measurement.
-   *
-   * Can be:
-   * - a mark name
-   * - an explicit performance timestamp
+   * The end of the timespan: a mark name or an instant. Defaults to
+   * {@link IMonotonicClock.monotonicNow}.
    */
   end?: string | MonotonicMilliseconds;
 
@@ -154,57 +132,46 @@ export interface IPerformanceMeasureOptions {
 }
 
 /**
- * The performance API
+ * Selects entries in {@link ITimings.entries} and {@link ITimings.clear}. An omitted field
+ * matches every entry.
  */
-export interface IPerformance {
+export interface ITimingsFilter {
+  name?: string;
   /**
-   * Returns the current high-resolution timestamp in milliseconds
-   * relative to timeOrigin.
+   * Matched against each entry's `entryType`.
    */
-  now(): MonotonicMilliseconds;
+  kind?: TimingKind;
+}
+
+/**
+ * Records marks and measures on the runtime's monotonic clock - see
+ * {@link IMonotonicClock.monotonicNow}.
+ *
+ * On a system runtime this is the native performance timeline, so marks and measures that other
+ * code records there are listed too.
+ */
+export interface ITimings {
+  /**
+   * Records a named instant.
+   */
+  mark(name: string, options?: ITimingMarkOptions): ITimingMark;
 
   /**
-   * The Unix timestamp at which this performance timeline started.
+   * Records a named timespan. With no options, it runs from the monotonic origin to now.
+   * @throws if a named mark does not exist, if `start`, `end` and `duration` are all given, or
+   * if `duration` is given without `start` or `end`.
    */
-  readonly timeOrigin: EpochMilliseconds;
+  measure(name: string, options?: ITimingMeasureOptions): ITimingMeasure;
 
   /**
-   * Returns all performance entries.
+   * Returns the marks and measures matching `filter`, in the order they were recorded.
    */
-  getEntries(): readonly IPerformanceEntry[];
+  entries(filter?: ITimingsFilter): readonly ITimingEntry[];
 
   /**
-   * Returns performance entries with a specific name.
+   * Removes exactly the entries that {@link entries} returns for the same `filter`.
    */
-  getEntriesByName(name: string, entryType?: PerformanceEntryType): readonly IPerformanceEntry[];
-
-  /**
-   * Returns performance entries of a specific type.
-   */
-  getEntriesByType(entryType: PerformanceEntryType): readonly IPerformanceEntry[];
-
-  /**
-   * Creates a timestamp marker.
-   */
-  mark(name: string, options?: IPerformanceMarkOptions): IPerformanceMark;
-
-  /**
-   * Creates a measured duration between marks or timestamps.
-   */
-  measure(
-    name: string,
-    startMarkOrOptions?: string | IPerformanceMeasureOptions,
-  ): IPerformanceMeasure;
-
-  /**
-   * Removes marks.
-   */
-  clearMarks(name?: string): void;
-
-  /**
-   * Removes measures.
-   */
-  clearMeasures(name?: string): void;
+  clear(filter?: ITimingsFilter): void;
 }
 
 //#endregion
@@ -283,9 +250,28 @@ interface ITimestampClock {
 }
 
 /**
+ * A clock that exposes a monotonic read, which wall-clock corrections never move.
+ */
+interface IMonotonicClock {
+  /**
+   * Returns the milliseconds elapsed since {@link monotonicOrigin}, on a clock that only moves
+   * forward on a system runtime. On a deterministic runtime it follows the clock, so a manual
+   * clock moved backward with `advance()` moves it backward too.
+   * Note: This operation is guaranteed to be side effects free, like
+   * {@link ITimestampClock.timestampNow}.
+   */
+  monotonicNow(): MonotonicMilliseconds;
+  /**
+   * The Unix timestamp {@link monotonicNow} counts from: when the runtime was created. It never
+   * changes, as a native `performance.timeOrigin` never changes for its context.
+   */
+  readonly monotonicOrigin: EpochMilliseconds;
+}
+
+/**
  * A clock that only exposes UTC time.
  */
-interface IUtcOnlyClock<TDate> extends ITimestampClock {
+interface IUtcOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
   /**
    * Returns the time as of now in UTC.
    * Note: On a sequential clock, this read also makes time advance and may run due timer callbacks.
@@ -294,7 +280,7 @@ interface IUtcOnlyClock<TDate> extends ITimestampClock {
   utcNow(): TDate;
 }
 
-interface ILocalOnlyClock<TDate> extends ITimestampClock {
+interface ILocalOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
   /**
    * Returns the time as of now for the local timezone of the runtime.
    * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwich timezone).
@@ -901,7 +887,7 @@ export interface IUtcOnlyManualRuntime<TDate>
 
 /**
  * The public facade of a Time-Provider: exposes its `clock`, `scheduler`, `converter` and
- * `performance`, backed by a timezone-aware clock.
+ * `timings`, backed by a timezone-aware clock.
  */
 export interface ITimeProvider<TDate>
   extends
@@ -910,11 +896,11 @@ export interface ITimeProvider<TDate>
     IWithClock<IClock<TDate>>,
     IWithScheduler,
     IWithConverter<IConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 
 /**
  * The public facade of a deterministic Time-Provider: exposes its `clock`, `scheduler`,
- * `converter` and `performance`, backed by a timezone-aware clock.
+ * `converter` and `timings`, backed by a timezone-aware clock.
  */
 export interface IDeterministicTimeProvider<TDate>
   extends
@@ -923,7 +909,7 @@ export interface IDeterministicTimeProvider<TDate>
     IWithClock<IClock<TDate>>,
     IWithDeterministicScheduler,
     IWithConverter<IConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 
 /**
  * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
@@ -935,7 +921,7 @@ export interface IUtcOnlyTimeProvider<TDate>
     IWithClock<IUtcOnlyClock<TDate>>,
     IWithScheduler,
     IWithConverter<IUtcOnlyConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 
 /**
  * The public facade of a deterministic Time-Provider backed by a timezone-naive (UTC only) clock.
@@ -947,7 +933,7 @@ export interface IUtcOnlyDeterministicTimeProvider<TDate>
     IWithClock<IUtcOnlyClock<TDate>>,
     IWithDeterministicScheduler,
     IWithConverter<IUtcOnlyConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 
 /**
  * The public facade of a Time-Provider backed by a manual (advanceable), timezone-aware clock.
@@ -959,7 +945,7 @@ export interface IManualTimeProvider<TDate>
     IWithClock<IManualClock<TDate>>,
     IWithDeterministicScheduler,
     IWithConverter<IConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 
 /**
  * The public facade of a Time-Provider backed by a manual (advanceable), timezone-naive
@@ -972,7 +958,7 @@ export interface IUtcOnlyManualTimeProvider<TDate>
     IWithClock<IUtcOnlyManualClock<TDate>>,
     IWithDeterministicScheduler,
     IWithConverter<IUtcOnlyConverter<TDate>>,
-    IWithPerformance {}
+    IWithTimings {}
 //#endregion
 
 //#region Plugins

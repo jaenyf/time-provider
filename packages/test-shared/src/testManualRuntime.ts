@@ -6,7 +6,7 @@ import type {
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
 import { testConverter } from "./helpers/testConverter.ts";
-import { testPerformance } from "./helpers/testPerformance.ts";
+import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import {
   testConstructorArgs,
   testWithTimezone,
@@ -735,16 +735,20 @@ export function testManualRuntime<TDate>(
       });
     });
 
-    describe("performance", () => {
-      testPerformance(createSUT);
+    describe("monotonic clock", () => {
+      testMonotonicClock(createSUT);
 
-      test("timeOrigin is the clock at creation, not at the first performance read", () => {
+      test("monotonicOrigin is the clock at creation, not at the first monotonic read", () => {
         const sut = createSUT();
         const createdAt = sut.clock.timestampNow();
         sut.advance({ hours: 1 });
-        expect(sut.performance.timeOrigin).toBe(createdAt);
-        expect(sut.performance.now()).toBe(3_600_000);
+        expect(sut.clock.monotonicOrigin).toBe(createdAt);
+        expect(sut.clock.monotonicNow()).toBe(3_600_000);
       });
+    });
+
+    describe("timings", () => {
+      testTimings(createSUT);
     });
 
     describe("addon-cron", () => {

@@ -16,7 +16,7 @@ import { testRuntime } from "./helpers/testRuntime.ts";
 import { testConverter } from "./helpers/testConverter.ts";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
-import { testPerformance } from "./helpers/testPerformance.ts";
+import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import { testAddonCronFixed } from "./helpers/testCron.ts";
 
 export function testFixedRuntime<TDate>(
@@ -108,8 +108,12 @@ export function testFixedRuntime<TDate>(
       testMicrotasks(createSUT, true);
     });
 
-    describe("performance", () => {
-      testPerformance(createSUT);
+    describe("monotonic clock", () => {
+      testMonotonicClock(createSUT);
+    });
+
+    describe("timings", () => {
+      testTimings(createSUT);
     });
 
     describe("addon-cron", () => {

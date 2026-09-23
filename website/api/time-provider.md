@@ -5,14 +5,14 @@ interface ITimeProvider<TDate> {
   get clock(): IClock<TDate>;
   get converter(): IConverter<TDate>;
   get scheduler(): IScheduler;
-  get performance(): IPerformance;
+  get timings(): ITimings;
 }
 
 interface IUtcOnlyTimeProvider<TDate> {
   get clock(): IUtcOnlyClock<TDate>;
   get converter(): IUtcOnlyConverter<TDate>;
   get scheduler(): IScheduler;
-  get performance(): IPerformance;
+  get timings(): ITimings;
 }
 ```
 
@@ -20,7 +20,7 @@ The object returned by `.create()`. All four getters return the _same_
 underlying runtime instance, exposed through narrower interfaces — this is
 why swapping strategies never changes call sites: whatever depends on
 `ITimeProvider<TDate>` only ever sees `clock`, `converter`, `scheduler`, and
-`performance`.
+`timings`.
 
 `IUtcOnlyTimeProvider` is what you get from a UTC-only plugin (native
 `Date`, plain Moment.js) — same shape, but `clock`/`converter` only expose the
@@ -64,5 +64,5 @@ Time-Provider with the addon's own extra property. An addon that schedules
 callbacks widens the `scheduler` facet (e.g. `scheduler.animation` from
 `@time-provider/addon-animation-frame`); one that doesn't adds a root
 property of its own (e.g. `eta` from `@time-provider/addon-eta`). `clock`,
-`converter`, `scheduler` and `performance` are always present regardless of
+`converter`, `scheduler` and `timings` are always present regardless of
 which addons are composed in. See [Addons](/addons/).

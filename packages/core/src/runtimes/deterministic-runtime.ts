@@ -1,6 +1,6 @@
 import { type IDurationSpec, toDuration } from "../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../environment.ts";
-import { DeterministicPerformance } from "../performance/deterministic-performance.ts";
+import { DeterministicTimings } from "../timings/deterministic-timings.ts";
 import type {
   IScheduledHandle,
   IAdvanceOptions,
@@ -16,6 +16,8 @@ import type {
   DurationMilliseconds,
   ITimerOptions,
   EpochMilliseconds,
+  ITimings,
+  MonotonicMilliseconds,
 } from "../types/types.ts";
 import {
   SCHEDULED_TIMER_KIND_INTERVAL,
@@ -686,23 +688,34 @@ export abstract class BaseDeterministicRuntime<TDate>
   #dueDrainingDisabled = false;
   #microtasks: MicrotaskQueue;
   #rethrowTimerErrors: boolean;
-  #performance: DeterministicPerformance<TDate>;
+  #timings = new DeterministicTimings(this);
+  #monotonicOrigin!: EpochMilliseconds;
 
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
-    const performance = new DeterministicPerformance<TDate>();
-    super(localTimezone, converter, performance);
-    this.#performance = performance;
+    super(localTimezone, converter);
     this.#dueQueue = new DueHeap<TDate>();
     this.#microtasks = new MicrotaskQueue();
     this.#rethrowTimerErrors = shouldRethrowTimerErrors();
   }
 
   /**
-   * Starts the performance timeline at the clock's current time. Called by a subclass once its
-   * clock is set up, which this constructor runs too early to see.
+   * Sets {@link monotonicOrigin} to the clock's current time. Called by a subclass once its clock
+   * is set up, which this constructor runs too early to see.
    */
-  protected startPerformanceTimeline(): void {
-    this.#performance.initialize(this);
+  protected startMonotonicClock(): void {
+    this.#monotonicOrigin = this.timestampNow();
+  }
+
+  get timings(): ITimings {
+    return this.#timings;
+  }
+
+  monotonicNow(): MonotonicMilliseconds {
+    return (this.timestampNow() - this.#monotonicOrigin) as MonotonicMilliseconds;
+  }
+
+  get monotonicOrigin(): EpochMilliseconds {
+    return this.#monotonicOrigin;
   }
 
   /**
@@ -915,7 +928,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   ) {
     super(localTimezone, converter);
     this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
-    this.startPerformanceTimeline();
+    this.startMonotonicClock();
   }
 
   localNowImpl(): TDate {

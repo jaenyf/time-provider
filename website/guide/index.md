@@ -9,14 +9,14 @@ about.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object — an `ITimeProvider` — exposing a **clock**, a **converter**, a
-**scheduler**, and a **performance** API, swappable per call site.
+**scheduler**, and **timings**, swappable per call site.
 
 ```ts
 interface ITimeProvider<TDate> {
-  clock: IClock<TDate>; // localNow(), utcNow(), timestampNow(), withTimezone()
+  clock: IClock<TDate>; // localNow(), utcNow(), timestampNow(), monotonicNow(), withTimezone()
   converter: IConverter<TDate>; // convertToUtc(), convertToLocal()
   scheduler: IScheduler; // timers (once(), every(), recurring(), wait()), microtasks
-  performance: IPerformance; // now(), mark(), measure(), getEntries()
+  timings: ITimings; // mark(), measure(), entries(), clear()
 }
 ```
 

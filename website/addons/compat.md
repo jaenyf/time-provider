@@ -69,8 +69,7 @@ through [`scheduler.timers.recurring`](/api/scheduler).
 
 `now()`, `timeOrigin`, `getEntries()`, `getEntriesByName()`, `getEntriesByType()`,
 `mark()`, `measure()`, `clearMarks()` and `clearMeasures()` sit directly on
-`.compat` too, with the same signatures as
-[`timeProvider.performance`](/api/performance) and as the `performance` global:
+`.compat` too, with the same signatures as the `performance` global:
 
 ```ts
 timeProvider.compat.mark("request-start");
@@ -79,10 +78,13 @@ timeProvider.compat.measure("request", "request-start");
 console.log(timeProvider.compat.getEntriesByName("request")[0]?.duration);
 ```
 
-They are pass-throughs to `timeProvider.performance`, so on a deterministic
+They map onto the Time-Provider's own [`clock.monotonicNow()`](/api/clock),
+`clock.monotonicOrigin` and [`timings`](/api/timings), so on a deterministic
 Time-Provider they read that runtime's simulated timeline — the point being that
 a file calling `performance.mark(...)` and `setTimeout(...)` side by side has one
-object to swap them both for.
+object to swap them both for. On a system Time-Provider, the `getEntries*`
+readers list the host's whole timeline, including entries it records itself
+(`resource`, `navigation`...), as the `performance` global does.
 
 ## What other addons add here
 
