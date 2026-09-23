@@ -80,6 +80,11 @@ export interface IPerformanceEntry {
    * The duration of the entry, in milliseconds. Always `0` for a mark.
    */
   readonly duration: DurationMilliseconds;
+  /**
+   * Returns the entry's fields as a plain object, as the native entries do, so that
+   * `JSON.stringify` gives the same output for both.
+   */
+  toJSON(): unknown;
 }
 
 /**
@@ -87,6 +92,10 @@ export interface IPerformanceEntry {
  */
 export interface IPerformanceMark extends IPerformanceEntry {
   readonly entryType: "mark";
+  /**
+   * The metadata given when the mark was created, or `null`.
+   */
+  readonly detail: unknown;
 }
 
 /**
@@ -94,6 +103,10 @@ export interface IPerformanceMark extends IPerformanceEntry {
  */
 export interface IPerformanceMeasure extends IPerformanceEntry {
   readonly entryType: "measure";
+  /**
+   * The metadata given when the measure was created, or `null`.
+   */
+  readonly detail: unknown;
 }
 
 export interface IPerformanceMarkOptions {

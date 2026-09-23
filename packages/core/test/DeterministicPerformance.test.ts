@@ -61,6 +61,16 @@ describe("DeterministicPerformance", () => {
     });
   });
 
+  describe("entries", () => {
+    test("are assignable to the native entry types", () => {
+      const sut = new DeterministicPerformance();
+      sut.initialize(fakeRuntimeWithTimestamps([0, 0, 0]));
+      const mark: PerformanceEntry = sut.mark("a", { detail: 1 });
+      const measure: PerformanceEntry = sut.measure("m", { start: "a" });
+      expect([mark.entryType, measure.entryType]).toEqual(["mark", "measure"]);
+    });
+  });
+
   describe("measure", () => {
     test("reports the specific missing start mark in the error message", () => {
       const sut = new DeterministicPerformance();

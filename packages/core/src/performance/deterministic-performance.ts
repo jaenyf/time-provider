@@ -20,6 +20,41 @@ class PerformanceError extends DOMException {
 }
 
 /**
+ * A mark or a measure recorded by {@link DeterministicPerformance}.
+ */
+class DeterministicPerformanceEntry<TEntryType extends "mark" | "measure"> {
+  readonly name: string;
+  readonly entryType: TEntryType;
+  readonly startTime: MonotonicMilliseconds;
+  readonly duration: DurationMilliseconds;
+  readonly detail: unknown;
+
+  constructor(
+    name: string,
+    entryType: TEntryType,
+    startTime: MonotonicMilliseconds,
+    duration: DurationMilliseconds,
+    detail: unknown,
+  ) {
+    this.name = name;
+    this.entryType = entryType;
+    this.startTime = startTime;
+    this.duration = duration;
+    this.detail = detail ?? null;
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      entryType: this.entryType,
+      startTime: this.startTime,
+      duration: this.duration,
+      detail: this.detail,
+    };
+  }
+}
+
+/**
  * A deterministic performance class
  */
 export class DeterministicPerformance<TDate> implements IPerformance {
@@ -85,12 +120,13 @@ export class DeterministicPerformance<TDate> implements IPerformance {
   };
 
   mark = (name: string, options?: IPerformanceMarkOptions): IPerformanceMark => {
-    const entry: IPerformanceMark = {
+    const entry: IPerformanceMark = new DeterministicPerformanceEntry(
       name,
-      entryType: "mark",
-      startTime: options?.startTime ?? this.now(),
-      duration: 0 as DurationMilliseconds,
-    };
+      "mark",
+      options?.startTime ?? this.now(),
+      0 as DurationMilliseconds,
+      options?.detail,
+    );
 
     this.#entries.push(entry);
 
@@ -167,12 +203,13 @@ export class DeterministicPerformance<TDate> implements IPerformance {
       }
     }
 
-    const entry: IPerformanceMeasure = {
+    const entry: IPerformanceMeasure = new DeterministicPerformanceEntry(
       name,
-      entryType: "measure",
+      "measure",
       startTime,
-      duration: monotonicArithmetic.subtract(endTime, startTime),
-    };
+      monotonicArithmetic.subtract(endTime, startTime),
+      typeof startMarkOrOptions === "string" ? undefined : startMarkOrOptions?.detail,
+    );
 
     this.#entries.push(entry);
 

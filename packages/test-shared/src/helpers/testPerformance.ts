@@ -94,6 +94,56 @@ export function testPerformance<TDate>(
     });
   });
 
+  describe("detail", () => {
+    test("is kept on a mark", () => {
+      const sut = createCleanSUT();
+      expect(sut.performance.mark("a", { detail: { step: 1 } }).detail).toEqual({ step: 1 });
+    });
+
+    test("is kept on a measure", () => {
+      const sut = createCleanSUT();
+      sut.performance.mark("a");
+      expect(sut.performance.measure("m", { start: "a", detail: "x" }).detail).toBe("x");
+    });
+
+    test("defaults to null", () => {
+      const sut = createCleanSUT();
+      expect(sut.performance.mark("a").detail).toBeNull();
+    });
+  });
+
+  describe("toJSON", () => {
+    test("serializes a mark to its plain fields", () => {
+      const sut = createCleanSUT();
+      const mark = sut.performance.mark("a", {
+        startTime: toMonotonic({ milliseconds: 5 }),
+        detail: 1,
+      });
+      expect(JSON.parse(JSON.stringify(mark))).toEqual({
+        name: "a",
+        entryType: "mark",
+        startTime: 5,
+        duration: 0,
+        detail: 1,
+      });
+    });
+
+    test("serializes a measure to its plain fields", () => {
+      const sut = createCleanSUT();
+      const measure = sut.performance.measure("m", {
+        start: toMonotonic({ milliseconds: 10 }),
+        end: toMonotonic({ milliseconds: 25 }),
+      });
+      expect(JSON.parse(JSON.stringify(measure))).toEqual({
+        name: "m",
+        entryType: "measure",
+        startTime: 10,
+        duration: 15,
+        detail: null,
+      });
+    });
+  });
+
   describe("getEntries", () => {
     test("includes marks and measures", () => {
       const sut = createCleanSUT();

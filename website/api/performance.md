@@ -13,14 +13,17 @@ interface IPerformanceEntry {
   readonly entryType: PerformanceEntryType;
   readonly startTime: MonotonicMilliseconds;
   readonly duration: DurationMilliseconds;
+  toJSON(): unknown;
 }
 
 interface IPerformanceMark extends IPerformanceEntry {
   readonly entryType: "mark";
+  readonly detail: unknown; // null when not given
 }
 
 interface IPerformanceMeasure extends IPerformanceEntry {
   readonly entryType: "measure";
+  readonly detail: unknown; // null when not given
 }
 
 interface IPerformanceMarkOptions {
