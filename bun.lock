@@ -82,7 +82,7 @@
       },
       "peerDependencies": {
         "@time-provider/core": "^3.0.0",
-        "dayjs": "~1.8.15",
+        "dayjs": "^1.8.32",
       },
     },
     "packages/plugin-luxon": {
@@ -95,7 +95,7 @@
       },
       "peerDependencies": {
         "@time-provider/core": "^3.0.0",
-        "luxon": "^3.7.2",
+        "luxon": ">=1.2.1 <1.6.1 || >=1.6.2 <4",
       },
     },
     "packages/plugin-moment": {
@@ -107,7 +107,7 @@
       },
       "peerDependencies": {
         "@time-provider/core": "^3.0.0",
-        "moment": "~2.31.0",
+        "moment": ">=2.3.0 <2.11.0 || >=2.11.1 <3",
       },
     },
     "packages/plugin-moment-timezone": {
@@ -120,8 +120,8 @@
       },
       "peerDependencies": {
         "@time-provider/core": "^3.0.0",
-        "moment": "~2.31.0",
-        "moment-timezone": "~0.6.3",
+        "moment": ">=2.9.0 <2.11.0 || >=2.11.1 <3",
+        "moment-timezone": ">=0.2.1 <0.7.0",
       },
     },
     "packages/plugin-native": {
