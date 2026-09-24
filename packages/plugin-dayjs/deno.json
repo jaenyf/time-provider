@@ -1,12 +1,16 @@
 {
   "name": "@time-provider/plugin-dayjs",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "exports": {
     ".": "./src/index.ts",
     "./deterministic": "./src/deterministic.ts"
   },
   "publish": {
-    "include": ["src", "LICENSE", "README.md"]
+    "include": [
+      "src",
+      "LICENSE",
+      "README.md"
+    ]
   },
   "imports": {
     "dayjs": "npm:dayjs@^1.8.32",

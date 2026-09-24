@@ -1,12 +1,16 @@
 {
   "name": "@time-provider/plugin-luxon",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "exports": {
     ".": "./src/index.ts",
     "./deterministic": "./src/deterministic.ts"
   },
   "publish": {
-    "include": ["src", "LICENSE", "README.md"]
+    "include": [
+      "src",
+      "LICENSE",
+      "README.md"
+    ]
   },
   "imports": {
     "luxon": "npm:luxon@^3.0.0",
