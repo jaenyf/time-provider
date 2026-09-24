@@ -1,11 +1,15 @@
 {
   "name": "@time-provider/addon-idle",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "exports": {
     ".": "./src/index.ts",
     "./deterministic": "./src/deterministic.ts"
   },
   "publish": {
-    "include": ["src", "LICENSE", "README.md"]
+    "include": [
+      "src",
+      "LICENSE",
+      "README.md"
+    ]
   }
 }
