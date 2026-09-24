@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.4.1...addon-animation-frame-v0.5.0) (2026-09-24)
+
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
 ## [0.4.1](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.4.0...addon-animation-frame-v0.4.1) (2026-09-22)
 
 

@@ -1,12 +1,16 @@
 {
   "name": "@time-provider/plugin-moment-timezone",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "exports": {
     ".": "./src/index.ts",
     "./deterministic": "./src/deterministic.ts"
   },
   "publish": {
-    "include": ["src", "LICENSE", "README.md"]
+    "include": [
+      "src",
+      "LICENSE",
+      "README.md"
+    ]
   },
   "imports": {
     "moment": "npm:moment@^2.11.1",

@@ -1,5 +1,29 @@
 # Changelog
 
+## [4.0.0](https://github.com/jaenyf/time-provider/compare/core-v3.0.1...core-v4.0.0) (2026-09-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174))
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+* stabilize final API and remove unstable API disclaimer ([f42cc8b](https://github.com/jaenyf/time-provider/commit/f42cc8bf4b88666386259aaed5f99ce0a0be1d9d))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+
+### Code Refactoring
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174)) ([04fc567](https://github.com/jaenyf/time-provider/commit/04fc567f6584be028aa60a806e272730f4097560))
+
 ## [3.0.1](https://github.com/jaenyf/time-provider/compare/core-v3.0.0...core-v3.0.1) (2026-09-22)
 
 
