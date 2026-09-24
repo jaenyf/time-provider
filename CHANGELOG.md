@@ -4,6 +4,188 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-24
+
+### @time-provider/addon-animation-frame 0.5.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+### @time-provider/addon-compat 0.3.0
+
+### ⚠ BREAKING CHANGES
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174))
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+
+### Code Refactoring
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174)) ([04fc567](https://github.com/jaenyf/time-provider/commit/04fc567f6584be028aa60a806e272730f4097560))
+
+### @time-provider/addon-cron 0.4.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+### @time-provider/addon-eta 0.4.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+### @time-provider/addon-idle 0.2.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+### @time-provider/core 4.0.0
+
+### ⚠ BREAKING CHANGES
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174))
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+* stabilize final API and remove unstable API disclaimer ([f42cc8b](https://github.com/jaenyf/time-provider/commit/f42cc8bf4b88666386259aaed5f99ce0a0be1d9d))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+
+### Code Refactoring
+
+* move performance to timings and monotonic clock ([#174](https://github.com/jaenyf/time-provider/issues/174)) ([04fc567](https://github.com/jaenyf/time-provider/commit/04fc567f6584be028aa60a806e272730f4097560))
+
+### @time-provider/plugin-dayjs 0.6.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+* widen the date-library peer ranges to the oldest versions that pass ([51afc4e](https://github.com/jaenyf/time-provider/commit/51afc4ea32671b767b27d8f734952f61c828770b))
+
+### @time-provider/plugin-luxon 0.6.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* **plugin-luxon:** accept a DateTime from another copy of luxon ([c97b5f5](https://github.com/jaenyf/time-provider/commit/c97b5f521838fc5126c0eb8edb86fc0acc29234c))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+* widen the date-library peer ranges to the oldest versions that pass ([51afc4e](https://github.com/jaenyf/time-provider/commit/51afc4ea32671b767b27d8f734952f61c828770b))
+
+### @time-provider/plugin-moment 0.6.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+* widen the date-library peer ranges to the oldest versions that pass ([51afc4e](https://github.com/jaenyf/time-provider/commit/51afc4ea32671b767b27d8f734952f61c828770b))
+
+### @time-provider/plugin-moment-timezone 0.5.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+* widen the date-library peer ranges to the oldest versions that pass ([51afc4e](https://github.com/jaenyf/time-provider/commit/51afc4ea32671b767b27d8f734952f61c828770b))
+
+### @time-provider/plugin-native 0.6.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
+### @time-provider/plugin-temporal 0.6.0
+
+### Features
+
+* dry-run and publish every package to both npm and JSR ([a937b71](https://github.com/jaenyf/time-provider/commit/a937b71a618690a46147ce853d18aae10490aec3))
+* publish a CommonJS build next to the ESM one ([c114f25](https://github.com/jaenyf/time-provider/commit/c114f25b9cef138771b3de568e4ee3e0c64dc397))
+
+
+### Bug Fixes
+
+* accept node 18.18 in every published package's engines ([6927c1f](https://github.com/jaenyf/time-provider/commit/6927c1f80daa5a66793f034dc1fff8f763767412))
+* ship the MIT notice with every published package ([206ecd4](https://github.com/jaenyf/time-provider/commit/206ecd4589a3c66a7ffc04f11a4f449701c17346))
+
 ## 2026-09-22
 
 ### @time-provider/addon-animation-frame 0.4.1
