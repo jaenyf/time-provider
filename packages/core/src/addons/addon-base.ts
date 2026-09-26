@@ -8,6 +8,9 @@ import type {
   ITimers,
 } from "../types/types.ts";
 
+/**
+ * Base class for an addon: gives it access to the runtime it is attached to, once initialized.
+ */
 export abstract class AddonBase<
   TDate,
   TRuntime extends IRuntime<TDate> | IDeterministicRuntime<TDate>,

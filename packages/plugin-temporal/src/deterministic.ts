@@ -1,3 +1,8 @@
+/**
+ * The Temporal plugin for Time-Provider's deterministic runtimes.
+ *
+ * @module
+ */
 import type { IDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 

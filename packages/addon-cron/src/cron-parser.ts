@@ -52,6 +52,9 @@ interface ParsedField {
   readonly isWildcard: boolean;
 }
 
+/**
+ * A cron expression parsed by {@link parseCronExpression}: the values each field matches.
+ */
 export interface ParsedCronExpression {
   readonly minute: ParsedField;
   readonly hour: ParsedField;

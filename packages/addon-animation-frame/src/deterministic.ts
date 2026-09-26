@@ -1,3 +1,9 @@
+/**
+ * The Animation Frame addon for Time-Provider's deterministic runtimes: frames run as the
+ * runtime's clock advances.
+ *
+ * @module
+ */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
 import type { WithAnimationFrameApi } from "./types.ts";

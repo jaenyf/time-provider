@@ -4,9 +4,13 @@ import type {
   MonotonicMilliseconds,
 } from "../types/types.ts";
 
+/** Number of milliseconds in a second. */
 export const MILLISECONDS_PER_SECOND = 1_000;
+/** Number of milliseconds in a minute. */
 export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND;
+/** Number of milliseconds in an hour. */
 export const MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE;
+/** Number of milliseconds in a day. */
 export const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR;
 
 /**
@@ -80,6 +84,10 @@ export function asap(): IDurationSpec {
   return { milliseconds: 0 };
 }
 
+/**
+ * The shortest possible duration.
+ * @returns a zero branded DurationMilliseconds.
+ */
 export function asapMilliseconds(): DurationMilliseconds {
   return 0 as DurationMilliseconds;
 }
@@ -152,10 +160,17 @@ export function asEpoch(): IEpochInstantSpec {
   return { milliseconds: 0 };
 }
 
+/**
+ * The epoch time.
+ * @returns a zero branded EpochMilliseconds.
+ */
 export function asEpochMilliseconds(): EpochMilliseconds {
   return 0 as EpochMilliseconds;
 }
 
+/**
+ * Arithmetic between epoch instants and durations that keeps the branded types.
+ */
 export const epochArithmetic = {
   addDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a + b) as EpochMilliseconds,
   subtract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
@@ -173,6 +188,9 @@ export function toMonotonic(instantSpec: IEpochInstantSpec): MonotonicMillisecon
   return toInstant(instantSpec) as number as MonotonicMilliseconds;
 }
 
+/**
+ * Arithmetic between monotonic instants and durations that keeps the branded types.
+ */
 export const monotonicArithmetic = {
   addDuration: (a: MonotonicMilliseconds, b: DurationMilliseconds) =>
     (a + b) as MonotonicMilliseconds,

@@ -51,6 +51,9 @@ interface IWithRuntime<TDate, TRuntime extends IRuntime<TDate> | IDeterministicR
 // _TDate is a phantom type parameter here: it isn't referenced in this interface's own body,
 // but every consumer relies on it to constrain an addon to a specific TDate (e.g.
 // `registerAddon(addon: IAddon<TDate>)`, `AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>>`).
+/**
+ * An addon attached to a runtime by a builder's `use()`.
+ */
 export interface IAddon<_TDate> extends IDisposable {}
 
 /**

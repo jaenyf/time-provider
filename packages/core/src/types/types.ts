@@ -13,7 +13,13 @@ import type { IDurationSpec } from "../helpers/branded-types.ts";
 //#region General branded types
 declare const __brand: unique symbol;
 type Brand<T, B> = T & { readonly [__brand]: B };
+/**
+ * A length of time in milliseconds, as built by {@link toDuration}.
+ */
 export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
+/**
+ * An instant in milliseconds since the Unix epoch, as built by {@link toInstant}.
+ */
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
 /**
  * A point on a runtime's monotonic timeline, in milliseconds since its time origin.
@@ -96,6 +102,9 @@ export interface ITimingMeasure extends ITimingEntry {
   readonly entryType: "measure";
 }
 
+/**
+ * Options for {@link ITimings.mark}.
+ */
 export interface ITimingMarkOptions {
   /**
    * The instant to record. Defaults to {@link IMonotonicClock.monotonicNow}.
@@ -108,6 +117,9 @@ export interface ITimingMarkOptions {
   detail?: unknown;
 }
 
+/**
+ * Options for {@link ITimings.measure}.
+ */
 export interface ITimingMeasureOptions {
   /**
    * The start of the timespan: a mark name or an instant. Defaults to the monotonic origin.
@@ -415,6 +427,9 @@ export interface ICalendarScheme<
   compose(fields: ComposableCalendarSchemeFields, timezone: TimezoneDefinition): TDate;
 }
 
+/**
+ * A {@link ICalendarScheme} using the English month and weekday names.
+ */
 export interface IDefaultCalendarScheme<TDate> extends ICalendarScheme<
   TDate,
   DefaultCalendarSchemeMonthName,
@@ -484,6 +499,9 @@ export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyC
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
 export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
 export const SCHEDULED_TIMER_KIND_RECURRING = 2;
+/**
+ * Which timer method a {@link IScheduledHandle} was obtained from.
+ */
 export enum ScheduledHandleKind {
   timeout = SCHEDULED_TIMER_KIND_TIMEOUT,
   interval = SCHEDULED_TIMER_KIND_INTERVAL,

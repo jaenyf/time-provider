@@ -1,3 +1,9 @@
+/**
+ * The deterministic runtimes of Time-Provider (fixed, manual and sequential), driven by a simulated
+ * clock instead of the system one.
+ *
+ * @module
+ */
 export { AddonHelper } from "./addons/addon-helper.ts";
 export { DefaultCalendarScheme } from "./calendar/default-calendar-scheme.ts";
 export { CalendarSchemeFieldsHelper } from "./calendar/calendar-fields-helper.ts";

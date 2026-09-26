@@ -1,3 +1,8 @@
+/**
+ * The cron addon for Time-Provider's deterministic runtimes.
+ *
+ * @module
+ */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { CronScheduler } from "./cron-scheduler.ts";

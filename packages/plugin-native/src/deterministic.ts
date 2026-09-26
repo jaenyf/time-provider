@@ -1,3 +1,8 @@
+/**
+ * The native `Date` plugin for Time-Provider's deterministic runtimes.
+ *
+ * @module
+ */
 import type { IUtcOnlyDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 

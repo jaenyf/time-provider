@@ -25,6 +25,28 @@
 
 This is the [Moment.js](https://momentjs.com/) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
 
+## Usage
+
+```ts
+import { createTimeProvider } from "@time-provider/core";
+import { createTimeProvider as createDeterministicTimeProvider } from "@time-provider/core/deterministic";
+import { plugin } from "@time-provider/plugin-moment";
+import { plugin as deterministicPlugin } from "@time-provider/plugin-moment/deterministic";
+
+// System: real clock and timers. This plugin is UTC-only.
+const timeProvider = createTimeProvider.for(plugin).create();
+timeProvider.clock.utcNow(); // a Moment.js Moment
+
+// Deterministic: a simulated clock that only moves when you advance it.
+using manual = createDeterministicTimeProvider
+  .for(deterministicPlugin)
+  .asManual()
+  .withInitialTime("2026-01-01T00:00:00.000Z")
+  .create();
+manual.clock.advance({ hours: 1 });
+manual.clock.utcNow(); // 2026-01-01T01:00:00.000Z
+```
+
 ## Notes
 
 When used **without** the [Moment-Timezone](https://momentjs.com/timezone/) extension, [Moment.js](https://momentjs.com/) does not provide support for IANA time zones or daylight saving time (DST)-aware time zone conversions.

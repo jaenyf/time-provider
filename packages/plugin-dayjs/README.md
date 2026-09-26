@@ -25,6 +25,28 @@
 
 This is the [Day.js](https://day.js.org/) plugin for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).
 
+## Usage
+
+```ts
+import { createTimeProvider } from "@time-provider/core";
+import { createTimeProvider as createDeterministicTimeProvider } from "@time-provider/core/deterministic";
+import { plugin } from "@time-provider/plugin-dayjs";
+import { plugin as deterministicPlugin } from "@time-provider/plugin-dayjs/deterministic";
+
+// System: real clock and timers, in the given timezone.
+const timeProvider = createTimeProvider.for(plugin).withTimezone("Europe/Paris").create();
+timeProvider.clock.localNow(); // a Day.js Dayjs
+
+// Deterministic: a simulated clock that only moves when you advance it.
+using manual = createDeterministicTimeProvider
+  .for(deterministicPlugin)
+  .asManual()
+  .withInitialTime("2026-01-01T00:00:00.000Z")
+  .create();
+manual.clock.advance({ hours: 1 });
+manual.clock.utcNow(); // 2026-01-01T01:00:00.000Z
+```
+
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-dayjs/CHANGELOG.md)

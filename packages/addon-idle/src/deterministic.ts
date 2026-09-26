@@ -1,3 +1,9 @@
+/**
+ * The Idle addon for Time-Provider's deterministic runtimes: idle callbacks run when the
+ * test drains them.
+ *
+ * @module
+ */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import { DeterministicIdleScheduler } from "./deterministic-idle-scheduler.ts";
 import type { WithDeterministicIdleApi } from "./types.ts";
