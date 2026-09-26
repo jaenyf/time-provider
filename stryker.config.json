@@ -10,6 +10,7 @@
   "mutate": [
     "**/src/**/*.ts",
     "!packages/**/src/**/*.test.ts",
+    "!packages/test/src/**/*.ts",
     "!packages/test-shared/src/**/*.ts",
     "!packages/test-e2e/src/**/*.ts",
     "!packages/test-treeshake/src/**/*.ts"
