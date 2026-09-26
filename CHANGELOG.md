@@ -4,6 +4,80 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-26
+
+### @time-provider/addon-animation-frame 0.5.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/addon-compat 0.3.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/addon-cron 0.4.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/addon-eta 0.4.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/addon-idle 0.2.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/core 4.0.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-dayjs 0.6.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-luxon 0.6.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-moment 0.6.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-moment-timezone 0.5.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-native 0.6.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
+### @time-provider/plugin-temporal 0.6.1
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
 ## 2026-09-24
 
 ### @time-provider/addon-animation-frame 0.5.0
