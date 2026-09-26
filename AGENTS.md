@@ -28,17 +28,17 @@ This is a Bun workspace monorepo (`packages/*`, `website`, `tools/*`).
 
 ## Commands
 
-| Command                           | What it does                                                                                        |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `vp test`                         | Run all tests                                                                                       |
-| `vp test --coverage`              | Run all tests with coverage (matches CI)                                                            |
-| `vp run build`                    | Build every package                                                                                 |
-| `vp check`                        | Format, lint, and type-check the **current** package (run it from inside `packages/<name>/`)        |
-| `vp run -r check`                 | Same, for every package, plus a JSR publish dry run of each publishable one (needs Deno)            |
-| `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first) |
-| `vp run stryker`                  | Mutation testing (Stryker)                                                                          |
-| `vp run ready`                    | Full local gate: build, check, test, stryker — run before considering a change done                 |
-| `vp run <pkg>#<script>`           | Run one package's script from the repo root, e.g. `vp run @time-provider/core#build`                |
+| Command                           | What it does                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `vp test`                         | Run all tests                                                                                                       |
+| `vp test --coverage`              | Run all tests with coverage (matches CI)                                                                            |
+| `vp run build`                    | Build every package                                                                                                 |
+| `vp check`                        | Format, lint, and type-check the **current** package (run it from inside `packages/<name>/`)                        |
+| `vp run -r check`                 | Same, for every package, plus a JSR publish dry run and a JSDoc coverage check of each publishable one (needs Deno) |
+| `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first)                 |
+| `vp run stryker`                  | Mutation testing (Stryker)                                                                                          |
+| `vp run ready`                    | Full local gate: build, check, test, stryker — run before considering a change done                                 |
+| `vp run <pkg>#<script>`           | Run one package's script from the repo root, e.g. `vp run @time-provider/core#build`                                |
 
 A package normally needs to be built (`vp run build`) before another package
 that imports it (e.g. a plugin importing `@time-provider/core`) will
