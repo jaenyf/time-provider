@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/jaenyf/time-provider/compare/plugin-temporal-v0.6.0...plugin-temporal-v0.6.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
 ## [0.6.0](https://github.com/jaenyf/time-provider/compare/plugin-temporal-v0.5.2...plugin-temporal-v0.6.0) (2026-09-24)
 
 

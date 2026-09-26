@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/jaenyf/time-provider/compare/addon-eta-v0.4.0...addon-eta-v0.4.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
 ## [0.4.0](https://github.com/jaenyf/time-provider/compare/addon-eta-v0.3.1...addon-eta-v0.4.0) (2026-09-24)
 
 

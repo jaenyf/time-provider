@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-animation-frame",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "exports": {
     ".": "./src/index.ts",
     "./deterministic": "./src/deterministic.ts"

@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/core",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": false,
   "description": "Time-Provider : Core library ~ Your single time interface for all your JavaScript / TypeScript projects.",
   "keywords": [
