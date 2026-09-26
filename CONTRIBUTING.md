@@ -28,16 +28,22 @@ first to avoid filing a duplicate, then:
 
 ## Setup
 
-Requires [Vite+](https://viteplus.dev/) (`vp`) installed and available in the PATH (including `vpx`).  
-See the [installation guide](https://viteplus.dev/guide/), or install directly:
+Requires two tools installed and available in the PATH:
 
-```bash
-curl -fsSL https://vite.plus | bash   # macOS/Linux
-irm https://vite.plus/ps1 | iex       # Windows (PowerShell)
-```
+- [Vite+](https://viteplus.dev/) (`vp`, including `vpx`). See the [installation guide](https://viteplus.dev/guide/), or install directly:
 
-[Deno](https://deno.com/) 2 is also needed for `vp run check` (and so `vp run ready`), which dry-runs
-every package's JSR publish. See the [installation guide](https://docs.deno.com/runtime/getting_started/installation/).
+  ```bash
+  curl -fsSL https://vite.plus | bash   # macOS/Linux
+  irm https://vite.plus/ps1 | iex       # Windows (PowerShell)
+  ```
+
+- [Deno](https://deno.com/), which is used by `vp run check` to ensure publishability on deno and check JSDoc coverage.
+  See the [installation guide](https://docs.deno.com/runtime/getting_started/installation/), or install directly:
+
+  ```bash
+  curl -fsSL https://deno.land/install.sh | sh   # macOS/Linux
+  irm https://deno.land/install.ps1 | iex        # Windows (PowerShell)
+  ```
 
 _Note: Vite+ will automatically download the pinned package manager version (currently [Bun](https://bun.com/)) and a compatible [Node.js](https://nodejs.org/) runtime if they aren't already available on your system._
 
