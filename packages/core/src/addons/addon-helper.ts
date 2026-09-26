@@ -1,32 +1,17 @@
 import type { IRuntime } from "../types/types.ts";
 import type { IAddon } from "../builders/builders.ts";
 
-/**
- * Utilities for addon authors to extend a runtime with additional, addon-specific commodities.
- */
+/** Utilities for extending a runtime with addon-specific properties. */
 export class AddonHelper {
   /**
-   * Defines a new entry on the runtime facade.
-   * It has to be called before the builder freezes the runtime.
-   * @param runtime the runtime instance to extend.
-   * @param newPropertyPath where to add the property, relative to `runtime`. A bare name
-   * (`"eta"`) puts it at the root; a dotted path walks the facets first, so an addon that
-   * schedules callbacks passes `"scheduler.cron"` and lands beside `timers` and `microtasks`
-   * rather than at the root. Every segment but the last must already exist on `runtime`.
-   * @param facade the value of the new property - the addon's public-facing surface, not the
-   * addon instance itself: an addon also carries lifecycle members (`.runtime`,
-   * `.applyToRuntime`, `.dispose`, ...) that a consumer reaching `runtime.<newPropertyPath>` has
-   * no business calling, so those shouldn't come along for the ride.
-   * @param addon the addon instance itself - registered with `runtime` so it gets disposed when
-   * `runtime` does, independently of whatever `facade` exposes.
-   * @param onlyIfPathExists what to do when a segment of `newPropertyPath` is missing, which
-   * happens when the property belongs to another addon's facade and that addon was not composed
-   * (or was composed after this one). `false`, the default, throws: the host is expected to be
-   * there. `true` makes the whole call a no-op instead - for a property an addon contributes to
-   * another's facade as a bonus, such as the native-shaped aliases the animation and idle addons
-   * add to `compat`. Declare such a property optional (`compat?:`) in the addon's public type,
-   * since it is only there when both addons are composed.
-   * @returns `runtime`, typed as extended with the new property.
+   * Adds a property to the runtime facade.
+   * @param runtime The runtime to extend.
+   * @param newPropertyPath The property path.
+   * @param facade The public property value.
+   * @param addon The addon instance.
+   * @param onlyIfPathExists No-op when a path segment is missing.
+   * @returns The extended runtime.
+   * @throws If a path segment is missing and `onlyIfPathExists` is `false`.
    */
   static extendRuntimeWithProperty<TDate, TAddonType>(
     runtime: IRuntime<TDate>,

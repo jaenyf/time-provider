@@ -1,12 +1,8 @@
 import type { CalendarSchemeFields, ComposableCalendarSchemeFields } from "../types/types.ts";
 
-/**
- * Operations on {@link CalendarSchemeFields} that hold for any calendar system - they only ever compare
- * or reshape the field bag itself, never interpret what a month/day *means*. Intended for
- * {@link ICalendarScheme} implementors and calendar-consuming code alike.
- */
+/** Calendar-agnostic operations on calendar fields. */
 export class CalendarSchemeFieldsHelper {
-  /** Whether `a` and `b` denote the same wall-clock instant, ignoring the derived `weekday`. */
+  /** Whether `a` and `b` denote the same wall-clock instant. */
   static equals(a: ComposableCalendarSchemeFields, b: ComposableCalendarSchemeFields): boolean {
     return (
       a.year === b.year &&
@@ -17,10 +13,7 @@ export class CalendarSchemeFieldsHelper {
     );
   }
 
-  /**
-   * Drops the derived `weekday`, leaving the subset {@link ICalendarScheme.compose} and
-   * {@link ICalendarScheme.normalize} accept.
-   */
+  /** Drops the derived `weekday`. */
   static toComposable(fields: CalendarSchemeFields): ComposableCalendarSchemeFields {
     const { year, month, day, hour, minute } = fields;
     return { year, month, day, hour, minute };

@@ -2,10 +2,7 @@ import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@t
 import type { IAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
 
-/**
- * Implements {@link IAnimationFrameScheduler} on top of a deterministic runtime's {@link IRuntime},
- * simulating frames at {@link hostFramesRate} instead of relying on a real display refresh.
- */
+/** Deterministic {@link IAnimationFrameScheduler} using simulated frames. */
 export class DeterministicAnimationFrameScheduler<TDate>
   extends AddonBase<TDate, IDeterministicRuntime<TDate>>
   implements IDeterministicAddon<TDate>, IAnimationFrameScheduler<TDate>
@@ -53,17 +50,12 @@ export class DeterministicAnimationFrameScheduler<TDate>
     );
   }
 
-  /**
-   * The simulated host display refresh rate driving `requestAnimationFrame`
-   * on this scheduler (defaults to 60hz).
-   */
+  /** Simulated display refresh rate; defaults to `60`. */
   get hostFramesRate(): number {
     return this.#hostFramesRate;
   }
-  /**
-   * The simulated host display refresh rate driving `requestAnimationFrame`
-   * on this scheduler (defaults to 60hz).
-   */
+
+  /** Simulated display refresh rate; defaults to `60`. */
   set hostFramesRate(value: number) {
     if (!value || value < 0) {
       throw new Error(`Invalid host frame rate (value was "${String(value)}")`);

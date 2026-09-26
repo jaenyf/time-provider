@@ -24,14 +24,11 @@ export class SystemHelper {
   }
 }
 
-/**
- * Guards for validating time and timezone inputs. Intended for plugin authors implementing
- * {@link ITimeConverter} or a runtime's clock methods.
- */
+/** Validates time and timezone inputs for plugin authors. */
 export class TimeInputValidator {
   /**
-   * Guards against invalid values.
-   * @throws if `time` is `undefined`, `null`, `NaN`, or an empty/whitespace-only string.
+   * Validates `time`.
+   * @throws If `time` is `undefined`, `null`, `NaN`, or blank.
    */
   /* @__INLINE__ */
   static assertValid<TDate>(
@@ -47,27 +44,20 @@ export class TimeInputValidator {
     }
   }
 
-  /**
-   * Throws an error describing `time` as an invalid time value.
-   */
+  /** Throws for invalid `time`. */
   /* @__INLINE__ */
   static throwInvalidTimeValue<TDate>(time: string | number | TDate): never {
     throw new Error(`Invalid time value (value was '${String(time)}')`);
   }
 
-  /**
-   * Throws an error describing `timezone` as an invalid timezone value.
-   */
+  /** Throws for invalid `timezone`. */
   /* @__INLINE__ */
   static throwInvalidTimezone(timezone: TimezoneDefinition): never {
     throw new Error(`Invalid timezone value (value was '${String(timezone)}')`);
   }
 }
 
-/**
- * Base class for all runtime classes
- * A runtime is an orchestrator (coordinator) between a clock and the timers
- */
+/** Base runtime coordinating a clock and timers. */
 export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   static readonly ABORTED_SIGNAL: AbortSignal = AbortSignal.abort();
   #localTimezone: TimezoneDefinition;
@@ -202,12 +192,14 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
     initialDelay?: IDurationSpec,
     options?: ITimerOptions,
   ): IScheduledHandle;
+
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void> {
     this.assertIsNotDisposed();
     return new Promise((resolve) => {
       this.once(delay, () => resolve(), options);
     });
   }
+
   abstract queue(callback: () => void): void;
 
   hostTimezone(): TimezoneDefinition {
@@ -224,10 +216,7 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   abstract localNow(): TDate;
   abstract utcNow(): TDate;
 
-  /**
-   * This runtime's calendar scheme - the plugin's own {@link ITimeConverter.calendarScheme} if
-   * it provided one, otherwise the shared Gregorian/`Intl` default.
-   */
+  /** This runtime's calendar scheme. */
   get calendarScheme(): ICalendarScheme<TDate> {
     return this.#calendarScheme;
   }
@@ -238,8 +227,8 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
 
   /**
-   * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
-   * @returns a TDate expressed as UTC time.
+   * Converts `time` to normalized UTC `TDate`.
+   * @returns UTC `TDate`.
    */
   convertToUtc = (time: string | EpochMilliseconds | TDate): TDate => {
     /*
@@ -254,9 +243,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
       this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
     );
   };
+
   /**
-   * Converts any accepted input (an ISO string, an epoch-milliseconds number, or a TDate) into a normalized TDate instance.
-   * @returns a TDate expressed as local time.
+   * Converts `time` to normalized local `TDate`.
+   * @returns Local `TDate`.
    */
   convertToLocal = (time: string | EpochMilliseconds | TDate): TDate => {
     /*
@@ -272,15 +262,18 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
       this.convertToEpochTimestampImpl(this.convertToUtcDateImpl(time)),
     );
   };
+
   protected convertToUtcDateImpl(time: string | EpochMilliseconds | TDate): TDate {
     return this.#converter.convertToUtcDate(time);
   }
+
   protected convertToLocalDateImpl(
     timezone: TimezoneDefinition,
     time: string | EpochMilliseconds | TDate,
   ): TDate {
     return this.#converter.convertToLocalDate(timezone, time);
   }
+
   protected convertToEpochTimestampImpl(
     time: string | EpochMilliseconds | number | TDate,
   ): EpochMilliseconds {

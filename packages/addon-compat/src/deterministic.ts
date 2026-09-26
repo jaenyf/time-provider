@@ -1,8 +1,5 @@
-/**
- * The compatibility addon for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Deterministic compatibility addon.
+ * @module */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { CompatRuntime } from "./compat-runtime.ts";
@@ -28,13 +25,8 @@ class DeterministicCompatAddonBuilder<TDate> extends AddonBuilderBase<
 }
 
 /**
- * The compat addon-builder for a deterministic Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)`. Same {@link CompatRuntime} implementation as the
- * system addon-builder in `./addon.ts` - it never touches anything deterministic-specific -
- * re-exposed here typed against `IDeterministicAddon` so it satisfies a deterministic
- * runtime-builder's `.use()` bound.
- * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
- * `AddonBuilderFactory` in `@time-provider/core`.
+ * Deterministic compat addon builder.
+ * @param typeHint Infers `TDate`; unused.
  */
 export function addon<TDate>(typeHint?: TDate): IAddonBuilder<DeterministicCompatAddon<TDate>> {
   return new DeterministicCompatAddonBuilder<TDate>(typeHint);

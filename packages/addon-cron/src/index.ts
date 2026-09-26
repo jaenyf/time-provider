@@ -1,3 +1,5 @@
+/** System cron addon.
+ * @module */
 import { addon } from "./addon.ts";
 
 export type { ICronApi, WithCronApi } from "./types.ts";

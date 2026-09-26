@@ -1,15 +1,8 @@
-/**
- * The Luxon plugin for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Luxon plugin for Time-Provider's deterministic runtimes.
+ * @module */
 import type { IDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 import { DateTime } from "luxon";
 
-/**
- * The Luxon plugin (adapter) for a deterministic (manual/fixed/sequential) Time-Provider.
- * Supports timezones and local time. Use with `createTimeProvider.for(plugin)` from
- * `@time-provider/core/deterministic`.
- */
+/** Luxon adapter for deterministic (manual/fixed/sequential) Time-Providers. Supports timezones and local time. */
 export const plugin: IDeterministicPlugin<DateTime> = new DeterministicPlugin();

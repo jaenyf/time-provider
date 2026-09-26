@@ -23,19 +23,10 @@ type ReturnTypeOfSetTimeout = ReturnType<typeof setTimeout>;
 // oxlint-disable-next-line typescript/no-duplicate-type-constituents
 type ReturnTypeOfTimer = ReturnTypeOfSetInterval;
 
-/**
- * Native timers hold their delay in a 32-bit signed field. A longer delay is clamped by the host
- * - Node clamps it to 1ms and emits a `TimeoutOverflowWarning` - so the timer fires almost
- * immediately instead of when it is due. Anything longer is armed in chunks of this size instead.
- */
+/** Maximum native timer delay. */
 const MAX_NATIVE_DELAY = 2_147_483_647;
 
-/**
- * Arms `callback` to run `msDelay` from now, splitting a delay past {@link MAX_NATIVE_DELAY} into
- * successive native timeouts. `onRearm` is handed the native handle of every chunk after the
- * first, so the caller's handle keeps pointing at the timeout currently pending and clearing it
- * still cancels the whole chain.
- */
+/** Arms `callback` for `msDelay`, chunking delays above {@link MAX_NATIVE_DELAY}. */
 function armTimeout(
   msDelay: number,
   callback: () => void,
@@ -49,15 +40,13 @@ function armTimeout(
   }, MAX_NATIVE_DELAY);
 }
 
-/**
- * Base class for a system runtime
- */
+/** Base class for system runtimes. */
 export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
   #timings = new SystemTimings();
 
   /**
-   * @param localTimezone the local timezone this runtime is configured with.
-   * @param converter the time converter for this runtime's date library, provided by the concrete subclass.
+   * @param localTimezone The runtime timezone.
+   * @param converter The runtime time converter.
    */
   constructor(localTimezone: TimezoneDefinition, converter: ITimeConverter<TDate>) {
     super(localTimezone, converter);
@@ -196,14 +185,8 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_RECURRING, this, arm(msInitialDelay));
     return this.trackHandle(handle, options);
   }
-  /**
-   * Queues `callback` via the native `queueMicrotask`, onto the host's own microtask queue.
-   *
-   * Disposing this runtime does not cancel it: the host's microtask queue has no notion of this
-   * runtime at all, so a callback already queued here still runs on schedule even if `callback`
-   * closes over a Time-Provider that is disposed by the time it fires - unlike a deterministic
-   * runtime, which discards its still-queued microtasks on {@link BaseRuntime.dispose}.
-   */
+
+  /** Queues `callback` on the host microtask queue. */
   queue(callback: () => void): void {
     this.assertIsNotDisposed();
     queueMicrotask(callback);

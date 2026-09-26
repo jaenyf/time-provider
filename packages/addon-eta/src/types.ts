@@ -1,275 +1,162 @@
 import type { DurationMilliseconds, EpochMilliseconds } from "@time-provider/core";
 
-/**
- * How the estimated completion rate is derived from reported progress:
- * - `"complete"` - averaged over the entire tracked history, from the start. Simple and stable,
- *   but a slow start (or a mid-run change of pace) permanently drags the estimate.
- * - `"windowed"` (the default) - averaged over only the most recently reported progress,
- *   discarding older samples. Reacts to a change in pace faster than `"complete"`.
- * - `"smoothed"` - a continuously blended running average, weighted toward more recent reports
- *   without discarding older ones outright.
- */
+/** How completion rate is estimated from progress samples. */
 export type EtaRateAlgorithm = "complete" | "windowed" | "smoothed";
 
-/**
- * Whether a tracked schedule is still running, finished normally, or was called off early.
- * Reported on every notification so a consumer can tell the difference between an ordinary
- * in-progress snapshot and the one final snapshot a schedule ever sends.
- */
+/** Whether tracking is running, done, or abandoned. */
 export type EtaStatus = "in-progress" | "done" | "abandoned";
 
-/**
- * One stage of a multi-stage job (e.g. download, then process, then finalize), for
- * {@link IEtaTrackBuilder.withStages}. Progress is reported against whichever stage is
- * current - see {@link IStagedProgressEtaTracker.nextStage}.
- */
+/** A weighted stage in a multi-stage job. */
 export interface IEtaStage {
-  /**
-   * This stage's share of the overall job, relative to the other stages' weights - not required
-   * to sum to any particular total across stages, each is normalized against the sum of all of
-   * them. A download stage twice as significant as the stage after it can be expressed as
-   * `{ weight: 2, total: downloadBytes }` next to `{ weight: 1, total: processSteps }`, exactly
-   * as well as `{ weight: 0.66, ... }` next to `{ weight: 0.33, ... }` would be.
-   */
+  /** Relative stage weight. */
   readonly weight: number;
-  /**
-   * This stage's own total, in whatever unit this stage's progress reports use - unrelated to
-   * any other stage's unit.
-   */
+  /** Stage-local total. */
   readonly total: number;
 }
 
-/**
- * Fields describing a schedule's overall completion estimate - shared by
- * {@link IEtaProgressSnapshot} (where "overall" and "the one total" are the same thing) and
- * {@link IStagedEtaProgressSnapshot} (where they're deliberately not - see its doc comment).
- */
+/** Overall completion estimate fields. */
 export interface IEtaEstimate {
   readonly status: EtaStatus;
-  /** The epoch-millisecond timestamp {@link IEtaTrackBuilder.estimate} was called at. */
+  /** Epoch timestamp when tracking started. */
   readonly startTime: number;
-  /** Milliseconds elapsed since `startTime`. */
+  /** Elapsed milliseconds since `startTime`. */
   readonly elapsedMilliseconds: number;
-  /**
-   * The estimated completion rate, as a fraction of the whole job (0-1) per millisecond - not
-   * scaled to the tracked unit, since {@link IStagedEtaProgressSnapshot} needs this same figure
-   * to combine stages that can use different units. `undefined` until the configured
-   * {@link EtaRateAlgorithm} has enough samples to estimate one.
-   */
+  /** Overall completion rate per millisecond. */
   readonly rate?: number;
-  /**
-   * The estimated epoch-millisecond completion time, or `undefined` until the configured
-   * {@link EtaRateAlgorithm} has enough samples to estimate a rate.
-   */
+  /** Estimated completion timestamp. */
   readonly eta?: number;
-  /** `eta` expressed as a duration from now, or `undefined` under the same condition as `eta`. */
+  /** Estimated time remaining. */
   readonly remainingMilliseconds?: number;
 }
 
-/**
- * The point-in-time state of a known-total schedule, delivered on every notification. Every
- * derived field (`percentage`, `rate`, `remaining`, `remainingMilliseconds`, `eta`) is computed
- * lazily, the moment it's actually read - a consumer that only ever reads `eta` never pays for
- * computing the others.
- */
+/** Snapshot of known-total progress. */
 export interface IEtaProgressSnapshot extends IEtaEstimate {
-  /** How much work has been completed so far, in the tracked unit. */
+  /** Completed work. */
   readonly completed: number;
-  /** The known total amount of work, in the tracked unit. */
+  /** Total work. */
   readonly total: number;
-  /** `total - completed`. */
+  /** Remaining work. */
   readonly remaining: number;
-  /** `(completed / total) * 100`. */
+  /** Completion percentage. */
   readonly percentage: number;
 }
 
-/**
- * The point-in-time state of a multi-stage schedule started via {@link IEtaTrackBuilder.withStages},
- * delivered on every notification. Different stages can use different units (bytes, then rows,
- * then steps), which can't be summed into one meaningful raw figure - so `stageCompleted`/
- * `stageTotal`/`stageRemaining`/`stagePercentage` are local to whichever stage is current (their
- * own natural unit, fit for a per-stage progress bar), while `rate`/`eta`/`remainingMilliseconds`
- * (inherited from {@link IEtaEstimate}) are weighted across every stage per
- * {@link IEtaStage.weight} (unit-less/normalized figures, which *can* be combined), answering
- * "when does the whole job finish" rather than just the current stage. Deliberately doesn't
- * extend {@link IEtaProgressSnapshot} - stage-scoped and overall fields would otherwise share the
- * same names for different things.
- */
+/** Snapshot of multi-stage progress. */
 export interface IStagedEtaProgressSnapshot extends IEtaEstimate {
-  /** How much work has been completed so far in the current stage, in that stage's own unit. */
+  /** Completed work in the current stage. */
   readonly stageCompleted: number;
-  /** The current stage's own total, in that stage's own unit. */
+  /** Current stage total. */
   readonly stageTotal: number;
-  /** `stageTotal - stageCompleted`. */
+  /** Remaining work in the current stage. */
   readonly stageRemaining: number;
-  /** `(stageCompleted / stageTotal) * 100`. */
+  /** Current-stage completion percentage. */
   readonly stagePercentage: number;
-  /** The index, into the array given to {@link IEtaTrackBuilder.withStages}, of the stage
-   * currently being reported against. */
+  /** Current stage index. */
   readonly currentStageIndex: number;
-  /** The number of stages given to {@link IEtaTrackBuilder.withStages}. */
+  /** Total stage count. */
   readonly stageCount: number;
 }
 
-/**
- * The point-in-time state of an estimated-duration schedule, delivered on every notification.
- * Unlike {@link IEtaProgressSnapshot}, there's no progress data backing this - `eta` is always
- * known immediately (`startTime + expectedDuration`), until {@link IDurationEtaTracker.abandon}
- * is called, after which there's nothing left to estimate.
- */
+/** Snapshot of an estimated-duration schedule. */
 export interface IEtaDurationSnapshot {
   readonly status: EtaStatus;
   readonly startTime: EpochMilliseconds;
   readonly elapsedMilliseconds: DurationMilliseconds;
-  /** `undefined` only once `status` is `"abandoned"`. */
+  /** `undefined` only when abandoned. */
   readonly eta?: EpochMilliseconds;
-  /** `undefined` only once `status` is `"abandoned"`. */
+  /** `undefined` only when abandoned. */
   readonly remainingMilliseconds?: DurationMilliseconds;
 }
 
-/**
- * Returned by {@link IEtaTrackBuilder.withKnownTotal}. Reports progress toward a single known
- * total.
- */
+/** Tracks progress toward a known total. */
 export interface IProgressEtaTracker {
-  /** Reports that `chunkSize` more work has been completed, relative to the last reported
-   * amount. */
+  /** Reports additional completed work. */
   progress(chunkSize: number): void;
-  /** Reports that `completed` amount of work has been done in total, replacing the last reported
-   * amount. */
+  /** Sets total completed work. */
   progressTo(completed: number): void;
-  /**
-   * Marks the job as complete: the final notification reports 100% regardless of the last
-   * reported amount, and no further notifications follow.
-   */
+  /** Completes tracking. */
   done(): void;
-  /**
-   * Calls off tracking without completing it: the final notification reports whatever progress
-   * was last recorded, with `eta`/`remainingMilliseconds` unset - there's nothing left to project
-   * forward. `rate` stays set to the last measured pace. No further notifications follow.
-   */
+  /** Abandons tracking. */
   abandon(): void;
 }
 
-/**
- * Returned by {@link IEtaTrackBuilder.withStages}. Same as {@link IProgressEtaTracker}, with
- * progress reported against whichever stage is current.
- */
+/** Tracks progress across multiple stages. */
 export interface IStagedProgressEtaTracker extends IProgressEtaTracker {
   /**
-   * Marks the current stage complete and moves on to the next one declared in
-   * {@link IEtaTrackBuilder.withStages}, resetting the amount of work done so far back to `0` for
-   * that new stage.
-   * @throws if called on the last stage - there's no next stage to move to; call
-   * {@link IProgressEtaTracker.done} instead.
+   * Completes the current stage and moves to the next.
+   * @throws If called on the last stage.
    */
   nextStage(): void;
 }
 
-/** Returned by {@link IEtaTrackBuilder.withEstimatedDuration}. */
+/** Tracks an estimated-duration schedule. */
 export interface IDurationEtaTracker {
-  /** Marks the job as complete. No further notifications follow. */
+  /** Completes tracking. */
   done(): void;
-  /** Calls off tracking without completing it. No further notifications follow. */
+  /** Abandons tracking. */
   abandon(): void;
 }
 
-/**
- * Configures a known-total or multi-stage schedule, started via
- * {@link IProgressEtaTrackBuilder.start}.
- */
+/** Configures known-total progress tracking. */
 export interface IProgressEtaTrackBuilder {
-  /** How often `start`'s callback is notified, in milliseconds. Defaults to `1000`, clamped to
-   * `0` if negative. */
+  /** Sets notification interval; defaults to `1000`, clamped to `0`. */
   withNotificationInterval(milliseconds: number): this;
-  /** Which {@link EtaRateAlgorithm} estimates the completion rate. Defaults to `"windowed"`. */
+  /** Sets the rate algorithm; defaults to `"windowed"`. */
   withAlgorithm(algorithm: EtaRateAlgorithm): this;
-  /**
-   * Starts the schedule, delivering a snapshot to `notify` on the configured notification
-   * interval, until {@link IProgressEtaTracker.done} or {@link IProgressEtaTracker.abandon} is
-   * called.
-   */
+  /** Starts tracking until `done()` or `abandon()`. */
   start(notify: (snapshot: IEtaProgressSnapshot) => void): IProgressEtaTracker;
 }
 
-/** {@link IProgressEtaTrackBuilder} for a multi-stage schedule. */
+/** Configures multi-stage progress tracking. */
 export interface IStagedProgressEtaTrackBuilder {
-  /** How often `start`'s callback is notified, in milliseconds. Defaults to `1000`, clamped to
-   * `0` if negative. */
+  /** Sets notification interval; defaults to `1000`, clamped to `0`. */
   withNotificationInterval(milliseconds: number): this;
-  /** Which {@link EtaRateAlgorithm} estimates the completion rate. Defaults to `"windowed"`. */
+  /** Sets the rate algorithm; defaults to `"windowed"`. */
   withAlgorithm(algorithm: EtaRateAlgorithm): this;
-  /**
-   * Starts the schedule, delivering a snapshot to `notify` on the configured notification
-   * interval, until {@link IStagedProgressEtaTracker.done} or
-   * {@link IStagedProgressEtaTracker.abandon} is called.
-   */
+  /** Starts tracking until `done()` or `abandon()`. */
   start(notify: (snapshot: IStagedEtaProgressSnapshot) => void): IStagedProgressEtaTracker;
 }
 
-/** Configures an estimated-duration schedule, started via {@link IDurationEtaTrackBuilder.start}. */
+/** Configures estimated-duration tracking. */
 export interface IDurationEtaTrackBuilder {
-  /** How often `start`'s callback is notified, in milliseconds. Defaults to `1000`, clamped to
-   * `0` if negative. */
+  /** Sets notification interval; defaults to `1000`, clamped to `0`. */
   withNotificationInterval(milliseconds: number): this;
-  /**
-   * Starts the schedule, delivering a snapshot to `notify` on the configured notification
-   * interval, until {@link IDurationEtaTracker.done} or {@link IDurationEtaTracker.abandon} is
-   * called.
-   */
+  /** Starts tracking until `done()` or `abandon()`. */
   start(notify: (snapshot: IEtaDurationSnapshot) => void): IDurationEtaTracker;
 }
 
-/**
- * Entry point for a single ETA schedule, returned by {@link IEtaApi.estimate}. Picking a branch
- * here decides the whole shape of what follows - a known-total or multi-stage schedule reports
- * progress and gets a data-driven `eta`; an estimated-duration schedule reports nothing and gets
- * a fixed `eta` computed once, up front.
- */
+/** Configures an ETA schedule. */
 export interface IEtaTrackBuilder {
   /**
-   * Tracks progress toward a single known total, in whatever unit fits (bytes, tasks, ...).
-   * @throws if `total` is negative.
+   * Tracks progress toward a known total.
+   * @throws If `total` is negative.
    */
   withKnownTotal(total: number): IProgressEtaTrackBuilder;
+
   /**
-   * Tracks progress across multiple weighted stages (e.g. download, then process, then
-   * finalize) as one overall schedule - see {@link IEtaStage}.
-   * @throws if `stages` is empty, any stage's `weight` is negative, or every stage's `weight` is
-   * `0`.
+   * Tracks weighted stages.
+   * @throws If `stages` is empty, any weight is negative, or all weights are `0`.
    */
   withStages(stages: readonly IEtaStage[]): IStagedProgressEtaTrackBuilder;
+
   /**
-   * No progress signal at all - just a rough prior of how long the job usually takes. `eta` is
-   * `startTime + expectedDurationMilliseconds`, fixed for the life of the schedule - until
-   * {@link IDurationEtaTracker.done} snaps it to the actual completion time, or
-   * {@link IDurationEtaTracker.abandon} clears it.
-   * @throws if `expectedDurationMilliseconds` is negative.
+   * Tracks an estimated duration.
+   * @throws If `expectedDurationMilliseconds` is negative.
    */
   withEstimatedDuration(expectedDurationMilliseconds: number): IDurationEtaTrackBuilder;
 }
 
-/**
- * The shape this addon adds to a composed Time-Provider: an `eta` property exposing
- * {@link IEtaApi}.
- */
+/** Adds `eta` to a composed Time-Provider. */
 export type WithEtaApi<TDate> = {
-  /**
-   * Estimates when a tracked job will finish, either from progress reported toward a known total
-   * (optionally split into weighted stages) or from a fixed expected duration, notifying a
-   * callback with a snapshot on an interval - see {@link IEtaApi}.
-   */
+  /** ETA API facade. */
   eta: IEtaApi<TDate>;
 };
 
-/**
- * The ETA API facade this addon adds to a composed Time-Provider, reachable as
- * `timeProvider.eta` once composed via `createTimeProvider.for(plugin).use(thisAddon)`.
- */
+/** ETA API exposed by the addon. */
 // Kept generic over TDate for symmetry with WithEtaApi<TDate> and the rest of the *Api<TDate>
 // family, even though no member here happens to reference it.
 // oxlint-disable-next-line no-unused-vars
 export interface IEtaApi<TDate> {
-  /** Starts configuring a new ETA schedule - see {@link IEtaTrackBuilder}. */
+  /** Starts configuring an ETA schedule. */
   estimate(): IEtaTrackBuilder;
 }

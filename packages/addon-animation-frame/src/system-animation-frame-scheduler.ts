@@ -44,17 +44,15 @@ class SystemAnimationFrameHandle implements IScheduledHandle {
   }
 }
 
-/**
- * Implements {@link IAnimationFrameScheduler} on top of the host's native
- * `requestAnimationFrame`/`cancelAnimationFrame`.
- */
+/** System {@link IAnimationFrameScheduler} using native animation frames. */
 export class SystemAnimationFrameScheduler<TDate>
   extends AddonBase<TDate, IRuntime<TDate>>
   implements IAnimationFrameScheduler<TDate>
 {
   #isDisposed: boolean;
+
   /**
-   * @throws if the host environment does not support `requestAnimationFrame`/`cancelAnimationFrame` (e.g. not a browser).
+   * @throws If `requestAnimationFrame` or `cancelAnimationFrame` is unsupported.
    */
   constructor() {
     super();

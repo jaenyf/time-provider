@@ -9,9 +9,7 @@ import type {
 } from "../types/types.ts";
 import { assertMeasureOptions, matchesTimingsFilter } from "./timings-helpers.ts";
 
-/**
- * Marks and measures on the host's own performance timeline.
- */
+/** Marks and measures on the host performance timeline. */
 export class SystemTimings implements ITimings {
   entries = (filter?: ITimingsFilter): readonly ITimingEntry[] =>
     (performance.getEntries() as unknown as ITimingEntry[]).filter(

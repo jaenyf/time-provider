@@ -1,8 +1,5 @@
-/**
- * The ETA estimation addon for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Deterministic ETA estimation addon.
+ * @module */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 import { EtaScheduler } from "./eta-scheduler.ts";
@@ -39,13 +36,8 @@ class DeterministicEtaAddonBuilder<TDate> extends AddonBuilderBase<
 }
 
 /**
- * The ETA estimation addon-builder for a deterministic Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)`. Same {@link EtaScheduler} implementation as the
- * system addon-builder in `./addon.ts` - it never touches anything deterministic-specific -
- * re-exposed here typed against `IDeterministicAddon` so it satisfies a deterministic
- * runtime-builder's `.use()` bound.
- * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
- * `AddonBuilderFactory` in `@time-provider/core`.
+ * Deterministic ETA addon builder.
+ * @param typeHint Infers `TDate`; unused.
  */
 export function addon<TDate>(typeHint?: TDate): IAddonBuilder<DeterministicEtaAddon<TDate>> {
   return new DeterministicEtaAddonBuilder<TDate>(typeHint);

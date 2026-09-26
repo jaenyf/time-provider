@@ -1,3 +1,5 @@
+/** System Time-Provider runtime.
+ * @module */
 export { AddonHelper } from "./addons/addon-helper.ts";
 export { AddonBase } from "./addons/addon-base.ts";
 export { AddonBuilderBase } from "./addons/addon-builder-base.ts";

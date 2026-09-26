@@ -1,14 +1,7 @@
-/**
- * The Temporal plugin for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Temporal plugin for deterministic Time-Provider runtimes.
+ * @module */
 import type { IDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 
-/**
- * The Temporal (`Temporal.ZonedDateTime`) plugin (adapter) for a deterministic
- * (manual/fixed/sequential) Time-Provider. Supports timezones and local time. Use with
- * `createTimeProvider.for(plugin)` from `@time-provider/core/deterministic`.
- */
+/** Temporal (`Temporal.ZonedDateTime`) adapter for deterministic (manual/fixed/sequential) Time-Providers. Supports timezones and local time. */
 export const plugin: IDeterministicPlugin<Temporal.ZonedDateTime> = new DeterministicPlugin();

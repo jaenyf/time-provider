@@ -1,6 +1,5 @@
 /**
- * Ambient declaration for the subset of the TC39 Temporal proposal this plugin uses.
- * (until it is widely and natively available)
+ * Ambient declaration for the Temporal APIs used by this plugin until native support is widespread.
  */
 declare namespace Temporal {
   interface Instant {

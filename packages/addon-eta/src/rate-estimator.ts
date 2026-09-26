@@ -1,12 +1,9 @@
 import type { EtaRateAlgorithm } from "./types.ts";
 
-/**
- * Estimates a completion rate (tracked units per millisecond) from a stream of `(time, done)`
- * samples, per the chosen {@link EtaRateAlgorithm}. Internal - not part of the public API.
- */
+/** Estimates completion rate from `(time, done)` samples. */
 export interface IRateEstimator {
   addSample(time: number, done: number): void;
-  /** `undefined` until enough samples have been seen to estimate a rate. */
+  /** `undefined` until enough samples exist. */
   estimateRate(): number | undefined;
 }
 
@@ -15,7 +12,7 @@ interface Sample {
   readonly done: number;
 }
 
-/** `"complete"` - only ever needs the very first sample and the latest one. */
+/** `"complete"` - uses the first and latest samples. */
 class CompleteRateEstimator implements IRateEstimator {
   #first: Sample | undefined;
   #latest: Sample | undefined;
@@ -37,7 +34,7 @@ class CompleteRateEstimator implements IRateEstimator {
 // consistent amount of real time regardless of how often progress happens to be reported.
 const WINDOWED_DURATION_MS = 10_000;
 
-/** `"windowed"` - only considers samples from the last {@link WINDOWED_DURATION_MS}. */
+/** `"windowed"` - uses samples from the last {@link WINDOWED_DURATION_MS}. */
 class WindowedRateEstimator implements IRateEstimator {
   #samples: Sample[] = [];
 
@@ -65,7 +62,7 @@ class WindowedRateEstimator implements IRateEstimator {
 // classic exponential moving average smoothing constant.
 const SMOOTHING_FACTOR = 0.3;
 
-/** `"smoothed"` - a running average blending each new sample into the previous estimate. */
+/** `"smoothed"` - blends each new sample into the previous estimate. */
 class SmoothedRateEstimator implements IRateEstimator {
   #previous: Sample | undefined;
   #rate: number | undefined;

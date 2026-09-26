@@ -16,29 +16,27 @@ import type {
 } from "../types/types.ts";
 
 interface ICreateTimeProvider<TProvider> {
-  /**
-   * Builds the Time-Provider from the options accumulated so far.
-   */
+  /** Builds the Time-Provider. */
   create(): TProvider;
 }
 
 interface IComposeWithTimezone<TBuilder> {
   /**
-   * Define the timezone used to produce local time.
-   * @param timezone the local timezone as a `TimezoneDefinition`
-   * @returns self
+   * Sets the local timezone.
+   * @param timezone The local timezone.
+   * @returns This builder.
    */
   withTimezone(timezone: TimezoneDefinition): TBuilder;
 
   /**
-   * Define the timezone used to produce local time to be the host timezone.
-   * @returns self
+   * Uses the host timezone.
+   * @returns This builder.
    */
   withHostTimezone(): TBuilder;
 
   /**
-   * Discard any custom local timezone set and restore the default one (UTC)
-   * @returns self
+   * Restores the default timezone (`Etc/UTC`).
+   * @returns This builder.
    */
   withDefaultTimezone(): TBuilder;
 }
@@ -51,210 +49,113 @@ interface IWithRuntime<TDate, TRuntime extends IRuntime<TDate> | IDeterministicR
 // _TDate is a phantom type parameter here: it isn't referenced in this interface's own body,
 // but every consumer relies on it to constrain an addon to a specific TDate (e.g.
 // `registerAddon(addon: IAddon<TDate>)`, `AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>>`).
-/**
- * An addon attached to a runtime by a builder's `use()`.
- */
+/** An addon attached by `.use()`. */
 export interface IAddon<_TDate> extends IDisposable {}
 
-/**
- * An addon that extends a system (real time) Time-Provider with extra, addon-specific
- * commodities (`TExtra`).
- */
+/** An addon for a system Time-Provider. */
 export interface ISystemAddon<TDate> extends IAddon<TDate>, IWithRuntime<TDate, IRuntime<TDate>> {}
-/**
- * An addon that extends a deterministic (manual/fixed/sequential) Time-Provider with extra,
- * addon-specific commodities (`TExtra`).
- */
+
+/** An addon for a deterministic Time-Provider. */
 export interface IDeterministicAddon<TDate>
   extends IAddon<TDate>, IWithRuntime<TDate, IDeterministicRuntime<TDate>> {}
 
-/**
- * What an addon actually contributes to a composed Time-Provider once `.use()`d: `TAddon`'s own
- * shape, with every addon lifecycle member (`.dispose`, `.isDisposed`, ... from `IAddon<TDate>`,
- * plus `.runtime`/`.applyToRuntime` from `IWithRuntime`) subtracted back out. Every addon package
- * intersects `ISystemAddon<TDate>`/`IDeterministicAddon<TDate>` into its own `TAddon` (see e.g.
- * `CronAddon<TDate>` in `@time-provider/addon-cron`'s `addon.ts`) purely so `.use()`'s generic
- * bound below is satisfiable - those lifecycle members were never meant to land on the composed
- * Time-Provider itself, only on the addon instance `.use()` calls `applyToRuntime` on internally.
- * Both `IAddon<TDate>` and `IWithRuntime` have to be listed here explicitly - neither one alone
- * covers every lifecycle member since `.runtime`/`.applyToRuntime` live on the latter, not the
- * former.
- */
+/** Public addon members exposed by a composed Time-Provider. */
 type PublicAddonSurface<TDate, TAddon extends IAddon<TDate>> = Omit<
   TAddon,
   keyof IAddon<TDate> | keyof IWithRuntime<TDate, IRuntime<TDate> | IDeterministicRuntime<TDate>>
 >;
 
-/**
- * What an addon package exports instead of the addon itself: something that produces a fresh
- * `TAddon` on demand. `.use()` calls {@link create} once, at Time-Provider creation time - not
- * when composed - so an addon-builder can accumulate configuration (e.g. the animation-frame
- * addon's `withHostFramesRate`) between `.use()` and `.create()`.
- *
- * Deliberately not generic over `TDate` itself: `TAddon` already carries it (via `IAddon<TDate>`),
- * and a `TDate` parameter unused by any member here would be structurally invariant, defeating
- * `.use()`'s ability to match an addon-builder against the runtime-builder's own `TDate`.
- */
-// biome-ignore lint/suspicious/noExplicitAny: the bound must accept IAddon<TDate> for every TDate,
-// including an unresolved generic one (e.g. inside an addon package's own `addon<TDate>()`
-// factory) - `unknown` rejects those, only `any` is permissive enough here.
+/** Factory that produces a fresh addon. */
 export interface IAddonBuilder<TAddon extends IAddon<any> = IAddon<any>> {
-  /**
-   * Builds the addon from the configuration accumulated so far.
-   */
+  /** Builds the addon. */
   create(): TAddon;
 }
 
-/**
- * The shape an addon-builder factory must have for `.use()` to correctly resolve the addon it
- * produces for the runtime-builder's own `TDate`, rather than the factory's `TDate` collapsing to
- * `unknown`.
- *
- * `typeHint` is never read - it exists purely so TypeScript can infer a passed-in, still-generic
- * `<TDate>(typeHint?: TDate) => IAddonBuilder<SomeAddon<TDate>>` factory's `TDate` from this
- * parameter, the same way it infers `T` for `identity<T>(x: T): T` from a call's argument.
- * Reading `TDate` back out of the *return* type instead - as `.use()` would have to without this
- * parameter, since a factory passed by reference (not called) is otherwise plugged into a
- * concrete, non-generic target type - is a different, unsupported kind of inference: TypeScript
- * collapses `TDate` to `unknown` rather than performing it. Every addon package's own `addon()`
- * factory declares this same parameter to opt into the parameter-position inference instead.
- *
- * `TBuilderExtra` is the opposite case, and is inferred from the return type: an addon-builder
- * that also extends the builder chain itself returns `IAddonBuilder<TAddon> & ItsExtras` (see
- * `IAnimationFrameBuilderExtra` in `@time-provider/addon-animation-frame`), and TypeScript
- * matches that intersection against this one to recover the extras. That works here precisely
- * because the extras are a plain structural shape rather than a type-parameter-position
- * inference site, so it doesn't compete with `typeHint` for `TDate`.
- */
+/** Factory for an addon and optional builder extras. */
 export type AddonBuilderFactory<TDate, TAddon extends IAddon<TDate>, TBuilderExtra = unknown> = (
   typeHint?: TDate,
 ) => IAddonBuilder<TAddon> & TBuilderExtra;
 
-/**
- * What an addon-builder contributes to the *builder chain* once `.use()`d, as opposed to what
- * {@link PublicAddonSurface} contributes to the composed Time-Provider: the addon-builder's own
- * extra chainable configuration methods, with `create()` subtracted back out. `.use()` splices
- * exactly these onto the runtime-builder at runtime (see `spliceAddonExtras` in
- * `builder-base.ts`, which skips the same member), so the type mirrors what actually lands.
- */
+/** Public builder extras exposed by `.use()`. */
 export type PublicBuilderSurface<TBuilderExtra> = Omit<TBuilderExtra, keyof IAddonBuilder>;
 
-/**
- * Start the setup of a manual/fixed/sequential Time-Provider, on top of whatever `TFixed`/
- * `TManual`/`TSequential` builder kind the plugged builder produces.
- */
+/** Selects a deterministic runtime strategy. */
 interface IAsRuntimeBuilders<TFixed, TManual, TSequential> {
-  /**
-   * Start the setup of a manual Time-Provider.
-   */
+  /** Starts a manual Time-Provider. */
   asManual(): TManual;
-  /**
-   * Start the setup of a fixed Time-Provider.
-   */
+  /** Starts a fixed Time-Provider. */
   asFixed(): TFixed;
-  /**
-   * Start the setup of a sequential Time-Provider.
-   */
+  /** Starts a sequential Time-Provider. */
   asSequential(): TSequential;
 }
 
-/**
- * Builds a deterministic Time-Provider whose clock stays fixed at a single point in time.
- */
+/** Builds a fixed-time deterministic Time-Provider. */
 export interface IFixedRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<IFixedRuntimeBuilder<TDate, TExtra>> {
-  /**
-   * Store the fixed time of the fixed time provider
-   */
+  /** Sets the fixed time. */
   withFixedTime(initialDateTime: string | number | TDate): IFixedRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a deterministic, UTC only Time-Provider whose clock stays fixed at a single point in time.
- */
+/** Builds a fixed-time deterministic UTC-only Time-Provider. */
 interface IUtcOnlyFixedRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
-  /**
-   * Store the fixed time of the fixed time provider
-   */
+  /** Sets the fixed time. */
   withFixedTime(
     initialDateTime: string | number | TDate,
   ): IUtcOnlyFixedRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a deterministic Time-Provider whose clock can be moved forward or backward on demand
- * via {@link IAdvanceable.advance}.
- */
+/** Builds a manual deterministic Time-Provider. */
 export interface IManualRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IManualTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<IManualRuntimeBuilder<TDate, TExtra>> {
-  /**
-   * Store the initial time of the manual time provider
-   */
+  /** Sets the initial time. */
   withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a deterministic, UTC only Time-Provider whose clock can be moved forward or backward
- * on demand via {@link IAdvanceable.advance}.
- */
+/** Builds a manual deterministic UTC-only Time-Provider. */
 interface IUtcOnlyManualRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyManualTimeProvider<TDate> & TExtra
 > {
-  /**
-   * Store the initial time of the manual time provider
-   */
+  /** Sets the initial time. */
   withInitialTime(
     initialDateTime: string | number | TDate,
   ): IUtcOnlyManualRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a deterministic Time-Provider that steps through a fixed sequence of times, one per
- * clock read.
- */
+/** Builds a sequential deterministic Time-Provider. */
 export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<ISequentialRuntimeBuilder<TDate, TExtra>> {
-  /**
-   * Store a new sequential time to be provided when getting time
-   */
+  /** Adds a sequential time. */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
   ): ISequentialRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a deterministic, UTC only Time-Provider that steps through a fixed sequence of times,
- * one per clock read.
- */
+/** Builds a sequential deterministic UTC-only Time-Provider. */
 interface IUtcOnlySequentialRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
-  /**
-   * Store a new sequential time to be provided when getting time
-   */
+  /** Adds a sequential time. */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
   ): IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>;
 }
 
-/**
- * Builds a system (real time) Time-Provider for a given plugin, optionally composed with addons.
- */
+/** Builds a system Time-Provider, optionally with addons. */
 export interface ISystemPluggedRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<ITimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<ISystemPluggedRuntimeBuilder<TDate, TExtra>> {
   /**
-   * Extends a Time-Provider with an addon's extra commodities.
-   * @param addonBuilderFactory the addon-builder factory to compose with.
+   * Adds an addon.
+   * @param addonBuilderFactory The addon builder.
    */
   use<TAddon extends ISystemAddon<TDate>, TBuilderExtra = unknown>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
@@ -262,17 +163,14 @@ export interface ISystemPluggedRuntimeBuilder<TDate, TExtra = unknown>
     PublicBuilderSurface<TBuilderExtra>;
 }
 
-/**
- * Builds a system (real time), UTC only Time-Provider for a given plugin, optionally composed
- * with addons.
- */
+/** Builds a system UTC-only Time-Provider, optionally with addons. */
 export interface IUtcOnlySystemPluggedRuntimeBuilder<
   TDate,
   TExtra = unknown,
 > extends ICreateTimeProvider<IUtcOnlyTimeProvider<TDate> & TExtra> {
   /**
-   * Extends a Time-Provider with an addon's extra commodities.
-   * @param addonBuilderFactory the addon-builder factory to compose with.
+   * Adds an addon.
+   * @param addonBuilderFactory The addon builder.
    */
   use<TAddon extends ISystemAddon<TDate>, TBuilderExtra = unknown>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
@@ -280,11 +178,7 @@ export interface IUtcOnlySystemPluggedRuntimeBuilder<
     PublicBuilderSurface<TBuilderExtra>;
 }
 
-/**
- * Entry point for building a deterministic Time-Provider for a given plugin: pick a strategy
- * with {@link IAsRuntimeBuilders.asFixed}, {@link IAsRuntimeBuilders.asManual}, or
- * {@link IAsRuntimeBuilders.asSequential}, optionally composing addons first with {@link use}.
- */
+/** Entry point for building a deterministic Time-Provider. */
 export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
   extends
     IComposeWithTimezone<IDeterministicPluggedRuntimeBuilder<TDate, TExtra>>,
@@ -294,8 +188,8 @@ export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
       ISequentialRuntimeBuilder<TDate, TExtra>
     > {
   /**
-   * Extends a Time-Provider with an addon's extra commodities.
-   * @param addonBuilderFactory the addon-builder factory to compose with.
+   * Adds an addon.
+   * @param addonBuilderFactory The addon builder.
    */
   use<TAddon extends IDeterministicAddon<TDate>, TBuilderExtra = unknown>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
@@ -303,11 +197,7 @@ export interface IDeterministicPluggedRuntimeBuilder<TDate, TExtra = unknown>
     PublicBuilderSurface<TBuilderExtra>;
 }
 
-/**
- * Entry point for building a deterministic, UTC only Time-Provider for a given plugin: pick a
- * strategy with {@link IAsRuntimeBuilders.asFixed}, {@link IAsRuntimeBuilders.asManual}, or
- * {@link IAsRuntimeBuilders.asSequential}, optionally composing addons first with {@link use}.
- */
+/** Entry point for building a deterministic UTC-only Time-Provider. */
 export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
   TDate,
   TExtra = unknown,
@@ -317,8 +207,8 @@ export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
   IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>
 > {
   /**
-   * Extends a Time-Provider with an addon's extra commodities.
-   * @param addonBuilderFactory the addon-builder factory to compose with.
+   * Adds an addon.
+   * @param addonBuilderFactory The addon builder.
    */
   use<TAddon extends IDeterministicAddon<TDate>, TBuilderExtra = unknown>(
     addonBuilderFactory: AddonBuilderFactory<TDate, TAddon, TBuilderExtra>,
@@ -326,36 +216,34 @@ export interface IUtcOnlyDeterministicPluggedRuntimeBuilder<
     PublicBuilderSurface<TBuilderExtra>;
 }
 
-/**
- * Factory to create a system (real time) runtime builder.
- */
+/** Factory for system runtime builders. */
 export interface IRuntimeBuilder {
   /**
-   * Setup a Time-Provider for a given plugin (adapter)
-   * @param adapter The instance of the plugin (adapter) to use.
+   * Creates a Time-Provider builder.
+   * @param adapter The plugin.
    */
   for<TDate>(adapter: IUtcOnlySystemPlugin<TDate>): IUtcOnlySystemPluggedRuntimeBuilder<TDate>;
+
   /**
-   * Setup a Time-Provider for a given plugin (adapter)
-   * @param adapter The instance of the plugin (adapter) to use.
+   * Creates a Time-Provider builder.
+   * @param adapter The plugin.
    */
   for<TDate>(adapter: ISystemPlugin<TDate>): ISystemPluggedRuntimeBuilder<TDate>;
 }
 
-/**
- * Factory to create a deterministic runtime builder.
- */
+/** Factory for deterministic runtime builders. */
 export interface IDeterministicRuntimeBuilder {
   /**
-   * Setup a deterministic Time-Provider for a given plugin (adapter)
-   * @param adapter The instance of the plugin (adapter) to use.
+   * Creates a deterministic Time-Provider builder.
+   * @param adapter The plugin.
    */
   for<TDate>(
     adapter: IUtcOnlyDeterministicPlugin<TDate>,
   ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate>;
+
   /**
-   * Setup a deterministic Time-Provider for a given plugin (adapter)
-   * @param adapter The instance of the plugin (adapter) to use.
+   * Creates a deterministic Time-Provider builder.
+   * @param adapter The plugin.
    */
   for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedRuntimeBuilder<TDate>;
 }

@@ -57,12 +57,7 @@ function stageFraction(stage: NormalizedStage, completed: number): number {
   return stage.total > 0 ? completed / stage.total : 1;
 }
 
-/**
- * Backs both {@link IProgressEtaTrackBuilder}/{@link IProgressEtaTracker} (a single implicit
- * stage, `withKnownTotal`'s sugar - see {@link EtaTrackBuilder.withKnownTotal}) and
- * {@link IStagedProgressEtaTrackBuilder}/{@link IStagedProgressEtaTracker} - one implementation,
- * exposed through two narrower public types depending on which entry point built it.
- */
+/** Implements single- and multi-stage progress ETA tracking. */
 class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   /*
     The clock is reached through `runtime.clock` and the timers through

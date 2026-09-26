@@ -1,19 +1,8 @@
-/**
- * Caches `Intl.DateTimeFormat` instances by timezone. Constructing one is expensive enough that
- * any adapter reading wall-clock fields through `Intl` wants to do it once per timezone, not once
- * per call - the cache is static so that sharing spans every adapter instance in the process.
- *
- * Not calendar-specific: `Intl.DateTimeFormat` formats non-Gregorian calendars too (via its own
- * `calendar` option), so this stays out of {@link DefaultCalendarScheme} and is reusable by any
- * future `Intl`-backed adapter.
- */
+/** Caches `Intl.DateTimeFormat` instances by timezone. */
 export class IntlFormatterCache {
   static #formatters = new Map<string, Intl.DateTimeFormat>();
 
-  /**
-   * The wall-clock (`year`/`month`/`day`/`hour`/`minute`, `h23`) formatter for `timezone`,
-   * created on first use and reused afterwards.
-   */
+  /** Returns the cached wall-clock formatter for `timezone`. */
   static wallClockFormatter(timezone: string): Intl.DateTimeFormat {
     let formatter = IntlFormatterCache.#formatters.get(timezone);
     if (!formatter) {

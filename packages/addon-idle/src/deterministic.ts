@@ -1,9 +1,5 @@
-/**
- * The Idle addon for Time-Provider's deterministic runtimes: idle callbacks run when the
- * test drains them.
- *
- * @module
- */
+/** Deterministic Idle addon; idle callbacks run when explicitly drained.
+ * @module */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import { DeterministicIdleScheduler } from "./deterministic-idle-scheduler.ts";
 import type { WithDeterministicIdleApi } from "./types.ts";
@@ -29,12 +25,9 @@ class DeterministicIdleAddonBuilder<TDate> extends AddonBuilderBase<
 }
 
 /**
- * The idle addon-builder for a deterministic Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)` to add an `idle` property backed by the runtime's
- * own tagged-timer index, drained on demand via `timeProvider.scheduler.idle.drain()` rather than the
- * runtime's own clock.
- * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
- * `AddonBuilderFactory` in `@time-provider/core`.
+ * Idle addon builder for deterministic Time-Providers. Adds `idle`, backed by the runtime's
+ * tagged-timer index and drained on demand via `timeProvider.scheduler.idle.drain()`.
+ * @param typeHint Unused; lets `.use()` infer `TDate`. See `AddonBuilderFactory`.
  */
 export function addon<TDate>(typeHint?: TDate): IAddonBuilder<DeterministicIdleAddon<TDate>> {
   return new DeterministicIdleAddonBuilder<TDate>(typeHint);

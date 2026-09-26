@@ -19,9 +19,7 @@ export class RuntimeHelper {
     throw new Error("Operation not supported");
   }
   /**
-   * Number of days in `date`'s (UTC) month, used to clamp day-of-month when advancing/going back by
-   * months or years so e.g. Jan 31 + 1 month lands on Feb 28, matching every other plugin's
-   * calendar-aware arithmetic instead of native `Date`'s day-overflow behavior.
+   * Returns the number of days in `date`'s UTC month, for clamping month/year arithmetic.
    */
   /* @__INLINE__ */
   static daysInMonth(date: Date): number {

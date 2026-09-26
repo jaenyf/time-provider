@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Fails when a package's documentation falls short of what JSR scores it on:
 //   1. every symbol an entry point exports has JSDoc;
-//   2. every entry point other than "." has a `@module` doc ("." falls back
-//      to the README on JSR).
+//   2. every entry point has a `@module` doc. JSR would fall back to the
+//      README for ".", but every entry point carries one for consistency.
 // `deno doc --lint` is stricter than JSR (every member, no private types
 // referenced by public ones), so this reads `deno doc --json` instead.
 //
@@ -51,7 +51,7 @@ for (const [entry, file] of Object.entries(exports)) {
   const { nodes } = JSON.parse(output) as { nodes: Record<string, DenoDocModule> };
   const [{ module_doc, symbols }] = Object.values(nodes);
 
-  if (entry !== "." && !module_doc) {
+  if (!module_doc) {
     problems.push(`${entry}: no @module doc`);
   }
   // `export default x` is a reference to `x`'s declaration, documented when `x` is.

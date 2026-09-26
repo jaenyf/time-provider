@@ -1,16 +1,13 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { ICompatApi, IPerformanceEntry } from "./types.ts";
 
-/**
- * Implements {@link ICompatApi} that performs underlying calls to core.
- */
+/** Implements {@link ICompatApi} using core APIs. */
 export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
   #isDisposed: boolean;
   #readsHostTimeline: boolean;
 
   /**
-   * @param readsHostTimeline whether the `getEntries*` readers list the host's whole performance
-   * timeline, as on a system Time-Provider, rather than only the runtime's marks and measures.
+   * @param readsHostTimeline Whether readers use the host performance timeline.
    */
   constructor(readsHostTimeline: boolean) {
     super();
@@ -32,11 +29,7 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
     AddonHelper.extendRuntimeWithProperty(runtime, "compat", this.#createFacade(), this);
   }
 
-  /**
-   * The performance members read the runtime's clock and timings at call time rather than
-   * capturing them here: an addon has no runtime to read them from until `applyToRuntime` - which
-   * builds this facade - has returned.
-   */
+  /** Creates the compatibility facade from the attached runtime. */
   #createFacade(): ICompatApi<TDate> {
     const clock = () => this.runtimeClock;
     const timings = () => this.runtimeTimings;

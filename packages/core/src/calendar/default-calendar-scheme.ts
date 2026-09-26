@@ -18,10 +18,7 @@ import { IntlFormatterCache } from "./intl-formatter-cache.ts";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * The default shared Gregorian/`Intl` {@link ICalendarScheme} every plugin gets unless it provides its
- * own - see {@link ITimeConverter.calendarScheme}.
- */
+/** Default shared Gregorian/`Intl` {@link ICalendarScheme}. */
 export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
   TDate,
   DefaultCalendarSchemeMonthName,
@@ -83,15 +80,12 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     return this.#converter.convertToUtcDate(DefaultCalendarScheme.#composeAt(fields, timezone));
   }
 
-  /**
-   * Treats `fields` as UTC and lets `Date.UTC`'s own calendar math carry any overflow (e.g. minute
-   * 60, or month 13) - a pure Gregorian calendar calculator, unrelated to any real timezone.
-   */
+  /** Treats `fields` as UTC and applies Gregorian overflow. */
   static #fieldsAsUtcMs(fields: ComposableCalendarSchemeFields): number {
     return Date.UTC(fields.year, fields.month - 1, fields.day, fields.hour, fields.minute);
   }
 
-  /** The wall-clock fields `timestampMs` represents in `timezone`, per the host's ICU data. */
+  /** Returns the wall-clock fields at `timestampMs` in `timezone`. */
   static #decomposeAt(timestampMs: number, timezone: string): CalendarSchemeFields {
     const parts = IntlFormatterCache.wallClockFormatter(timezone).formatToParts(
       new Date(timestampMs),
@@ -111,10 +105,7 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     };
   }
 
-  /**
-   * The UTC offset (in ms, east-positive) `timezone` observes at real instant `instant` - how far
-   * `instant`'s own wall-clock reading, naively re-interpreted as UTC, sits from `instant` itself.
-   */
+  /** Returns the UTC offset observed by `timezone` at `instant`. */
   static #offsetAt(instant: number, timezone: string): number {
     return (
       DefaultCalendarScheme.#fieldsAsUtcMs(DefaultCalendarScheme.#decomposeAt(instant, timezone)) -
@@ -122,21 +113,7 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     );
   }
 
-  /**
-   * Resolves `fields` (intended as local time in `timezone`) to the epoch timestamp it represents.
-   * Real IANA timezones never carry two DST transitions within a couple of days of each other, so
-   * sampling the offset a full day on either side of `fields`' naive "treat it as UTC" guess safely
-   * brackets whichever single transition (if any) could be in play right around `fields` itself.
-   * When both offsets agree, there's no transition nearby and the instant is unambiguous. When they
-   * don't, `fields` sits on the transition itself - checking which offset(s) actually produce
-   * `fields` back (not just picking whichever the arithmetic happens to reach first) tells them
-   * apart:
-   * - if *neither* candidate reads back as `fields`, it's a "spring forward" gap (`fields` never
-   *   occurs) - resolves to the later of the two, the first valid instant once the new offset takes
-   *   effect.
-   * - if *both* do, it's a "fall back" overlap (`fields` occurs twice) - resolves to the earlier of
-   *   the two, the first time it's valid.
-   */
+  /** Resolves local `fields` in `timezone` to an epoch timestamp. */
   static #composeAt(fields: ComposableCalendarSchemeFields, timezone: string): EpochMilliseconds {
     const target = DefaultCalendarScheme.#fieldsAsUtcMs(fields);
     const offsetBefore = DefaultCalendarScheme.#offsetAt(target - ONE_DAY_MS, timezone);

@@ -1,3 +1,5 @@
+/** System ETA estimation addon.
+ * @module */
 import { addon } from "./addon.ts";
 
 export type {

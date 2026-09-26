@@ -1,14 +1,10 @@
-/**
- * The native `Date` plugin for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Native `Date` plugin for deterministic Time-Provider runtimes.
+ * @module */
 import type { IUtcOnlyDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 
 /**
- * The native `Date` plugin (adapter) for a deterministic (manual/fixed/sequential)
- * Time-Provider. Timezone-naive (UTC only) - has no external date library dependency. Use with
- * `createTimeProvider.for(plugin)` from `@time-provider/core/deterministic`.
+ * Native `Date` adapter for deterministic (manual/fixed/sequential) Time-Providers.
+ * UTC only; no external date library dependency. Use with `createTimeProvider.for(plugin)`.
  */
 export const plugin: IUtcOnlyDeterministicPlugin<Date> = new DeterministicPlugin();

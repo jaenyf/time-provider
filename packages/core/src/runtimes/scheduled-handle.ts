@@ -1,9 +1,7 @@
 import { type IRuntime, type IScheduledHandle, type ScheduledHandleKind } from "../types/types.ts";
 import { BaseRuntime } from "./runtime-base.ts";
 
-/**
- * The {@link IScheduledHandle} a system runtime returns, wrapping the host's own timer handle.
- */
+/** {@link IScheduledHandle} wrapping a system timer handle. */
 export class ScheduledHandle<TDate, TNativeHandle> implements IScheduledHandle {
   #kind: ScheduledHandleKind;
   #owner: IRuntime<TDate>;

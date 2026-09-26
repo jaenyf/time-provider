@@ -7,18 +7,13 @@ import type {
 } from "@time-provider/core";
 import { CalendarSchemeFieldsHelper } from "@time-provider/core";
 
-/**
- * What a single cron field accepts, entirely derived from the runtime's {@link ICalendarScheme}
- */
+/** Bounds and names accepted by one cron field. */
 interface FieldBounds {
   readonly min: number;
   readonly max: number;
-  /** Names accepted for this field, in calendar order - `names[0]` denotes {@link min}. */
+  /** Accepted names in calendar order. */
   readonly names?: readonly string[];
-  /**
-   * Whether {@link max} is an alias for {@link min} rather than a distinct value - the day-of-week
-   * field's usual cron convention (`7` means the same day as `0` on a 7-day week).
-   */
+  /** Whether `max` aliases `min`. */
   readonly wrapsMaxToMin?: boolean;
 }
 
@@ -52,9 +47,7 @@ interface ParsedField {
   readonly isWildcard: boolean;
 }
 
-/**
- * A cron expression parsed by {@link parseCronExpression}: the values each field matches.
- */
+/** Parsed values for each cron field. */
 export interface ParsedCronExpression {
   readonly minute: ParsedField;
   readonly hour: ParsedField;
@@ -67,12 +60,12 @@ function throwInvalidCronExpression(expression: string, reason: string): never {
   throw new Error(`Invalid cron expression "${expression}": ${reason}`);
 }
 
-/** Collapses a {@link FieldBounds.wrapsMaxToMin} alias onto the value it aliases. */
+/** Applies a field's `max`→`min` alias. */
 function applyMaxAlias(value: number, bounds: FieldBounds): number {
   return bounds.wrapsMaxToMin && value === bounds.max ? bounds.min : value;
 }
 
-/** The number `name` denotes for this field, or `undefined` if the calendar doesn't name it. */
+/** Resolves a field name, or `undefined` if unnamed. */
 function resolveName(name: string, bounds: FieldBounds): number | undefined {
   if (bounds.names === undefined) {
     return undefined;
@@ -159,12 +152,8 @@ function parseField(fieldText: string, bounds: FieldBounds, expression: string):
 }
 
 /**
- * Parses a standard 5-field cron expression. Each field accepts `*`, a single value, a `a-b`
- * range, a `.../n` step, or a comma-separated list of any of those - e.g. `"0 9 * * MON-FRI"`,
- * `"*\/15 8-18 * * *"`.
- *
- * Every field's valid range and accepted names come from `adapter`, so the same syntax describes whatever calendar backs the runtime.
- * @throws if `expression` doesn't have exactly 5 whitespace-separated fields, or any field is malformed or out of range for `adapter`'s calendar.
+ * Parses a standard 5-field cron expression.
+ * @throws If `expression` is malformed or out of range.
  */
 export function parseCronExpression<TDate, TMonthName extends string, TWeekdayName extends string>(
   expression: string,
@@ -189,46 +178,37 @@ export function parseCronExpression<TDate, TMonthName extends string, TWeekdayNa
 
 //#region JSON spec
 
-/**
- * The month names accepted by a runtime backed by the default Gregorian calendar. A runtime whose
- * plugin supplies a different {@link ICalendarScheme} names its months differently - pass that
- * calendar's names as {@link ICronSpec}'s first type argument to type-check against those instead.
- */
+/** Default Gregorian month names. */
 export type MonthName = DefaultCalendarSchemeMonthName;
-/** The day-of-week names accepted by the default Gregorian calendar - see {@link MonthName}. */
+
+/** Default Gregorian weekday names. */
 export type DayOfWeekName = DefaultCalendarSchemeWeekdayName;
-/** A string that looks like a number (e.g. `"9"`), accepted anywhere a number is - the runtime
- * parses it the same way as the equivalent number. */
+
+/** Numeric string accepted as a number. */
 export type NumericString = `${number}`;
 
-/** A `{ from, to, step? }` range for a purely numeric field (`minute`, `hour`, `dayOfMonth`). */
+/** Numeric field range. */
 export interface CronNumericRangeSpec {
   readonly from: number | NumericString;
   readonly to: number | NumericString;
   readonly step?: number;
 }
 
-/** A `{ from, to, step? }` range for the `month` field - `from`/`to` accept a month name
- * anywhere a number is accepted. */
+/** Month field range. */
 export interface CronMonthRangeSpec<TMonthName extends string = MonthName> {
   readonly from: number | NumericString | TMonthName;
   readonly to: number | NumericString | TMonthName;
   readonly step?: number;
 }
 
-/** A `{ from, to, step? }` range for the `dayOfWeek` field - `from`/`to` accept a day-of-week
- * name anywhere a number is accepted. */
+/** Weekday field range. */
 export interface CronDayOfWeekRangeSpec<TWeekdayName extends string = DayOfWeekName> {
   readonly from: number | NumericString | TWeekdayName;
   readonly to: number | NumericString | TWeekdayName;
   readonly step?: number;
 }
 
-/**
- * The `minute`/`hour`/`dayOfMonth` field value in {@link ICronSpec}: the string `"*"` for every
- * value, a single number or {@link NumericString}, a {@link CronNumericRangeSpec}, or an array
- * mixing any of those.
- */
+/** Numeric cron field value. */
 export type CronNumericFieldSpec =
   | "*"
   | number
@@ -236,11 +216,7 @@ export type CronNumericFieldSpec =
   | CronNumericRangeSpec
   | (number | NumericString | CronNumericRangeSpec)[];
 
-/**
- * The `month` field value in {@link ICronSpec}: the string `"*"` for every value, a single
- * number, {@link NumericString}, or month name, a {@link CronMonthRangeSpec}, or an array mixing
- * any of those.
- */
+/** Month cron field value. */
 export type CronMonthFieldSpec<TMonthName extends string = MonthName> =
   | "*"
   | number
@@ -249,11 +225,7 @@ export type CronMonthFieldSpec<TMonthName extends string = MonthName> =
   | CronMonthRangeSpec<TMonthName>
   | (number | NumericString | TMonthName | CronMonthRangeSpec<TMonthName>)[];
 
-/**
- * The `dayOfWeek` field value in {@link ICronSpec}: the string `"*"` for every value, a single
- * number, {@link NumericString}, or day-of-week name, a {@link CronDayOfWeekRangeSpec}, or an
- * array mixing any of those.
- */
+/** Weekday cron field value. */
 export type CronDayOfWeekFieldSpec<TWeekdayName extends string = DayOfWeekName> =
   | "*"
   | number
@@ -262,16 +234,7 @@ export type CronDayOfWeekFieldSpec<TWeekdayName extends string = DayOfWeekName> 
   | CronDayOfWeekRangeSpec<TWeekdayName>
   | (number | NumericString | TWeekdayName | CronDayOfWeekRangeSpec<TWeekdayName>)[];
 
-/**
- * A JSON-friendly alternative to a cron expression string.
- * The same 5 fields a cron expression encodes, addressed by name instead of position.
- * Each field defaults to `"*"` (every value) when omitted;
- * `month` and `dayOfWeek` are typed to only accept their own names, so passing e.g. a
- * day-of-week name to `hour` is a compile-time error rather than a runtime one.
- *
- * The name types default to the Gregorian calendar's, which is what every plugin shipped today
- * uses; a runtime backed by a different calendar parameterizes them with its own names.
- */
+/** JSON-friendly 5-field cron specification. */
 export interface ICronSpec<
   TMonthName extends string = MonthName,
   TWeekdayName extends string = DayOfWeekName,
@@ -283,10 +246,7 @@ export interface ICronSpec<
   readonly dayOfWeek?: CronDayOfWeekFieldSpec<TWeekdayName>;
 }
 
-/**
- * The structural shape every {@link ICronSpec} field value has in common, regardless of which names it accepts.
- * Used internally so the parsing logic below is written once.
- */
+/** Common structural shape of cron field values. */
 type AnyCronFieldSpec =
   | number
   | string
@@ -364,9 +324,8 @@ function parseSpecField(
 }
 
 /**
- * Parses a JSON cron spec - see {@link ICronSpec}. Field ranges and names come from `adapter`,
- * exactly as for {@link parseCronExpression}.
- * @throws if any field value is malformed or out of range for `adapter`'s calendar.
+ * Parses a JSON cron spec; ranges and names come from `calendarScheme`.
+ * @throws If a field is malformed or out of range.
  */
 export function parseCronSpec<TDate, TMonthName extends string, TWeekdayName extends string>(
   /*
@@ -388,8 +347,7 @@ export function parseCronSpec<TDate, TMonthName extends string, TWeekdayName ext
 }
 
 /**
- * Translates a cron expression string into its {@link ICronSpec} JSON equivalent, e.g. to accept
- * either representation from a caller while only ever storing/transmitting the JSON one.
+ * Converts a cron expression to its {@link ICronSpec} equivalent.
  */
 export function cronExpressionToSpec<TDate, TMonthName extends string, TWeekdayName extends string>(
   expression: string,
@@ -442,13 +400,8 @@ function dayMatches(parsed: ParsedCronExpression, fields: CalendarSchemeFields):
 const MAX_SEARCH_YEARS_AHEAD = 10;
 
 /**
- * Computes the next `TDate`, strictly after `from`, at which `parsed` matches - in `timezone`'s
- * wall-clock calendar, per `adapter`. On a wall-clock instant that a DST transition skips (a
- * "spring forward" gap), resolves to the first instant after the gap; on one a DST transition
- * repeats (a "fall back" overlap), resolves to the earlier of the two occurrences - see
- * {@link ICalendarScheme.compose}.
- * @throws if no match is found within a multi-year search bound (the expression can never match,
- * e.g. a day-of-month/month combination that never occurs, like `"0 0 31 2 *"`).
+ * Computes the next matching `TDate` strictly after `from`.
+ * @throws If no match is found within the search bound.
  */
 export function computeNextOccurrence<TDate>(
   parsed: ParsedCronExpression,

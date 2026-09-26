@@ -1,8 +1,6 @@
 import type { ITimingEntry, ITimingMeasureOptions, ITimingsFilter } from "../types/types.ts";
 
-/**
- * Whether `entry` is selected by `filter` - see {@link ITimingsFilter}.
- */
+/** Whether `entry` matches `filter`. */
 export function matchesTimingsFilter(entry: ITimingEntry, filter?: ITimingsFilter): boolean {
   return (
     (filter?.name === undefined || entry.name === filter.name) &&
@@ -10,9 +8,7 @@ export function matchesTimingsFilter(entry: ITimingEntry, filter?: ITimingsFilte
   );
 }
 
-/**
- * Throws the same `TypeError` on every runtime when `options` cannot describe one interval.
- */
+/** Validates that `options` describe one interval. */
 export function assertMeasureOptions(options?: ITimingMeasureOptions): void {
   if (options?.duration === undefined) {
     return;

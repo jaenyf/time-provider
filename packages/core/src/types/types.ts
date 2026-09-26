@@ -1,6 +1,5 @@
 /**
- * All pure, type-only contracts of the library are here.
- * None of them cause JavaScript to be emited, so it has no effect on bundle size or tree-shaking.
+ * Type-only contracts.
  */
 
 import type { IAddon } from "../builders/builders.ts";
@@ -13,17 +12,14 @@ import type { IDurationSpec } from "../helpers/branded-types.ts";
 //#region General branded types
 declare const __brand: unique symbol;
 type Brand<T, B> = T & { readonly [__brand]: B };
-/**
- * A length of time in milliseconds, as built by {@link toDuration}.
- */
+
+/** Milliseconds as built by {@link toDuration}. */
 export type DurationMilliseconds = Brand<number, "DurationMilliseconds">;
-/**
- * An instant in milliseconds since the Unix epoch, as built by {@link toInstant}.
- */
+
+/** Epoch milliseconds as built by {@link toInstant}. */
 export type EpochMilliseconds = Brand<number, "EpochMilliseconds">;
-/**
- * A point on a runtime's monotonic timeline, in milliseconds since its time origin.
- */
+
+/** Milliseconds on a monotonic timeline. */
 export type MonotonicMilliseconds = Brand<number, "MonotonicMilliseconds">;
 //#endregion
 
@@ -45,144 +41,91 @@ export interface IHasAbortSignal {
 // ---------------------------------------------------------------------------
 
 interface IWithTimings {
-  /**
-   * Get the marks and measures recorded on this runtime's monotonic clock.
-   */
+  /** Get the current timings. */
   get timings(): ITimings;
 }
 
-/**
- * The kind of a {@link ITimingEntry}.
- */
+/** The kind of a {@link ITimingEntry}. */
 export type TimingKind = "mark" | "measure";
 
-/**
- * A single entry recorded by {@link ITimings}: a mark or a measure.
- */
+/** A mark or measure recorded by {@link ITimings}. */
 export interface ITimingEntry {
-  /**
-   * The name given to the entry when it was created.
-   */
+  /** The entry name. */
   readonly name: string;
-  /**
-   * The kind of entry this is. Named as on a native entry, so an entry can be passed where one
-   * is expected.
-   */
+
+  /** The entry kind. */
   readonly entryType: TimingKind;
-  /**
-   * The point, relative to {@link IMonotonicClock.monotonicOrigin}, at which the entry starts.
-   */
+
+  /** The start time from {@link IMonotonicClock.monotonicOrigin}. */
   readonly startTime: MonotonicMilliseconds;
-  /**
-   * The duration of the entry, in milliseconds. Always `0` for a mark.
-   */
+
+  /** The duration in milliseconds; `0` for marks. */
   readonly duration: DurationMilliseconds;
-  /**
-   * The metadata given when the entry was created, or `null`.
-   */
+
+  /** The entry metadata, or `null`. */
   readonly detail: unknown;
-  /**
-   * Returns the entry's fields as a plain object, as the native entries do, so that
-   * `JSON.stringify` gives the same output for both.
-   */
+
+  /** Returns the entry as a plain object. */
   toJSON(): unknown;
 }
 
-/**
- * A named instant recorded via {@link ITimings.mark}.
- */
+/** A named instant recorded via {@link ITimings.mark}. */
 export interface ITimingMark extends ITimingEntry {
   readonly entryType: "mark";
 }
 
-/**
- * A named timespan recorded via {@link ITimings.measure}: a start instant plus a duration.
- */
+/** A named timespan recorded via {@link ITimings.measure}. */
 export interface ITimingMeasure extends ITimingEntry {
   readonly entryType: "measure";
 }
 
-/**
- * Options for {@link ITimings.mark}.
- */
+/** Options for {@link ITimings.mark}. */
 export interface ITimingMarkOptions {
-  /**
-   * The instant to record. Defaults to {@link IMonotonicClock.monotonicNow}.
-   */
+  /** The instant; defaults to {@link IMonotonicClock.monotonicNow}. */
   startTime?: MonotonicMilliseconds;
 
-  /**
-   * Arbitrary metadata associated with the mark.
-   */
+  /** Mark metadata. */
   detail?: unknown;
 }
 
-/**
- * Options for {@link ITimings.measure}.
- */
+/** Options for {@link ITimings.measure}. */
 export interface ITimingMeasureOptions {
-  /**
-   * The start of the timespan: a mark name or an instant. Defaults to the monotonic origin.
-   */
+  /** Start mark/time; defaults to the monotonic origin. */
   start?: string | MonotonicMilliseconds;
 
-  /**
-   * The end of the timespan: a mark name or an instant. Defaults to
-   * {@link IMonotonicClock.monotonicNow}.
-   */
+  /** End mark/time; defaults to {@link IMonotonicClock.monotonicNow}. */
   end?: string | MonotonicMilliseconds;
 
-  /**
-   * Duration to use instead of calculating from start/end.
-   */
+  /** Overrides the calculated duration. */
   duration?: DurationMilliseconds;
 
-  /**
-   * Arbitrary metadata associated with the measure.
-   */
+  /** Measure metadata. */
   detail?: unknown;
 }
 
-/**
- * Selects entries in {@link ITimings.entries} and {@link ITimings.clear}. An omitted field
- * matches every entry.
- */
+/** Filters {@link ITimings.entries} and {@link ITimings.clear}. */
 export interface ITimingsFilter {
   name?: string;
-  /**
-   * Matched against each entry's `entryType`.
-   */
+
+  /** Matches `entryType`. */
   kind?: TimingKind;
 }
 
-/**
- * Records marks and measures on the runtime's monotonic clock - see
- * {@link IMonotonicClock.monotonicNow}.
- *
- * On a system runtime this is the native performance timeline, so marks and measures that other
- * code records there are listed too.
- */
+/** Records marks and measures on the monotonic clock. */
 export interface ITimings {
-  /**
-   * Records a named instant.
-   */
+  /** Records a named instant. */
   mark(name: string, options?: ITimingMarkOptions): ITimingMark;
 
   /**
-   * Records a named timespan. With no options, it runs from the monotonic origin to now.
-   * @throws if a named mark does not exist, if `start`, `end` and `duration` are all given, or
-   * if `duration` is given without `start` or `end`.
+   * Records a named timespan; without options, origin→now.
+   * @throws If a mark is missing or the options are invalid.
    */
   measure(name: string, options?: ITimingMeasureOptions): ITimingMeasure;
 
-  /**
-   * Returns the marks and measures matching `filter`, in the order they were recorded.
-   */
+  /** Returns matching entries in record order. */
   entries(filter?: ITimingsFilter): readonly ITimingEntry[];
 
-  /**
-   * Removes exactly the entries that {@link entries} returns for the same `filter`.
-   */
+  /** Removes matching entries. */
   clear(filter?: ITimingsFilter): void;
 }
 
@@ -193,140 +136,89 @@ export interface ITimings {
 // Clock
 // ---------------------------------------------------------------------------
 
-/**
- * An IANA timezone name (e.g. `"Etc/UTC"`, `"Europe/Paris"`) identifying a local timezone.
- */
+/** An IANA timezone name. */
 export type TimezoneDefinition = string;
 
-/**
- * Describe the time elements of a manual clock to advance.
- *
- * Note: When more than one element is set, they are applied to the current time in a
- * fixed order :  years, months,days, hours, minutes, seconds, milliseconds.
- * This order is important because, for calendar-variable elements (`months`, `years`), combining them with other
- * elements can give a different result than a different application order would.
- */
+/** Time elements to advance. */
 export interface IAdvanceOptions {
-  /** Number of years to add (or subtract, if negative). */
+  /** Years to add or subtract. */
   years?: number;
-  /** Number of months to add (or subtract, if negative). */
+  /** Months to add or subtract. */
   months?: number;
-  /** Number of days to add (or subtract, if negative). */
+  /** Days to add or subtract. */
   days?: number;
-  /** Number of hours to add (or subtract, if negative). */
+  /** Hours to add or subtract. */
   hours?: number;
-  /** Number of minutes to add (or subtract, if negative). */
+  /** Minutes to add or subtract. */
   minutes?: number;
-  /** Number of seconds to add (or subtract, if negative). */
+  /** Seconds to add or subtract. */
   seconds?: number;
-  /** Number of milliseconds to add (or subtract, if negative). */
+  /** Milliseconds to add or subtract. */
   milliseconds?: number;
 }
 
-/**
- * A clock capable of moving its own time forward or backward.
- */
+/** A clock that can move forward or backward. */
 interface IAdvanceable<TSelf> {
   /**
-   * Moves this clock's time forward (or backward, using negative values) by
-   * the given amount.
-   *
-   * If timers backed by this clock have pending timer callbacks,
-   * any of them that become due as a result are run
-   * synchronously, in-line, before `advance()` returns - see
-   * {@link ITimers} for details on this execution model.
-   * @throws if the runtime has been disposed.
+   * Moves the clock by the given amount.
+   * @throws If the runtime is disposed.
    */
   advance(advanceOptions: IAdvanceOptions): TSelf;
 }
 
 interface IWithClock<TClock> {
-  /**
-   * Get the current configured clock
-   */
+  /** Get the current clock. */
   get clock(): TClock;
 }
 
-/**
- * A clock that exposes timestamps/ticks.
- */
+/** A clock exposing timestamps and ticks. */
 interface ITimestampClock {
-  /**
-   * Returns the current time stamp.
-   * Note: This operation is guaranteed to be side effects free.
-   * On sequential clock, it does not consume the next queued value, and never runs due timer callbacks.
-   * {@link IUtcOnlyClock.utcNow}/{@link ILocalOnlyClock.localNow} are the reads that do.
-   * Use this instead when "now" is only needed to compute something (e.g. a delay), not to observe the passage of time.
-   */
+  /** Returns the current timestamp without side effects. */
   timestampNow(): EpochMilliseconds;
 }
 
-/**
- * A clock that exposes a monotonic read, which wall-clock corrections never move.
- */
+/** A clock exposing a monotonic read. */
 interface IMonotonicClock {
-  /**
-   * Returns the milliseconds elapsed since {@link monotonicOrigin}, on a clock that only moves
-   * forward on a system runtime. On a deterministic runtime it follows the clock, so a manual
-   * clock moved backward with `advance()` moves it backward too.
-   * Note: This operation is guaranteed to be side effects free, like
-   * {@link ITimestampClock.timestampNow}.
-   */
+  /** Returns milliseconds since {@link monotonicOrigin}. */
   monotonicNow(): MonotonicMilliseconds;
-  /**
-   * The Unix timestamp {@link monotonicNow} counts from: when the runtime was created. It never
-   * changes, as a native `performance.timeOrigin` never changes for its context.
-   */
+
+  /** The Unix timestamp corresponding to {@link monotonicNow} = `0`. */
   readonly monotonicOrigin: EpochMilliseconds;
 }
 
-/**
- * A clock that only exposes UTC time.
- */
+/** A clock exposing UTC time only. */
 interface IUtcOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
-  /**
-   * Returns the time as of now in UTC.
-   * Note: On a sequential clock, this read also makes time advance and may run due timer callbacks.
-   * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
-   */
+  /** Returns the current UTC time. */
   utcNow(): TDate;
 }
 
 interface ILocalOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
-  /**
-   * Returns the time as of now for the local timezone of the runtime.
-   * If no local timezone has been specified when building it, is assumed to be "Etc/UTC" (aka. Greenwich timezone).
-   * Note: On a sequential clock, this read also makes time advance and may run due timer callbacks.
-   * See {@link ITimestampClock.timestampNow} for a side-effect-free read.
-   */
+  /** Returns the current local time. */
   localNow(): TDate;
+
   /**
-   * Redefine the local timezone of the runtime.
-   *
-   * @param timezone the new local `timezone` to be used by the runtime.
+   * Redefines the local timezone.
+   * @param timezone The new timezone.
    */
   withTimezone(timezone: TimezoneDefinition): this;
+
   /**
-   * Retrieves the host timezone.
-   * @returns a `TimezoneDefinition` describing the host timezone.
+   * Returns the host timezone.
+   * @returns The host timezone.
    */
   hostTimezone(): TimezoneDefinition;
 
   /**
-   * Get the current defined local timezone.
-   * @returns the current defined local timezone as a `TimezoneDefinition`.
+   * Returns the current local timezone.
+   * @returns The current timezone.
    */
   get timezone(): TimezoneDefinition;
 }
 
-/**
- * A clock exposing both UTC and local time, backed by a configurable local timezone.
- */
+/** A clock exposing UTC and local time. */
 export interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 
-/**
- * A clock whose time can be moved forward or backward on demand. See {@link IAdvanceable.advance}.
- */
+/** A clock that can be moved forward or backward. */
 export interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManualClock<TDate>> {}
 
 interface IUtcOnlyManualClock<TDate>
@@ -339,12 +231,7 @@ interface IUtcOnlyManualClock<TDate>
 // Calendar Scheme
 // ---------------------------------------------------------------------------
 
-/**
- * The wall-clock calendar fields a `TDate` decomposes into, in whatever calendar system that
- * `TDate`'s {@link ICalendarScheme} represents - not necessarily Gregorian. `weekday` is derived
- * (0-based, calendar-defined), not an independent field - see {@link ComposableCalendarSchemeFields}
- * for the subset {@link ICalendarScheme.compose} actually accepts.
- */
+/** The wall-clock calendar fields of a `TDate`. */
 export interface CalendarSchemeFields {
   readonly year: number;
   readonly month: number;
@@ -354,82 +241,53 @@ export interface CalendarSchemeFields {
   readonly weekday: number;
 }
 
-/**
- * The fields {@link ICalendarScheme.compose} accepts - every {@link CalendarSchemeFields} member
- * except the derived `weekday`.
- */
+/** The calendar fields accepted by {@link ICalendarScheme.compose}. */
 export type ComposableCalendarSchemeFields = Omit<CalendarSchemeFields, "weekday">;
 
-/**
- * This interface acts as an adapter between any plugin calendar and any calendar-related code consummers.
- * It provides calendar-related introspection/arithmetic for a `TDate`, delegated to whichever date library backs it -
- * lets calendar-consuming code (e.g. the cron addon) work against any plugin's own calendar
- * system and timezone data instead of assuming Gregorian/`Intl`. Optional on
- * {@link ITimeConverter}: a plugin only implements it to diverge from the shared default (e.g. to
- * honor its own bundled timezone data) or to support an operation the default can't. When a
- * plugin doesn't provide one, {@link IWithCalendarScheme.calendarScheme} falls back to that default.
- *
- * Nothing here assumes a specific calendar system: the unit sizes are all queried rather than
- * assumed (a calendar with 36 months of 10 days, or a day of 10 hours, is describable), and the
- * month/weekday names are whatever this calendar calls them - `TMonthName`/`TWeekdayName` default
- * to the Gregorian ones so the overwhelmingly common case needs no type arguments at all.
- *
- * Every member is cheap to implement even for a plugin with nothing to diverge on: the
- * constant-shaped ones are one-liners, and the rest are thin forwards to an accessor/method the
- * date library already exposes natively (`.year()`, `.add()`/`.plus()`, ...) - none of it is
- * calendar math reimplemented per plugin, just a uniform shape generic code can call across
- * incompatible APIs.
- */
+/** Adapts a plugin calendar to calendar-consuming code. */
 export interface ICalendarScheme<
   TDate,
   TMonthName extends string = DefaultCalendarSchemeMonthName,
   TWeekdayName extends string = DefaultCalendarSchemeWeekdayName,
 > {
-  /** Converts `date` to epoch milliseconds - same as {@link ITimeConverter.convertToTimestamp}. */
+  /** Converts `date` to epoch milliseconds. */
   toTimestamp(date: TDate): EpochMilliseconds;
-  /** Converts epoch milliseconds to a `TDate` - same as {@link ITimeConverter.convertToUtcDate}. */
+
+  /** Converts epoch milliseconds to `TDate`. */
   fromTimestamp(timestampMs: EpochMilliseconds): TDate;
-  /** Number of minutes in an hour for this calendar's timekeeping - `60` for Gregorian. */
+
+  /** Minutes per hour; `60` for Gregorian. */
   minutesPerHour(): number;
-  /** Number of hours in a day for this calendar's timekeeping - `24` for Gregorian. */
+
+  /** Hours per day; `24` for Gregorian. */
   hoursPerDay(): number;
-  /** Number of days in a week for this calendar - `7` for Gregorian. */
+
+  /** Days per week; `7` for Gregorian. */
   daysPerWeek(): number;
-  /** Number of months in a year for this calendar - `12` for Gregorian. */
+
+  /** Months per year; `12` for Gregorian. */
   monthsPerYear(): number;
-  /** The largest a day-of-month value can ever be for this calendar - `31` for Gregorian. */
+
+  /** Maximum day-of-month; `31` for Gregorian. */
   maxDayOfMonth(): number;
-  /**
-   * The names this calendar gives its months, in calendar order - index 0 names month 1. Empty
-   * when this calendar names no months, in which case only numeric month values are accepted.
-   * Matched case-insensitively by consumers.
-   */
+
+  /** Month names in calendar order. */
   readonly monthNames: readonly TMonthName[];
-  /** The names this calendar gives its weekdays, in calendar order - see {@link monthNames}. */
+
+  /** Weekday names in calendar order. */
   readonly weekdayNames: readonly TWeekdayName[];
-  /**
-   * Normalizes possibly out-of-range `fields` (e.g. minute 65, month 13) via this calendar's own
-   * carry rules, same as how out-of-range arguments to `new Date(...)` roll over - timezone-
-   * independent, pure calendar-field arithmetic, unrelated to any real instant. Distinct from
-   * {@link ICalendarScheme.compose}: repeatedly normalizing (rather than composing) while
-   * searching for a candidate date, and only resolving to a real `TDate`/instant once a match is
-   * found, keeps a DST transition from perturbing every step along the way to the answer instead
-   * of just the answer itself.
-   */
+
+  /** Normalizes calendar fields. */
   normalize(fields: ComposableCalendarSchemeFields): CalendarSchemeFields;
-  /** Decomposes `date` into its wall-clock calendar fields, as observed in `timezone`. */
+
+  /** Decomposes `date` into calendar fields. */
   decompose(date: TDate, timezone: TimezoneDefinition): CalendarSchemeFields;
-  /**
-   * Constructs a `TDate` from `fields` (already in range - see {@link ICalendarScheme.normalize}
-   * for fields that might not be), interpreted as local time in `timezone`. For a timezone-aware
-   * adapter, this is where DST ambiguity (a skipped or repeated wall-clock instant) is resolved.
-   */
+
+  /** Builds a `TDate` from calendar fields in `timezone`. */
   compose(fields: ComposableCalendarSchemeFields, timezone: TimezoneDefinition): TDate;
 }
 
-/**
- * A {@link ICalendarScheme} using the English month and weekday names.
- */
+/** An {@link ICalendarScheme} using English month and weekday names. */
 export interface IDefaultCalendarScheme<TDate> extends ICalendarScheme<
   TDate,
   DefaultCalendarSchemeMonthName,
@@ -444,47 +302,29 @@ export interface IDefaultCalendarScheme<TDate> extends ICalendarScheme<
 // ---------------------------------------------------------------------------
 
 interface IWithConverter<TConverter> {
-  /**
-   * Get the current configured converter
-   */
+  /** Get the current converter. */
   get converter(): TConverter;
 }
 
-/**
- * A converter that only exposes conversion to UTC.
- */
+/** A converter exposing UTC conversion only. */
 export interface IUtcOnlyConverter<TDate> {
   /**
-   * Converts `time` into a UTC time `TDate` instance.
-   *
-   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-converted
-   * `TDate`. Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
-   * output) are not supported and may throw or produce an unspecified
-   * result depending on the underlying date library.
-   * @returns a TDate expressed as UTC time.
+   * Converts `time` to UTC `TDate`.
+   * @returns `time` as UTC.
    */
   convertToUtc(time: string | number | TDate): TDate;
 }
 
-/**
- * A converter that only exposes conversion to local time.
- */
+/** A converter exposing local conversion only. */
 interface ILocalOnlyConverter<TDate> {
   /**
-   * Converts `time` into a local time `TDate` instance.
-   *
-   * Accepts an ISO 8601 time string, an epoch-milliseconds number, or an already-converted
-   * `TDate`. Other string formats (e.g. RFC 2822, or a date library's own non-ISO `toString()`
-   * output) are not supported and may throw or produce an unspecified
-   * result depending on the underlying date library.
-   * @returns a TDate expressed as local time.
+   * Converts `time` to local `TDate`.
+   * @returns `time` as local time.
    */
   convertToLocal(time: string | number | TDate): TDate;
 }
 
-/**
- * Converts raw input into either UTC or local `TDate` instances.
- */
+/** Converts raw input to UTC or local `TDate`. */
 export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyConverter<TDate> {}
 //#endregion
 
@@ -493,85 +333,49 @@ export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyC
 // Timers
 // ---------------------------------------------------------------------------
 
-/**
- * Discriminates what a {@link IScheduledHandle} was obtained from.
- */
+/** Discriminates the source of an {@link IScheduledHandle}. */
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
 export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
 export const SCHEDULED_TIMER_KIND_RECURRING = 2;
-/**
- * Which timer method a {@link IScheduledHandle} was obtained from.
- */
+
+/** Identifies the timer method used to obtain an {@link IScheduledHandle}. */
 export enum ScheduledHandleKind {
   timeout = SCHEDULED_TIMER_KIND_TIMEOUT,
   interval = SCHEDULED_TIMER_KIND_INTERVAL,
   recurring = SCHEDULED_TIMER_KIND_RECURRING,
 }
 
-/**
- * Time handle returned by any of the timer methods ({@link ITimers.once}, {@link ITimers.every} and
- * {@link ITimers.recurring}).
- *
- * A handle with nothing left to run becomes disposed on its own: a {@link ITimers.once} handle
- * once its callback has executed, and a {@link ITimers.recurring} handle once its callback
- * returns `false`. Calling `dispose()` yourself afterward is a harmless no-op.
- */
+/** Handle returned by timer methods. */
 export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}
 
-/**
- * Additional options to create a timer.
- */
+/** Timer creation options. */
 export interface ITimerOptions {
   signal?: AbortSignal;
 }
 
-/**
- * Schedules and cancels timeouts/intervals/recurring.
- *
- * Execution model depends on the clock strategy backing these timers:
- * - On a **system** clock, timer callbacks run asynchronously via the real, native
- *   timers, exactly like in production code.
- * - On a **manual** or **sequential** clock, callbacks run synchronously,
- *   in-line, as soon as they become due - as a direct side effect of
- *   {@link ITimers.once}/{@link ITimers.every} itself
- *   (e.g. a delay of `0` or a negative value is already due when armed),
- *   or of any call that moves the clock forward (`advance()`,
- *   `clock.localNow()`, `clock.utcNow()`). There is no event loop tick
- *   involved: a due callback has already run by the time the triggering call
- *   returns.
- * - On a **fixed** clock, time never advances, so no timer callback is
- *   ever due - it never runs, regardless of the delay it was registered with.
- *
- * On a manual/sequential clock, a callback that throws is handled to match what a native timer
- * callback throwing would actually do in the current environment: the error propagates out of the
- * triggering call in a Node-like environment, and is logged via `console.error` and swallowed in a
- * browser-like one.
- */
+/** Schedules and cancels timers. */
 export interface ITimers {
   /**
    * One-shot timer.
-   * @throws if the runtime has been disposed.
+   * @throws If the runtime is disposed.
    */
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /**
-   * A "promise" variant of the `once` one-shot.
-   *
-   * A disposed runtime is reported by throwing, as the other timers do, rather than by handing
-   * back a rejected promise.
-   * @throws if the runtime has been disposed.
+   * Promise variant of {@link ITimers.once}.
+   * @throws If the runtime is disposed.
    */
   wait(delay: IDurationSpec, options?: ITimerOptions): Promise<void>;
 
   /**
    * Fixed-interval timer.
-   * @throws if the runtime has been disposed.
+   * @throws If the runtime is disposed.
    */
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle;
 
   /**
-   * Dynamic recurrence: The callback determines the next interval; `false` stops it.
-   * @throws if the runtime has been disposed.
+   * Dynamic recurrence; `false` stops it.
+   * @throws If the runtime is disposed.
    */
   recurring(
     callback: () => IDurationSpec | false,
@@ -581,9 +385,7 @@ export interface ITimers {
 }
 
 interface IWithTimers {
-  /**
-   * Get the current configured timers
-   */
+  /** Get the current timers. */
   get timers(): ITimers;
 }
 
@@ -598,73 +400,29 @@ interface IClearTimers {
 // Microtasks
 // ---------------------------------------------------------------------------
 
-/**
- * Queues callbacks to run at the next microtask checkpoint, before control returns to the event
- * loop.
- *
- * Execution model depends on the clock strategy backing this:
- * - On a **system** clock this is the host's own `queueMicrotask`, so a queued callback shares
- *   the one real microtask queue with promise continuations, in FIFO order.
- * - On a **manual**, **sequential**, or **fixed** clock, a queued callback goes onto this runtime's
- *   own queue instead. Because there is no task boundary to hook the checkpoint to, it runs at
- *   every point that stands in for one: after each due timer callback, before any
- *   `once`/`every`/`recurring` call and any clock read or `advance()` that may run due callbacks,
- *   and on demand via {@link IDeterministicMicrotasks.drain}. A callback queued right before one
- *   of those calls may therefore run earlier than it would on a real host, where it would wait
- *   for the current task to finish. Microtasks are not time-driven, so a fixed clock still runs
- *   them even though it never runs a timer.
- *
- * A microtask may itself queue further microtasks, and a checkpoint keeps going until the queue
- * is empty. A microtask that unconditionally re-queues itself therefore never lets the checkpoint
- * finish.
- *
- * Disposing a deterministic runtime clears its still-queued microtasks along with its timers, so
- * none of them run afterward. A system runtime cannot do the same: a queued callback is already
- * sitting on the host's own microtask queue, which has no notion of this runtime, so it still
- * runs on schedule even after the Time-Provider it was queued through is disposed.
- */
+/** Queues callbacks for the next microtask checkpoint. */
 export interface IMicrotasks {
   /**
-   * Queues `callback` to run at the next microtask checkpoint.
-   * @param callback the function to run at the next checkpoint.
-   * @throws if the runtime has been disposed.
+   * Queues `callback` for the next checkpoint.
+   * @param callback The callback to run.
+   * @throws If the runtime is disposed.
    */
   queue(callback: () => void): void;
 }
 
-/**
- * The {@link IMicrotasks} of a deterministic (fixed/manual/sequential) runtime, which additionally
- * lets a test run the microtask checkpoint on demand. See {@link IMicrotasks} for the execution
- * model shared with a system runtime's.
- */
+/** Deterministic {@link IMicrotasks} with manual draining. */
 export interface IDeterministicMicrotasks extends IMicrotasks {
-  /**
-   * Runs every callback queued through {@link IMicrotasks.queue} on this runtime, in order, until
-   * the queue is empty - including microtasks queued by a microtask. Synchronous: they have all
-   * run by the time this returns.
-   *
-   * A deterministic runtime already runs a checkpoint before its due timers and after each due
-   * callback, so this is only needed to observe a microtask queued from a test's own code, where
-   * there is no boundary for the runtime to hook.
-   *
-   * Only the callbacks this runtime was asked to queue are run. Pending promise continuations
-   * (`await`, `.then()`) live on the host's real microtask queue, which no synchronous call can
-   * drain - they still settle when the surrounding stack unwinds, as they do in production.
-   */
+  /** Runs queued callbacks until empty. */
   drain(): void;
 }
 
 interface IWithMicrotasks {
-  /**
-   * Get the current configured microtasks
-   */
+  /** Get the current microtasks. */
   get microtasks(): IMicrotasks;
 }
 
 interface IWithDeterministicMicrotasks {
-  /**
-   * Get the current configured deterministic microtasks
-   */
+  /** Get the current deterministic microtasks. */
   get microtasks(): IDeterministicMicrotasks;
 }
 
@@ -675,35 +433,19 @@ interface IWithDeterministicMicrotasks {
 // Scheduler
 // ---------------------------------------------------------------------------
 
-/**
- * Everything that schedules a callback to run later, in one place: the timer primitives under
- * `timers` (see {@link ITimers}) and the microtask checkpoint under `microtasks`.
- *
- * Addons extend this facet rather than the root of the Time-Provider:
- * `@time-provider/addon-cron` adds `scheduler.cron`, `@time-provider/addon-idle` adds
- * `scheduler.idle` and `@time-provider/addon-animation-frame` adds `scheduler.animation`. Every
- * one of them hands back the same {@link IScheduledHandle} {@link ITimers} does, so a single
- * disposal story covers all of them.
- */
+/** Schedules timers and microtasks. */
 export interface IScheduler extends IWithTimers, IWithMicrotasks {}
 
-/**
- * The {@link IScheduler} of a deterministic (fixed/manual/sequential) runtime, whose microtasks
- * can additionally be run on demand - see {@link IDeterministicMicrotasks.drain}.
- */
+/** Deterministic scheduler with manual microtask draining. */
 export interface IDeterministicScheduler extends IWithTimers, IWithDeterministicMicrotasks {}
 
 interface IWithScheduler {
-  /**
-   * Get the current configured scheduler
-   */
+  /** Get the current scheduler. */
   get scheduler(): IScheduler;
 }
 
 interface IWithDeterministicScheduler {
-  /**
-   * Get the current configured deterministic scheduler
-   */
+  /** Get the current deterministic scheduler. */
   get scheduler(): IDeterministicScheduler;
 }
 //#endregion
@@ -713,47 +455,28 @@ interface IWithDeterministicScheduler {
 // Runtime
 // ---------------------------------------------------------------------------
 
-/**
- * Handles the time conversions for a Runtime. This is only used for Plugins.
- */
+/** Handles Runtime time conversions; used by plugins. */
 export interface ITimeConverter<TDate> {
-  /**
-   * Converts `time` to epoch milliseconds.
-   */
+  /** Converts `time` to epoch milliseconds. */
   convertToTimestamp(time: string | EpochMilliseconds | number | TDate): EpochMilliseconds;
-  /**
-   * Converts `time` to a `TDate` instance expressed in UTC.
-   */
+
+  /** Converts `time` to UTC `TDate`. */
   convertToUtcDate(time: string | EpochMilliseconds | TDate): TDate;
-  /**
-   * Converts `time` to a `TDate` instance expressed in the given local `timezone`.
-   */
+
+  /** Converts `time` to local `TDate`. */
   convertToLocalDate(timezone: TimezoneDefinition, time: string | EpochMilliseconds | TDate): TDate;
-  /**
-   * This plugin's own {@link ICalendarScheme}, when it diverges from (or supports an operation
-   * the) shared Gregorian/`Intl` default (can't). Omit to inherit that default.
-   */
+
+  /** This plugin's {@link ICalendarScheme}, when provided. */
   readonly calendarScheme?: ICalendarScheme<TDate>;
 }
 
-/**
- * Supplies the {@link ICalendarScheme} backing a runtime's date library: the plugin's own, when
- * it provides one via {@link ITimeConverter.calendarScheme}, otherwise a shared Gregorian/`Intl`
- * default.
- *
- * Deliberately on the runtime rather than on {@link IUtcOnlyClock}: calendar-consuming addons
- * (e.g. cron) are handed the runtime itself by `applyToRuntime`, so they reach the adapter with
- * full type safety from here, while an ordinary consumer holding an {@link ITimeProvider} never
- * sees it on `clock`.
- */
+/** Provides the runtime's calendar scheme. */
 export interface IWithCalendarScheme<TDate> {
-  /** This runtime's calendar scheme - see {@link ICalendarScheme}. */
+  /** This runtime's calendar scheme; see {@link ICalendarScheme}. */
   get calendarScheme(): ICalendarScheme<TDate>;
 }
 
-/**
- * A runtime backed by a timezone-aware clock.
- */
+/** A runtime backed by a timezone-aware clock. */
 export interface IRuntime<TDate>
   extends
     IDisposable,
@@ -766,15 +489,12 @@ export interface IRuntime<TDate>
     ITimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
 }
 
-/**
- * A deterministic (fixed/manual/sequential) runtime backed by a timezone-aware clock.
- */
+/** A deterministic runtime backed by a timezone-aware clock. */
 export interface IDeterministicRuntime<TDate>
   extends
     IDisposable,
@@ -787,10 +507,10 @@ export interface IDeterministicRuntime<TDate>
     IDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
+
   specific(
     tag: unknown,
     kind: ScheduledHandleKind,
@@ -798,12 +518,11 @@ export interface IDeterministicRuntime<TDate>
     callback: () => void,
     intervalDelay?: number,
   ): IScheduledHandle;
+
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
 }
 
-/**
- * A runtime backed by an UTC only clock.
- */
+/** A runtime backed by a UTC-only clock. */
 export interface IUtcOnlyRuntime<TDate>
   extends
     IDisposable,
@@ -816,15 +535,12 @@ export interface IUtcOnlyRuntime<TDate>
     IUtcOnlyTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
 }
 
-/**
- * A deterministic (fixed/manual/sequential) runtime backed by an UTC only clock.
- */
+/** A deterministic runtime backed by a UTC-only clock. */
 export interface IUtcOnlyDeterministicRuntime<TDate>
   extends
     IDisposable,
@@ -837,15 +553,12 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
     IUtcOnlyDeterministicTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
 }
 
-/**
- * A runtime backed by a manual clock.
- */
+/** A runtime backed by a manual clock. */
 export interface IManualRuntime<TDate>
   extends
     IDisposable,
@@ -860,10 +573,10 @@ export interface IManualRuntime<TDate>
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
+
   specific(
     tag: unknown,
     kind: ScheduledHandleKind,
@@ -871,12 +584,11 @@ export interface IManualRuntime<TDate>
     callback: () => void,
     intervalDelay?: number,
   ): IScheduledHandle;
+
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
 }
 
-/**
- * A runtime backed by an UTC only manual clock.
- */
+/** A runtime backed by a UTC-only manual clock. */
 export interface IUtcOnlyManualRuntime<TDate>
   extends
     IDisposable,
@@ -891,9 +603,8 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
   registerAddon(addon: IAddon<TDate>): void;
-  /**
-   * @throws if this runtime has been disposed.
-   */
+
+  /** @throws If this runtime is disposed. */
   assertIsNotDisposed(): void;
 }
 //#endregion
@@ -903,10 +614,7 @@ export interface IUtcOnlyManualRuntime<TDate>
 // Time provider facades
 // ---------------------------------------------------------------------------
 
-/**
- * The public facade of a Time-Provider: exposes its `clock`, `scheduler`, `converter` and
- * `timings`, backed by a timezone-aware clock.
- */
+/** Public facade of a timezone-aware Time-Provider. */
 export interface ITimeProvider<TDate>
   extends
     IDisposable,
@@ -916,10 +624,7 @@ export interface ITimeProvider<TDate>
     IWithConverter<IConverter<TDate>>,
     IWithTimings {}
 
-/**
- * The public facade of a deterministic Time-Provider: exposes its `clock`, `scheduler`,
- * `converter` and `timings`, backed by a timezone-aware clock.
- */
+/** Public facade of a deterministic timezone-aware Time-Provider. */
 export interface IDeterministicTimeProvider<TDate>
   extends
     IDisposable,
@@ -929,9 +634,7 @@ export interface IDeterministicTimeProvider<TDate>
     IWithConverter<IConverter<TDate>>,
     IWithTimings {}
 
-/**
- * The public facade of a Time-Provider backed by a timezone-naive (UTC only) clock.
- */
+/** Public facade of a UTC-only Time-Provider. */
 export interface IUtcOnlyTimeProvider<TDate>
   extends
     IDisposable,
@@ -941,9 +644,7 @@ export interface IUtcOnlyTimeProvider<TDate>
     IWithConverter<IUtcOnlyConverter<TDate>>,
     IWithTimings {}
 
-/**
- * The public facade of a deterministic Time-Provider backed by a timezone-naive (UTC only) clock.
- */
+/** Public facade of a deterministic UTC-only Time-Provider. */
 export interface IUtcOnlyDeterministicTimeProvider<TDate>
   extends
     IDisposable,
@@ -953,9 +654,7 @@ export interface IUtcOnlyDeterministicTimeProvider<TDate>
     IWithConverter<IUtcOnlyConverter<TDate>>,
     IWithTimings {}
 
-/**
- * The public facade of a Time-Provider backed by a manual (advanceable), timezone-aware clock.
- */
+/** Public facade of a manual timezone-aware Time-Provider. */
 export interface IManualTimeProvider<TDate>
   extends
     IDisposable,
@@ -965,10 +664,7 @@ export interface IManualTimeProvider<TDate>
     IWithConverter<IConverter<TDate>>,
     IWithTimings {}
 
-/**
- * The public facade of a Time-Provider backed by a manual (advanceable), timezone-naive
- * (UTC only) clock.
- */
+/** Public facade of a manual UTC-only Time-Provider. */
 export interface IUtcOnlyManualTimeProvider<TDate>
   extends
     IDisposable,
@@ -984,63 +680,44 @@ export interface IUtcOnlyManualTimeProvider<TDate>
 // Plugins
 // ---------------------------------------------------------------------------
 
-/**
- * A plugin capable of producing a system (real time) runtime, backed by a
- * timezone-aware date library.
- */
+/** A plugin producing system runtimes with a timezone-aware date library. */
 export interface ISystemPlugin<TDate> {
-  /**
-   * Whether or not this plugin supports timezones and local time.
-   */
+  /** Whether the plugin supports timezones and local time. */
   readonly supportsLocalTime: true;
-  /**
-   * Create a runtime for system time and timers
-   */
+
+  /** Creates a system-time runtime. */
   createSystemRuntime(localTimezone: TimezoneDefinition): IRuntime<TDate>;
 }
 
-/**
- * A plugin capable of producing a system (real time) runtime, backed by a
- * timezone-naive date library (UTC only).
- */
+/** A plugin producing UTC-only system runtimes. */
 export interface IUtcOnlySystemPlugin<TDate> {
-  /**
-   * Whether or not this plugin supports timezones and local time.
-   */
+  /** Whether the plugin supports timezones and local time. */
   readonly supportsLocalTime: false;
-  /**
-   * Create a UTC only runtime for system time and timers
-   */
+
+  /** Creates a UTC-only system-time runtime. */
   createSystemRuntime(): IUtcOnlyRuntime<TDate>;
 }
 
-/**
- * A plugin capable of deterministic runtimes,
- * backed by a timezone-aware date library.
- */
+/** A plugin producing deterministic timezone-aware runtimes. */
 export interface IDeterministicPlugin<TDate> {
-  /**
-   * Whether or not this plugin supports timezones and local time.
-   */
+  /** Whether the plugin supports timezones and local time. */
   readonly supportsLocalTime: true;
-  /**
-   * Create a runtime for manual time and timers
-   */
+
+  /** Creates a manual-time runtime. */
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IManualRuntime<TDate>;
-  /**
-   * Create a runtime for fixed time.
-   */
+
+  /** Creates a fixed-time runtime. */
   createFixedRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IDeterministicRuntime<TDate>;
+
   /**
-   * Create a runtime for sequential time and timers.
-   *
-   * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
+   * Creates a sequential-time runtime.
+   * @param sequentialTimes Empty means the clock stays at the Unix epoch.
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
@@ -1048,31 +725,24 @@ export interface IDeterministicPlugin<TDate> {
   ): IDeterministicRuntime<TDate>;
 }
 
-/**
- * A plugin capable of producing deterministic runtimes,
- * backed by a timezone-naive date library (UTC only).
- */
+/** A plugin producing deterministic UTC-only runtimes. */
 export interface IUtcOnlyDeterministicPlugin<TDate> {
-  /**
-   * Whether or not this plugin supports timezones and local time.
-   */
+  /** Whether the plugin supports timezones and local time. */
   readonly supportsLocalTime: false;
-  /**
-   * Create a runtime for manual time and timers.
-   */
+
+  /** Creates a manual-time runtime. */
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IUtcOnlyManualRuntime<TDate>;
-  /**
-   * Create a runtime for fixed time and timers.
-   */
+
+  /** Creates a fixed-time runtime. */
   createFixedRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
   ): IUtcOnlyDeterministicRuntime<TDate>;
+
   /**
-   * Create a runtime for sequential time and timers.
-   *
-   * @param sequentialTimes the sequence to step through. If empty, the resulting clock stays at the Unix epoch.
+   * Creates a sequential-time runtime.
+   * @param sequentialTimes Empty means the clock stays at the Unix epoch.
    */
   createSequentialRuntime(
     sequentialTimes: (string | EpochMilliseconds | number | TDate)[],

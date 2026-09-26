@@ -8,21 +8,9 @@ import type {
 import moment from "moment-timezone";
 
 /**
- * The calendar scheme for this plugin, overriding only the two timezone-dependent operations so
- * that cron (and anything else calendar-aware) resolves wall-clock times against
- * **moment-timezone's own bundled tzdata**, exactly like the rest of a moment-timezone app -
- * rather than against the host's ICU, which the shared default uses.
- *
- * The two datasets genuinely disagree: moment-timezone ships a static copy that a consumer pins
- * and updates on their own schedule, while ICU travels with the JS engine, so zones whose rules
- * changed recently (Morocco's Ramadan shifts, the Canadian permanent-DST proposals, ...) can
- * resolve an hour apart between them. `createTimeProvider.for(momentTimezonePlugin)` is a promise
- * that the library behaves the way moment-timezone does, and that has to include which tzdata wins.
- *
- * Everything else is inherited: moment is a Gregorian calendar library, so the unit sizes, month/
- * weekday names and field-carry rules are the default's already. `normalize` in particular must
- * *not* be routed through moment - `moment.utc({ minute: 60 })` yields an invalid moment rather
- * than carrying into the next hour the way the contract requires.
+ * Calendar scheme using moment-timezone's bundled tzdata for timezone-dependent operations.
+ * Other calendar behavior inherits from {@link DefaultCalendarScheme}; normalization remains
+ * default-based.
  */
 export class MomentTimezoneCalendarScheme
   extends DefaultCalendarScheme<moment.Moment>
@@ -41,10 +29,9 @@ export class MomentTimezoneCalendarScheme
   }
 
   /**
-   * `fields` arrives already in range (see {@link ICalendarScheme.compose}), which is what makes
-   * moment's non-carrying object form safe to use here. moment-timezone resolves a DST gap forward
-   * past it and a DST overlap to the earlier of the two occurrences - the same resolution the
-   * shared default documents, so this override changes *which tzdata* decides, not the rules.
+   * Composes already-normalized fields with moment-timezone's tzdata.
+   * DST gaps resolve forward and overlaps to the earlier occurrence, matching the shared default.
+   * @see {@link ICalendarScheme.compose}
    */
   override compose(
     fields: ComposableCalendarSchemeFields,

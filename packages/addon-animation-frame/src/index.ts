@@ -1,3 +1,5 @@
+/** System Animation Frame addon.
+ * @module */
 import { addon } from "./addon.ts";
 
 export type {

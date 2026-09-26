@@ -1,3 +1,5 @@
+/** Idle addon for Time-Provider's system runtime.
+ * @module */
 import { addon } from "./addon.ts";
 
 export type { IIdleApi, WithIdleApi } from "./types.ts";

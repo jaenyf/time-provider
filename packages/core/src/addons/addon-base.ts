@@ -8,9 +8,7 @@ import type {
   ITimers,
 } from "../types/types.ts";
 
-/**
- * Base class for an addon: gives it access to the runtime it is attached to, once initialized.
- */
+/** Base addon with access to its attached runtime. */
 export abstract class AddonBase<
   TDate,
   TRuntime extends IRuntime<TDate> | IDeterministicRuntime<TDate>,
@@ -33,32 +31,22 @@ export abstract class AddonBase<
     return this.#runtime;
   }
 
-  /**
-   * This runtime's timers, resolved once. An addon reaches them through the `scheduler` facet
-   * (`runtime.scheduler.timers`), so caching the result keeps a scheduling hot path from walking
-   * that chain on every call.
-   */
+  /** This runtime's timers, cached on first access. */
   protected get runtimeTimers(): ITimers {
     return (this.#timers ??= this.runtime.scheduler.timers);
   }
 
-  /**
-   * This runtime's clock, resolved once - see {@link runtimeTimers} for why it is cached.
-   */
+  /** This runtime's clock, cached on first access. */
   protected get runtimeClock(): IClock<TDate> {
     return (this.#clock ??= this.runtime.clock);
   }
 
-  /**
-   * This runtime's microtasks, resolved once - see {@link runtimeTimers} for why it is cached.
-   */
+  /** This runtime's microtasks, cached on first access. */
   protected get runtimeMicrotasks(): IMicrotasks {
     return (this.#microtasks ??= this.runtime.scheduler.microtasks);
   }
 
-  /**
-   * This runtime's timings, resolved once - see {@link runtimeTimers} for why it is cached.
-   */
+  /** This runtime's timings, cached on first access. */
   protected get runtimeTimings(): ITimings {
     return (this.#timings ??= this.runtime.timings);
   }

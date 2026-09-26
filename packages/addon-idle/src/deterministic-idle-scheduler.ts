@@ -8,30 +8,21 @@ import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/
 import type { IDeterministicIdleApi } from "./types.ts";
 
 /**
- * Tags every entry this addon registers - one constant is enough since `.use()` only ever lets
- * one idle addon compose onto a given runtime (a second `.use(idleAddon)` call fails outright,
- * trying to redefine the same `idle` property).
+ * Tag for all entries registered by this addon.
  */
 const IDLE_TAG = Symbol("idle");
 
 /**
- * How far out a `request()`'s placeholder entry is registered - far enough that it never becomes
- * due on its own during a test's lifetime, so only `drain()` ever removes it.
+ * Delay used for `request()` placeholders; they never become due during normal tests.
  */
 const FAR_FUTURE_DELAY = { days: 365 * 100 };
 
 /**
- * Implements {@link IDeterministicIdleApi} via the runtime's own `specific()`/
- * `takeOutSpecificCallbacks()` capability (see `IDeterministicRuntime` in `@time-provider/core`):
- * `request()` registers a real, far-future-due entry in the shared due-heap under this addon's
- * own tag, and `drain(maxCount?)` retrieves up to `maxCount` of them directly - oldest first -
- * through that tag's own index, without scanning any other pending timer/interval/recurring entry
- * sharing the heap.
+ * Implements {@link IDeterministicIdleApi} using the runtime's `specific()` and
+ * `takeOutSpecificCallbacks()` APIs.
  *
- * Every deterministic runtime kind (fixed/manual/sequential) shares the same `specific()`/
- * `takeOutSpecificCallbacks()` implementation and behaves identically here - unlike a design
- * relying on the runtime's own due-draining to fire a placeholder, which a fixed clock disables
- * entirely (see `BaseFixedRuntime.disableDueDraining` in core).
+ * `request()` registers a far-future entry under this addon's tag.
+ * `drain(maxCount?)` removes and runs up to `maxCount`, oldest first.
  */
 export class DeterministicIdleScheduler<TDate>
   extends AddonBase<TDate, IDeterministicRuntime<TDate>>

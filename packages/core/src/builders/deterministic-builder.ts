@@ -50,10 +50,12 @@ class FixedRuntimeBuilder<TDate>
     this.#fixedDateTime = undefined;
     this.#addonBuilders = addonBuilders;
   }
+
   withFixedTime(initialDateTime: string | number | TDate): IFixedRuntimeBuilder<TDate> {
     this.#fixedDateTime = initialDateTime;
     return this;
   }
+
   create(): IDeterministicTimeProvider<TDate> {
     const initialTime = undefined !== this.#fixedDateTime ? this.#fixedDateTime : 0;
     const runtime = this.plugin.supportsLocalTime
@@ -85,6 +87,7 @@ class ManualRuntimeBuilder<TDate>
     this.#initialDateTime = initialDateTime;
     return this;
   }
+
   create(): IManualTimeProvider<TDate> {
     const initialTime = undefined !== this.#initialDateTime ? this.#initialDateTime : 0;
     const runtime = this.plugin.supportsLocalTime
@@ -156,11 +159,13 @@ class DeterministicPluggedRuntimeBuilder<TDate>
       new ManualRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
     );
   }
+
   asFixed(): IFixedRuntimeBuilder<TDate> {
     return Object.freeze(
       new FixedRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
     );
   }
+
   asSequential(): ISequentialRuntimeBuilder<TDate> {
     return Object.freeze(
       new SequentialRuntimeBuilder(this.plugin, this.localTimezone, this.#addonBuilders),
@@ -176,7 +181,9 @@ class DeterministicRuntimeBuilder implements IDeterministicRuntimeBuilder {
   for<TDate>(
     adapter: IUtcOnlyDeterministicPlugin<TDate>,
   ): IUtcOnlyDeterministicPluggedRuntimeBuilder<TDate>;
+
   for<TDate>(adapter: IDeterministicPlugin<TDate>): IDeterministicPluggedRuntimeBuilder<TDate>;
+
   for<TDate>(
     adapter: AnyDeterministicPlugin<TDate>,
   ):
@@ -187,8 +194,7 @@ class DeterministicRuntimeBuilder implements IDeterministicRuntimeBuilder {
 }
 
 /**
- * Entry point for building a deterministic (manual/fixed/sequential) Time-Provider. Exposed by
- * the package as `createTimeProvider` from the `@time-provider/core/deterministic` entry point.
+ * Entry point for building deterministic Time-Providers.
  *
  * @example
  * ```ts

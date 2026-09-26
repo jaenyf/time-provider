@@ -11,10 +11,8 @@ class CronAddonBuilder<TDate> extends AddonBuilderBase<TDate, CronAddon<TDate>> 
 }
 
 /**
- * The cron addon-builder for a Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)`.
- * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
- * `AddonBuilderFactory` in `@time-provider/core`.
+ * Cron addon builder.
+ * @param typeHint Infers `TDate`; unused.
  */
 export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CronAddon<TDate>> {
   return new CronAddonBuilder<TDate>(typeHint);

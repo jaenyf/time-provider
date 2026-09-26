@@ -4,19 +4,18 @@ import type {
   MonotonicMilliseconds,
 } from "../types/types.ts";
 
-/** Number of milliseconds in a second. */
+/** Milliseconds per second. */
 export const MILLISECONDS_PER_SECOND = 1_000;
-/** Number of milliseconds in a minute. */
+/** Milliseconds per minute. */
 export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND;
-/** Number of milliseconds in an hour. */
+/** Milliseconds per hour. */
 export const MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE;
-/** Number of milliseconds in a day. */
+/** Milliseconds per day. */
 export const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR;
 
 /**
- * Guards a spec total against `NaN` and `±Infinity`, which the `number` fields of a spec accept
- * and the branded return types cannot reject.
- * @throws if `milliseconds` is not a finite number.
+ * Validates a millisecond total.
+ * @throws If `milliseconds` is not finite.
  */
 function assertFiniteMilliseconds(milliseconds: number, kind: "duration" | "instant"): void {
   if (!Number.isFinite(milliseconds)) {
@@ -24,9 +23,7 @@ function assertFiniteMilliseconds(milliseconds: number, kind: "duration" | "inst
   }
 }
 
-/**
- * Describe a duration in terms of its number of days, hours, minutes, seconds and milliseconds.
- */
+/** Describes a duration in days, hours, minutes, seconds and milliseconds. */
 export interface IDurationSpec {
   milliseconds?: number;
   seconds?: number;
@@ -36,13 +33,10 @@ export interface IDurationSpec {
 }
 
 /**
- * Convert a duration spec to a branded duration expressed in milliseconds.
- *
- * A fractional value is kept as given rather than rounded - a deterministic runtime honours it
- * exactly, while a system runtime hands it to the host timer, which truncates it.
- * @param durationSpec the spec describing the duration.
- * @returns a branded DurationMilliseconds type
- * @throws if the fields don't add up to a finite number of milliseconds.
+ * Converts a duration spec to branded milliseconds.
+ * @param durationSpec The duration spec.
+ * @returns A branded `DurationMilliseconds`.
+ * @throws If the fields do not produce finite milliseconds.
  */
 export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
   let ms: number = 0;
@@ -78,7 +72,7 @@ export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
 
 /**
  * The shortest possible duration.
- * @returns the shortest possible duration as a IDurationSpec type.
+ * @returns An `IDurationSpec` for zero.
  */
 export function asap(): IDurationSpec {
   return { milliseconds: 0 };
@@ -86,15 +80,13 @@ export function asap(): IDurationSpec {
 
 /**
  * The shortest possible duration.
- * @returns a zero branded DurationMilliseconds.
+ * @returns Zero as `DurationMilliseconds`.
  */
 export function asapMilliseconds(): DurationMilliseconds {
   return 0 as DurationMilliseconds;
 }
 
-/**
- * Describe an instant compared to the epoch time in terms of its number of days, hours, minutes, seconds and milliseconds.
- */
+/** Describes an epoch instant in days, hours, minutes, seconds and milliseconds. */
 export interface IEpochInstantSpec {
   milliseconds?: number;
   seconds?: number;
@@ -104,10 +96,10 @@ export interface IEpochInstantSpec {
 }
 
 /**
- * Convert the given instant spec to a branded instant expressed as the number of milliseconds since epoch.
- * @param instantSpec the spec describing the instant compared to the epoch time.
- * @returns a branded EpochMilliseconds type
- * @throws if any field is negative, or if the fields don't add up to a finite number of milliseconds.
+ * Converts an instant spec to epoch milliseconds.
+ * @param instantSpec The epoch instant spec.
+ * @returns A branded `EpochMilliseconds`.
+ * @throws If a field is negative or the total is not finite.
  */
 export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
   let ms: number = 0;
@@ -154,7 +146,7 @@ export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
 
 /**
  * The epoch time.
- * @returns the epoch time as a IEpochInstantSpec type.
+ * @returns An `IEpochInstantSpec` for zero.
  */
 export function asEpoch(): IEpochInstantSpec {
   return { milliseconds: 0 };
@@ -162,15 +154,13 @@ export function asEpoch(): IEpochInstantSpec {
 
 /**
  * The epoch time.
- * @returns a zero branded EpochMilliseconds.
+ * @returns Zero as `EpochMilliseconds`.
  */
 export function asEpochMilliseconds(): EpochMilliseconds {
   return 0 as EpochMilliseconds;
 }
 
-/**
- * Arithmetic between epoch instants and durations that keeps the branded types.
- */
+/** Arithmetic for epoch instants and durations. */
 export const epochArithmetic = {
   addDuration: (a: EpochMilliseconds, b: DurationMilliseconds) => (a + b) as EpochMilliseconds,
   subtract: (a: EpochMilliseconds, b: EpochMilliseconds) => (a - b) as DurationMilliseconds,
@@ -178,19 +168,16 @@ export const epochArithmetic = {
 };
 
 /**
- * Convert the given spec to a branded point on a monotonic timeline, expressed as the number of
- * milliseconds since that timeline's origin.
- * @param instantSpec the spec describing the point compared to the timeline's origin.
- * @returns a branded MonotonicMilliseconds type
- * @throws if any field is negative, or if the fields don't add up to a finite number of milliseconds.
+ * Converts a spec to branded monotonic milliseconds.
+ * @param instantSpec The timeline instant spec.
+ * @returns A branded `MonotonicMilliseconds`.
+ * @throws If a field is negative or the total is not finite.
  */
 export function toMonotonic(instantSpec: IEpochInstantSpec): MonotonicMilliseconds {
   return toInstant(instantSpec) as number as MonotonicMilliseconds;
 }
 
-/**
- * Arithmetic between monotonic instants and durations that keeps the branded types.
- */
+/** Arithmetic for monotonic instants and durations. */
 export const monotonicArithmetic = {
   addDuration: (a: MonotonicMilliseconds, b: DurationMilliseconds) =>
     (a + b) as MonotonicMilliseconds,

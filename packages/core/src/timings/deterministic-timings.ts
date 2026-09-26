@@ -14,14 +14,10 @@ import type {
 } from "../types/types.ts";
 
 class TimingError extends DOMException {
-  /*
-   * The native performance API throws DOMException errors
-   */
+  /** The native performance API throws DOMException errors */
 }
 
-/**
- * A mark or a measure recorded by {@link DeterministicTimings}.
- */
+/** A mark or measure recorded by {@link DeterministicTimings}. */
 class DeterministicTimingEntry<TKind extends TimingKind> {
   readonly name: string;
   readonly entryType: TKind;
@@ -54,9 +50,7 @@ class DeterministicTimingEntry<TKind extends TimingKind> {
   }
 }
 
-/**
- * Deterministic marks and measures, recorded on a deterministic runtime's monotonic clock.
- */
+/** Deterministic marks and measures on a monotonic clock. */
 export class DeterministicTimings implements ITimings {
   #clock: { monotonicNow(): MonotonicMilliseconds };
   #entries: ITimingEntry[] = [];
@@ -124,9 +118,7 @@ export class DeterministicTimings implements ITimings {
     return entry;
   };
 
-  /**
-   * An instant as given, or the instant of the named mark.
-   */
+  /** Resolves an instant or named mark. */
   #resolve(instantOrMarkName: string | MonotonicMilliseconds): MonotonicMilliseconds {
     if (typeof instantOrMarkName === "number") {
       return instantOrMarkName;

@@ -46,10 +46,7 @@ class SystemIdleHandle implements IScheduledHandle {
   }
 }
 
-/**
- * Implements {@link IIdleApi} on top of the host's native
- * `requestIdleCallback`/`cancelIdleCallback`.
- */
+/** Implements {@link IIdleApi} using the host's native `requestIdleCallback`/`cancelIdleCallback`. */
 export class SystemIdleScheduler<TDate>
   extends AddonBase<TDate, IRuntime<TDate>>
   implements IIdleApi
@@ -57,8 +54,7 @@ export class SystemIdleScheduler<TDate>
   #isDisposed: boolean;
 
   /**
-   * @throws if the host environment does not support `requestIdleCallback`/`cancelIdleCallback`
-   * (e.g. Safari, which has no native equivalent).
+   * @throws If the host lacks `requestIdleCallback`/`cancelIdleCallback` (e.g. Safari).
    */
   constructor() {
     super();

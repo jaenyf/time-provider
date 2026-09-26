@@ -1,7 +1,4 @@
-/**
- * Whether or not an uncaught exception in a timer callback should be rethrown rather than logged and swallowed.
- * This is intended to mimic the behavior of a browser or a node-like environment.
- */
+/** Whether timer errors are rethrown in Node-like runtimes. */
 export function shouldRethrowTimerErrors(): boolean {
   const runtimeGlobal = globalThis as {
     window?: unknown;

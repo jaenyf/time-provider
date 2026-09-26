@@ -50,9 +50,7 @@ class SystemPluggedRuntimeBuilder<TDate>
   }
 }
 
-/**
- * Default implementation of {@link IRuntimeBuilder}, exposed as the {@link createTimeProvider} singleton.
- */
+/** Default {@link IRuntimeBuilder} implementation. */
 export class RuntimeBuilder implements IRuntimeBuilder {
   /*
     The underlying runtime objects always have the full capability regardless of which overload matched.
@@ -68,7 +66,7 @@ export class RuntimeBuilder implements IRuntimeBuilder {
 }
 
 /**
- * Entry point for building a system (real time) Time-Provider.
+ * Entry point for building a system Time-Provider.
  *
  * @example
  * ```ts

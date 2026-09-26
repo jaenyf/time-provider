@@ -1,51 +1,23 @@
 import type { IScheduledHandle } from "@time-provider/core";
 
-/**
- * The shape this addon adds to a composed Time-Provider: a `scheduler.animation` property
- * exposing {@link IAnimationFrameScheduler}.
- */
+/** Adds `scheduler.animation` and optional native-shaped animation aliases. */
 export type WithAnimationFrameApi<TDate> = {
   scheduler: {
-    /**
-     * Schedules work to run before the next host frame update, via `requestAnimationFrame`/
-     * `cancelAnimationFrame` - the host's real frames on a system runtime, frames simulated
-     * against this runtime's own clock on a deterministic one. See
-     * {@link IAnimationFrameScheduler}.
-     */
+    /** Schedules work before the next frame. */
     animation: IAnimationFrameScheduler<TDate>;
   };
-  /**
-   * Present only when the compat addon is composed as well, and composed first: the
-   * native-shaped aliases for {@link IAnimationFrameScheduler.scheduleFrame}, sitting on that
-   * addon's `compat` facade beside `setTimeout` and friends. `cancelAnimationFrame` takes the
-   * handle `requestAnimationFrame` returned, not a numeric id, and is a no-op if the frame
-   * already ran.
-   */
+  /** Optional native-shaped animation aliases. */
   compat?: {
     requestAnimationFrame(callback: () => void): IScheduledHandle;
     cancelAnimationFrame(handle: IScheduledHandle): void;
   };
 };
 
-/**
- * The animation-frame API facade this addon adds to a composed Time-Provider,
- * reachable as `timeProvider.scheduler.animation` once composed via
- * `createTimeProvider.for(plugin).use(thisAddon)`.
- */
+/** Animation-frame API exposed by the addon. */
 // Kept generic over TDate for symmetry with WithAnimationFrameApi<TDate>, even though no member
 // here happens to reference it.
 // oxlint-disable-next-line no-unused-vars
 export interface IAnimationFrameScheduler<TDate> {
-  /**
-   * Schedules frame `callback` to run once, before the next host frame update.
-   * On a system (real time) runtime this depends on the host display refresh
-   * rate (common values are 60hz, 75hz, 90hz, 120hz, 144hz and 240hz). On a
-   * deterministic runtime, it fires once this runtime's own "now" has moved
-   * forward by at least one simulated frame duration - see
-   * {@link DeterministicAnimationFrameScheduler.hostFramesRate}.
-   *
-   * Matches the native `requestAnimationFrame` contract: fires exactly once,
-   * not repeatedly - call it again from within the callback to keep animating.
-   */
+  /** Schedules `callback` once before the next frame. */
   scheduleFrame(callback: () => void): IScheduledHandle;
 }

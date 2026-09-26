@@ -10,10 +10,8 @@ import { MomentTimezoneCalendarScheme } from "./calendar-scheme.ts";
 
 export class RuntimeHelper {
   /**
-   * Resolves wall-clock times against moment-timezone's own bundled tzdata rather than the host's
-   * ICU - see {@link MomentTimezoneCalendarScheme}. Passing `RuntimeHelper` to itself is safe:
-   * static methods are installed on the class before any static field initializer runs, so the
-   * converter this adapter captures is already complete.
+   * Resolves wall-clock times with moment-timezone's bundled tzdata.
+   * See {@link MomentTimezoneCalendarScheme}.
    */
   static readonly calendarScheme: ICalendarScheme<moment.Moment> = new MomentTimezoneCalendarScheme(
     RuntimeHelper,

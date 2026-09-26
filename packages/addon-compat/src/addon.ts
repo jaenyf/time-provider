@@ -11,10 +11,8 @@ class CompatAddonBuilder<TDate> extends AddonBuilderBase<TDate, CompatAddon<TDat
 }
 
 /**
- * The compat addon-builder for a Time-Provider. Compose it with
- * `createTimeProvider.for(plugin).use(addon)` to add a `compat` property.
- * @param typeHint never read - lets `.use()` infer `TDate` from this factory. See
- * `AddonBuilderFactory` in `@time-provider/core`.
+ * Compat addon builder.
+ * @param typeHint Infers `TDate`; unused.
  */
 export function addon<TDate>(typeHint?: TDate): IAddonBuilder<CompatAddon<TDate>> {
   return new CompatAddonBuilder<TDate>(typeHint);

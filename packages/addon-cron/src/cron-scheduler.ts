@@ -16,13 +16,7 @@ import {
 } from "./cron-parser.ts";
 import type { ICronApi } from "./types.ts";
 
-/**
- * Implements {@link ICronApi} on top of `ITimers.recurring`, re-deriving the delay to the
- * next occurrence after every run. Generic over `TDate`, delegated to the runtime's own
- * calendar scheme for every calendar/timezone computation - see {@link ICalendarScheme} - so
- * the same implementation backs every plugin, and each one's own calendar/timezone behavior
- * (if it diverges from the shared default) is honored automatically.
- */
+/** Implements {@link ICronApi} using runtime timers and calendar schemes. */
 export class CronScheduler<
   TDate,
   TMonthName extends string = MonthName,

@@ -106,12 +106,12 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     status: EtaStatus,
     startTime: EpochMilliseconds,
     now: EpochMilliseconds,
-    /** This stage's own raw completed/total - see {@link IStagedEtaProgressSnapshot}. */
+    /** Current stage's raw completed/total. */
     stageCompleted: number,
     stageTotal: number,
     currentStageIndex: number,
     stageCount: number,
-    /** The overall (weighted, 0-1) fraction of the whole job completed so far. */
+    /** Overall weighted completion fraction. */
     overallFraction: number,
     overallRateEstimator: IRateEstimator | undefined,
   ) {
@@ -142,24 +142,23 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
   get stagePercentage(): number {
     return this.#stagePercentage.value;
   }
-  /** {@link IEtaProgressSnapshot.completed} - aliases the current (only, for `withKnownTotal`)
-   * stage's own value. */
+  /** {@link IEtaProgressSnapshot.completed}; aliases `stageCompleted`. */
   get completed(): number {
     return this.stageCompleted;
   }
-  /** {@link IEtaProgressSnapshot.total} - aliases {@link stageTotal}. */
+  /** {@link IEtaProgressSnapshot.total}; aliases {@link stageTotal}. */
   get total(): number {
     return this.stageTotal;
   }
-  /** {@link IEtaProgressSnapshot.remaining} - aliases {@link stageRemaining}. */
+  /** {@link IEtaProgressSnapshot.remaining}; aliases {@link stageRemaining}. */
   get remaining(): number {
     return this.#stageRemaining.value;
   }
-  /** {@link IEtaProgressSnapshot.percentage} - aliases {@link stagePercentage}. */
+  /** {@link IEtaProgressSnapshot.percentage}; aliases {@link stagePercentage}. */
   get percentage(): number {
     return this.#stagePercentage.value;
   }
-  /** Overall rate across every stage, in fraction-of-the-whole-job per millisecond. */
+  /** Overall rate across all stages. */
   get rate(): number | undefined {
     return this.#rate.value;
   }

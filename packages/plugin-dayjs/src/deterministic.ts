@@ -1,8 +1,5 @@
-/**
- * The Day.js plugin for Time-Provider's deterministic runtimes.
- *
- * @module
- */
+/** Day.js plugin for deterministic Time-Provider runtimes.
+ * @module */
 import type { IDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 import dayjs from "dayjs";
@@ -12,7 +9,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 /**
- * The Day.js plugin (adapter) for a deterministic (manual/fixed/sequential) Time-Provider.
+ * Day.js adapter for deterministic (manual/fixed/sequential) Time-Providers.
  * Supports timezones and local time. Use with `createTimeProvider.for(plugin)` from
  * `@time-provider/core/deterministic`.
  */

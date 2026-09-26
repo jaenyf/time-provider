@@ -2,9 +2,7 @@ import { AddonBase, AddonHelper, type IRuntime } from "@time-provider/core";
 import { EtaTrackBuilder } from "./eta-tracker.ts";
 import type { IEtaApi, IEtaTrackBuilder } from "./types.ts";
 
-/**
- * The addon behind `timeProvider.eta`: starts ETA estimations against the runtime's clock.
- */
+/** Addon behind `timeProvider.eta`. */
 export class EtaScheduler<TDate>
   extends AddonBase<TDate, IRuntime<TDate>>
   implements IEtaApi<TDate>

@@ -1,8 +1,7 @@
+/** Native `Date` plugin for Time-Provider's system runtime.
+ * @module */
 import type { IUtcOnlySystemPlugin } from "@time-provider/core";
 import { SystemPlugin } from "./plugin/system.ts";
 
-/**
- * The native `Date` plugin (adapter) for a system (real time) Time-Provider. Timezone-naive
- * (UTC only) - has no external date library dependency. Use with `createTimeProvider.for(plugin)`.
- */
+/** Native `Date` adapter for the system (real time) Time-Provider. UTC only; no external date library dependency. */
 export const plugin: IUtcOnlySystemPlugin<Date> = new SystemPlugin();
