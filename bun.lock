@@ -22,7 +22,7 @@
     },
     "packages/addon-animation-frame": {
       "name": "@time-provider/addon-animation-frame",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -32,7 +32,7 @@
     },
     "packages/addon-compat": {
       "name": "@time-provider/addon-compat",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -42,7 +42,7 @@
     },
     "packages/addon-cron": {
       "name": "@time-provider/addon-cron",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -52,7 +52,7 @@
     },
     "packages/addon-eta": {
       "name": "@time-provider/addon-eta",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -62,7 +62,7 @@
     },
     "packages/addon-idle": {
       "name": "@time-provider/addon-idle",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -72,11 +72,11 @@
     },
     "packages/core": {
       "name": "@time-provider/core",
-      "version": "3.0.1",
+      "version": "4.0.0",
     },
     "packages/plugin-dayjs": {
       "name": "@time-provider/plugin-dayjs",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -87,7 +87,7 @@
     },
     "packages/plugin-luxon": {
       "name": "@time-provider/plugin-luxon",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
         "@types/luxon": "^3.7.2",
@@ -100,7 +100,7 @@
     },
     "packages/plugin-moment": {
       "name": "@time-provider/plugin-moment",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
         "moment": "~2.31.0",
@@ -112,7 +112,7 @@
     },
     "packages/plugin-moment-timezone": {
       "name": "@time-provider/plugin-moment-timezone",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
         "moment": "~2.31.0",
@@ -126,7 +126,7 @@
     },
     "packages/plugin-native": {
       "name": "@time-provider/plugin-native",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -136,7 +136,7 @@
     },
     "packages/plugin-temporal": {
       "name": "@time-provider/plugin-temporal",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },

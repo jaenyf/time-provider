@@ -20,38 +20,38 @@ const manifests = readdirSync(packagesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => [entry.name, readManifest(entry.name)] as const);
 
-//const majorOf = (versionOrRange: string) => Number(versionOrRange.replace("^", "").split(".")[0]);
+const majorOf = (versionOrRange: string) => Number(versionOrRange.replace("^", "").split(".")[0]);
 
 describe("workspace manifests", () => {
-  // describe("core peer ranges", () => {
-  //   const declared = manifests.filter(
-  //     ([, manifest]) => manifest.peerDependencies?.["@time-provider/core"] !== undefined,
-  //   );
-  //   const ranges = declared.map(
-  //     ([, manifest]) => manifest.peerDependencies["@time-provider/core"] as string,
-  //   );
+  describe("core peer ranges", () => {
+    const declared = manifests.filter(
+      ([, manifest]) => manifest.peerDependencies?.["@time-provider/core"] !== undefined,
+    );
+    const ranges = declared.map(
+      ([, manifest]) => manifest.peerDependencies["@time-provider/core"] as string,
+    );
 
-  //   test("every package that peers on core declares the same range", () => {
-  //     // A range bumped in ten packages and missed in the eleventh publishes one package that
-  //     // resolves an incompatible core. Comparing them to each other catches that without
-  //     // hard-coding which packages exist.
-  //     expect(new Set(ranges).size).toBe(1);
-  //   });
+    test("every package that peers on core declares the same range", () => {
+      // A range bumped in ten packages and missed in the eleventh publishes one package that
+      // resolves an incompatible core. Comparing them to each other catches that without
+      // hard-coding which packages exist.
+      expect(new Set(ranges).size).toBe(1);
+    });
 
-  //   test.each(declared)("%s pins a whole core major", (_packageName, manifest) => {
-  //     // `^N.0.0` is the convention the repo has always used, and it is what makes the major
-  //     // comparison below meaningful.
-  //     expect(manifest.peerDependencies["@time-provider/core"]).toMatch(/^\^\d+\.0\.0$/);
-  //   });
+    test.each(declared)("%s pins a whole core major", (_packageName, manifest) => {
+      // `^N.0.0` is the convention the repo has always used, and it is what makes the major
+      // comparison below meaningful.
+      expect(manifest.peerDependencies["@time-provider/core"]).toMatch(/^\^\d+\.0\.0$/);
+    });
 
-  //   test("the declared range is not behind the core in this repo", () => {
-  //     // Deliberately `toBeGreaterThanOrEqual` rather than equality: between a breaking change
-  //     // landing and release-please cutting the release, the ranges point at the major core is
-  //     // about to become while core's own version still reads the old one. Running ahead is the
-  //     // correct intermediate state; falling behind never is.
-  //     expect(majorOf(ranges[0])).toBeGreaterThanOrEqual(majorOf(readManifest("core").version));
-  //   });
-  // });
+    test("the declared range is not behind the core in this repo", () => {
+      // Deliberately `toBeGreaterThanOrEqual` rather than equality: between a breaking change
+      // landing and release-please cutting the release, the ranges point at the major core is
+      // about to become while core's own version still reads the old one. Running ahead is the
+      // correct intermediate state; falling behind never is.
+      expect(majorOf(ranges[0])).toBeGreaterThanOrEqual(majorOf(readManifest("core").version));
+    });
+  });
 
   describe("node engines", () => {
     const published = manifests.filter(([, manifest]) => manifest.private === false);

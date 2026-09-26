@@ -29,8 +29,8 @@
 //   6. the manifest version and the package.json version agree;
 //   7. a publishable package isn't marked private and has the `release`
 //      script the publish job runs;
-//   8. each plugin's and addon's `@time-provider/core` peer range still
-//      admits the core version in this repo;
+//   8. each plugin's and addon's `@time-provider/core` peer range admits the
+//      core version in this repo, or the next major ahead of a breaking release;
 //   9. no publishable package declares runtime dependencies, which is what
 //      lets SECURITY.md say a vulnerability in this repo's tooling cannot
 //      reach a consumer;
@@ -252,11 +252,18 @@ function checkCorePeerRange(pkg: PackageJson, coreVersion: string): void {
   const range = pkg.peerDependencies?.["@time-provider/core"];
   if (range === undefined) return;
 
+  // Ahead of a breaking release the ranges already point at the next major while core's own
+  // version still reads the old one, since release-please never bumps peer ranges. Running
+  // ahead is expected (as in workspace.test.ts); falling behind never is.
+  const nextMajor = `${Number(coreVersion.split(".")[0]) + 1}.0.0`;
   const satisfied = satisfiesCaret(coreVersion, range);
   if (satisfied === undefined) {
     fail(pkg.name, `declares core peer range "${range}", which this script can't read - extend it`);
-  } else if (!satisfied) {
-    fail(pkg.name, `requires core "${range}", which doesn't admit this repo's core ${coreVersion}`);
+  } else if (!satisfied && !satisfiesCaret(nextMajor, range)) {
+    fail(
+      pkg.name,
+      `requires core "${range}", which admits neither this repo's core ${coreVersion} nor ${nextMajor}`,
+    );
   }
 }
 
