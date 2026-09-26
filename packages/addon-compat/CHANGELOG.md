@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.3.0...addon-compat-v0.3.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **docs:** reduce amount jsdoc to reduce packages sizes ([22a03d4](https://github.com/jaenyf/time-provider/commit/22a03d4d6672b63a56d6c69209d3efdb328124bd))
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.2.1...addon-compat-v0.3.0) (2026-09-24)
 
 
