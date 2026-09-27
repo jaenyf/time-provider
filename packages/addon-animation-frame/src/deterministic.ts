@@ -2,16 +2,18 @@
  * @module */
 import { AddonBuilderBase, type IAddonBuilder } from "@time-provider/core";
 import { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
-import type { WithAnimationFrameApi } from "./types.ts";
+import type { WithDeterministicAnimationFrameApi } from "./types.ts";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 export type {
   IAnimationFrameScheduler as IAnimationFrameApi,
+  IDeterministicAnimationFrameScheduler as IDeterministicAnimationFrameApi,
   WithAnimationFrameApi,
+  WithDeterministicAnimationFrameApi,
 } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
 
-type DeterministicAnimationFrameAddon<TDate> = WithAnimationFrameApi<TDate> &
+type DeterministicAnimationFrameAddon<TDate> = WithDeterministicAnimationFrameApi<TDate> &
   IDeterministicAddon<TDate>;
 
 /** Extra builder method contributed by the animation-frame addon. */
