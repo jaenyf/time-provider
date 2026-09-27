@@ -228,6 +228,14 @@ export function testManualRuntime<TDate>(
         });
       });
 
+      test("does not move back after a callback advanced the clock further", () => {
+        const sut = createSUT();
+        const start = sut.timestampNow();
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.advance({ milliseconds: 500 }));
+        sut.advance({ milliseconds: 100 });
+        expect(sut.timestampNow() - start).toBe(510);
+      });
+
       describe("issue#147", () => {
         describe("self-rescheduling timeout chains", () => {
           test("fires once per delay across a single large advance(), not once total", () => {

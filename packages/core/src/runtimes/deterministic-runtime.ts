@@ -909,11 +909,13 @@ export abstract class BaseManualRuntime<TDate>
     // setTimeout) reads timestampNow() when it re-registers, so it must see the clock at *its
     // own* due time, not already at the final target - otherwise its new entry always lands
     // past the target and the whole chain fires only once per advance(), however large the gap.
+    let lastSet = this._sequentialTimestamps[0];
     this.drainDueAdvancing(targetTimestamp, (runAt) => {
-      this._sequentialTimestamps[0] = runAt;
+      this._sequentialTimestamps[0] = lastSet = runAt;
     });
 
-    this.setDeterminedTime(time);
+    // Keep a move a callback made.
+    if (this._sequentialTimestamps[0] === lastSet) this.setDeterminedTime(time);
     return this;
   }
 
