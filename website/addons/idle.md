@@ -29,7 +29,7 @@ The handle is an `IScheduledHandle`, the same type every other
 
 Nothing about elapsed simulated time says a runtime has spare capacity, so
 there is no idle to detect. A deterministic request stays pending until a
-test declares the runtime idle, and `advance()` or a clock read never fires
+test declares the runtime idle, and `moveBy()` or a clock read never fires
 one on its own:
 
 ```ts
@@ -48,7 +48,7 @@ const ran: string[] = [];
 timeProvider.scheduler.idle.request(() => ran.push("first"));
 timeProvider.scheduler.idle.request(() => ran.push("second"));
 
-timeProvider.clock.advance({ hours: 1 });
+timeProvider.clock.moveBy({ hours: 1 });
 console.log(ran); // [] - moving the clock is not an idle period
 
 timeProvider.scheduler.idle.drain(1); // returns 1
@@ -63,6 +63,7 @@ first, and returns how many actually ran. Omit the argument to run everything
 pending. That gives a test the thing a real host never offers: control over
 how much work one idle period lets through, so you can assert what happens
 when the host stays busy and only some of the queue drains.
+`scheduler.idle.pendingCount` counts the requests still pending.
 
 Every deterministic runtime behaves the same way here. A fixed clock is no
 exception, even though it disables the runtime's own due-draining, because
@@ -96,7 +97,7 @@ function scheduleCleanup(tp: ITimeProvider<Date> & WithIdleApi) {
 ```
 
 The `/deterministic` entry point exports `IDeterministicIdleApi` and
-`WithDeterministicIdleApi`, which extend those with `drain`. Reach for them
+`WithDeterministicIdleApi`, which extend those with `drain` and `pendingCount`. Reach for them
 when a test helper takes a Time-Provider and needs to drain it.
 
 The implementation classes are exported too, for the rare case of building a

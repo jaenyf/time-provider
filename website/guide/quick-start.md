@@ -42,13 +42,13 @@ const timeProvider = createTimeProvider
 
 let retries = 0;
 timeProvider.scheduler.timers.every({ seconds: 1 }, () => retries++);
-timeProvider.clock.advance({ seconds: 3 });
+timeProvider.clock.moveBy({ seconds: 3 });
 
 expect(retries).toBe(3);
 ```
 
 Manual and sequential clocks run synchronously: a due timer callback fires in-line, as a direct side effect of the call
-that made it due (`advance()` — or `localNow()`, `utcNow()` on sequential
+that made it due (`moveBy()` — or `localNow()`, `utcNow()` on sequential
 clocks) — not on a real event-loop tick. Use `timestampNow()` instead when
 you only need a value to compute with; it never triggers this. No `await`,
 no fake-timer install/restore boilerplate.

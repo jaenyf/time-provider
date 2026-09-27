@@ -9,7 +9,7 @@ clock strategy backing it:
   as soon as they become due: either as a direct side effect of
   native times themself (a delay of `0` or negative is already
   due when scheduled), or of any call that moves the clock forward
-  (`advance()` for manual runtimes, or `clock.localNow()` and `clock.utcNow()` for sequential runtimes only). There is no event
+  (`moveBy()` for manual runtimes, or `clock.localNow()` and `clock.utcNow()` for sequential runtimes only). There is no event
   loop tick involved — a due callback has already run by the time the
   triggering call returns.
 - **Fixed** — time never advances, so a scheduled callback is never due; it
@@ -21,12 +21,12 @@ call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
 For example, jumping 5 seconds past a 1-second `every` fires it 5 times,
-synchronously, before `advance()` returns:
+synchronously, before `moveBy()` returns:
 
 ```ts
 let ticks = 0;
 timeProvider.scheduler.timers.every({ seconds: 1 }, () => ticks++);
-timeProvider.clock.advance({ seconds: 5 });
+timeProvider.clock.moveBy({ seconds: 5 });
 ticks; // 5
 ```
 

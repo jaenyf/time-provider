@@ -40,13 +40,13 @@ import { plugin as deterministicPlugin } from "@time-provider/plugin-moment/dete
 const timeProvider = createTimeProvider.for(plugin).create();
 timeProvider.clock.utcNow(); // a Moment.js Moment
 
-// Deterministic: a simulated clock that only moves when you advance it.
+// Deterministic: a simulated clock that only moves when you move it.
 using manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .asManual()
   .withInitialTime("2026-01-01T00:00:00.000Z")
   .create();
-manual.clock.advance({ hours: 1 });
+manual.clock.moveBy({ hours: 1 });
 manual.clock.utcNow(); // 2026-01-01T01:00:00.000Z
 ```
 

@@ -13,7 +13,7 @@ strategy, including a fixed one that never runs a single timer.
 - **Manual/sequential/fixed** — `callback` goes on this runtime's own queue
   instead. Since there's no real event loop tick to hang a checkpoint off,
   one runs at every point that stands in for one: after each due timer
-  callback, and before any `once`/`every`/`recurring` call, `advance()`, or
+  callback, and before any `once`/`every`/`recurring` call, `moveBy()`, or
   clock read that may run due callbacks. Microtasks aren't time-driven, so a
   fixed clock still runs them even though it never runs a timer.
 
@@ -23,7 +23,7 @@ timeProvider.scheduler.timers.once({ milliseconds: 0 }, () => {
   timeProvider.scheduler.microtasks.queue(() => log.push("m1"));
 });
 timeProvider.scheduler.timers.once({ milliseconds: 0 }, () => log.push("t2"));
-timeProvider.clock.advance({ milliseconds: 1 });
+timeProvider.clock.moveBy({ milliseconds: 1 });
 log; // ["t1", "m1", "t2"] - m1 runs before t2, exactly as a real host would
 ```
 

@@ -152,7 +152,7 @@
               <div class="pg-value">{{ remainingSequential }}</div>
             </div>
             <div class="pg-readout-item" v-if="selectedStrategy === 'manual'">
-              <div class="pg-label">clock.advance(...)</div>
+              <div class="pg-label">clock.moveBy(...)</div>
               <div class="pg-advance-row">
                 <label class="pg-input-label">
                   <span>amount</span>
@@ -170,8 +170,24 @@
                     <option value="years">years</option>
                   </select>
                 </label>
-                <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="advance">
-                  Advance
+                <label class="pg-input-label">
+                  <span>as</span>
+                  <select v-model="moveAs">
+                    <option value="flow">flow</option>
+                    <option value="sleep">sleep</option>
+                    <option value="snap">snap</option>
+                  </select>
+                </label>
+                <button class="pg-btn pg-btn-brand" :disabled="!timeProvider" @click="moveBy">
+                  Move
+                </button>
+              </div>
+              <div class="pg-advance-row">
+                <button class="pg-btn" :disabled="!timeProvider" @click="moveToNextTimer">
+                  moveTo("nextTimer")
+                </button>
+                <button class="pg-btn" :disabled="!timeProvider" @click="moveUntilNoTimers">
+                  moveUntil("noTimers")
                 </button>
               </div>
             </div>
@@ -266,7 +282,7 @@
           <p class="pg-note">
             On <strong>system</strong>, timers fire for real, asynchronously. On
             <strong>manual</strong>/<strong>sequential</strong>, they fire synchronously, in-line,
-            the moment <code>advance()</code>/<code>utcNow()</code>/<code>localNow()</code> makes
+            the moment <code>moveBy()</code>/<code>utcNow()</code>/<code>localNow()</code> makes
             them due. On <strong>fixed</strong>, they never fire. <code>recurring</code> re-reads
             its period from what the run itself returns — here, the previous delay times the backoff
             factor — and returns <code>false</code> on the last run to stop.
@@ -404,7 +420,7 @@
             host's own <code>performance</code> timeline, shared by every system provider in the
             page, so they outlive a rebuild. On
             <strong>fixed</strong>/<strong>manual</strong>/<strong>sequential</strong>, the provider
-            keeps its own list, and the monotonic clock follows the simulated one: advance a manual
+            keeps its own list, and the monotonic clock follows the simulated one: move a manual
             clock between two marks and the measure shows the simulated time.
           </p>
         </div>
@@ -1119,7 +1135,7 @@ const strategies: { key: Strategy; label: string }[] = [
 const strategyHints: Record<Strategy, string> = {
   system: "Real time, real timers.",
   fixed: "Always the same instant. Timers never fire.",
-  manual: "Advances only via advance(). Timers fire in-line when due.",
+  manual: "Moves only via moveBy(), moveTo() or moveUntil(). Timers fire in-line when due.",
   sequential: "Each read consumes the next instant. Timers fire in-line when due.",
 };
 
@@ -1147,6 +1163,7 @@ const advanceAmount = ref(1);
 const advanceUnit = ref<
   "milliseconds" | "seconds" | "minutes" | "hours" | "days" | "months" | "years"
 >("seconds");
+const moveAs = ref<"flow" | "sleep" | "snap">("flow");
 
 const timerLabel = ref("Tick");
 const timerKind = ref<SchedulerTimerKind>("every");
@@ -1158,7 +1175,7 @@ const microtaskLabel = ref("Microtask");
 // needs a rule for that: start at `recurringInitialDelay`, multiply by `recurringFactor` after
 // every run (factor 1 behaves exactly like `every`), and return `false` once
 // `recurringMaxRuns` runs have happened. The run cap is mandatory rather than optional: on a
-// manual clock a single advance() drains everything already due, so an unbounded schedule with a
+// manual clock a single moveBy() drains everything already due, so an unbounded schedule with a
 // small delay would spin in-line until the browser gave up.
 const RECURRING_MAX_RUNS = 1000;
 const recurringInitialDelay = ref(1000);
@@ -1612,15 +1629,30 @@ function readLocal() {
   }
 }
 
-function advance() {
+function moveClock(call: string, move: (clock: PlaygroundProvider["clock"]) => void) {
   if (!timeProvider.value) return;
   try {
-    const options = { [advanceUnit.value]: advanceAmount.value };
-    timeProvider.value.clock.advance(options);
-    pushLog("tick", `advance(${JSON.stringify(options)})`);
+    move(timeProvider.value.clock);
+    pushLog("tick", call);
   } catch (e) {
     pushLog("error", e instanceof Error ? e.message : String(e));
   }
+}
+
+function moveBy() {
+  const spec = { [advanceUnit.value]: advanceAmount.value };
+  const options = { as: moveAs.value };
+  moveClock(`moveBy(${JSON.stringify(spec)}, ${JSON.stringify(options)})`, (clock) =>
+    clock.moveBy(spec, options),
+  );
+}
+
+function moveToNextTimer() {
+  moveClock('moveTo("nextTimer")', (clock) => clock.moveTo("nextTimer"));
+}
+
+function moveUntilNoTimers() {
+  moveClock('moveUntil("noTimers")', (clock) => clock.moveUntil("noTimers"));
 }
 
 function enqueueMicrotask() {

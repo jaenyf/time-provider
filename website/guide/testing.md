@@ -31,7 +31,7 @@ const timeProvider = createTimeProvider
 const onRetry = vi.fn();
 new RetryJob(timeProvider).scheduleRetries(3, 1000, onRetry);
 
-timeProvider.clock.advance({ seconds: 3 });
+timeProvider.clock.moveBy({ seconds: 3 });
 
 expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teardown
 ```
@@ -45,9 +45,9 @@ expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teard
   `jest.useRealTimers()` pair to remember, and nothing leaks between tests
   if you forget to clean up.
 - **Deterministic by construction.** Manual and sequential runs are
-  synchronous, so assertions after `advance()` don't need `await` — a due
+  synchronous, so assertions after `moveBy()` don't need `await` — a due
   callback, and any microtask it queues, has already run by the time
-  `advance()` returns. A microtask your test queues directly (not from
+  `moveBy()` returns. A microtask your test queues directly (not from
   inside a due callback) is the one exception: it needs an explicit
   `timeProvider.scheduler.microtasks.drain()` to observe, since there's no other
   checkpoint boundary for the runtime to hook a drain to — see

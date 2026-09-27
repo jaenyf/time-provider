@@ -11,7 +11,7 @@ and Sequential come from the same call in `@time-provider/core/deterministic`
 | ------------------------------------- | ------------------------------------- | ------------------------------------------------ | -------------------------------------- |
 | [System](/guide/system-clock)         | the real system clock                 | asynchronously, via real native timers           | Production                             |
 | [Fixed](/guide/fixed-clock)           | a single instant, forever             | never (time never advances)                      | Deterministic single-instant tests     |
-| [Manual](/guide/manual-clock)         | the last value set via `advance()`    | synchronously, in-line, when advanced due        | Simulations, timer/retry logic tests   |
+| [Manual](/guide/manual-clock)         | the last value set via `moveBy()`     | synchronously, in-line, when advanced due        | Simulations, timer/retry logic tests   |
 | [Sequential](/guide/sequential-clock) | the next instant in a predefined list | synchronously, in-line, as instants are consumed | Tests asserting on changing timestamps |
 
 ```ts

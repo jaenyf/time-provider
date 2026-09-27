@@ -100,6 +100,7 @@ export default defineConfig({
           { text: "Fixed Clock", link: "/guide/fixed-clock" },
           { text: "Manual Clock", link: "/guide/manual-clock" },
           { text: "Sequential Clock", link: "/guide/sequential-clock" },
+          { text: "Moving the Clock", link: "/guide/moving-the-clock" },
         ],
       },
       {

@@ -70,7 +70,7 @@ const timeProvider = createTimeProvider
   .create();
 
 timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
-timeProvider.clock.advance({ milliseconds: 20 }); // simulated frame duration elapses
+timeProvider.clock.moveBy({ milliseconds: 20 }); // simulated frame duration elapses
 ```
 
 `@time-provider/addon-cron` and `@time-provider/addon-eta` behave the same on

@@ -46,9 +46,9 @@ const job = timeProvider.eta
   .start((s) => snapshots.push(s.percentage));
 
 job.progress(25);
-timeProvider.clock.advance({ seconds: 1 }); // one notification tick fires, in-line
+timeProvider.clock.moveBy({ seconds: 1 }); // one notification tick fires, in-line
 job.progress(25);
-timeProvider.clock.advance({ seconds: 1 });
+timeProvider.clock.moveBy({ seconds: 1 });
 
 console.log(snapshots); // [25, 50]
 ```
@@ -153,8 +153,9 @@ const job = timeProvider.eta
 job.done(); // snaps eta to the actual completion time
 ```
 
-`eta` is `startTime + expectedDuration`, fixed for the schedule's life, until
-`done()` snaps it to the real completion time or `abandon()` clears it.
+`eta` is the current wall time plus what is left of the expected duration,
+which is `startTime + expectedDuration` as long as the wall clock does not
+step. `done()` snaps it to the real completion time and `abandon()` clears it.
 
 ## Which rate algorithm
 
@@ -174,13 +175,15 @@ the chosen algorithm has enough samples to estimate anything.
 
 ## Timing comes from the runtime
 
-`.eta` reads time through `clock.timestampNow()` and programs its ticks on
+`.eta` measures `elapsedMilliseconds` and its rate with `clock.monotonicNow()`,
+so a wall clock step never makes them negative, and reads `startTime` and
+`eta` with `clock.timestampNow()`. It programs its ticks on
 `timeProvider.scheduler`, which has two consequences worth knowing.
 
 Notifications follow the [clock strategy](/guide/clock-strategies) like any
-other timer — real intervals on a system clock, in-line during `advance()` on a
+other timer — real intervals on a system clock, in-line during `moveBy()` on a
 manual clock, and never on a fixed clock, where time doesn't move and nothing
-becomes due. And because it reads with `timestampNow()` rather than `utcNow()`,
+becomes due. And because it never reads `utcNow()`,
 tracking a job never consumes an instant from a
 [sequential clock](/guide/sequential-clock).
 

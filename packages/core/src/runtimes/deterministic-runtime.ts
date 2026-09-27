@@ -766,7 +766,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     setCurrentTimestamp: (timestamp: number) => void,
   ): void {
     const microtasks = this.#microtasks;
-    /* advance() ends a task like any other call that may run due callbacks - see
+    /* A move ends a task like any other call that may run due callbacks - see
        mayRunDueCallbacks - so its microtasks are owed up front, even if this walk finds nothing
        due at all. */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);

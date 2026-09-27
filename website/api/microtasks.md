@@ -10,6 +10,8 @@ interface IMicrotasks {
 interface IDeterministicMicrotasks extends IMicrotasks {
   /** Runs every callback queued through `queue`, in order, until the queue is empty. */
   drain(): void;
+  /** Number of queued callbacks. */
+  readonly pendingCount: number;
 }
 ```
 

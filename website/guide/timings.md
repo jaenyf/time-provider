@@ -35,7 +35,9 @@ durations the way `epochArithmetic` does for epoch instants.
   measures other code recorded there too.
 - **Manual** — the Time-Provider keeps its own list, and `monotonicNow()`
   follows the clock: it starts at `0` when the Time-Provider is created, and
-  `advance()` moves it. Moving the clock backward moves it backward too.
+  `moveBy()` moves it. A [snap](/guide/moving-the-clock) moves only the wall
+  clock, so a measure is never negative. The deprecated `advance()` with a
+  negative value still moves it backward.
 - **Sequential** — `monotonicNow()` follows the queued instants. Recording a
   mark doesn't consume one, since it reads the clock the side-effect-free way
   `timestampNow()` does. Only `utcNow()`/`localNow()` move to the next instant.
@@ -54,7 +56,7 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
 using timeProvider = createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
 
 timeProvider.timings.mark("start");
-timeProvider.clock.advance({ seconds: 2 });
+timeProvider.clock.moveBy({ seconds: 2 });
 timeProvider.timings.mark("end");
 
 timeProvider.timings.measure("work", { start: "start", end: "end" }).duration; // 2000

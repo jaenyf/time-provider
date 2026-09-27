@@ -71,15 +71,15 @@ manual.scheduler.idle.drain(); // the idle callback runs here
 
 There is no such thing as a real idle period on a deterministic runtime - unlike a timeout,
 nothing about elapsed simulated time says the runtime has spare capacity - so `request()` just
-registers the callback under this addon's own tag in the runtime's shared due-heap. `advance()`/
-clock reads never fire it on their own; only `drain()` does, by retrieving up to `maxCount`
+registers the callback under this addon's own tag in the runtime's shared due-heap. Clock moves and
+reads never fire it on their own; only `drain()` does, by retrieving up to `maxCount`
 pending requests (oldest first) directly through that tag - without scanning any other pending
 timer/interval/recurring entry sharing the heap:
 
 ```ts
 manual.scheduler.timers.once({ milliseconds: 50 }, () => console.log("Busy!"));
 manual.scheduler.idle.request(() => console.log("Idle!"));
-manual.clock.advance({ milliseconds: 50 }); // "Busy!" - the idle request is still pending
+manual.clock.moveBy({ milliseconds: 50 }); // "Busy!" - the idle request is still pending
 manual.scheduler.idle.drain(); // "Idle!"
 ```
 

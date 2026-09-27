@@ -41,7 +41,7 @@ interface IUtcOnlyManualTimeProvider<TDate> extends IUtcOnlyTimeProvider<TDate> 
 
 What `.asManual()....create()` (from `@time-provider/core/deterministic`)
 returns — identical to `ITimeProvider`/`IUtcOnlyTimeProvider` except `clock`
-is additionally `IAdvanceable`, i.e. has `.advance(options)`. Which of the
+is additionally `IMovable`, i.e. has `.moveBy()`, `.moveTo()` and `.moveUntil()`. Which of the
 two you get follows the plugin, exactly as above: `IManualTimeProvider` from
 a timezone-aware plugin, `IUtcOnlyManualTimeProvider` from a UTC-only one.
 See [Manual Clock](/guide/manual-clock).

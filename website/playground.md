@@ -11,7 +11,7 @@ sidebar: false
 
 Pick a plugin (adapter) and a clock strategy, build a live `ITimeProvider`,
 then read the clock, register scheduled timers, and (on a
-manual clock) advance time. All is running, in your browser, against
+manual clock) move time. All is running, in your browser, against
 the actual library source.
 
 </div>

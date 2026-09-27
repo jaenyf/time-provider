@@ -31,7 +31,7 @@ it just reads in `"Etc/UTC"` — see
 [Timezones & Local Time](/guide/timezones).
 
 On a deterministic Time-Provider the schedule runs against that runtime's own
-simulated clock, so a whole week of a job's behaviour is a single `advance()`
+simulated clock, so a whole week of a job's behaviour is a single `moveBy()`
 away — no real waiting, no flaky timing:
 
 ```ts
@@ -49,9 +49,18 @@ const timeProvider = createTimeProvider
 let runs = 0;
 timeProvider.scheduler.cron.schedule("*/15 * * * *", () => runs++);
 
-timeProvider.clock.advance({ hours: 1 });
+timeProvider.clock.moveBy({ hours: 1 });
 console.log(runs); // 4
 ```
+
+## Wall clock steps
+
+A schedule follows the wall clock. After the clock steps back, it waits for
+the next occurrence at its wall time and never runs one twice. After it steps
+forward past occurrences, it runs the skipped occurrence once, then carries on
+from the current wall time. The step is noticed when the schedule's pending
+timer wakes, so that catch-up run can come as late as the time that was left
+before the step. See [Moving the Clock](/guide/moving-the-clock).
 
 ## Expression syntax
 
