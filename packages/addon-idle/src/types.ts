@@ -59,4 +59,6 @@ export interface IDeterministicIdleApi extends IIdleApi {
    * @returns Number of callbacks run.
    */
   drain(maxCount?: number): number;
+  /** Number of pending idle callbacks. */
+  readonly pendingCount: number;
 }

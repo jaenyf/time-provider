@@ -18,6 +18,7 @@ type FakeRuntime = IDeterministicRuntime<unknown> & {
 type IdleFacade = {
   request: (callback: () => void) => { dispose(): void };
   drain: (maxCount?: number) => number;
+  pendingCount: number;
 };
 
 /*
@@ -73,6 +74,7 @@ function fakeDeterministicRuntime(): {
         }
         return callbacks;
       },
+      countSpecific: (tag: unknown) => entries.filter((entry) => entry.tag === tag).length,
     } as unknown as FakeRuntime,
     registeredCount: () => entries.length,
   };
@@ -85,7 +87,19 @@ describe("idleAddon (deterministic)", () => {
     expect(runtime.scheduler.idle).toStrictEqual({
       request: expect.any(Function),
       drain: expect.any(Function),
+      pendingCount: 0,
     });
+  });
+
+  test("pendingCount counts requests until they are drained", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    const idle = runtime.scheduler.idle as IdleFacade;
+    idle.request(() => {});
+    idle.request(() => {});
+    expect(idle.pendingCount).toBe(2);
+    idle.drain(1);
+    expect(idle.pendingCount).toBe(1);
   });
 
   test("applyToRuntime adds the native-shaped aliases when a compat facade is there", () => {
