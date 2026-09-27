@@ -2,10 +2,14 @@
 
 ```ts
 interface IUtcOnlyConverter<TDate> {
+  convertToUtc(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated */
   convertToUtc(time: string | number | TDate): TDate;
 }
 
 interface ILocalOnlyConverter<TDate> {
+  convertToLocal(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated */
   convertToLocal(time: string | number | TDate): TDate;
 }
 
@@ -19,8 +23,9 @@ because it is part of the public API surface — the local half of what
 `timeProvider.converter` offers on a timezone-aware plugin, and a name tooltips
 will show you — not because you can import it.
 
-Both methods accept an ISO 8601 time string, an epoch-milliseconds number,
-or an already-converted `TDate` — other string formats (e.g. RFC 2822, or a
+Both methods accept an ISO 8601 time string, `EpochMilliseconds` (built with
+`toInstant()`), or an already-converted `TDate`. A plain number still works
+but is deprecated. Other string formats (e.g. RFC 2822, or a
 date library's own non-ISO `toString()` output) aren't supported and may
 throw or produce an unspecified result depending on the underlying date
 library.
@@ -34,6 +39,6 @@ library.
 
 ```ts
 timeProvider.converter.convertToUtc("2026-06-01T12:00:00Z");
-timeProvider.converter.convertToUtc(1780488000000);
+timeProvider.converter.convertToUtc(toInstant({ milliseconds: 1780488000000 }));
 timeProvider.converter.convertToLocal("2026-06-01T12:00:00Z"); // rendered in clock.timezone
 ```

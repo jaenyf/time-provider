@@ -344,6 +344,8 @@ export interface IUtcOnlyConverter<TDate> {
    * Converts `time` to UTC `TDate`.
    * @returns `time` as UTC.
    */
+  convertToUtc(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated Pass `EpochMilliseconds` (see `toInstant()`) instead of a plain number. */
   convertToUtc(time: string | number | TDate): TDate;
 }
 
@@ -353,6 +355,8 @@ interface ILocalOnlyConverter<TDate> {
    * Converts `time` to local `TDate`.
    * @returns `time` as local time.
    */
+  convertToLocal(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated Pass `EpochMilliseconds` (see `toInstant()`) instead of a plain number. */
   convertToLocal(time: string | number | TDate): TDate;
 }
 
