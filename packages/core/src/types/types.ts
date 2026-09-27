@@ -177,10 +177,19 @@ interface IMovable<TSelf, TDate> {
   moveBy(spec: IMoveSpec, options?: IMoveOptions): TSelf;
 
   /**
-   * Moves the clock to `time`.
-   * @throws If the move is negative without `as: "snap"`, the options conflict, or the runtime is disposed.
+   * Moves the clock to `time`, or to the next or last pending timer.
+   * @throws If the move is negative without `as: "snap"`, the options conflict, no timer is pending for `"nextTimer"`/`"lastTimer"`, or the runtime is disposed.
    */
-  moveTo(time: string | EpochMilliseconds | TDate, options?: IMoveOptions): TSelf;
+  moveTo(
+    time: "nextTimer" | "lastTimer" | (string & {}) | EpochMilliseconds | TDate,
+    options?: IMoveOptions,
+  ): TSelf;
+
+  /**
+   * Moves the clock from timer to timer until none is pending.
+   * @throws If timers are still pending after the limit set by `withMoveUntilTimersLimit()`, `as` is `"snap"`, or the runtime is disposed.
+   */
+  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): TSelf;
 
   /**
    * @deprecated Use {@link moveBy}.
@@ -355,6 +364,9 @@ export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyC
 // ---------------------------------------------------------------------------
 // Timers
 // ---------------------------------------------------------------------------
+
+/** Default limit of {@link IManualClock.moveUntil}. */
+export const DEFAULT_MOVE_UNTIL_TIMERS_LIMIT = 1000;
 
 /** Discriminates the source of an {@link IScheduledHandle}. */
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
@@ -616,6 +628,9 @@ export interface IManualRuntime<TDate>
     IConverter<TDate>,
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
+  /** Timers {@link IManualClock.moveUntil} may fire before it throws. */
+  moveUntilTimersLimit: number;
+
   registerAddon(addon: IAddon<TDate>): void;
 
   /** @throws If this runtime is disposed. */
@@ -649,6 +664,9 @@ export interface IUtcOnlyManualRuntime<TDate>
     IUtcOnlyConverter<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
+  /** Timers {@link IManualClock.moveUntil} may fire before it throws. */
+  moveUntilTimersLimit: number;
+
   registerAddon(addon: IAddon<TDate>): void;
 
   /** @throws If this runtime is disposed. */
@@ -754,6 +772,7 @@ export interface IDeterministicPlugin<TDate> {
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IManualRuntime<TDate>;
 
   /** Creates a fixed-time runtime. */
@@ -780,6 +799,7 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
   /** Creates a manual-time runtime. */
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IUtcOnlyManualRuntime<TDate>;
 
   /** Creates a fixed-time runtime. */

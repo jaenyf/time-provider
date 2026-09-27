@@ -17,6 +17,7 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ) => IManualRuntime<TDate>;
 
   /** Constructor for the fixed runtime. */
@@ -34,8 +35,9 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IManualRuntime<TDate> {
-    return new this.ManualRuntimeCtor(localTimezone, initialTime);
+    return new this.ManualRuntimeCtor(localTimezone, initialTime, moveUntilTimersLimit);
   }
 
   createFixedRuntime(
@@ -63,6 +65,7 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ) => IUtcOnlyManualRuntime<TDate>;
 
   /** Constructor for the fixed runtime. */
@@ -81,8 +84,9 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
 
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IUtcOnlyManualRuntime<TDate> {
-    return new this.ManualRuntimeCtor(this.#utcTimezone, initialTime);
+    return new this.ManualRuntimeCtor(this.#utcTimezone, initialTime, moveUntilTimersLimit);
   }
 
   createFixedRuntime(

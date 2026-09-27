@@ -30,8 +30,9 @@ class ManualRuntime extends BaseManualRuntime<DateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | DateTime,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: DateTime<boolean>, years: number): DateTime<boolean> {
     return time.plus({ years });

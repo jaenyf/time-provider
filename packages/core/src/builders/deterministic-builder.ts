@@ -7,6 +7,7 @@ import type {
   IUtcOnlyDeterministicPlugin,
   TimezoneDefinition,
 } from "../types/types.ts";
+import { DEFAULT_MOVE_UNTIL_TIMERS_LIMIT } from "../types/types.ts";
 import type {
   AddonBuilderFactory,
   PublicBuilderSurface,
@@ -71,6 +72,7 @@ class ManualRuntimeBuilder<TDate>
   implements IManualRuntimeBuilder<TDate>
 {
   #initialDateTime?: string | number | TDate;
+  #moveUntilTimersLimit: number;
   #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
@@ -81,6 +83,7 @@ class ManualRuntimeBuilder<TDate>
     super(plugin, localTimezone);
     this.#initialDateTime = undefined;
     this.#addonBuilders = addonBuilders;
+    this.#moveUntilTimersLimit = DEFAULT_MOVE_UNTIL_TIMERS_LIMIT;
   }
 
   withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate> {
@@ -88,11 +91,23 @@ class ManualRuntimeBuilder<TDate>
     return this;
   }
 
+  withMoveUntilTimersLimit(limit: number): IManualRuntimeBuilder<TDate> {
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error(`Invalid moveUntil timers limit: ${limit}`);
+    }
+    this.#moveUntilTimersLimit = limit;
+    return this;
+  }
+
   create(): IManualTimeProvider<TDate> {
-    const initialTime = undefined !== this.#initialDateTime ? this.#initialDateTime : 0;
+    const initialTime = this.#initialDateTime ?? 0;
+    const moveUntilTimersLimit = this.#moveUntilTimersLimit;
     const runtime = this.plugin.supportsLocalTime
-      ? this.plugin.createManualRuntime(this.localTimezone, initialTime)
-      : (this.plugin.createManualRuntime(initialTime) as unknown as IManualRuntime<TDate>);
+      ? this.plugin.createManualRuntime(this.localTimezone, initialTime, moveUntilTimersLimit)
+      : (this.plugin.createManualRuntime(
+          initialTime,
+          moveUntilTimersLimit,
+        ) as unknown as IManualRuntime<TDate>);
     applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);
   }

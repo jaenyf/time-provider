@@ -115,6 +115,11 @@ export interface IManualRuntimeBuilder<TDate, TExtra = unknown>
     IComposeWithTimezone<IManualRuntimeBuilder<TDate, TExtra>> {
   /** Sets the initial time. */
   withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Sets how many timers `moveUntil()` may fire; defaults to 1000.
+   * @throws If `limit` is not a positive integer.
+   */
+  withMoveUntilTimersLimit(limit: number): IManualRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a manual deterministic UTC-only Time-Provider. */
@@ -125,6 +130,11 @@ interface IUtcOnlyManualRuntimeBuilder<TDate, TExtra = unknown> extends ICreateT
   withInitialTime(
     initialDateTime: string | number | TDate,
   ): IUtcOnlyManualRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Sets how many timers `moveUntil()` may fire; defaults to 1000.
+   * @throws If `limit` is not a positive integer.
+   */
+  withMoveUntilTimersLimit(limit: number): IUtcOnlyManualRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a sequential deterministic Time-Provider. */

@@ -703,6 +703,12 @@ export abstract class BaseDeterministicRuntime<TDate>
     return this.#dueQueue.untagged().length;
   }
 
+  /** Number of untagged timers due at or before the wall time `time`. */
+  protected countTimersDueBy(time: number): number {
+    const runAt = time - this.#wallClockTimeOffset;
+    return this.#dueQueue.untagged().filter((entry) => entry.runAt <= runAt).length;
+  }
+
   /** Wall time of the earliest (`-1`) or latest (`1`) untagged timer. */
   #dueTime(sign: 1 | -1): EpochMilliseconds | undefined {
     let runAt: number | undefined;
@@ -938,6 +944,8 @@ export abstract class BaseManualRuntime<TDate>
   extends BaseSequentialRuntime<TDate>
   implements IManualRuntime<TDate>
 {
+  #moveUntilTimersLimit: number;
+
   /**
    * @param localTimezone The runtime timezone.
    * @param fixedTime The initial clock time.
@@ -946,9 +954,15 @@ export abstract class BaseManualRuntime<TDate>
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, [fixedTime], converter);
+    this.#moveUntilTimersLimit = moveUntilTimersLimit;
+  }
+
+  get moveUntilTimersLimit(): number {
+    return this.#moveUntilTimersLimit;
   }
 
   get clock(): IManualClock<TDate> {
@@ -970,9 +984,36 @@ export abstract class BaseManualRuntime<TDate>
     return this.#move(this.#targetOf(spec), options);
   }
 
-  moveTo(time: string | EpochMilliseconds | TDate, options?: IMoveOptions): IManualRuntime<TDate> {
+  moveTo(
+    time: "nextTimer" | "lastTimer" | (string & {}) | EpochMilliseconds | TDate,
+    options?: IMoveOptions,
+  ): IManualRuntime<TDate> {
     this.assertIsNotDisposed();
+    if (time === "nextTimer" || time === "lastTimer") {
+      const dueTime = time === "nextTimer" ? this.nextDueTime : this.lastDueTime;
+      if (dueTime === undefined) throw new Error("No pending timer to move to");
+      return this.#move(dueTime, options);
+    }
     return this.#move(this.convertToEpochTimestampImpl(time), options);
+  }
+
+  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): IManualRuntime<TDate> {
+    this.assertIsNotDisposed();
+    const as: unknown = options?.as;
+    if (until !== "noTimers" || as === "snap") {
+      throw new Error(`Invalid moveUntil arguments ('${until}', as: '${String(as)}')`);
+    }
+    let fired = 0;
+    for (let next = this.nextDueTime; next !== undefined; next = this.nextDueTime) {
+      fired += this.countTimersDueBy(next);
+      if (fired > this.moveUntilTimersLimit) {
+        throw new Error(
+          `Timers still pending after ${this.moveUntilTimersLimit} fired; see withMoveUntilTimersLimit()`,
+        );
+      }
+      this.#move(next, { as: options?.as });
+    }
+    return this;
   }
 
   #move(targetTimestamp: EpochMilliseconds, options?: IMoveOptions): IManualRuntime<TDate> {

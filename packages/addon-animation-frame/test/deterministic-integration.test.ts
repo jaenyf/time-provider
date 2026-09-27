@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vite-plus/test";
-import { BaseManualRuntime, toInstant } from "@time-provider/core/deterministic";
+import {
+  BaseManualRuntime,
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
+  toInstant,
+} from "@time-provider/core/deterministic";
 import type { ITimeConverter } from "@time-provider/core";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import type { WithAnimationFrameApi } from "../src/types.ts";
@@ -19,7 +23,7 @@ const identityConverter: ITimeConverter<number> = {
 
 class RealManualRuntime extends BaseManualRuntime<number> {
   constructor(initialTime: number) {
-    super("Etc/UTC", initialTime, identityConverter);
+    super("Etc/UTC", initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT, identityConverter);
   }
   protected advanceYears(time: number, years: number): number {
     return time + years * 365 * 24 * 60 * 60 * 1000;

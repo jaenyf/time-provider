@@ -29,8 +29,9 @@ class ManualRuntime extends BaseManualRuntime<moment.Moment> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | moment.Moment,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: moment.Moment, years: number): moment.Moment {
     return time.add({ years });

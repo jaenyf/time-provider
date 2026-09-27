@@ -29,8 +29,9 @@ class ManualRuntime extends BaseManualRuntime<Temporal.ZonedDateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | Temporal.ZonedDateTime,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: Temporal.ZonedDateTime, years: number): Temporal.ZonedDateTime {
     return time.add({ years });

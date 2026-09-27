@@ -30,8 +30,9 @@ class ManualRuntime extends BaseManualRuntime<dayjs.Dayjs> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | dayjs.Dayjs,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: dayjs.Dayjs, years: number): dayjs.Dayjs {
     return time.add(years, "year");

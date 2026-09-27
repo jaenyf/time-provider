@@ -1,8 +1,9 @@
 import { expect, test, describe } from "vite-plus/test";
-import type {
-  IDeterministicPlugin,
-  IDeterministicRuntime,
-  IUtcOnlyDeterministicPlugin,
+import {
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
+  type IDeterministicPlugin,
+  type IDeterministicRuntime,
+  type IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
@@ -38,8 +39,8 @@ export function testManualRuntime<TDate>(
     initialTime: string | number | TDate,
   ) =>
     plugin.supportsLocalTime
-      ? plugin.createManualRuntime(timezone, initialTime)
-      : plugin.createManualRuntime(initialTime);
+      ? plugin.createManualRuntime(timezone, initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT)
+      : plugin.createManualRuntime(initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT);
 
   const createSUT = () => createManualRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
 
@@ -300,6 +301,7 @@ export function testManualRuntime<TDate>(
         expect(() => sut.moveTo(toInstant({ milliseconds: 0 }))).toThrow(
           "Invalid operation on a disposed runtime",
         );
+        expect(() => sut.moveUntil("noTimers")).toThrow("Invalid operation on a disposed runtime");
       });
 
       test.each([
@@ -446,6 +448,111 @@ export function testManualRuntime<TDate>(
         sut.moveBy({ milliseconds: 10 });
         sut.moveBy({ hours: -1 }, { as: "snap" });
         expect(sut.timings.measure("m", { start: "a" }).duration).toBe(10);
+      });
+
+      test.each<["nextTimer" | "lastTimer", string[], number]>([
+        ["nextTimer", ["a"], 10],
+        ["lastTimer", ["a", "b"], 30],
+      ])("moveTo(%s) moves to that timer's due time", (target, fired, elapsed) => {
+        const sut = createAtT0();
+        const seen: string[] = [];
+        sut.scheduler.timers.once({ milliseconds: 30 }, () => seen.push("b"));
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => seen.push("a"));
+        sut.moveTo(target);
+        expect(seen).toEqual(fired);
+        expect(sut.timestampNow()).toBe(t0 + elapsed);
+      });
+
+      test.each(["nextTimer", "lastTimer"] as const)(
+        "moveTo(%s) throws when no timer is pending",
+        (target) => {
+          const sut = createAtT0();
+          expect(() => sut.moveTo(target)).toThrow("No pending timer to move to");
+        },
+      );
+
+      test.each<[{ as?: "flow" | "sleep" } | undefined]>([
+        [undefined],
+        [{ as: "flow" }],
+        [{ as: "sleep" }],
+      ])("moveUntil fires timers scheduled by timers until none is pending (%o)", (options) => {
+        const sut = createAtT0();
+        const seen: number[] = [];
+        const { timers } = sut.scheduler;
+        timers.once({ milliseconds: 30 }, () => {
+          seen.push(sut.timestampNow() - t0);
+          timers.once({ milliseconds: 50 }, () => seen.push(sut.timestampNow() - t0));
+        });
+        timers.once({ milliseconds: 10 }, () => seen.push(sut.timestampNow() - t0));
+        expect(sut.moveUntil("noTimers", options)).toBe(sut);
+        expect(seen).toEqual([10, 30, 80]);
+        expect(timers.pendingCount).toBe(0);
+        expect(sut.timestampNow()).toBe(t0 + 80);
+      });
+
+      test("moveUntil leaves tagged entries alone", () => {
+        const sut = createAtT0() as IDeterministicRuntime<TDate> & ReturnType<typeof createAtT0>;
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+        sut.moveUntil("noTimers");
+        expect(sut.timestampNow()).toBe(t0);
+        expect(sut.countSpecific("tag")).toBe(1);
+      });
+
+      test.each([{ as: "flow" }, { as: "sleep" }] as const)(
+        "moveUntil throws after the default limit of fired timers (%o)",
+        (options) => {
+          const sut = createAtT0();
+          expect(sut.moveUntilTimersLimit).toBe(DEFAULT_MOVE_UNTIL_TIMERS_LIMIT);
+          sut.scheduler.timers.every({ milliseconds: 1 }, () => {});
+          expect(() => sut.moveUntil("noTimers", options)).toThrow(
+            "Timers still pending after 1000 fired",
+          );
+          expect(sut.timestampNow()).toBe(t0 + 1000);
+        },
+      );
+
+      test("withMoveUntilTimersLimit sets the moveUntil limit", () => {
+        const sut = getDeterministicBuilderFor(plugin)
+          .asManual()
+          .withInitialTime(t0)
+          .withMoveUntilTimersLimit(3)
+          .create();
+        sut.scheduler.timers.every({ milliseconds: 1 }, () => {});
+        expect(() => sut.clock.moveUntil("noTimers")).toThrow("Timers still pending after 3 fired");
+        expect(sut.clock.timestampNow()).toBe(t0 + 3);
+      });
+
+      test.each<[number, number, boolean]>([
+        [3, 10, true],
+        [4, 20, false],
+      ])("moveUntil counts timers due together one by one (limit %s)", (limit, at, throws) => {
+        const sut = getDeterministicBuilderFor(plugin)
+          .asManual()
+          .withInitialTime(t0)
+          .withMoveUntilTimersLimit(limit)
+          .create();
+        for (const delay of [10, 10, 20, 20])
+          sut.scheduler.timers.once({ milliseconds: delay }, () => {});
+        const moveUntil = () => sut.clock.moveUntil("noTimers");
+        if (throws) expect(moveUntil).toThrow(`after ${limit} fired`);
+        else moveUntil();
+        expect(sut.clock.timestampNow()).toBe(t0 + at);
+      });
+
+      test.each([0, -1, 1.5, Number.NaN])("withMoveUntilTimersLimit(%s) throws", (limit) => {
+        expect(() =>
+          getDeterministicBuilderFor(plugin).asManual().withMoveUntilTimersLimit(limit),
+        ).toThrow(`Invalid moveUntil timers limit: ${limit}`);
+      });
+
+      test.each<[string, { as?: "flow" | "sleep" } | undefined]>([
+        ["noTimers", { as: "snap" as "flow" }],
+        ["noPending", undefined],
+      ])("moveUntil(%s, %o) throws", (until, options) => {
+        const sut = createAtT0();
+        expect(() => sut.moveUntil(until as "noTimers", options)).toThrow(
+          "Invalid moveUntil arguments",
+        );
       });
     });
 

@@ -33,8 +33,9 @@ class ManualRuntime extends BaseManualRuntime<Date> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | Date,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: Date, years: number): Date {
     const day = time.getUTCDate();

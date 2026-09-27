@@ -3,12 +3,13 @@ import {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,
 } from "../src/plugins/deterministic-plugin.ts";
-import type {
-  IDeterministicRuntime,
-  IUtcOnlyDeterministicRuntime,
-  IManualRuntime,
-  IUtcOnlyManualRuntime,
-  TimezoneDefinition,
+import {
+  type IDeterministicRuntime,
+  type IUtcOnlyDeterministicRuntime,
+  type IManualRuntime,
+  type IUtcOnlyManualRuntime,
+  type TimezoneDefinition,
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
 } from "../src/types/types.ts";
 
 class FakeRuntime {
@@ -56,7 +57,8 @@ describe("BaseUtcOnlyDeterministicPlugin", () => {
   test.each([
     [
       "createManualRuntime",
-      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createManualRuntime(0),
+      (plugin: FakeUtcOnlyDeterministicPlugin) =>
+        plugin.createManualRuntime(0, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT),
     ],
     [
       "createFixedRuntime",
