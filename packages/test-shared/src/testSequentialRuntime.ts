@@ -12,6 +12,7 @@ import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import {
   testConstructorArgs,
   testTimestampNow,
+  testTimestampNowMatchesLastRead,
   testWithTimezone,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
@@ -52,6 +53,7 @@ export function testSequentialRuntime<TDate>(
 
   describe("sequential", () => {
     testTimestampNow(createSUT);
+    testTimestampNowMatchesLastRead(createSUT);
     describe.skipIf(!plugin.supportsLocalTime)("localNow", () => {
       test("doesn't throw", () => {
         const sut = createSUT();

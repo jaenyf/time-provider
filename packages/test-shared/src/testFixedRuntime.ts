@@ -10,6 +10,7 @@ import {
   testWithTimezone,
   testUtcNow,
   testTimestampNow,
+  testTimestampNowMatchesLastRead,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
@@ -49,6 +50,7 @@ export function testFixedRuntime<TDate>(
     testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
     testTimestampNow(createSUT);
+    testTimestampNowMatchesLastRead(createSUT);
 
     describe("converter", () => {
       testConverter(

@@ -777,6 +777,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   /** Epoch timestamps consumed one per clock read; the last repeats. */
   protected _sequentialTimestamps: number[];
   #sequentialIndex = 0;
+  #hasBeenRead = false;
 
   /**
    * @param localTimezone The runtime timezone.
@@ -818,9 +819,10 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   }
 
   private consumeNextSequentialTimestamp(): number {
-    if (this.#sequentialIndex < this._sequentialTimestamps.length - 1) {
-      return this._sequentialTimestamps[this.#sequentialIndex++];
+    if (this.#hasBeenRead && this.#sequentialIndex < this._sequentialTimestamps.length - 1) {
+      this.#sequentialIndex++;
     }
+    this.#hasBeenRead = true;
     return this._sequentialTimestamps[this.#sequentialIndex] ?? 0;
   }
 }
