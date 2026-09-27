@@ -66,7 +66,7 @@ describe("BaseUtcOnlyDeterministicPlugin", () => {
     ],
     [
       "createSequentialRuntime",
-      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createSequentialRuntime([0]),
+      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createSequentialRuntime([{ time: 0 }]),
     ],
   ] as const)("%s pins the runtime to Etc/UTC", (_name, create) => {
     const runtime = create(new FakeUtcOnlyDeterministicPlugin());

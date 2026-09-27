@@ -4,7 +4,7 @@ import {
   BaseSequentialRuntime,
   BaseUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
-import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, IMoveOptions, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 
 class FixedRuntime extends BaseFixedRuntime<Date> {
@@ -19,9 +19,12 @@ class FixedRuntime extends BaseFixedRuntime<Date> {
 class SequentialRuntime extends BaseSequentialRuntime<Date> {
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | Date)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | Date;
+      as?: IMoveOptions["as"];
+    }[],
   ) {
-    super(localTimezone, sequentialTimes, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper);
   }
 }
 

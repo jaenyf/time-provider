@@ -442,6 +442,13 @@ export function testManualRuntime<TDate>(
         expect(fired).toBe(0);
       });
 
+      test("a flow never moves back after a callback moved the clock further", () => {
+        const sut = createAtT0();
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.moveBy({ milliseconds: 500 }));
+        sut.moveBy({ milliseconds: 100 });
+        expect(sut.timestampNow()).toBe(t0 + 510);
+      });
+
       test("a timing measure is never negative across a backward snap", () => {
         const sut = createAtT0();
         sut.timings.mark("a");

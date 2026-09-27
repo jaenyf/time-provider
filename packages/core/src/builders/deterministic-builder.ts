@@ -4,6 +4,7 @@ import type {
   IDeterministicTimeProvider,
   IManualRuntime,
   IManualTimeProvider,
+  IMoveOptions,
   IUtcOnlyDeterministicPlugin,
   TimezoneDefinition,
 } from "../types/types.ts";
@@ -117,7 +118,7 @@ class SequentialRuntimeBuilder<TDate>
   extends BaseRuntimeBuilder<AnyDeterministicPlugin<TDate>>
   implements ISequentialRuntimeBuilder<TDate>
 {
-  #sequentialTimes: (string | number | TDate)[] = [];
+  #sequentialMoves: { time: string | number | TDate; as?: IMoveOptions["as"] }[] = [];
   #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
@@ -131,17 +132,18 @@ class SequentialRuntimeBuilder<TDate>
 
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
+    options?: { as?: IMoveOptions["as"] },
   ): ISequentialRuntimeBuilder<TDate> {
-    this.#sequentialTimes.push(sequentialDateTime);
+    this.#sequentialMoves.push({ time: sequentialDateTime, as: options?.as });
     return this;
   }
 
   create(): IDeterministicTimeProvider<TDate> {
-    const sequentialTimes = this.#sequentialTimes.length ? this.#sequentialTimes : [0];
+    const sequentialMoves = this.#sequentialMoves.length ? this.#sequentialMoves : [{ time: 0 }];
     const runtime = this.plugin.supportsLocalTime
-      ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialTimes)
+      ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialMoves)
       : (this.plugin.createSequentialRuntime(
-          sequentialTimes,
+          sequentialMoves,
         ) as unknown as IDeterministicRuntime<TDate>);
     applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);

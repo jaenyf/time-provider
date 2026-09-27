@@ -787,7 +787,10 @@ export interface IDeterministicPlugin<TDate> {
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IDeterministicRuntime<TDate>;
 }
 
@@ -812,7 +815,10 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    * @param sequentialTimes Empty means the clock stays at the Unix epoch.
    */
   createSequentialRuntime(
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IUtcOnlyDeterministicRuntime<TDate>;
 }
 //#endregion

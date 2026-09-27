@@ -268,7 +268,7 @@ describe("DeterministicPluggedRuntimeBuilder", () => {
     test("defaults to a single epoch-0 entry when withSequentialTime was never called", () => {
       const { plugin, getLastSequentialTimes } = fakeSequentialTimesCapturingDeterministicPlugin();
       createDeterministicTimeProvider.for(plugin).asSequential().create();
-      expect(getLastSequentialTimes()).toEqual([0]);
+      expect(getLastSequentialTimes()).toEqual([{ time: 0 }]);
     });
   });
 

@@ -4,7 +4,7 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
 } from "@time-provider/core/deterministic";
-import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, IMoveOptions, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 import { DateTime } from "luxon";
 
@@ -20,9 +20,12 @@ class FixedRuntime extends BaseFixedRuntime<DateTime> {
 class SequentialRuntime extends BaseSequentialRuntime<DateTime> {
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | DateTime)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | DateTime;
+      as?: IMoveOptions["as"];
+    }[],
   ) {
-    super(localTimezone, sequentialTimes, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper);
   }
 }
 

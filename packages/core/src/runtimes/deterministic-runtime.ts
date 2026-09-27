@@ -868,37 +868,52 @@ export abstract class BaseDeterministicRuntime<TDate>
 /** Base class for deterministic sequential runtimes. */
 export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRuntime<TDate> {
   /** Epoch timestamps consumed one per clock read; the last repeats. */
-  protected _sequentialTimestamps: number[];
+  protected _sequentialMoves: { time: number; as: IMoveOptions["as"] }[];
   #sequentialIndex = 0;
   #hasBeenRead = false;
 
   /**
    * @param localTimezone The runtime timezone.
-   * @param sequentialTimes Timestamps consumed one per clock read.
+   * @param sequentialMoves Timestamps consumed one per clock read.
    * @param converter The runtime time converter.
    */
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, converter);
-    this._sequentialTimestamps = sequentialTimes.map((t) => this.convertToEpochTimestampImpl(t));
+    const moves = sequentialMoves.map((move) => ({
+      time: this.convertToEpochTimestampImpl(move.time) as number,
+      as: move.as,
+    }));
+    for (let i = 1; i < moves.length; i++) {
+      const backward = moves[i].time < moves[i - 1].time;
+      if (moves[i].as === undefined) moves[i].as = backward ? "snap" : "flow";
+      else if (backward && moves[i].as !== "snap") {
+        throw new Error(`A clock can't ${moves[i].as} backward. Use { as: "snap" }`);
+      }
+    }
+    this._sequentialMoves = moves;
+
     this.startMonotonicClock();
   }
 
   localNowImpl(): TDate {
-    const nowTimestamp = this.consumeNextSequentialTimestamp();
+    const nowSpec = this.consumeNextSequentialMove();
     this.mayRunDueCallbacks();
     // Already a validated epoch-milliseconds value (see timestampNowImpl below) - no need to
     // round-trip it back through toInstant()'s spec-object validation.
-    return this.convertToLocalDateImpl(this.localTimezone, nowTimestamp as EpochMilliseconds);
+    return this.convertToLocalDateImpl(this.localTimezone, nowSpec.time as EpochMilliseconds);
   }
 
   utcNowImpl(): TDate {
-    const nowTimestamp = this.consumeNextSequentialTimestamp();
+    const nowSpec = this.consumeNextSequentialMove();
     this.mayRunDueCallbacks();
-    return this.convertToUtcDateImpl(nowTimestamp as EpochMilliseconds);
+    return this.convertToUtcDateImpl(nowSpec.time as EpochMilliseconds);
   }
 
   /** Returns the current sequence value without consuming it or running callbacks. */
@@ -907,16 +922,61 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     // convertToEpochTimestampImpl, which itself validates) - no need to re-validate them here by
     // round-tripping through toInstant()'s spec-object form.
     return (
-      this._sequentialTimestamps.length > 0 ? this._sequentialTimestamps[this.#sequentialIndex] : 0
+      this._sequentialMoves.length > 0 ? this._sequentialMoves[this.#sequentialIndex].time : 0
     ) as EpochMilliseconds;
   }
 
-  private consumeNextSequentialTimestamp(): number {
-    if (this.#hasBeenRead && this.#sequentialIndex < this._sequentialTimestamps.length - 1) {
+  private consumeNextSequentialMove(): { time: number; as?: IMoveOptions["as"] } {
+    const moves = this._sequentialMoves;
+    const index = this.#sequentialIndex;
+    if (this.#hasBeenRead && index < moves.length - 1) {
+      const next = moves[index + 1];
+      const target = next.time as EpochMilliseconds;
+      next.time = moves[index].time;
       this.#sequentialIndex++;
+      this.moveClock(target, { as: next.as });
     }
     this.#hasBeenRead = true;
-    return this._sequentialTimestamps[this.#sequentialIndex] ?? 0;
+    return moves[this.#sequentialIndex] ?? { time: 0 };
+  }
+  /**
+   * Moves the clock to `targetTimestamp`.
+   * @throws If the options are invalid or conflict, or a flow or sleep goes backward.
+   */
+  protected moveClock(targetTimestamp: EpochMilliseconds, options?: IMoveOptions): this {
+    const as = options?.as ?? "flow";
+    const monotonic = options?.monotonic ?? (as === "snap" ? "paused" : "running");
+    if (
+      !MOVE_KINDS.includes(as) ||
+      (monotonic !== "running" && monotonic !== "paused") ||
+      (as === "flow" && monotonic === "paused") ||
+      (as === "snap" && monotonic === "running")
+    ) {
+      throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
+    }
+    const delta = targetTimestamp - this.timestampNow();
+    if (delta < 0 && as !== "snap") {
+      throw new Error(`A clock can't ${as} backward. Use { as: "snap" }`);
+    }
+    if (as === "flow") {
+      this.flowTo(targetTimestamp);
+      return this;
+    }
+    if (monotonic === "paused") this.snapWallClockTime(delta);
+    this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
+    this.mayRunDueCallbacks(true);
+    return this;
+  }
+
+  /** Moves the clock to `targetTimestamp`, firing each due callback at its due time. */
+  protected flowTo(targetTimestamp: EpochMilliseconds): void {
+    // Each due callback must see its own due time, or a self-rescheduling chain fires once per move.
+    let lastSet = this._sequentialMoves[this.#sequentialIndex].time;
+    this.drainDueAdvancing(targetTimestamp, (runAt) => {
+      this._sequentialMoves[this.#sequentialIndex].time = lastSet = runAt;
+    });
+    if (this._sequentialMoves[this.#sequentialIndex].time === lastSet)
+      this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
   }
 }
 
@@ -932,7 +992,7 @@ export abstract class BaseFixedRuntime<TDate> extends BaseSequentialRuntime<TDat
     fixedTime: string | EpochMilliseconds | number | TDate,
     converter: ITimeConverter<TDate>,
   ) {
-    super(localTimezone, [fixedTime], converter);
+    super(localTimezone, [{ time: fixedTime }], converter);
     // Time never advances on a fixed clock, so scheduled callbacks are never due - see ITimers.
     // Microtasks aren't time-driven, so they still run - see mayRunDueCallbacks's own checkpoint.
     this.disableDueDraining();
@@ -957,7 +1017,7 @@ export abstract class BaseManualRuntime<TDate>
     moveUntilTimersLimit: number,
     converter: ITimeConverter<TDate>,
   ) {
-    super(localTimezone, [fixedTime], converter);
+    super(localTimezone, [{ time: fixedTime }], converter);
     this.#moveUntilTimersLimit = moveUntilTimersLimit;
   }
 
@@ -975,13 +1035,13 @@ export abstract class BaseManualRuntime<TDate>
    */
   advance(advanceConfiguration: IMoveSpec): IManualRuntime<TDate> {
     this.assertIsNotDisposed();
-    this.#flowTo(this.#targetOf(advanceConfiguration));
+    this.flowTo(this.#targetOf(advanceConfiguration));
     return this;
   }
 
   moveBy(spec: IMoveSpec, options?: IMoveOptions): IManualRuntime<TDate> {
     this.assertIsNotDisposed();
-    return this.#move(this.#targetOf(spec), options);
+    return this.moveClock(this.#targetOf(spec), options);
   }
 
   moveTo(
@@ -992,9 +1052,9 @@ export abstract class BaseManualRuntime<TDate>
     if (time === "nextTimer" || time === "lastTimer") {
       const dueTime = time === "nextTimer" ? this.nextDueTime : this.lastDueTime;
       if (dueTime === undefined) throw new Error("No pending timer to move to");
-      return this.#move(dueTime, options);
+      return this.moveClock(dueTime, options);
     }
-    return this.#move(this.convertToEpochTimestampImpl(time), options);
+    return this.moveClock(this.convertToEpochTimestampImpl(time), options);
   }
 
   moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): IManualRuntime<TDate> {
@@ -1011,33 +1071,8 @@ export abstract class BaseManualRuntime<TDate>
           `Timers still pending after ${this.moveUntilTimersLimit} fired; see withMoveUntilTimersLimit()`,
         );
       }
-      this.#move(next, { as: options?.as });
+      this.moveClock(next, { as: options?.as });
     }
-    return this;
-  }
-
-  #move(targetTimestamp: EpochMilliseconds, options?: IMoveOptions): IManualRuntime<TDate> {
-    const as = options?.as ?? "flow";
-    const monotonic = options?.monotonic ?? (as === "snap" ? "paused" : "running");
-    if (
-      !MOVE_KINDS.includes(as) ||
-      (monotonic !== "running" && monotonic !== "paused") ||
-      (as === "flow" && monotonic === "paused") ||
-      (as === "snap" && monotonic === "running")
-    ) {
-      throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
-    }
-    const delta = targetTimestamp - this.timestampNow();
-    if (delta < 0 && as !== "snap") {
-      throw new Error(`A clock can't ${as} backward. Use { as: "snap" }`);
-    }
-    if (as === "flow") {
-      this.#flowTo(targetTimestamp);
-      return this;
-    }
-    if (monotonic === "paused") this.snapWallClockTime(delta);
-    this._sequentialTimestamps[0] = targetTimestamp;
-    this.mayRunDueCallbacks(true);
     return this;
   }
 
@@ -1052,15 +1087,6 @@ export abstract class BaseManualRuntime<TDate>
     if (spec.seconds) time = this.advanceSeconds(time, spec.seconds);
     if (spec.milliseconds) time = this.advanceMilliseconds(time, spec.milliseconds);
     return this.convertToEpochTimestampImpl(time);
-  }
-
-  #flowTo(targetTimestamp: EpochMilliseconds): void {
-    // Each due callback must see its own due time, or a self-rescheduling chain fires once per move.
-    let lastSet = this._sequentialTimestamps[0];
-    this.drainDueAdvancing(targetTimestamp, (runAt) => {
-      this._sequentialTimestamps[0] = lastSet = runAt;
-    });
-    if (this._sequentialTimestamps[0] === lastSet) this._sequentialTimestamps[0] = targetTimestamp;
   }
 
   /** Returns `time` shifted by `years`. */

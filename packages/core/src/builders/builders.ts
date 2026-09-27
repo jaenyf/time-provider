@@ -3,6 +3,7 @@ import type {
   IDisposable,
   IDeterministicTimeProvider,
   IManualTimeProvider,
+  IMoveOptions,
   IRuntime,
   ISystemPlugin,
   ITimeProvider,
@@ -142,9 +143,10 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<ISequentialRuntimeBuilder<TDate, TExtra>> {
-  /** Adds a sequential time. */
+  /** Adds a sequential time, reached by default with a backward snap or a forward flow */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
+    options?: { as?: IMoveOptions["as"] },
   ): ISequentialRuntimeBuilder<TDate, TExtra>;
 }
 
@@ -152,9 +154,10 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
 interface IUtcOnlySequentialRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
-  /** Adds a sequential time. */
+  /** Adds a sequential time, reached by default with a backward snap or a forward flow. */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
+    options?: { as?: IMoveOptions["as"] },
   ): IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>;
 }
 
