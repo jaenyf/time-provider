@@ -17,6 +17,7 @@ import {
 import { testConverter } from "./helpers/testConverter.ts";
 import { testMonotonicClock, testTimings } from "./helpers/testTimings.ts";
 import { testAddonCronSystem } from "./helpers/testCron.ts";
+import { testAddonEtaSystem } from "./helpers/testEta.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testSystemRuntime<TDate>(
@@ -350,6 +351,10 @@ export function testSystemRuntime<TDate>(
 
     describe("addon-cron", () => {
       testAddonCronSystem(() => getBuilderFor(plugin));
+    });
+
+    describe("addon-eta", () => {
+      testAddonEtaSystem(() => getBuilderFor(plugin));
     });
   });
 }

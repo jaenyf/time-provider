@@ -36,7 +36,7 @@ function fakeDeterministicRuntime(now: number): {
       throw new Error("not used by the eta addon");
     },
   };
-  const clock = { timestampNow: () => now };
+  const clock = { timestampNow: () => now, monotonicNow: () => now };
   return {
     runtime: {
       scheduler: { timers },

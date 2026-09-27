@@ -27,6 +27,7 @@ import {
   type TimezoneDefinition,
 } from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
+import { testAddonEtaManual } from "./helpers/testEta.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testManualRuntime<TDate>(
@@ -1117,6 +1118,10 @@ export function testManualRuntime<TDate>(
 
     describe("addon-cron", () => {
       testAddonCronManual(() => getDeterministicBuilderFor(plugin));
+    });
+
+    describe("addon-eta", () => {
+      testAddonEtaManual(() => getDeterministicBuilderFor(plugin));
     });
   });
 }

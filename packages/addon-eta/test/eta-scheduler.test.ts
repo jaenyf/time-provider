@@ -26,6 +26,7 @@ function fakeRuntime(timestampNowDelegate: () => EpochMilliseconds): IRuntime<un
     timestampNow: timestampNowDelegate,
     clock: {
       timestampNow: timestampNowDelegate,
+      monotonicNow: timestampNowDelegate,
     },
     registerAddon: () => {},
     scheduler: {

@@ -192,6 +192,7 @@
       "name": "@time-provider/test-shared",
       "dependencies": {
         "@time-provider/addon-cron": "workspace:*",
+        "@time-provider/addon-eta": "workspace:*",
         "@time-provider/core": "workspace:*",
       },
       "peerDependencies": {
