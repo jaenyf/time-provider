@@ -1,6 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import type {
   IDeterministicPlugin,
+  IDeterministicRuntime,
   IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
@@ -20,6 +21,7 @@ import {
   asap,
   toInstant,
   type IMoveOptions,
+  ScheduledHandleKind,
   type IScheduledHandle,
   type TimezoneDefinition,
 } from "@time-provider/core";
@@ -444,6 +446,70 @@ export function testManualRuntime<TDate>(
         sut.moveBy({ milliseconds: 10 });
         sut.moveBy({ hours: -1 }, { as: "snap" });
         expect(sut.timings.measure("m", { start: "a" }).duration).toBe(10);
+      });
+    });
+
+    describe("timer queries", () => {
+      const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+      const createAtT0 = () => createManualRuntime("Pacific/Kiritimati", t0);
+
+      test("report nothing pending on a fresh runtime", () => {
+        const { timers, microtasks } = createAtT0().scheduler;
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          undefined,
+          undefined,
+          0,
+        ]);
+        expect(microtasks.pendingCount).toBe(0);
+      });
+
+      test("report the earliest and latest due times and the pending count", () => {
+        const sut = createAtT0();
+        const { timers } = sut.scheduler;
+        const once = timers.once({ milliseconds: 100 }, () => {});
+        timers.every({ milliseconds: 50 }, () => {});
+        timers.recurring(() => false, { milliseconds: 300 });
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          t0 + 50,
+          t0 + 300,
+          3,
+        ]);
+        sut.moveBy({ milliseconds: 60 });
+        expect(timers.nextDueTime).toBe(t0 + 100);
+        once.dispose();
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          t0 + 100,
+          t0 + 300,
+          2,
+        ]);
+      });
+
+      test("report wall due times after a snap", () => {
+        const sut = createAtT0();
+        sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.scheduler.timers.nextDueTime).toBe(t0 + 100 - 3_600_000);
+      });
+
+      test("skip tagged entries, which countSpecific counts", () => {
+        const sut = createAtT0() as IDeterministicRuntime<TDate> & ReturnType<typeof createAtT0>;
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+        expect([sut.scheduler.timers.nextDueTime, sut.scheduler.timers.pendingCount]).toEqual([
+          undefined,
+          0,
+        ]);
+        expect([sut.countSpecific("tag"), sut.countSpecific("other")]).toEqual([1, 0]);
+        sut.moveBy({ milliseconds: 10 });
+        expect(sut.countSpecific("tag")).toBe(0);
+      });
+
+      test("count queued microtasks", () => {
+        const { microtasks } = createAtT0().scheduler;
+        microtasks.queue(() => {});
+        microtasks.queue(() => {});
+        expect(microtasks.pendingCount).toBe(2);
+        microtasks.drain();
+        expect(microtasks.pendingCount).toBe(0);
       });
     });
 

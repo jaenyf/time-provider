@@ -8,6 +8,7 @@ import type {
   IDeterministicRuntime,
   IDeterministicMicrotasks,
   IDeterministicScheduler,
+  IDeterministicTimers,
   IManualClock,
   IManualRuntime,
   IRuntime,
@@ -329,6 +330,24 @@ class DueHeap<TDate> {
     );
   }
 
+  /** Live entries registered without a tag. */
+  untagged(): DueEntry<TDate>[] {
+    const entries: DueEntry<TDate>[] = [];
+    for (let entry = this._liveHead; entry !== undefined; entry = entry._liveNext) {
+      if (entry.tag === undefined) entries.push(entry);
+    }
+    return entries;
+  }
+
+  /** Number of live entries under `tag`. */
+  countTagged(tag: unknown): number {
+    let count = 0;
+    for (let entry = this._tagLists.get(tag)?.head; entry !== undefined; entry = entry._tagNext) {
+      count++;
+    }
+    return count;
+  }
+
   /** Retires an entry from the live/tag lists and lazily from the heap. */
   retireEntry(entry: DueEntry<TDate>): void {
     this._unlinkLive(entry);
@@ -597,6 +616,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   #dueQueue: DueHeap<TDate>;
   #dueDrainingDisabled = false;
   #microtasks: MicrotaskQueue;
+  #microtasksFacade?: IDeterministicMicrotasks;
   #rethrowTimerErrors: boolean;
   #timings = new DeterministicTimings(this);
   #monotonicOrigin!: EpochMilliseconds;
@@ -667,10 +687,43 @@ export abstract class BaseDeterministicRuntime<TDate>
     return this;
   }
 
-  //#region microtasks management
-  /** Returns this runtime as deterministic microtasks. */
-  override get microtasks(): IDeterministicMicrotasks {
+  override get timers(): IDeterministicTimers {
     return this;
+  }
+
+  get nextDueTime(): EpochMilliseconds | undefined {
+    return this.#dueTime(-1);
+  }
+
+  get lastDueTime(): EpochMilliseconds | undefined {
+    return this.#dueTime(1);
+  }
+
+  get pendingCount(): number {
+    return this.#dueQueue.untagged().length;
+  }
+
+  /** Wall time of the earliest (`-1`) or latest (`1`) untagged timer. */
+  #dueTime(sign: 1 | -1): EpochMilliseconds | undefined {
+    let runAt: number | undefined;
+    for (const entry of this.#dueQueue.untagged()) {
+      if (runAt === undefined || (entry.runAt - runAt) * sign > 0) runAt = entry.runAt;
+    }
+    return runAt === undefined
+      ? undefined
+      : ((runAt + this.#wallClockTimeOffset) as EpochMilliseconds);
+  }
+
+  //#region microtasks management
+  override get microtasks(): IDeterministicMicrotasks {
+    const microtasks = this.#microtasks;
+    return (this.#microtasksFacade ??= {
+      queue: (callback) => this.queue(callback),
+      drain: () => this.drain(),
+      get pendingCount() {
+        return microtasks.length;
+      },
+    });
   }
 
   /** Queues `callback` on this runtime's microtask queue. */
@@ -798,6 +851,10 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[] {
     return this.#dueQueue.takeOutCallbacksByTag(tag, maxCount);
+  }
+
+  countSpecific(tag: unknown): number {
+    return this.#dueQueue.countTagged(tag);
   }
   //#endregion tagged timers
 }

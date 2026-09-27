@@ -407,9 +407,24 @@ export interface ITimers {
   ): IScheduledHandle;
 }
 
+/** Deterministic {@link ITimers}; the queries skip addon entries such as animation frames. */
+export interface IDeterministicTimers extends ITimers {
+  /** Wall time the next timer fires at, or `undefined`. */
+  readonly nextDueTime: EpochMilliseconds | undefined;
+  /** Wall time the last pending timer fires at, or `undefined`. */
+  readonly lastDueTime: EpochMilliseconds | undefined;
+  /** Number of pending timers. */
+  readonly pendingCount: number;
+}
+
 interface IWithTimers {
   /** Get the current timers. */
   get timers(): ITimers;
+}
+
+interface IWithDeterministicTimers {
+  /** Get the current deterministic timers. */
+  get timers(): IDeterministicTimers;
 }
 
 interface IClearTimers {
@@ -437,6 +452,8 @@ export interface IMicrotasks {
 export interface IDeterministicMicrotasks extends IMicrotasks {
   /** Runs queued callbacks until empty. */
   drain(): void;
+  /** Number of queued callbacks. */
+  readonly pendingCount: number;
 }
 
 interface IWithMicrotasks {
@@ -460,7 +477,8 @@ interface IWithDeterministicMicrotasks {
 export interface IScheduler extends IWithTimers, IWithMicrotasks {}
 
 /** Deterministic scheduler with manual microtask draining. */
-export interface IDeterministicScheduler extends IWithTimers, IWithDeterministicMicrotasks {}
+export interface IDeterministicScheduler
+  extends IWithDeterministicTimers, IWithDeterministicMicrotasks {}
 
 interface IWithScheduler {
   /** Get the current scheduler. */
@@ -522,9 +540,9 @@ export interface IDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IClock<TDate>,
     IConverter<TDate>,
     IDeterministicTimeProvider<TDate>,
@@ -543,6 +561,9 @@ export interface IDeterministicRuntime<TDate>
   ): IScheduledHandle;
 
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
+
+  /** Number of pending entries registered under `tag`. */
+  countSpecific(tag: unknown): number;
 }
 
 /** A runtime backed by a UTC-only clock. */
@@ -568,9 +589,9 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IUtcOnlyClock<TDate>,
     IUtcOnlyConverter<TDate>,
     IUtcOnlyDeterministicTimeProvider<TDate>,
@@ -588,9 +609,9 @@ export interface IManualRuntime<TDate>
     IHasAbortSignal,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IClock<TDate>,
     IConverter<TDate>,
     IManualTimeProvider<TDate>,
@@ -609,6 +630,9 @@ export interface IManualRuntime<TDate>
   ): IScheduledHandle;
 
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
+
+  /** Number of pending entries registered under `tag`. */
+  countSpecific(tag: unknown): number;
 }
 
 /** A runtime backed by a UTC-only manual clock. */
@@ -618,9 +642,9 @@ export interface IUtcOnlyManualRuntime<TDate>
     IHasAbortSignal,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IUtcOnlyClock<TDate>,
     IUtcOnlyConverter<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
