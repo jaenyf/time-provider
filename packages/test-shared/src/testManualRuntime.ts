@@ -443,6 +443,25 @@ export function testManualRuntime<TDate>(
         expect(fired).toBe(0);
       });
 
+      test("a once-a-second tracker measures 1s on monotonic time across a wall step back", () => {
+        const sut = createAtT0();
+        const wallDeltas: number[] = [];
+        const monotonicDeltas: number[] = [];
+        let lastWall = sut.timestampNow();
+        let lastMonotonic = sut.monotonicNow();
+        sut.scheduler.timers.every({ seconds: 1 }, () => {
+          wallDeltas.push(sut.timestampNow() - lastWall);
+          monotonicDeltas.push(sut.monotonicNow() - lastMonotonic);
+          lastWall = sut.timestampNow();
+          lastMonotonic = sut.monotonicNow();
+        });
+        sut.moveBy({ seconds: 2 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        sut.moveBy({ seconds: 1 });
+        expect(wallDeltas).toEqual([1000, 1000, -3_599_000]);
+        expect(monotonicDeltas).toEqual([1000, 1000, 1000]);
+      });
+
       test("a flow never moves back after a callback moved the clock further", () => {
         const sut = createAtT0();
         sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.moveBy({ milliseconds: 500 }));
