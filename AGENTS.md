@@ -73,6 +73,13 @@ type-check or run, since workspace packages resolve through their built
   only on `core` and the one date library it adapts, declared as a
   `peerDependency` (never bundled as a `dependency`); each addon depends only
   on `core` — don't add a new runtime dependency without a strong reason.
+- Every public API needs JSDoc, to keep JSR's documentation score at 100%.
+  Keep it as short as possible, with the tags (`@param`, `@returns`,
+  `@throws`, ...) kept and just as short.
+- No comments in code, which should explain itself. When new code really
+  can't, one short comment is tolerated.
+- Extended docs live on the website. Update it, and every README, in the same
+  change as the code they describe: they must never diverge from it.
 - Packages under `packages/*` are versioned and released **independently**
   (see [SECURITY.md](./SECURITY.md)) — don't assume `core` and the plugins
   share a version number.
