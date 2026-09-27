@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "Time-Provider",
-  description: "Your single time interface for all your JavaScript / TypeScript projects.",
+  description: "Inject time. Control it in tests.",
   lang: "en-US",
   base: "/time-provider/",
   cleanUrls: true,

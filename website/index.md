@@ -5,7 +5,7 @@ titleTemplate: false
 hero:
   name: Time-Provider
   text: Time is a dependency.
-  tagline: Your single time interface for all your JavaScript / TypeScript projects.
+  tagline: Inject time. Control it in tests.
   image:
     light: /logo-light.svg
     dark: /logo-dark.svg
