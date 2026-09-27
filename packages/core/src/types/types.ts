@@ -139,8 +139,8 @@ export interface ITimings {
 /** An IANA timezone name. */
 export type TimezoneDefinition = string;
 
-/** Time elements to advance. */
-export interface IAdvanceOptions {
+/** Time elements to move a clock by. */
+export interface IMoveSpec {
   /** Years to add or subtract. */
   years?: number;
   /** Months to add or subtract. */
@@ -157,13 +157,36 @@ export interface IAdvanceOptions {
   milliseconds?: number;
 }
 
-/** A clock that can move forward or backward. */
-interface IAdvanceable<TSelf> {
+/** @deprecated Use {@link IMoveSpec}. */
+export type IAdvanceOptions = IMoveSpec;
+
+/** How a clock move happens. */
+export interface IMoveOptions {
+  /** `"flow"` (default): time passes; `"sleep"`: overdue timers fire once; `"snap"`: only the wall clock moves. */
+  as?: "flow" | "sleep" | "snap";
+  /** Defaults to `"paused"` for `"snap"`, `"running"` otherwise; only `"sleep"` accepts either. */
+  monotonic?: "running" | "paused";
+}
+
+/** A clock that can be moved. */
+interface IMovable<TSelf, TDate> {
   /**
-   * Moves the clock by the given amount.
+   * Moves the clock by `spec`.
+   * @throws If the move is negative without `as: "snap"`, the options conflict, or the runtime is disposed.
+   */
+  moveBy(spec: IMoveSpec, options?: IMoveOptions): TSelf;
+
+  /**
+   * Moves the clock to `time`.
+   * @throws If the move is negative without `as: "snap"`, the options conflict, or the runtime is disposed.
+   */
+  moveTo(time: string | EpochMilliseconds | TDate, options?: IMoveOptions): TSelf;
+
+  /**
+   * @deprecated Use {@link moveBy}.
    * @throws If the runtime is disposed.
    */
-  advance(advanceOptions: IAdvanceOptions): TSelf;
+  advance(advanceOptions: IMoveSpec): TSelf;
 }
 
 interface IWithClock<TClock> {
@@ -219,10 +242,10 @@ interface ILocalOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
 export interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 
 /** A clock that can be moved forward or backward. */
-export interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManualClock<TDate>> {}
+export interface IManualClock<TDate> extends IClock<TDate>, IMovable<IManualClock<TDate>, TDate> {}
 
 interface IUtcOnlyManualClock<TDate>
-  extends IUtcOnlyClock<TDate>, IAdvanceable<IUtcOnlyManualClock<TDate>> {}
+  extends IUtcOnlyClock<TDate>, IMovable<IUtcOnlyManualClock<TDate>, TDate> {}
 
 //#endregion
 

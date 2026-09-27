@@ -16,7 +16,13 @@ import {
   testTimestampNowMatchesLastRead,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
-import { asap, type IScheduledHandle, type TimezoneDefinition } from "@time-provider/core";
+import {
+  asap,
+  toInstant,
+  type IMoveOptions,
+  type IScheduledHandle,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
@@ -270,6 +276,174 @@ export function testManualRuntime<TDate>(
             expect(fireCount).toBe(10);
           });
         });
+      });
+    });
+
+    describe("move", () => {
+      const t0 = toInstant({ milliseconds: Date.parse("2026-01-01T00:00:00.000Z") });
+      const createAtT0 = () => createManualRuntime("Pacific/Kiritimati", t0);
+
+      test("moveBy and moveTo return itself", () => {
+        const sut = createSUT();
+        expect(sut.moveBy({})).toBe(sut);
+        expect(sut.moveTo(sut.timestampNow())).toBe(sut);
+      });
+
+      test("moving a disposed clock throws", () => {
+        const sut = createSUT();
+        sut.dispose();
+        expect(() => sut.moveBy({ milliseconds: 10 })).toThrow(
+          "Invalid operation on a disposed runtime",
+        );
+        expect(() => sut.moveTo(toInstant({ milliseconds: 0 }))).toThrow(
+          "Invalid operation on a disposed runtime",
+        );
+      });
+
+      test.each([
+        "2026-02-01T00:00:00.000Z",
+        toInstant({ milliseconds: Date.parse("2026-02-01T00:00:00.000Z") }),
+        parseTimeToUtc("2026-02-01T00:00:00.000Z"),
+      ])("moveTo accepts %s", (time) => {
+        const sut = createSUT();
+        sut.moveTo(time);
+        expect(sut.utcNow()).toEqual(parseTimeToUtc("2026-02-01T00:00:00.000Z"));
+      });
+
+      test.each<[IMoveOptions | undefined, number]>([
+        [undefined, 1000],
+        [{ as: "flow" }, 1000],
+        [{ as: "flow", monotonic: "running" }, 1000],
+        [{ as: "sleep" }, 1000],
+        [{ as: "sleep", monotonic: "running" }, 1000],
+        [{ as: "sleep", monotonic: "paused" }, 0],
+        [{ as: "snap" }, 0],
+        [{ as: "snap", monotonic: "paused" }, 0],
+      ])("moves the wall clock and monotonic time as %o says", (options, monotonicDelta) => {
+        const sut = createAtT0();
+        sut.moveBy({ seconds: 1 }, options);
+        expect(sut.timestampNow()).toBe(t0 + 1000);
+        expect(sut.monotonicNow()).toBe(monotonicDelta);
+      });
+
+      test.each([
+        { as: "flow", monotonic: "paused" },
+        { as: "snap", monotonic: "running" },
+        { as: "jump" },
+        { monotonic: "stopped" },
+      ])("throws on invalid options %o", (options) => {
+        const sut = createAtT0();
+        expect(() => sut.moveBy({ seconds: 1 }, options as IMoveOptions)).toThrow(
+          "Invalid move options",
+        );
+        expect(sut.timestampNow()).toBe(t0);
+      });
+
+      test.each<[IMoveOptions | undefined, string]>([
+        [undefined, "flow"],
+        [{ as: "flow" }, "flow"],
+        [{ as: "sleep" }, "sleep"],
+        [{ as: "sleep", monotonic: "paused" }, "sleep"],
+      ])("throws on a backward move with %o", (options, as) => {
+        const sut = createAtT0();
+        const message = `A clock can't ${as} backward. Use { as: "snap" }`;
+        expect(() => sut.moveBy({ milliseconds: -1 }, options)).toThrow(message);
+        expect(() => sut.moveTo(toInstant({ milliseconds: t0 - 1 }), options)).toThrow(message);
+        expect(sut.timestampNow()).toBe(t0);
+      });
+
+      test("snaps backward without moving monotonic time or its origin", () => {
+        const sut = createAtT0();
+        sut.moveBy({ seconds: 5 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.timestampNow()).toBe(t0 + 5000 - 3_600_000);
+        expect(sut.monotonicNow()).toBe(5000);
+        expect(sut.monotonicOrigin).toBe(t0);
+      });
+
+      test.each([{ hours: 1 }, { hours: -1 }])(
+        "a snap by %o leaves pending timers as they were",
+        (spec) => {
+          const sut = createAtT0();
+          let fired = 0;
+          sut.scheduler.timers.once({ milliseconds: 100 }, () => fired++);
+          sut.moveBy(spec, { as: "snap" });
+          sut.moveBy({ milliseconds: 99 });
+          expect(fired).toBe(0);
+          sut.moveBy({ milliseconds: 1 });
+          expect(fired).toBe(1);
+        },
+      );
+
+      test("a flow after a snap shows each timer the wall time it fires at", () => {
+        const sut = createAtT0();
+        const seen: number[] = [];
+        sut.scheduler.timers.once({ milliseconds: 100 }, () => seen.push(sut.timestampNow() - t0));
+        sut.moveBy({ hours: 1 }, { as: "snap" });
+        sut.moveBy({ seconds: 1 });
+        expect(seen).toEqual([3_600_100]);
+        expect(sut.timestampNow()).toBe(t0 + 3_601_000);
+      });
+
+      test("a snap drains pending microtasks", () => {
+        const sut = createAtT0();
+        let ran = false;
+        sut.scheduler.microtasks.queue(() => (ran = true));
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(ran).toBe(true);
+      });
+
+      test("a sleep fires each overdue timer once, in due order, at wake-up time", () => {
+        const sut = createAtT0();
+        const seen: string[] = [];
+        const log = (name: string) => () => {
+          seen.push(`${name}@${sut.timestampNow() - t0}`);
+          return false as const;
+        };
+        sut.scheduler.timers.every({ milliseconds: 30 }, log("every"));
+        sut.scheduler.timers.once({ milliseconds: 20 }, log("once20"));
+        sut.scheduler.timers.once({ milliseconds: 10 }, log("once10"));
+        sut.scheduler.timers.recurring(log("recurring"), { milliseconds: 25 });
+        sut.moveBy({ milliseconds: 100 }, { as: "sleep" });
+        expect(seen).toEqual(["once10@100", "once20@100", "recurring@100", "every@100"]);
+      });
+
+      test("a sleep re-arms intervals and recurrences from wake-up time", () => {
+        const sut = createAtT0();
+        let everyRuns = 0;
+        let recurringRuns = 0;
+        sut.scheduler.timers.every({ milliseconds: 30 }, () => everyRuns++);
+        sut.scheduler.timers.recurring(
+          () => {
+            recurringRuns++;
+            return { milliseconds: 50 };
+          },
+          { milliseconds: 10 },
+        );
+        sut.moveBy({ milliseconds: 100 }, { as: "sleep" });
+        expect([everyRuns, recurringRuns]).toEqual([1, 1]);
+        sut.moveBy({ milliseconds: 29 });
+        expect([everyRuns, recurringRuns]).toEqual([1, 1]);
+        sut.moveBy({ milliseconds: 1 });
+        expect([everyRuns, recurringRuns]).toEqual([2, 1]);
+        sut.moveBy({ milliseconds: 20 });
+        expect([everyRuns, recurringRuns]).toEqual([2, 2]);
+      });
+
+      test("a sleep with monotonic paused fires nothing", () => {
+        const sut = createAtT0();
+        let fired = 0;
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => fired++);
+        sut.moveBy({ seconds: 1 }, { as: "sleep", monotonic: "paused" });
+        expect(fired).toBe(0);
+      });
+
+      test("a timing measure is never negative across a backward snap", () => {
+        const sut = createAtT0();
+        sut.timings.mark("a");
+        sut.moveBy({ milliseconds: 10 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.timings.measure("m", { start: "a" }).duration).toBe(10);
       });
     });
 
