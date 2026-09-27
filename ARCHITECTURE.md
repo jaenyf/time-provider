@@ -80,7 +80,7 @@ A `Runtime` is a single object that implements `IClock`, `IConverter`, and
 `this`); `ITimeProvider` just exposes those three facets as separate
 properties. The four runtime kinds (system, fixed, manual, sequential) share
 this shape and differ only in where `timestamp()` comes from and, for
-manual, how it advances.
+manual, how it moves.
 
 ## How we avoid duplication in plugins codebase
 
@@ -258,12 +258,13 @@ re-exported - only `BaseFixedRuntime`/`BaseManualRuntime`/
 backs the fixed, manual, and sequential runtimes. Timers insert into a `Heap` and then check only the just-inserted handle for
 firing immediately (a zero or negative delay fires synchronously on
 registration) - not the whole pending set, since nothing already pending can
-have newly become due from an insert alone. Advancing time (via `advance()`
-on the manual runtime, or moving through a fixed/sequential runtime's
-timestamps) does scan the full pending set, since any number of entries may
-have become due at once. A repeating interval whose delay is smaller than
-the elapsed advance re-fires as many times as would fit, matching how a real
-interval behaves when the event loop was blocked past a firing.
+have newly become due from an insert alone. Moving time (via `moveBy()`,
+`moveTo()` or `moveUntil()` on the manual runtime, or moving through a
+sequential runtime's timestamps) does scan the full pending set, since any
+number of entries may have become due at once. On a `flow` move, a repeating
+interval whose delay is smaller than the move re-fires as many times as would
+fit; on a `sleep` move it fires once, like a host waking up. The heap is keyed
+on monotonic time plus a wall offset, so a `snap` only shifts that offset.
 
 ## Testing
 

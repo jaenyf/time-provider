@@ -80,7 +80,7 @@ using manual = createDeterministicTimeProvider
 using handle = manual.scheduler.cron.schedule("*/15 * * * *", () =>
   console.log("Every 15 minutes"),
 );
-manual.clock.advance({ minutes: 15 });
+manual.clock.moveBy({ minutes: 15 });
 ```
 
 ## JSON schedules

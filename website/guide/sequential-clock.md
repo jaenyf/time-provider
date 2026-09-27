@@ -31,6 +31,11 @@ timeProvider.clock.utcNow(); // 00:00:03
 timeProvider.clock.utcNow(); // 00:00:03 — list exhausted, keeps returning the last instant
 ```
 
+Each read is a move to the next instant: a backward instant snaps the wall
+clock and a forward one flows, firing due timers at their own times.
+`withSequentialTime(time, { as })` picks another move — see
+[Moving the Clock](/guide/moving-the-clock#sequential-clocks).
+
 Use it for tests that assert on a _sequence_ of changing timestamps read
 from the same code path (e.g. a function that stamps `createdAt` then
 `updatedAt` a moment later) without needing to model elapsed real time the

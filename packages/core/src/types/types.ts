@@ -139,8 +139,8 @@ export interface ITimings {
 /** An IANA timezone name. */
 export type TimezoneDefinition = string;
 
-/** Time elements to advance. */
-export interface IAdvanceOptions {
+/** Time elements to move a clock by. */
+export interface IMoveSpec {
   /** Years to add or subtract. */
   years?: number;
   /** Months to add or subtract. */
@@ -157,13 +157,45 @@ export interface IAdvanceOptions {
   milliseconds?: number;
 }
 
-/** A clock that can move forward or backward. */
-interface IAdvanceable<TSelf> {
+/** @deprecated Use {@link IMoveSpec}. */
+export type IAdvanceOptions = IMoveSpec;
+
+/** How a clock move happens. */
+export interface IMoveOptions {
+  /** `"flow"` (default): time passes; `"sleep"`: overdue timers fire once; `"snap"`: only the wall clock moves. */
+  as?: "flow" | "sleep" | "snap";
+  /** Defaults to `"paused"` for `"snap"`, `"running"` otherwise; only `"sleep"` accepts either. */
+  monotonic?: "running" | "paused";
+}
+
+/** A clock that can be moved. */
+interface IMovable<TSelf, TDate> {
   /**
-   * Moves the clock by the given amount.
+   * Moves the clock by `spec`.
+   * @throws If the move is negative without `as: "snap"`, the options conflict, or the runtime is disposed.
+   */
+  moveBy(spec: IMoveSpec, options?: IMoveOptions): TSelf;
+
+  /**
+   * Moves the clock to `time`, or to the next or last pending timer.
+   * @throws If the move is negative without `as: "snap"`, the options conflict, no timer is pending for `"nextTimer"`/`"lastTimer"`, or the runtime is disposed.
+   */
+  moveTo(
+    time: "nextTimer" | "lastTimer" | (string & {}) | EpochMilliseconds | TDate,
+    options?: IMoveOptions,
+  ): TSelf;
+
+  /**
+   * Moves the clock from timer to timer until none is pending.
+   * @throws If timers are still pending after the limit set by `withMoveUntilTimersLimit()`, `as` is `"snap"`, or the runtime is disposed.
+   */
+  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): TSelf;
+
+  /**
+   * @deprecated Use {@link moveBy}.
    * @throws If the runtime is disposed.
    */
-  advance(advanceOptions: IAdvanceOptions): TSelf;
+  advance(advanceOptions: IMoveSpec): TSelf;
 }
 
 interface IWithClock<TClock> {
@@ -219,10 +251,10 @@ interface ILocalOnlyClock<TDate> extends ITimestampClock, IMonotonicClock {
 export interface IClock<TDate> extends IUtcOnlyClock<TDate>, ILocalOnlyClock<TDate> {}
 
 /** A clock that can be moved forward or backward. */
-export interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManualClock<TDate>> {}
+export interface IManualClock<TDate> extends IClock<TDate>, IMovable<IManualClock<TDate>, TDate> {}
 
 interface IUtcOnlyManualClock<TDate>
-  extends IUtcOnlyClock<TDate>, IAdvanceable<IUtcOnlyManualClock<TDate>> {}
+  extends IUtcOnlyClock<TDate>, IMovable<IUtcOnlyManualClock<TDate>, TDate> {}
 
 //#endregion
 
@@ -312,6 +344,8 @@ export interface IUtcOnlyConverter<TDate> {
    * Converts `time` to UTC `TDate`.
    * @returns `time` as UTC.
    */
+  convertToUtc(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated Pass `EpochMilliseconds` (see `toInstant()`) instead of a plain number. */
   convertToUtc(time: string | number | TDate): TDate;
 }
 
@@ -321,6 +355,8 @@ interface ILocalOnlyConverter<TDate> {
    * Converts `time` to local `TDate`.
    * @returns `time` as local time.
    */
+  convertToLocal(time: string | EpochMilliseconds | TDate): TDate;
+  /** @deprecated Pass `EpochMilliseconds` (see `toInstant()`) instead of a plain number. */
   convertToLocal(time: string | number | TDate): TDate;
 }
 
@@ -332,6 +368,9 @@ export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyC
 // ---------------------------------------------------------------------------
 // Timers
 // ---------------------------------------------------------------------------
+
+/** Default limit of {@link IManualClock.moveUntil}. */
+export const DEFAULT_MOVE_UNTIL_TIMERS_LIMIT = 1000;
 
 /** Discriminates the source of an {@link IScheduledHandle}. */
 export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
@@ -384,9 +423,24 @@ export interface ITimers {
   ): IScheduledHandle;
 }
 
+/** Deterministic {@link ITimers}; the queries skip addon entries such as animation frames. */
+export interface IDeterministicTimers extends ITimers {
+  /** Wall time the next timer fires at, or `undefined`. */
+  readonly nextDueTime: EpochMilliseconds | undefined;
+  /** Wall time the last pending timer fires at, or `undefined`. */
+  readonly lastDueTime: EpochMilliseconds | undefined;
+  /** Number of pending timers. */
+  readonly pendingCount: number;
+}
+
 interface IWithTimers {
   /** Get the current timers. */
   get timers(): ITimers;
+}
+
+interface IWithDeterministicTimers {
+  /** Get the current deterministic timers. */
+  get timers(): IDeterministicTimers;
 }
 
 interface IClearTimers {
@@ -414,6 +468,8 @@ export interface IMicrotasks {
 export interface IDeterministicMicrotasks extends IMicrotasks {
   /** Runs queued callbacks until empty. */
   drain(): void;
+  /** Number of queued callbacks. */
+  readonly pendingCount: number;
 }
 
 interface IWithMicrotasks {
@@ -437,7 +493,8 @@ interface IWithDeterministicMicrotasks {
 export interface IScheduler extends IWithTimers, IWithMicrotasks {}
 
 /** Deterministic scheduler with manual microtask draining. */
-export interface IDeterministicScheduler extends IWithTimers, IWithDeterministicMicrotasks {}
+export interface IDeterministicScheduler
+  extends IWithDeterministicTimers, IWithDeterministicMicrotasks {}
 
 interface IWithScheduler {
   /** Get the current scheduler. */
@@ -499,9 +556,9 @@ export interface IDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IClock<TDate>,
     IConverter<TDate>,
     IDeterministicTimeProvider<TDate>,
@@ -520,6 +577,9 @@ export interface IDeterministicRuntime<TDate>
   ): IScheduledHandle;
 
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
+
+  /** Number of pending entries registered under `tag`. */
+  countSpecific(tag: unknown): number;
 }
 
 /** A runtime backed by a UTC-only clock. */
@@ -545,9 +605,9 @@ export interface IUtcOnlyDeterministicRuntime<TDate>
   extends
     IDisposable,
     IHasAbortSignal,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IUtcOnlyClock<TDate>,
     IUtcOnlyConverter<TDate>,
     IUtcOnlyDeterministicTimeProvider<TDate>,
@@ -565,13 +625,16 @@ export interface IManualRuntime<TDate>
     IHasAbortSignal,
     IManualClock<TDate>,
     IWithClock<IManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IClock<TDate>,
     IConverter<TDate>,
     IManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
+  /** Timers {@link IManualClock.moveUntil} may fire before it throws. */
+  moveUntilTimersLimit: number;
+
   registerAddon(addon: IAddon<TDate>): void;
 
   /** @throws If this runtime is disposed. */
@@ -586,6 +649,9 @@ export interface IManualRuntime<TDate>
   ): IScheduledHandle;
 
   takeOutSpecificCallbacks(tag: unknown, maxCount: number): (() => void)[];
+
+  /** Number of pending entries registered under `tag`. */
+  countSpecific(tag: unknown): number;
 }
 
 /** A runtime backed by a UTC-only manual clock. */
@@ -595,13 +661,16 @@ export interface IUtcOnlyManualRuntime<TDate>
     IHasAbortSignal,
     IUtcOnlyManualClock<TDate>,
     IWithClock<IUtcOnlyManualClock<TDate>>,
-    ITimers,
+    IDeterministicTimers,
     IClearTimers,
-    IDeterministicMicrotasks,
+    Omit<IDeterministicMicrotasks, "pendingCount">,
     IUtcOnlyClock<TDate>,
     IUtcOnlyConverter<TDate>,
     IUtcOnlyManualTimeProvider<TDate>,
     IWithCalendarScheme<TDate> {
+  /** Timers {@link IManualClock.moveUntil} may fire before it throws. */
+  moveUntilTimersLimit: number;
+
   registerAddon(addon: IAddon<TDate>): void;
 
   /** @throws If this runtime is disposed. */
@@ -707,6 +776,7 @@ export interface IDeterministicPlugin<TDate> {
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IManualRuntime<TDate>;
 
   /** Creates a fixed-time runtime. */
@@ -721,7 +791,10 @@ export interface IDeterministicPlugin<TDate> {
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IDeterministicRuntime<TDate>;
 }
 
@@ -733,6 +806,7 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
   /** Creates a manual-time runtime. */
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IUtcOnlyManualRuntime<TDate>;
 
   /** Creates a fixed-time runtime. */
@@ -745,7 +819,10 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
    * @param sequentialTimes Empty means the clock stays at the Unix epoch.
    */
   createSequentialRuntime(
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IUtcOnlyDeterministicRuntime<TDate>;
 }
 //#endregion

@@ -3,12 +3,13 @@ import {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,
 } from "../src/plugins/deterministic-plugin.ts";
-import type {
-  IDeterministicRuntime,
-  IUtcOnlyDeterministicRuntime,
-  IManualRuntime,
-  IUtcOnlyManualRuntime,
-  TimezoneDefinition,
+import {
+  type IDeterministicRuntime,
+  type IUtcOnlyDeterministicRuntime,
+  type IManualRuntime,
+  type IUtcOnlyManualRuntime,
+  type TimezoneDefinition,
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
 } from "../src/types/types.ts";
 
 class FakeRuntime {
@@ -56,7 +57,8 @@ describe("BaseUtcOnlyDeterministicPlugin", () => {
   test.each([
     [
       "createManualRuntime",
-      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createManualRuntime(0),
+      (plugin: FakeUtcOnlyDeterministicPlugin) =>
+        plugin.createManualRuntime(0, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT),
     ],
     [
       "createFixedRuntime",
@@ -64,7 +66,7 @@ describe("BaseUtcOnlyDeterministicPlugin", () => {
     ],
     [
       "createSequentialRuntime",
-      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createSequentialRuntime([0]),
+      (plugin: FakeUtcOnlyDeterministicPlugin) => plugin.createSequentialRuntime([{ time: 0 }]),
     ],
   ] as const)("%s pins the runtime to Etc/UTC", (_name, create) => {
     const runtime = create(new FakeUtcOnlyDeterministicPlugin());

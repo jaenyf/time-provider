@@ -1,7 +1,9 @@
 import { expect, test, describe } from "vite-plus/test";
-import type {
-  IDeterministicPlugin,
-  IUtcOnlyDeterministicPlugin,
+import {
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
+  type IDeterministicPlugin,
+  type IDeterministicRuntime,
+  type IUtcOnlyDeterministicPlugin,
 } from "@time-provider/core/deterministic";
 import { testTimers } from "./helpers/testTimers.ts";
 import { testMicrotasks } from "./helpers/testMicrotasks.ts";
@@ -13,10 +15,19 @@ import {
   testLocalNow,
   testUtcNow,
   testTimestampNow,
+  testTimestampNowMatchesLastRead,
   getDeterministicBuilderFor,
 } from "./helpers/testHelpers.ts";
-import { asap, type IScheduledHandle, type TimezoneDefinition } from "@time-provider/core";
+import {
+  asap,
+  toInstant,
+  type IMoveOptions,
+  ScheduledHandleKind,
+  type IScheduledHandle,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 import { testAddonCronManual } from "./helpers/testCron.ts";
+import { testAddonEtaManual } from "./helpers/testEta.ts";
 import { testRuntime } from "./helpers/testRuntime.ts";
 
 export function testManualRuntime<TDate>(
@@ -29,8 +40,8 @@ export function testManualRuntime<TDate>(
     initialTime: string | number | TDate,
   ) =>
     plugin.supportsLocalTime
-      ? plugin.createManualRuntime(timezone, initialTime)
-      : plugin.createManualRuntime(initialTime);
+      ? plugin.createManualRuntime(timezone, initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT)
+      : plugin.createManualRuntime(initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT);
 
   const createSUT = () => createManualRuntime("Pacific/Kiritimati", "2026-01-01T00:00:00.000Z");
 
@@ -57,6 +68,7 @@ export function testManualRuntime<TDate>(
     testWithTimezone<TDate>(plugin.supportsLocalTime, createSUT);
     testUtcNow(createSUT, () => parseTimeToUtc("2026-01-01T00:00:00.000Z"));
     testTimestampNow(createSUT);
+    testTimestampNowMatchesLastRead(createSUT);
 
     describe("converter", () => {
       testConverter(
@@ -226,6 +238,14 @@ export function testManualRuntime<TDate>(
         });
       });
 
+      test("does not move back after a callback advanced the clock further", () => {
+        const sut = createSUT();
+        const start = sut.timestampNow();
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.advance({ milliseconds: 500 }));
+        sut.advance({ milliseconds: 100 });
+        expect(sut.timestampNow() - start).toBe(510);
+      });
+
       describe("issue#147", () => {
         describe("self-rescheduling timeout chains", () => {
           test("fires once per delay across a single large advance(), not once total", () => {
@@ -260,6 +280,370 @@ export function testManualRuntime<TDate>(
             expect(fireCount).toBe(10);
           });
         });
+      });
+    });
+
+    describe("move", () => {
+      const t0 = toInstant({ milliseconds: Date.parse("2026-01-01T00:00:00.000Z") });
+      const createAtT0 = () => createManualRuntime("Pacific/Kiritimati", t0);
+
+      test("moveBy and moveTo return itself", () => {
+        const sut = createSUT();
+        expect(sut.moveBy({})).toBe(sut);
+        expect(sut.moveTo(sut.timestampNow())).toBe(sut);
+      });
+
+      test("moving a disposed clock throws", () => {
+        const sut = createSUT();
+        sut.dispose();
+        expect(() => sut.moveBy({ milliseconds: 10 })).toThrow(
+          "Invalid operation on a disposed runtime",
+        );
+        expect(() => sut.moveTo(toInstant({ milliseconds: 0 }))).toThrow(
+          "Invalid operation on a disposed runtime",
+        );
+        expect(() => sut.moveUntil("noTimers")).toThrow("Invalid operation on a disposed runtime");
+      });
+
+      test.each([
+        "2026-02-01T00:00:00.000Z",
+        toInstant({ milliseconds: Date.parse("2026-02-01T00:00:00.000Z") }),
+        parseTimeToUtc("2026-02-01T00:00:00.000Z"),
+      ])("moveTo accepts %s", (time) => {
+        const sut = createSUT();
+        sut.moveTo(time);
+        expect(sut.utcNow()).toEqual(parseTimeToUtc("2026-02-01T00:00:00.000Z"));
+      });
+
+      test.each<[IMoveOptions | undefined, number]>([
+        [undefined, 1000],
+        [{ as: "flow" }, 1000],
+        [{ as: "flow", monotonic: "running" }, 1000],
+        [{ as: "sleep" }, 1000],
+        [{ as: "sleep", monotonic: "running" }, 1000],
+        [{ as: "sleep", monotonic: "paused" }, 0],
+        [{ as: "snap" }, 0],
+        [{ as: "snap", monotonic: "paused" }, 0],
+      ])("moves the wall clock and monotonic time as %o says", (options, monotonicDelta) => {
+        const sut = createAtT0();
+        sut.moveBy({ seconds: 1 }, options);
+        expect(sut.timestampNow()).toBe(t0 + 1000);
+        expect(sut.monotonicNow()).toBe(monotonicDelta);
+      });
+
+      test.each([
+        { as: "flow", monotonic: "paused" },
+        { as: "snap", monotonic: "running" },
+        { as: "jump" },
+        { monotonic: "stopped" },
+      ])("throws on invalid options %o", (options) => {
+        const sut = createAtT0();
+        expect(() => sut.moveBy({ seconds: 1 }, options as IMoveOptions)).toThrow(
+          "Invalid move options",
+        );
+        expect(sut.timestampNow()).toBe(t0);
+      });
+
+      test.each<[IMoveOptions | undefined, string]>([
+        [undefined, "flow"],
+        [{ as: "flow" }, "flow"],
+        [{ as: "sleep" }, "sleep"],
+        [{ as: "sleep", monotonic: "paused" }, "sleep"],
+      ])("throws on a backward move with %o", (options, as) => {
+        const sut = createAtT0();
+        const message = `A clock can't ${as} backward. Use { as: "snap" }`;
+        expect(() => sut.moveBy({ milliseconds: -1 }, options)).toThrow(message);
+        expect(() => sut.moveTo(toInstant({ milliseconds: t0 - 1 }), options)).toThrow(message);
+        expect(sut.timestampNow()).toBe(t0);
+      });
+
+      test("snaps backward without moving monotonic time or its origin", () => {
+        const sut = createAtT0();
+        sut.moveBy({ seconds: 5 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.timestampNow()).toBe(t0 + 5000 - 3_600_000);
+        expect(sut.monotonicNow()).toBe(5000);
+        expect(sut.monotonicOrigin).toBe(t0);
+      });
+
+      test.each([{ hours: 1 }, { hours: -1 }])(
+        "a snap by %o leaves pending timers as they were",
+        (spec) => {
+          const sut = createAtT0();
+          let fired = 0;
+          sut.scheduler.timers.once({ milliseconds: 100 }, () => fired++);
+          sut.moveBy(spec, { as: "snap" });
+          sut.moveBy({ milliseconds: 99 });
+          expect(fired).toBe(0);
+          sut.moveBy({ milliseconds: 1 });
+          expect(fired).toBe(1);
+        },
+      );
+
+      test("a flow after a snap shows each timer the wall time it fires at", () => {
+        const sut = createAtT0();
+        const seen: number[] = [];
+        sut.scheduler.timers.once({ milliseconds: 100 }, () => seen.push(sut.timestampNow() - t0));
+        sut.moveBy({ hours: 1 }, { as: "snap" });
+        sut.moveBy({ seconds: 1 });
+        expect(seen).toEqual([3_600_100]);
+        expect(sut.timestampNow()).toBe(t0 + 3_601_000);
+      });
+
+      test("a snap drains pending microtasks", () => {
+        const sut = createAtT0();
+        let ran = false;
+        sut.scheduler.microtasks.queue(() => (ran = true));
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(ran).toBe(true);
+      });
+
+      test("a sleep fires each overdue timer once, in due order, at wake-up time", () => {
+        const sut = createAtT0();
+        const seen: string[] = [];
+        const log = (name: string) => () => {
+          seen.push(`${name}@${sut.timestampNow() - t0}`);
+          return false as const;
+        };
+        sut.scheduler.timers.every({ milliseconds: 30 }, log("every"));
+        sut.scheduler.timers.once({ milliseconds: 20 }, log("once20"));
+        sut.scheduler.timers.once({ milliseconds: 10 }, log("once10"));
+        sut.scheduler.timers.recurring(log("recurring"), { milliseconds: 25 });
+        sut.moveBy({ milliseconds: 100 }, { as: "sleep" });
+        expect(seen).toEqual(["once10@100", "once20@100", "recurring@100", "every@100"]);
+      });
+
+      test("a sleep re-arms intervals and recurrences from wake-up time", () => {
+        const sut = createAtT0();
+        let everyRuns = 0;
+        let recurringRuns = 0;
+        sut.scheduler.timers.every({ milliseconds: 30 }, () => everyRuns++);
+        sut.scheduler.timers.recurring(
+          () => {
+            recurringRuns++;
+            return { milliseconds: 50 };
+          },
+          { milliseconds: 10 },
+        );
+        sut.moveBy({ milliseconds: 100 }, { as: "sleep" });
+        expect([everyRuns, recurringRuns]).toEqual([1, 1]);
+        sut.moveBy({ milliseconds: 29 });
+        expect([everyRuns, recurringRuns]).toEqual([1, 1]);
+        sut.moveBy({ milliseconds: 1 });
+        expect([everyRuns, recurringRuns]).toEqual([2, 1]);
+        sut.moveBy({ milliseconds: 20 });
+        expect([everyRuns, recurringRuns]).toEqual([2, 2]);
+      });
+
+      test("a sleep with monotonic paused fires nothing", () => {
+        const sut = createAtT0();
+        let fired = 0;
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => fired++);
+        sut.moveBy({ seconds: 1 }, { as: "sleep", monotonic: "paused" });
+        expect(fired).toBe(0);
+      });
+
+      test("a once-a-second tracker measures 1s on monotonic time across a wall step back", () => {
+        const sut = createAtT0();
+        const wallDeltas: number[] = [];
+        const monotonicDeltas: number[] = [];
+        let lastWall = sut.timestampNow();
+        let lastMonotonic = sut.monotonicNow();
+        sut.scheduler.timers.every({ seconds: 1 }, () => {
+          wallDeltas.push(sut.timestampNow() - lastWall);
+          monotonicDeltas.push(sut.monotonicNow() - lastMonotonic);
+          lastWall = sut.timestampNow();
+          lastMonotonic = sut.monotonicNow();
+        });
+        sut.moveBy({ seconds: 2 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        sut.moveBy({ seconds: 1 });
+        expect(wallDeltas).toEqual([1000, 1000, -3_599_000]);
+        expect(monotonicDeltas).toEqual([1000, 1000, 1000]);
+      });
+
+      test("a flow never moves back after a callback moved the clock further", () => {
+        const sut = createAtT0();
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.moveBy({ milliseconds: 500 }));
+        sut.moveBy({ milliseconds: 100 });
+        expect(sut.timestampNow()).toBe(t0 + 510);
+      });
+
+      test("a timing measure is never negative across a backward snap", () => {
+        const sut = createAtT0();
+        sut.timings.mark("a");
+        sut.moveBy({ milliseconds: 10 });
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.timings.measure("m", { start: "a" }).duration).toBe(10);
+      });
+
+      test.each<["nextTimer" | "lastTimer", string[], number]>([
+        ["nextTimer", ["a"], 10],
+        ["lastTimer", ["a", "b"], 30],
+      ])("moveTo(%s) moves to that timer's due time", (target, fired, elapsed) => {
+        const sut = createAtT0();
+        const seen: string[] = [];
+        sut.scheduler.timers.once({ milliseconds: 30 }, () => seen.push("b"));
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => seen.push("a"));
+        sut.moveTo(target);
+        expect(seen).toEqual(fired);
+        expect(sut.timestampNow()).toBe(t0 + elapsed);
+      });
+
+      test.each(["nextTimer", "lastTimer"] as const)(
+        "moveTo(%s) throws when no timer is pending",
+        (target) => {
+          const sut = createAtT0();
+          expect(() => sut.moveTo(target)).toThrow("No pending timer to move to");
+        },
+      );
+
+      test.each<[{ as?: "flow" | "sleep" } | undefined]>([
+        [undefined],
+        [{ as: "flow" }],
+        [{ as: "sleep" }],
+      ])("moveUntil fires timers scheduled by timers until none is pending (%o)", (options) => {
+        const sut = createAtT0();
+        const seen: number[] = [];
+        const { timers } = sut.scheduler;
+        timers.once({ milliseconds: 30 }, () => {
+          seen.push(sut.timestampNow() - t0);
+          timers.once({ milliseconds: 50 }, () => seen.push(sut.timestampNow() - t0));
+        });
+        timers.once({ milliseconds: 10 }, () => seen.push(sut.timestampNow() - t0));
+        expect(sut.moveUntil("noTimers", options)).toBe(sut);
+        expect(seen).toEqual([10, 30, 80]);
+        expect(timers.pendingCount).toBe(0);
+        expect(sut.timestampNow()).toBe(t0 + 80);
+      });
+
+      test("moveUntil leaves tagged entries alone", () => {
+        const sut = createAtT0() as IDeterministicRuntime<TDate> & ReturnType<typeof createAtT0>;
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+        sut.moveUntil("noTimers");
+        expect(sut.timestampNow()).toBe(t0);
+        expect(sut.countSpecific("tag")).toBe(1);
+      });
+
+      test.each([{ as: "flow" }, { as: "sleep" }] as const)(
+        "moveUntil throws after the default limit of fired timers (%o)",
+        (options) => {
+          const sut = createAtT0();
+          expect(sut.moveUntilTimersLimit).toBe(DEFAULT_MOVE_UNTIL_TIMERS_LIMIT);
+          sut.scheduler.timers.every({ milliseconds: 1 }, () => {});
+          expect(() => sut.moveUntil("noTimers", options)).toThrow(
+            "Timers still pending after 1000 fired",
+          );
+          expect(sut.timestampNow()).toBe(t0 + 1000);
+        },
+      );
+
+      test("withMoveUntilTimersLimit sets the moveUntil limit", () => {
+        const sut = getDeterministicBuilderFor(plugin)
+          .asManual()
+          .withInitialTime(t0)
+          .withMoveUntilTimersLimit(3)
+          .create();
+        sut.scheduler.timers.every({ milliseconds: 1 }, () => {});
+        expect(() => sut.clock.moveUntil("noTimers")).toThrow("Timers still pending after 3 fired");
+        expect(sut.clock.timestampNow()).toBe(t0 + 3);
+      });
+
+      test.each<[number, number, boolean]>([
+        [3, 10, true],
+        [4, 20, false],
+      ])("moveUntil counts timers due together one by one (limit %s)", (limit, at, throws) => {
+        const sut = getDeterministicBuilderFor(plugin)
+          .asManual()
+          .withInitialTime(t0)
+          .withMoveUntilTimersLimit(limit)
+          .create();
+        for (const delay of [10, 10, 20, 20])
+          sut.scheduler.timers.once({ milliseconds: delay }, () => {});
+        const moveUntil = () => sut.clock.moveUntil("noTimers");
+        if (throws) expect(moveUntil).toThrow(`after ${limit} fired`);
+        else moveUntil();
+        expect(sut.clock.timestampNow()).toBe(t0 + at);
+      });
+
+      test.each([0, -1, 1.5, Number.NaN])("withMoveUntilTimersLimit(%s) throws", (limit) => {
+        expect(() =>
+          getDeterministicBuilderFor(plugin).asManual().withMoveUntilTimersLimit(limit),
+        ).toThrow(`Invalid moveUntil timers limit: ${limit}`);
+      });
+
+      test.each<[string, { as?: "flow" | "sleep" } | undefined]>([
+        ["noTimers", { as: "snap" as "flow" }],
+        ["noPending", undefined],
+      ])("moveUntil(%s, %o) throws", (until, options) => {
+        const sut = createAtT0();
+        expect(() => sut.moveUntil(until as "noTimers", options)).toThrow(
+          "Invalid moveUntil arguments",
+        );
+      });
+    });
+
+    describe("timer queries", () => {
+      const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+      const createAtT0 = () => createManualRuntime("Pacific/Kiritimati", t0);
+
+      test("report nothing pending on a fresh runtime", () => {
+        const { timers, microtasks } = createAtT0().scheduler;
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          undefined,
+          undefined,
+          0,
+        ]);
+        expect(microtasks.pendingCount).toBe(0);
+      });
+
+      test("report the earliest and latest due times and the pending count", () => {
+        const sut = createAtT0();
+        const { timers } = sut.scheduler;
+        const once = timers.once({ milliseconds: 100 }, () => {});
+        timers.every({ milliseconds: 50 }, () => {});
+        timers.recurring(() => false, { milliseconds: 300 });
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          t0 + 50,
+          t0 + 300,
+          3,
+        ]);
+        sut.moveBy({ milliseconds: 60 });
+        expect(timers.nextDueTime).toBe(t0 + 100);
+        once.dispose();
+        expect([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]).toEqual([
+          t0 + 100,
+          t0 + 300,
+          2,
+        ]);
+      });
+
+      test("report wall due times after a snap", () => {
+        const sut = createAtT0();
+        sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
+        sut.moveBy({ hours: -1 }, { as: "snap" });
+        expect(sut.scheduler.timers.nextDueTime).toBe(t0 + 100 - 3_600_000);
+      });
+
+      test("skip tagged entries, which countSpecific counts", () => {
+        const sut = createAtT0() as IDeterministicRuntime<TDate> & ReturnType<typeof createAtT0>;
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+        expect([sut.scheduler.timers.nextDueTime, sut.scheduler.timers.pendingCount]).toEqual([
+          undefined,
+          0,
+        ]);
+        expect([sut.countSpecific("tag"), sut.countSpecific("other")]).toEqual([1, 0]);
+        sut.moveBy({ milliseconds: 10 });
+        expect(sut.countSpecific("tag")).toBe(0);
+      });
+
+      test("count queued microtasks", () => {
+        const { microtasks } = createAtT0().scheduler;
+        microtasks.queue(() => {});
+        microtasks.queue(() => {});
+        expect(microtasks.pendingCount).toBe(2);
+        microtasks.drain();
+        expect(microtasks.pendingCount).toBe(0);
       });
     });
 
@@ -753,6 +1137,10 @@ export function testManualRuntime<TDate>(
 
     describe("addon-cron", () => {
       testAddonCronManual(() => getDeterministicBuilderFor(plugin));
+    });
+
+    describe("addon-eta", () => {
+      testAddonEtaManual(() => getDeterministicBuilderFor(plugin));
     });
   });
 }

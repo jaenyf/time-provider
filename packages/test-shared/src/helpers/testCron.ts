@@ -4,6 +4,20 @@ import type { ISystemPluggedRuntimeBuilder } from "@time-provider/core";
 import { addon as deterministicCronAddon } from "@time-provider/addon-cron/deterministic";
 import { addon as systemCronAddon } from "@time-provider/addon-cron";
 
+/** Issue #177: `0 9 * * *` scheduled at 08:30, then the wall clock steps to `stepTo`. */
+const WALL_STEP_CASES: [string, string, string[]][] = [
+  [
+    "2026-01-01T07:30:00.000Z",
+    "fires at the scheduled wall time after a backward step",
+    ["2026-01-01T09:00:00.000Z", "2026-01-02T09:00:00.000Z", "2026-01-03T09:00:00.000Z"],
+  ],
+  [
+    "2026-01-01T09:30:00.000Z",
+    "runs a skipped occurrence once after a forward step, then fires on time",
+    ["2026-01-01T10:00:00.000Z", "2026-01-02T09:00:00.000Z", "2026-01-03T09:00:00.000Z"],
+  ],
+];
+
 /*
  * Drives occurrences with .asManual()/clock.advance(), the only deterministic kind that can move
  * its own clock forward.
@@ -63,6 +77,20 @@ export function testAddonCronManual<TDate>(
       sut.clock.advance({ hours: 10 });
 
       expect(fires).toBe(3);
+    });
+
+    describe("issue#177", () => {
+      test.each(WALL_STEP_CASES)("snapped to %s: %s", (stepTo, _label, expected) => {
+        using sut = createSUT();
+        sut.clock.moveTo("2026-01-01T08:30:00.000Z");
+        const fired: string[] = [];
+        sut.scheduler.cron.schedule("0 9 * * *", () =>
+          fired.push(new Date(sut.clock.timestampNow()).toISOString()),
+        );
+        sut.clock.moveTo(stepTo, { as: "snap" });
+        sut.clock.moveTo("2026-01-03T12:00:00.000Z");
+        expect(fired).toEqual(expected);
+      });
     });
   });
 }
@@ -242,6 +270,20 @@ export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRunti
       vi.advanceTimersByTime(10 * 60 * 60 * 1000);
 
       expect(fires).toBe(3);
+    });
+
+    describe("issue#177", () => {
+      test.each(WALL_STEP_CASES)("stepped to %s: %s", (stepTo, _label, expected) => {
+        vi.setSystemTime(new Date("2026-01-01T08:30:00.000Z"));
+        const sut = createSUT();
+        const fired: string[] = [];
+        sut.scheduler.cron.schedule("0 9 * * *", () =>
+          fired.push(new Date(sut.clock.timestampNow()).toISOString()),
+        );
+        vi.setSystemTime(new Date(stepTo));
+        vi.advanceTimersByTime(Date.parse("2026-01-03T12:00:00.000Z") - Date.parse(stepTo));
+        expect(fired).toEqual(expected);
+      });
     });
   });
 }

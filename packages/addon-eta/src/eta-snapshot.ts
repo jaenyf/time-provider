@@ -48,6 +48,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     status: EtaStatus,
     startTime: EpochMilliseconds,
     now: EpochMilliseconds,
+    elapsedMilliseconds: DurationMilliseconds,
     completed: number,
     total: number,
     rateEstimator: IRateEstimator | undefined,
@@ -56,7 +57,7 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     this.startTime = startTime;
     this.completed = completed;
     this.total = total;
-    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
+    this.elapsedMilliseconds = elapsedMilliseconds;
     this.#remaining = new Lazy(() => this.total - this.completed);
     this.#percentage = new Lazy(() => (this.total > 0 ? (this.completed / this.total) * 100 : 0));
     this.#rate = new Lazy(() => rateEstimator?.estimateRate());
@@ -106,6 +107,7 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     status: EtaStatus,
     startTime: EpochMilliseconds,
     now: EpochMilliseconds,
+    elapsedMilliseconds: DurationMilliseconds,
     /** Current stage's raw completed/total. */
     stageCompleted: number,
     stageTotal: number,
@@ -119,7 +121,7 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     this.startTime = startTime;
     this.stageCompleted = stageCompleted;
     this.stageTotal = stageTotal;
-    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
+    this.elapsedMilliseconds = elapsedMilliseconds;
     this.currentStageIndex = currentStageIndex;
     this.stageCount = stageCount;
     this.#stageRemaining = new Lazy(() => this.stageTotal - this.stageCompleted);
@@ -181,11 +183,12 @@ export class EtaDurationSnapshot implements IEtaDurationSnapshot {
     status: EtaStatus,
     startTime: EpochMilliseconds,
     now: EpochMilliseconds,
+    elapsedMilliseconds: DurationMilliseconds,
     eta: EpochMilliseconds | undefined,
   ) {
     this.status = status;
     this.startTime = startTime;
-    this.elapsedMilliseconds = epochArithmetic.subtract(now, startTime);
+    this.elapsedMilliseconds = elapsedMilliseconds;
     this.eta = eta;
     this.remainingMilliseconds = eta === undefined ? undefined : epochArithmetic.subtract(eta, now);
   }

@@ -4,10 +4,8 @@ import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
 /*
- * requestAnimationFrame/cancelAnimationFrame just delegate to setTimeout/clearTimeout
- * (see deterministic-animation-frame.ts for why) - the one-shot/cancellation/compaction
- * behavior itself is already covered by core's own setTimeout tests, so these only need
- * to check the delegation contract, not re-simulate a queue.
+ * Frames are tagged runtime entries; the queue itself is covered by core's own tests, so these
+ * only check the delegation contract.
  */
 function fakeRuntime(): IDeterministicRuntime<unknown> & {
   scheduled: Map<
@@ -27,44 +25,28 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & {
     cleared,
     registerAddon: () => {},
     drain: () => {},
-    specific() {
-      throw new Error("not used by DeterministicAnimationFrameScheduler");
+    specific(_tag: unknown, _kind: unknown, durationSpec: IDurationSpec, callback: () => void) {
+      const handle = {
+        id: nextHandle++,
+        kind: 0,
+        isDisposed: false,
+        dispose: () => {
+          cleared.add(handle.id);
+        },
+      };
+      scheduled.set(handle.id, {
+        callback,
+        delayMs: toDuration(durationSpec),
+        dispose: handle.dispose,
+        isDisposed: false,
+      });
+      return handle as unknown as IScheduledHandle;
     },
     takeOutSpecificCallbacks() {
       throw new Error("not used by DeterministicAnimationFrameScheduler");
     },
-    scheduler: {
-      timers: {
-        once(durationSpec: IDurationSpec, callback: () => void) {
-          const handle = {
-            id: nextHandle++,
-            kind: 2,
-            isDisposed: false,
-            dispose: () => {
-              cleared.add(handle.id);
-            },
-          };
-          scheduled.set((handle as unknown as { id: number }).id, {
-            callback,
-            delayMs: toDuration(durationSpec),
-            dispose: () => {
-              cleared.add(handle.id);
-            },
-            isDisposed: false,
-          });
-          return handle as unknown as IScheduledHandle;
-        },
-        every() {
-          throw new Error("not used by DeterministicAnimationFrameScheduler");
-        },
-        recurring() {
-          throw new Error("not used by DeterministicAnimationFrameScheduler");
-        },
-        wait() {
-          throw new Error("not used by DeterministicAnimationFrameScheduler");
-        },
-      },
-    },
+    countSpecific: () => scheduled.size - cleared.size,
+    scheduler: {},
   } as unknown as IDeterministicRuntime<unknown> & {
     scheduled: Map<
       number,
@@ -114,7 +96,7 @@ describe("DeterministicAnimationFrameScheduler", () => {
   });
 
   describe("requestAnimationFrame", () => {
-    test("delegates to the runtime scheduler's once with the default ~16.67ms frame duration", () => {
+    test("registers a tagged runtime entry with the default ~16.67ms frame duration", () => {
       using sut = new DeterministicAnimationFrameScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
@@ -152,5 +134,15 @@ describe("DeterministicAnimationFrameScheduler", () => {
     const handle = sut.scheduleFrame(() => {});
     handle.dispose();
     expect(runtime.cleared.has((handle as unknown as { id: number }).id)).toBe(true);
+  });
+
+  test("pendingCount counts the runtime's frame entries", () => {
+    using sut = new DeterministicAnimationFrameScheduler();
+    sut.applyToRuntime(fakeRuntime());
+    sut.scheduleFrame(() => {});
+    const handle = sut.scheduleFrame(() => {});
+    expect(sut.pendingCount).toBe(2);
+    handle.dispose();
+    expect(sut.pendingCount).toBe(1);
   });
 });

@@ -53,9 +53,9 @@ one down, derive it — see [Naming these types](#naming-these-types).
   `MonotonicMilliseconds` point: the read [`timings`](/api/timings) records
   marks and measures against. On a system clock it is the host's
   `performance.now()`, which wall-clock corrections never move. On a
-  deterministic clock it follows the clock, so a manual clock moved backward
-  with `advance()` moves it backward too. Free of side effects, like
-  `timestampNow()`.
+  deterministic clock it follows the clock, except for a
+  [snap](/guide/moving-the-clock), which moves only the wall clock. Free of
+  side effects, like `timestampNow()`.
 - **`.monotonicOrigin`** — the epoch timestamp `monotonicNow()` counts from:
   the host's `performance.timeOrigin` on a system clock, the clock's time at
   creation on a deterministic one. It never changes.
@@ -69,12 +69,12 @@ one down, derive it — see [Naming these types](#naming-these-types).
 ## IManualClock
 
 ```ts
-interface IManualClock<TDate> extends IClock<TDate>, IAdvanceable<IManualClock<TDate>> {}
+interface IManualClock<TDate> extends IClock<TDate>, IMovable<IManualClock<TDate>, TDate> {}
 
 interface IUtcOnlyManualClock<TDate>
-  extends IUtcOnlyClock<TDate>, IAdvanceable<IUtcOnlyManualClock<TDate>> {}
+  extends IUtcOnlyClock<TDate>, IMovable<IUtcOnlyManualClock<TDate>, TDate> {}
 
-interface IAdvanceOptions {
+interface IMoveSpec {
   years?: number;
   months?: number;
   days?: number;
@@ -84,28 +84,55 @@ interface IAdvanceOptions {
   milliseconds?: number;
 }
 
-interface IAdvanceable<TSelf> {
-  advance(advanceOptions: IAdvanceOptions): TSelf;
+/** @deprecated Use IMoveSpec. */
+type IAdvanceOptions = IMoveSpec;
+
+interface IMoveOptions {
+  as?: "flow" | "sleep" | "snap";
+  monotonic?: "running" | "paused";
+}
+
+interface IMovable<TSelf, TDate> {
+  moveBy(spec: IMoveSpec, options?: IMoveOptions): TSelf;
+  moveTo(
+    time: "nextTimer" | "lastTimer" | (string & {}) | EpochMilliseconds | TDate,
+    options?: IMoveOptions,
+  ): TSelf;
+  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): TSelf;
+  /** @deprecated Use moveBy. */
+  advance(advanceOptions: IMoveSpec): TSelf;
 }
 ```
 
 Only on a manual clock (see [Manual Clock](/guide/manual-clock)) —
 `IManualClock` from a timezone-aware plugin, `IUtcOnlyManualClock` from a
-UTC-only one.
-
-None of these four is exported either. Same reason as above: they describe what
-`.asManual()....create()` hands you, so they belong in the reference even though
-the names aren't importable. Derive them from the provider type as shown
+UTC-only one. `IMoveSpec`, `IMoveOptions` and `IAdvanceOptions` are exported
+from `@time-provider/core`; the other names are not. They describe what
+`.asManual()....create()` hands you, so they belong in the reference even
+though the names aren't importable. Derive them from the provider type as shown
 [below](#naming-these-types).
 
-`advance()` moves the clock's time forward (or backward, with negative
-values); when more than one field is set, they apply to the current time in
-the fixed order `years → months → days → hours → minutes → seconds →
-milliseconds`, since combining calendar-variable fields with others can
-otherwise give a different result depending on the order. Any
-timers callback that becomes due as a result runs
-synchronously, in-line, before `advance()` returns — see
-[Deterministic Timers](/guide/timers).
+- **`moveBy(spec, options)`** — moves the clock by `spec`. When more than one
+  field is set, they apply to the current time in the fixed order `years →
+months → days → hours → minutes → seconds → milliseconds`, since combining
+  calendar-variable fields with others can otherwise give a different result
+  depending on the order.
+- **`moveTo(time, options)`** — moves the clock to `time`: an ISO string,
+  `EpochMilliseconds` (see `toInstant()`), a `TDate`, or `"nextTimer"`/`"lastTimer"` for the due time of
+  the next or last pending timer.
+- **`moveUntil("noTimers", options)`** — moves from timer to timer until none
+  is pending, and throws once it has fired the builder's
+  `withMoveUntilTimersLimit()` (1000 by default).
+- **`options.as`** — `"flow"` (the default) lets time pass, firing each due
+  timer at its own time. `"sleep"` jumps both clocks and fires each overdue
+  timer once. `"snap"` moves only the wall clock. Only a snap may go backward;
+  a negative flow or sleep throws. See [Moving the Clock](/guide/moving-the-clock)
+  for the full table and `options.monotonic`.
+- **`advance(spec)`** — deprecated. The same as `moveBy(spec)`, except that a
+  negative value moves monotonic time back too.
+
+Timer callbacks that become due run synchronously, in-line, before the call
+returns — see [Deterministic Timers](/guide/timers).
 
 ## Naming these types
 
@@ -120,7 +147,7 @@ using timeProvider = createTimeProvider
   .asManual()
   .withInitialTime(0)
   .create();
-// clock.advance(), plus the addon's own facade, both inferred
+// clock.moveBy(), plus the addon's own facade, both inferred
 ```
 
 Where you do need a name — a parameter in a shared test helper, or a package
@@ -132,10 +159,10 @@ them:
 import type { IManualTimeProvider } from "@time-provider/core/deterministic";
 
 type ManualClock = IManualTimeProvider<Date>["clock"]; // IManualClock<Date>
-type AdvanceOptions = Parameters<ManualClock["advance"]>[0]; // IAdvanceOptions
+type MoveSpec = Parameters<ManualClock["moveBy"]>[0]; // IMoveSpec
 
-function advancePastRetry(clock: ManualClock, options: AdvanceOptions) {
-  clock.advance(options);
+function movePastRetry(clock: ManualClock, spec: MoveSpec) {
+  clock.moveBy(spec);
 }
 ```
 

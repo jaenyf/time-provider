@@ -10,6 +10,7 @@ import { createRateEstimator, type IRateEstimator } from "./rate-estimator.ts";
 import { EtaDurationSnapshot, StagedEtaProgressSnapshot } from "./eta-snapshot.ts";
 import type {
   EtaRateAlgorithm,
+  EtaStatus,
   IDurationEtaTracker,
   IDurationEtaTrackBuilder,
   IEtaDurationSnapshot,
@@ -53,6 +54,10 @@ function normalizeStages(stages: readonly IEtaStage[]): NormalizedStage[] {
   return stages.map((stage) => ({ weight: stage.weight / sum, total: stage.total }));
 }
 
+function elapsedSince<TDate>(clock: IClock<TDate>, startMonotonic: number): DurationMilliseconds {
+  return (clock.monotonicNow() - startMonotonic) as DurationMilliseconds;
+}
+
 function stageFraction(stage: NormalizedStage, completed: number): number {
   return stage.total > 0 ? completed / stage.total : 1;
 }
@@ -68,6 +73,7 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   #stages: readonly NormalizedStage[];
   #notify: (snapshot: IStagedEtaProgressSnapshot) => void;
   #startTime: EpochMilliseconds;
+  #startMonotonic: number;
   #currentStageIndex = 0;
   #stageCompleted = 0;
   #completedWeight = 0;
@@ -86,8 +92,9 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
     this.#stages = stages;
     this.#notify = notify;
     this.#startTime = this.#clock.timestampNow();
+    this.#startMonotonic = this.#clock.monotonicNow();
     this.#rateEstimator = createRateEstimator(algorithm);
-    this.#rateEstimator.addSample(this.#startTime, 0);
+    this.#rateEstimator.addSample(this.#startMonotonic, 0);
     this.#timerHandle = runtime.scheduler.timers.every(
       { milliseconds: notificationIntervalMilliseconds },
       () => this.#tick(),
@@ -106,11 +113,11 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   }
 
   #buildSnapshot(status: "in-progress" | "done" | "abandoned"): StagedEtaProgressSnapshot {
-    const now = this.#clock.timestampNow();
     return new StagedEtaProgressSnapshot(
       status,
       this.#startTime,
-      now,
+      this.#clock.timestampNow(),
+      elapsedSince(this.#clock, this.#startMonotonic),
       this.#stageCompleted,
       this.#currentStage().total,
       this.#currentStageIndex,
@@ -125,7 +132,7 @@ class ProgressEtaTracker<TDate> implements IStagedProgressEtaTracker {
   }
 
   #recordSample(): void {
-    this.#rateEstimator.addSample(this.#clock.timestampNow(), this.#overallFraction());
+    this.#rateEstimator.addSample(this.#clock.monotonicNow(), this.#overallFraction());
   }
 
   #terminate(status: "done" | "abandoned"): void {
@@ -219,7 +226,8 @@ class DurationEtaTracker<TDate> implements IDurationEtaTracker {
   #clock: IClock<TDate>;
   #notify: (snapshot: IEtaDurationSnapshot) => void;
   #startTime: EpochMilliseconds;
-  #eta: EpochMilliseconds;
+  #startMonotonic: number;
+  #expectedDurationMilliseconds: DurationMilliseconds;
   #status: "in-progress" | "done" | "abandoned" = "in-progress";
   #timerHandle: IScheduledHandle;
 
@@ -232,19 +240,27 @@ class DurationEtaTracker<TDate> implements IDurationEtaTracker {
     this.#clock = runtime.clock;
     this.#notify = notify;
     this.#startTime = this.#clock.timestampNow();
-    this.#eta = epochArithmetic.addDuration(this.#startTime, expectedDurationMilliseconds);
+    this.#startMonotonic = this.#clock.monotonicNow();
+    this.#expectedDurationMilliseconds = expectedDurationMilliseconds;
     this.#timerHandle = runtime.scheduler.timers.every(
       { milliseconds: notificationIntervalMilliseconds },
-      () =>
-        this.#notify(
-          new EtaDurationSnapshot(
-            "in-progress",
-            this.#startTime,
-            this.#clock.timestampNow(),
-            this.#eta,
-          ),
-        ),
+      () => this.#notify(this.#snapshot("in-progress")),
     );
+  }
+
+  #snapshot(status: EtaStatus): EtaDurationSnapshot {
+    const now = this.#clock.timestampNow();
+    const elapsed = elapsedSince(this.#clock, this.#startMonotonic);
+    const eta =
+      status === "in-progress"
+        ? epochArithmetic.addDuration(
+            now,
+            (this.#expectedDurationMilliseconds - elapsed) as DurationMilliseconds,
+          )
+        : status === "done"
+          ? now
+          : undefined;
+    return new EtaDurationSnapshot(status, this.#startTime, now, elapsed, eta);
   }
 
   #terminate(status: "done" | "abandoned"): void {
@@ -253,10 +269,7 @@ class DurationEtaTracker<TDate> implements IDurationEtaTracker {
     }
     this.#status = status;
     this.#timerHandle.dispose();
-
-    const now = this.#clock.timestampNow();
-    const eta = status === "done" ? now : undefined;
-    this.#notify(new EtaDurationSnapshot(status, this.#startTime, now, eta));
+    this.#notify(this.#snapshot(status));
   }
 
   done(): void {

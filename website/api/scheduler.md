@@ -70,6 +70,25 @@ const handle = timeProvider.scheduler.timers.every({ seconds: 1 }, () => tick())
 handle.dispose(); // no-op if already fired/cleared
 ```
 
+## Deterministic timers
+
+On a fixed, manual or sequential Time-Provider, `scheduler.timers` also
+reports what is pending:
+
+```ts
+interface IDeterministicTimers extends ITimers {
+  /** Wall time the next timer fires at, or `undefined`. */
+  readonly nextDueTime: EpochMilliseconds | undefined;
+  /** Wall time the last pending timer fires at, or `undefined`. */
+  readonly lastDueTime: EpochMilliseconds | undefined;
+  /** Number of pending timers. */
+  readonly pendingCount: number;
+}
+```
+
+Animation frames and idle callbacks are left out. See
+[Moving the Clock](/guide/moving-the-clock#stepping-through-timers).
+
 ## Recurring
 
 `every` repeats on a fixed period; `recurring` repeats on a dynamic period

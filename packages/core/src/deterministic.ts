@@ -11,6 +11,7 @@ export type {
   IUtcOnlyDeterministicPlugin,
   IDeterministicMicrotasks,
   IDeterministicScheduler,
+  IDeterministicTimers,
   IDeterministicRuntime,
   IDeterministicTimeProvider,
   IUtcOnlyDeterministicTimeProvider,
@@ -21,6 +22,7 @@ export type {
   ICalendarScheme,
 } from "./types/types.ts";
 export * from "./helpers/branded-types.ts";
+export { DEFAULT_MOVE_UNTIL_TIMERS_LIMIT } from "./types/types.ts";
 export {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,

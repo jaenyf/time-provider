@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vite-plus/test";
-import { toDuration, type IScheduledHandle, type ITimers, type IAddon } from "@time-provider/core";
+import {
+  toDuration,
+  type IScheduledHandle,
+  type IAddon,
+  type IDurationSpec,
+} from "@time-provider/core";
 import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
@@ -11,11 +16,14 @@ type FakeRuntime = IDeterministicRuntime<unknown> & {
     cancelAnimationFrame?: (handle: { dispose: () => void }) => void;
   };
 };
-type AnimationFacade = { scheduleFrame: (callback: () => void) => IScheduledHandle };
+type AnimationFacade = {
+  scheduleFrame: (callback: () => void) => IScheduledHandle;
+  pendingCount: number;
+};
 
 /*
  * applyToRuntime only touches what it's documented to (define `.animation`,
- * read `.scheduler.timers`), so a minimal object satisfies it for a focused unit test
+ * call the runtime's specific()/countSpecific()), so a minimal object satisfies it for a focused unit test
  * without needing a real plugin/runtime - the cast is safe because these tests
  * never exercise anything else on the fake runtime.
  */
@@ -27,31 +35,18 @@ function fakeDeterministicRuntime(): {
   const scheduled = new Map<number, () => void>();
   const delays: number[] = [];
   let nextHandle = 1;
-  const timers: ITimers = {
-    once(delay, callback) {
-      delays.push(toDuration(delay));
-      const handle = nextHandle++;
-      scheduled.set(handle, callback);
-      return handle as unknown as IScheduledHandle;
-    },
-    every() {
-      throw new Error("not used by the animation-frame addon");
-    },
-    recurring() {
-      throw new Error("not used by the animation-frame addon");
-    },
-    wait() {
-      throw new Error("not used by the animation-frame addon");
-    },
-  };
   return {
     runtime: {
-      scheduler: { timers },
+      scheduler: {},
       registerAddon: (_addon: IAddon<unknown>) => {},
       drain: () => {},
-      specific() {
-        throw new Error("not used by the animation-frame addon");
+      specific(_tag: unknown, _kind: unknown, delay: IDurationSpec, callback: () => void) {
+        delays.push(toDuration(delay));
+        const handle = nextHandle++;
+        scheduled.set(handle, callback);
+        return handle as unknown as IScheduledHandle;
       },
+      countSpecific: () => scheduled.size,
       takeOutSpecificCallbacks() {
         throw new Error("not used by the animation-frame addon");
       },
@@ -66,7 +61,10 @@ describe("animationFrameAddon (deterministic)", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.scheduler.animation).not.toBeInstanceOf(DeterministicAnimationFrameScheduler);
-    expect(runtime.scheduler.animation).toStrictEqual({ scheduleFrame: expect.any(Function) });
+    expect(runtime.scheduler.animation).toStrictEqual({
+      scheduleFrame: expect.any(Function),
+      pendingCount: 0,
+    });
   });
 
   test("applyToRuntime wires .animation to the runtime's own scheduler", () => {
@@ -75,6 +73,7 @@ describe("animationFrameAddon (deterministic)", () => {
     const scheduler = runtime.scheduler.animation as AnimationFacade;
     scheduler.scheduleFrame(() => {});
     expect(scheduled.size).toBe(1);
+    expect(scheduler.pendingCount).toBe(1);
   });
 
   test("applyToRuntime adds the native-shaped aliases when a compat facade is there", () => {

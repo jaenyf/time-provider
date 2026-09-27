@@ -64,7 +64,7 @@ const manual = createDeterministicTimeProvider
   .withInitialTime(0)
   .create();
 manual.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
-manual.clock.advance({ milliseconds: 20 });
+manual.clock.moveBy({ milliseconds: 20 });
 ```
 
 You can configure the simulated frame rate by chaining `.withHostFramesRate(...)` on

@@ -16,6 +16,8 @@ export type {
   TimezoneDefinition,
   IClock,
   IAdvanceOptions,
+  IMoveSpec,
+  IMoveOptions,
   IConverter,
   ITimings,
   ITimingsFilter,

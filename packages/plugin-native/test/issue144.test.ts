@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
-import type { IAdvanceOptions } from "@time-provider/core";
+import type { IMoveSpec } from "@time-provider/core";
 import { plugin } from "../src/deterministic.ts";
+import { DEFAULT_MOVE_UNTIL_TIMERS_LIMIT } from "@time-provider/core/deterministic";
 
 /*
   This plugin is UTC-only, time `advance` is expected to be host-timezone-free.
@@ -12,10 +13,10 @@ describe("issue#144", () => {
     beforeAll(() => (process.env.TZ = "America/New_York"));
     afterAll(() => (process.env.TZ = originalTimezone));
 
-    const elapsedAfterAdvance = (initialTime: string, options: IAdvanceOptions) => {
-      const runtime = plugin.createManualRuntime(initialTime);
+    const elapsedAfterAdvance = (initialTime: string, options: IMoveSpec) => {
+      const runtime = plugin.createManualRuntime(initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT);
       const before = runtime.timestampNow();
-      runtime.advance(options);
+      runtime.moveBy(options);
       return runtime.timestampNow() - before;
     };
 

@@ -32,7 +32,7 @@ const manual = createTimeProvider.for(plugin).use(addon).asManual().withInitialT
 
 let ticks = 0;
 manual.compat.setInterval(() => ticks++, 1000);
-manual.clock.advance({ seconds: 3 });
+manual.clock.moveBy({ seconds: 3 });
 console.log(ticks); // 3
 ```
 

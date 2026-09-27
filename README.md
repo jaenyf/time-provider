@@ -53,7 +53,8 @@ Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.
 
 ## Features
 
-- **Four clock strategies**: system (real time), fixed, manual (advance time explicitly), sequential (predefined instants) - same API for production and tests.
+- **Four clock strategies**: system (real time), fixed, manual (move time explicitly), sequential (predefined instants) - same API for production and tests.
+- **Wall clock steps**: move a manual clock as elapsed time (`flow`), a host sleep (`sleep`) or a wall correction (`snap`), and step from timer to timer with `moveTo("nextTimer")`/`moveUntil("noTimers")`.
 - **Deterministic timers**: driven by the clock strategy, not the real event loop, so manual/sequential/fixed runs are synchronous and don't depend on wall-clock time.
 - **Bring your own date library**: adapters for [Temporal](https://www.npmjs.com/package/@time-provider/plugin-temporal), [Day.js](https://www.npmjs.com/package/@time-provider/plugin-dayjs), [Luxon](https://www.npmjs.com/package/@time-provider/plugin-luxon), [Moment.js](https://www.npmjs.com/package/@time-provider/plugin-moment), [Moment.js + moment-timezone](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone), and [native `Date`](https://www.npmjs.com/package/@time-provider/plugin-native). Your code keeps working with the date type it already uses.
 - **Real timezone support** where the underlying library allows it (native `Date`, plain Moment.js are UTC-only - see ARCHITECTURE.md) - `withTimezone(...)` plus `localNow()`/`utcNow()`.
@@ -104,7 +105,7 @@ import { plugin } from "@time-provider/plugin-native/deterministic";
   {
     //timers are cleared when disposing their handles
     using timerHandle = timeProvider.scheduler.timers.every({ seconds: 1 }, () => retries++);
-    timeProvider.clock.advance({ seconds: 3 });
+    timeProvider.clock.moveBy({ seconds: 3 });
   }
 
   expect(retries).toBe(3);
@@ -147,8 +148,8 @@ new RetryingOperation(timeProvider).run(
   () => (gaveUp = true),
 );
 
-timeProvider.clock.advance({ seconds: 1 }); // 2nd attempt
-timeProvider.clock.advance({ seconds: 2 }); // 3rd attempt, succeeds
+timeProvider.clock.moveBy({ seconds: 1 }); // 2nd attempt
+timeProvider.clock.moveBy({ seconds: 2 }); // 3rd attempt, succeeds
 
 expect(attempts).toBe(3);
 expect(gaveUp).toBe(false);
@@ -196,7 +197,7 @@ createTimeProvider
   .create();
 ```
 
-> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`advance()` (or `localNow()`, `utcNow()` on sequential clocks)) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run. Use `timestampNow()` instead when you only need a value to compute with - it never triggers any timer on sequential clocks or advances time.
+> **Manual and sequential clocks run synchronously.** A due timer callback fires in-line, as a direct side effect of the call that made it due (`moveBy()`, `moveTo()`, `moveUntil()`, or `localNow()`/`utcNow()` on sequential clocks) - not on a real event-loop tick. This is what makes them deterministic without `await`, but it means call ordering can differ subtly from a real async run. Use `timestampNow()` instead when you only need a value to compute with - it never triggers any timer on sequential clocks or advances time.
 
 ## Addons vs. Plugins
 

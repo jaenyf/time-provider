@@ -1,6 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import {
   createTimeProvider,
+  type EpochMilliseconds,
   type IClock,
   type ISystemPlugin,
   type ISystemPluggedRuntimeBuilder,
@@ -204,6 +205,20 @@ export function testTimestampNow<TDate>(getSut: () => { clock: unknown }) {
       const clock = getSut().clock as IClock<TDate>;
       expect(clock.timestampNow()).not.toEqual(undefinedValue);
     });
+  });
+}
+
+export function testTimestampNowMatchesLastRead<TDate>(
+  getSut: () => { clock: unknown; converter: unknown },
+) {
+  test("timestampNow() is the instant last read", () => {
+    const sut = getSut();
+    const clock = sut.clock as IClock<TDate>;
+    const converter = sut.converter as { convertToUtc(time: EpochMilliseconds): TDate };
+    for (let i = 0; i < 3; i++) {
+      const read = clock.utcNow();
+      expect(converter.convertToUtc(clock.timestampNow())).toEqual(read);
+    }
   });
 }
 

@@ -11,6 +11,8 @@ import {
   createTimeProvider as createDeterministicTimeProvider,
   type IDeterministicPlugin,
   type IDeterministicTimeProvider,
+  type IManualTimeProvider,
+  type IUtcOnlyManualTimeProvider,
   type IUtcOnlyDeterministicPlugin,
   type IUtcOnlyDeterministicTimeProvider,
 } from "../../core/dist/deterministic.mjs";
@@ -85,6 +87,7 @@ export class E2eHelper {
       );
       E2eHelper.testMicrotaskDrain(manual);
     }
+    E2eHelper.testClockMoves(() => deterministicBuilder.asManual().create());
 
     {
       using sequential = deterministicBuilder.asSequential().create();
@@ -151,6 +154,7 @@ export class E2eHelper {
       underlyingToMs,
     );
     E2eHelper.testMicrotaskDrain(manual);
+    E2eHelper.testClockMoves(() => deterministicBuilder.asManual().create());
 
     E2eHelper.testUtcOnlyTimeProvider(
       sequential,
@@ -319,6 +323,24 @@ export class E2eHelper {
         expect(() => {
           timeProvider.scheduler.microtasks.drain();
         }).not.toThrow();
+      });
+    });
+  }
+
+  private static testClockMoves<TDate>(
+    create: () => IManualTimeProvider<TDate> | IUtcOnlyManualTimeProvider<TDate>,
+  ) {
+    describe("clock moves", () => {
+      test("snap, next timer and sleep", () => {
+        using timeProvider = create();
+        const { clock, scheduler } = timeProvider;
+        let fired = 0;
+        scheduler.timers.once({ seconds: 1 }, () => fired++);
+        clock.moveBy({ hours: 1 }, { as: "snap" });
+        clock.moveTo("nextTimer");
+        clock.moveBy({ seconds: 1 }, { as: "sleep" });
+        expect([fired, scheduler.timers.pendingCount]).toEqual([1, 0]);
+        expect([clock.timestampNow(), clock.monotonicNow()]).toEqual([3_602_000, 2000]);
       });
     });
   }

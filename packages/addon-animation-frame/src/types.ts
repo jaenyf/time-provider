@@ -21,3 +21,18 @@ export interface IAnimationFrameScheduler<TDate> {
   /** Schedules `callback` once before the next frame. */
   scheduleFrame(callback: () => void): IScheduledHandle;
 }
+
+/** Adds `scheduler.animation` for deterministic runtimes. */
+export type WithDeterministicAnimationFrameApi<TDate> = WithAnimationFrameApi<TDate> & {
+  scheduler: {
+    animation: IDeterministicAnimationFrameScheduler<TDate>;
+  };
+};
+
+/** {@link IAnimationFrameScheduler} for deterministic runtimes. */
+export interface IDeterministicAnimationFrameScheduler<
+  TDate,
+> extends IAnimationFrameScheduler<TDate> {
+  /** Number of pending frame callbacks. */
+  readonly pendingCount: number;
+}

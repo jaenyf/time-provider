@@ -49,7 +49,13 @@ export class DeterministicIdleScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "scheduler.idle",
-      { request: this.request.bind(this), drain: this.drain.bind(this) },
+      {
+        request: this.request.bind(this),
+        drain: this.drain.bind(this),
+        get pendingCount() {
+          return runtime.countSpecific(IDLE_TAG);
+        },
+      },
       this,
     );
     // The native-shaped aliases, added only when the compat addon is composed before this one.
@@ -71,6 +77,10 @@ export class DeterministicIdleScheduler<TDate>
 
   request(callback: () => void): IScheduledHandle {
     return this.runtime.specific(IDLE_TAG, ScheduledHandleKind.timeout, FAR_FUTURE_DELAY, callback);
+  }
+
+  get pendingCount(): number {
+    return this.runtime.countSpecific(IDLE_TAG);
   }
 
   drain(maxCount = Number.POSITIVE_INFINITY): number {

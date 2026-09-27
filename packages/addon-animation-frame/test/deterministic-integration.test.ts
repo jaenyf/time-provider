@@ -1,8 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import { BaseManualRuntime, toInstant } from "@time-provider/core/deterministic";
+import {
+  BaseManualRuntime,
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
+  toInstant,
+} from "@time-provider/core/deterministic";
 import type { ITimeConverter } from "@time-provider/core";
 import { addon as addonBuilderFactory } from "../src/deterministic.ts";
-import type { WithAnimationFrameApi } from "../src/types.ts";
+import type { WithDeterministicAnimationFrameApi } from "../src/types.ts";
 
 /*
  * A real manual runtime (same shape as core's own FakeManualRuntime test double), not the
@@ -19,7 +23,7 @@ const identityConverter: ITimeConverter<number> = {
 
 class RealManualRuntime extends BaseManualRuntime<number> {
   constructor(initialTime: number) {
-    super("Etc/UTC", initialTime, identityConverter);
+    super("Etc/UTC", initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT, identityConverter);
   }
   protected advanceYears(time: number, years: number): number {
     return time + years * 365 * 24 * 60 * 60 * 1000;
@@ -44,13 +48,28 @@ class RealManualRuntime extends BaseManualRuntime<number> {
   }
 }
 
-function createAnimatedRuntime(): RealManualRuntime & WithAnimationFrameApi<unknown> {
+function createAnimatedRuntime(): RealManualRuntime & WithDeterministicAnimationFrameApi<unknown> {
   const runtime = new RealManualRuntime(0);
   addonBuilderFactory().create().applyToRuntime(runtime);
-  return runtime as RealManualRuntime & WithAnimationFrameApi<unknown>;
+  return runtime as RealManualRuntime & WithDeterministicAnimationFrameApi<unknown>;
 }
 
 describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
+  test("frames are counted apart from timers, skipped by moveUntil, and still fire on a move", () => {
+    const runtime = createAnimatedRuntime();
+    let frames = 0;
+    runtime.scheduler.animation.scheduleFrame(() => frames++);
+    expect(runtime.scheduler.animation.pendingCount).toBe(1);
+    expect([runtime.scheduler.timers.pendingCount, runtime.scheduler.timers.nextDueTime]).toEqual([
+      0,
+      undefined,
+    ]);
+    runtime.moveUntil("noTimers");
+    expect(frames).toBe(0);
+    runtime.moveBy({ milliseconds: 17 });
+    expect([frames, runtime.scheduler.animation.pendingCount]).toEqual([1, 0]);
+  });
+
   test("a self-rescheduling requestAnimationFrame loop fires once per frame across a single large advance(), not once total", () => {
     const timeProvider = createAnimatedRuntime();
     let frameCount = 0;
@@ -85,7 +104,7 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     const runtime = new RealManualRuntime(0);
     const configured = addonBuilderFactory().withHostFramesRate(90).create();
     configured.applyToRuntime(runtime);
-    const timeProvider = runtime as RealManualRuntime & WithAnimationFrameApi<unknown>;
+    const timeProvider = runtime as RealManualRuntime & WithDeterministicAnimationFrameApi<unknown>;
     let frameCount = 0;
     function loop() {
       frameCount++;

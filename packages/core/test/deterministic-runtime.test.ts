@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
 import {
+  DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
   ScheduledHandleKind,
   type IScheduledHandle,
   type ITimeConverter,
@@ -15,7 +16,7 @@ const identityConverter: ITimeConverter<number> = {
 
 class FakeManualRuntime extends BaseManualRuntime<number> {
   constructor(initialTime: number) {
-    super("Etc/UTC", initialTime, identityConverter);
+    super("Etc/UTC", initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT, identityConverter);
   }
   protected advanceYears(time: number, years: number): number {
     return time + years * 365 * 24 * 60 * 60 * 1000;

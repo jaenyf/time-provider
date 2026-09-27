@@ -6,6 +6,6 @@ const manual = createTimeProvider.for(plugin).use(addon).asManual().create();
 
 {
   using handle = manual.scheduler.animation.scheduleFrame(() => console.log("frame"));
-  manual.clock.advance({ milliseconds: 20 });
+  manual.clock.moveBy({ milliseconds: 20 });
   handle.dispose();
 }

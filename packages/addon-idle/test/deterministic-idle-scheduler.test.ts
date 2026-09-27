@@ -83,6 +83,7 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & { registeredCount: () =
       }
       return callbacks;
     },
+    countSpecific: (tag: unknown) => entries.filter((entry) => entry.tag === tag).length,
   } as unknown as IDeterministicRuntime<unknown> & { registeredCount: () => number };
 }
 
@@ -103,6 +104,16 @@ describe("DeterministicIdleScheduler", () => {
       }
       expect(sutRef.isDisposed).toBe(true);
     });
+  });
+
+  test("pendingCount counts undrained requests", () => {
+    using sut = new DeterministicIdleScheduler();
+    sut.applyToRuntime(fakeRuntime());
+    sut.request(() => {});
+    const handle = sut.request(() => {});
+    expect(sut.pendingCount).toBe(2);
+    handle.dispose();
+    expect(sut.pendingCount).toBe(1);
   });
 
   describe("request", () => {

@@ -27,7 +27,7 @@ other `@time-provider/core` timer returns.
 
 On a deterministic Time-Provider, frames are simulated against the runtime's own
 clock: a registered callback fires once "now" has moved forward by at least one
-frame duration. So a whole animation plays out inside `advance()`, with no real
+frame duration. So a whole animation plays out inside `moveBy()`, with no real
 waiting and no dependence on a display:
 
 ```ts
@@ -50,12 +50,17 @@ const tick = () => {
 };
 timeProvider.scheduler.animation.scheduleFrame(tick);
 
-timeProvider.clock.advance({ milliseconds: 100 }); // ~9 frames at 90 FPS
+timeProvider.clock.moveBy({ milliseconds: 100 }); // ~9 frames at 90 FPS
 ```
 
 `.withHostFramesRate(rate)` is contributed by the deterministic addon and
 chains directly off `.use(addon)`, before you pick a strategy. It defaults to
 `60` and throws on a rate that is zero or negative.
+
+`scheduler.animation.pendingCount` counts the frames waiting to fire. Frames
+are not timers: `scheduler.timers.pendingCount`, `moveTo("nextTimer")` and
+`moveUntil("noTimers")` skip them, while `moveBy()` fires them — see
+[Moving the Clock](/guide/moving-the-clock#stepping-through-timers).
 
 ## Where the API isn't available
 
@@ -114,8 +119,9 @@ function animate(tp: ITimeProvider<Date> & WithAnimationFrameApi) {
 The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemAnimationFrameScheduler` from the
 root entry point, and `DeterministicAnimationFrameScheduler` from
-`/deterministic`, which takes the runtime's `ITimers` and exposes a readable
-and writable `hostFramesRate`.
+`/deterministic`, which exposes a readable and writable `hostFramesRate`.
+`/deterministic` also exports `IDeterministicAnimationFrameApi` and
+`WithDeterministicAnimationFrameApi`, which add `pendingCount`.
 
 ## With the compat addon
 

@@ -3,6 +3,7 @@ import type {
   IDisposable,
   IDeterministicTimeProvider,
   IManualTimeProvider,
+  IMoveOptions,
   IRuntime,
   ISystemPlugin,
   ITimeProvider,
@@ -115,6 +116,11 @@ export interface IManualRuntimeBuilder<TDate, TExtra = unknown>
     IComposeWithTimezone<IManualRuntimeBuilder<TDate, TExtra>> {
   /** Sets the initial time. */
   withInitialTime(initialDateTime: string | number | TDate): IManualRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Sets how many timers `moveUntil()` may fire; defaults to 1000.
+   * @throws If `limit` is not a positive integer.
+   */
+  withMoveUntilTimersLimit(limit: number): IManualRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a manual deterministic UTC-only Time-Provider. */
@@ -125,6 +131,11 @@ interface IUtcOnlyManualRuntimeBuilder<TDate, TExtra = unknown> extends ICreateT
   withInitialTime(
     initialDateTime: string | number | TDate,
   ): IUtcOnlyManualRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Sets how many timers `moveUntil()` may fire; defaults to 1000.
+   * @throws If `limit` is not a positive integer.
+   */
+  withMoveUntilTimersLimit(limit: number): IUtcOnlyManualRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a sequential deterministic Time-Provider. */
@@ -132,9 +143,10 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
   extends
     ICreateTimeProvider<IDeterministicTimeProvider<TDate> & TExtra>,
     IComposeWithTimezone<ISequentialRuntimeBuilder<TDate, TExtra>> {
-  /** Adds a sequential time. */
+  /** Adds a sequential time, reached by default with a backward snap or a forward flow */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
+    options?: { as?: IMoveOptions["as"] },
   ): ISequentialRuntimeBuilder<TDate, TExtra>;
 }
 
@@ -142,9 +154,10 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
 interface IUtcOnlySequentialRuntimeBuilder<TDate, TExtra = unknown> extends ICreateTimeProvider<
   IUtcOnlyDeterministicTimeProvider<TDate> & TExtra
 > {
-  /** Adds a sequential time. */
+  /** Adds a sequential time, reached by default with a backward snap or a forward flow. */
   withSequentialTime(
     sequentialDateTime: string | number | TDate,
+    options?: { as?: IMoveOptions["as"] },
   ): IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>;
 }
 

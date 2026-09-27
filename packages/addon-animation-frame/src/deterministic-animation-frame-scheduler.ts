@@ -1,11 +1,18 @@
-import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { IAnimationFrameScheduler } from "./types.ts";
+import {
+  AddonBase,
+  AddonHelper,
+  ScheduledHandleKind,
+  type IScheduledHandle,
+} from "@time-provider/core";
+import type { IDeterministicAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
 
-/** Deterministic {@link IAnimationFrameScheduler} using simulated frames. */
+const ANIMATION_FRAME_TAG = Symbol("animation frame");
+
+/** Deterministic {@link IDeterministicAnimationFrameScheduler} using simulated frames. */
 export class DeterministicAnimationFrameScheduler<TDate>
   extends AddonBase<TDate, IDeterministicRuntime<TDate>>
-  implements IDeterministicAddon<TDate>, IAnimationFrameScheduler<TDate>
+  implements IDeterministicAddon<TDate>, IDeterministicAnimationFrameScheduler<TDate>
 {
   #hostFramesRate = 60;
   #hostFrameDurationMs = 1000 / 60;
@@ -26,11 +33,16 @@ export class DeterministicAnimationFrameScheduler<TDate>
     this.dispose();
   }
 
-  applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
+  applyToRuntimeImpl(runtime: IDeterministicRuntime<TDate>): void {
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "scheduler.animation",
-      { scheduleFrame: this.scheduleFrame.bind(this) },
+      {
+        scheduleFrame: this.scheduleFrame.bind(this),
+        get pendingCount() {
+          return runtime.countSpecific(ANIMATION_FRAME_TAG);
+        },
+      },
       this,
     );
     // The native-shaped aliases, added only when the compat addon is composed before this one.
@@ -64,7 +76,16 @@ export class DeterministicAnimationFrameScheduler<TDate>
     this.#hostFrameDurationMs = 1000 / value;
   }
 
+  get pendingCount(): number {
+    return this.runtime.countSpecific(ANIMATION_FRAME_TAG);
+  }
+
   scheduleFrame(callback: () => void): IScheduledHandle {
-    return this.runtimeTimers.once({ milliseconds: this.#hostFrameDurationMs }, callback);
+    return this.runtime.specific(
+      ANIMATION_FRAME_TAG,
+      ScheduledHandleKind.timeout,
+      { milliseconds: this.#hostFrameDurationMs },
+      callback,
+    );
   }
 }

@@ -4,7 +4,7 @@ import {
   BaseManualRuntime,
   BaseSequentialRuntime,
 } from "@time-provider/core/deterministic";
-import type { EpochMilliseconds, TimezoneDefinition } from "@time-provider/core";
+import type { EpochMilliseconds, IMoveOptions, TimezoneDefinition } from "@time-provider/core";
 import { RuntimeHelper } from "./runtime-helper.ts";
 import moment from "moment-timezone";
 
@@ -20,9 +20,12 @@ class FixedRuntime extends BaseFixedRuntime<moment.Moment> {
 class SequentialRuntime extends BaseSequentialRuntime<moment.Moment> {
   constructor(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | moment.Moment)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | moment.Moment;
+      as?: IMoveOptions["as"];
+    }[],
   ) {
-    super(localTimezone, sequentialTimes, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper);
   }
 }
 
@@ -30,8 +33,9 @@ class ManualRuntime extends BaseManualRuntime<moment.Moment> {
   constructor(
     localTimezone: TimezoneDefinition,
     fixedTime: string | EpochMilliseconds | number | moment.Moment,
+    moveUntilTimersLimit: number,
   ) {
-    super(localTimezone, fixedTime, RuntimeHelper);
+    super(localTimezone, fixedTime, moveUntilTimersLimit, RuntimeHelper);
   }
   protected advanceYears(time: moment.Moment, years: number): moment.Moment {
     return time.add({ years });

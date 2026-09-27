@@ -1,10 +1,10 @@
 import {
   type IScheduledHandle,
-  type IDurationSpec,
   type IAddon,
   AddonBase,
   type IRuntime,
   AddonHelper,
+  type EpochMilliseconds,
 } from "@time-provider/core";
 import {
   computeNextOccurrence,
@@ -69,20 +69,15 @@ export class CronScheduler<
       typeof expressionOrSpec === "string"
         ? parseCronExpression(expressionOrSpec, calendarScheme)
         : parseCronSpec(expressionOrSpec as ICronSpec<MonthName, DayOfWeekName>, calendarScheme);
-    /*
-      Anchored to the schedule's own last computed occurrence, not a fresh `timestampNow()` read
-      on every rearm: on a deterministic runtime, a single advance() can drain several due
-      callbacks in one batch, and by the time a later one runs, timestampNow() already reflects
-      advance()'s final target - not the instant this particular occurrence is actually due at.
-      Re-querying it there would skip every occurrence between "now" and that final target.
-    */
-    let lastOccurrence = calendarScheme.fromTimestamp(this.runtimeClock.timestampNow());
-    const nextDelay = (): IDurationSpec => {
-      const next = computeNextOccurrence(parsed, lastOccurrence, timezone, calendarScheme);
-      const delay = calendarScheme.toTimestamp(next) - calendarScheme.toTimestamp(lastOccurrence);
-      lastOccurrence = next;
-      return { milliseconds: delay };
-    };
+    const clock = this.runtimeClock;
+    const nextAfter = (time: EpochMilliseconds): EpochMilliseconds =>
+      calendarScheme.toTimestamp(
+        computeNextOccurrence(parsed, calendarScheme.fromTimestamp(time), timezone, calendarScheme),
+      );
+    const scheduledAt = clock.timestampNow();
+    let due = nextAfter(scheduledAt);
+    // A wake before `due` means the wall clock went back: wait again. After it, run once, even if
+    // the wall clock skipped several occurrences.
     /*
       `callback` is invoked without a try/catch on purpose: a throwing cron callback is just a
       throwing scheduler callback, and the runtime already has one policy for those - rethrow in a
@@ -91,9 +86,16 @@ export class CronScheduler<
       throws stops the schedule, exactly as `recurring` documents; catch inside your own callback
       if a failing run should not end the job.
     */
-    return this.runtimeTimers.recurring(() => {
-      callback();
-      return nextDelay();
-    }, nextDelay());
+    return this.runtimeTimers.recurring(
+      () => {
+        const now = clock.timestampNow();
+        if (now >= due) {
+          callback();
+          due = nextAfter(Math.max(due, now) as EpochMilliseconds);
+        }
+        return { milliseconds: due - now };
+      },
+      { milliseconds: due - scheduledAt },
+    );
   }
 }

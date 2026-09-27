@@ -8,7 +8,7 @@ console.log(fixed.clock.utcNow());
 
 const manual = builder.asManual().create();
 console.log(manual.clock.utcNow());
-manual.clock.advance({ seconds: 1 });
+manual.clock.moveBy({ seconds: 1 });
 
 const sequential = builder.asSequential().create();
 console.log(sequential.clock.utcNow());

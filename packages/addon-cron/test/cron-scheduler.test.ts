@@ -202,7 +202,7 @@ describe("CronScheduler", () => {
   });
 
   test("the recurring callback runs the user callback, then re-derives the next delay", () => {
-    const now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
+    let now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
       () => "Etc/UTC",
@@ -212,32 +212,34 @@ describe("CronScheduler", () => {
     const runs: number[] = [];
     sut.schedule("* * * * *", () => runs.push(now));
 
+    now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 31, 0) });
     const nextDelay = runtime.recurring[0]?.callback();
     expect(runs).toEqual([now]);
     expect((nextDelay as IDurationSpec).milliseconds).toBe(60_000);
   });
 
-  test("re-arms are computed from the schedule's own occurrence chain, not from timestampNow() at rearm time", () => {
+  test.each<[string, number, number, number]>([
+    ["forward past several occurrences runs once, then continues from now", 12, 1, 60_000],
+    ["backward runs nothing and waits for the due occurrence", 10, 0, 31 * 60_000],
+  ])("a wake after a wall step %s", (_label, wakeHour, expectedRuns, expectedDelay) => {
     let now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
-    // On a deterministic runtime, a single advance() sets the clock to its final target *before*
-    // draining any due callback - by the time a mid-batch cron callback actually runs,
-    // timestampNow() already reflects that unrelated future instant, not the occurrence being
-    // processed. The delay computation must not depend on it past the very first schedule() call.
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
       () => "Etc/UTC",
       () => now,
     );
     sut.applyToRuntime(runtime as unknown as IRuntime<unknown>);
-    sut.schedule("* * * * *", () => {});
+    let runs = 0;
+    sut.schedule("* * * * *", () => runs++);
 
-    now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 12, 0, 0) });
+    now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, wakeHour, 0, 0) });
     const nextDelay = runtime.recurring[0]?.callback();
-    expect((nextDelay as IDurationSpec).milliseconds).toBe(60_000);
+    expect(runs).toBe(expectedRuns);
+    expect((nextDelay as IDurationSpec).milliseconds).toBe(expectedDelay);
   });
 
-  test("chains through several consecutive occurrences even while timestampNow() never advances (a batched drain)", () => {
-    const now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 0, 0, 0) });
+  test("chains through consecutive occurrences", () => {
+    let now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 0, 0, 0) });
     const sut = new CronScheduler();
     const runtime = fakeRuntime(
       () => "Etc/UTC",
@@ -249,15 +251,17 @@ describe("CronScheduler", () => {
     expect(runtime.recurring[0]?.initialDelay?.milliseconds).toBe(
       Date.UTC(2024, 0, 1, 9, 0, 0) - now,
     );
-    expect((runtime.recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(60 * 60_000); // 09:00 -> 10:00
-    expect((runtime.recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(60 * 60_000); // 10:00 -> 11:00
-    expect((runtime.recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(
-      22 * 60 * 60_000,
-    ); // 11:00 -> next day's 09:00
+    const wakeAt = (hour: number) => {
+      now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, hour, 0, 0) });
+      return (runtime.recurring[0]!.callback() as IDurationSpec).milliseconds;
+    };
+    expect(wakeAt(9)).toBe(60 * 60_000);
+    expect(wakeAt(10)).toBe(60 * 60_000);
+    expect(wakeAt(11)).toBe(22 * 60 * 60_000);
   });
 
   test("a throwing callback propagates to the timers, rather than being caught and re-reported by cron itself", () => {
-    const now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
+    let now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 30, 0) });
     // The runtime owns the one policy for a throwing timers callback (rethrow in a Node-like
     // environment, log in a browser-like one - see Itimers). Catching here would hide cron's
     // failures from it, so the exception has to leave this callback untouched.
@@ -272,6 +276,7 @@ describe("CronScheduler", () => {
       throw error;
     });
 
+    now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 10, 31, 0) });
     expect(() => runtime.recurring[0]?.callback()).toThrow(error);
   });
 
@@ -353,7 +358,7 @@ describe("CronScheduler", () => {
 
     test("an already-created schedule keeps its own timezone when the clock's changes later", () => {
       let timezone = "Etc/UTC";
-      const now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 0, 0, 0) });
+      let now = toInstant({ milliseconds: Date.UTC(2024, 0, 1, 0, 0, 0) });
       const sut = new CronScheduler();
       const runtime = fakeRuntime(
         () => timezone,
@@ -365,6 +370,7 @@ describe("CronScheduler", () => {
       timezone = "Asia/Tokyo";
       const parsed = parseCronExpression("0 9 * * *", defaultCalendarScheme);
       const utcOccurrence = computeNextOccurrence(parsed, now, "Etc/UTC", defaultCalendarScheme);
+      now = toInstant({ milliseconds: utcOccurrence });
       // Re-arming still walks the UTC occurrence chain this schedule started on.
       expect((runtime.recurring[0]?.callback() as IDurationSpec)?.milliseconds).toBe(
         computeNextOccurrence(parsed, utcOccurrence, "Etc/UTC", defaultCalendarScheme) -

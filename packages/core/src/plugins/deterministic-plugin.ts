@@ -3,6 +3,7 @@ import type {
   IDeterministicPlugin,
   IDeterministicRuntime,
   IManualRuntime,
+  IMoveOptions,
   IUtcOnlyDeterministicPlugin,
   IUtcOnlyDeterministicRuntime,
   IUtcOnlyManualRuntime,
@@ -17,6 +18,7 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ) => IManualRuntime<TDate>;
 
   /** Constructor for the fixed runtime. */
@@ -28,14 +30,18 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
   /** Constructor for the sequential runtime. */
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ) => IDeterministicRuntime<TDate>;
 
   createManualRuntime(
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IManualRuntime<TDate> {
-    return new this.ManualRuntimeCtor(localTimezone, initialTime);
+    return new this.ManualRuntimeCtor(localTimezone, initialTime, moveUntilTimersLimit);
   }
 
   createFixedRuntime(
@@ -47,9 +53,12 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
 
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IDeterministicRuntime<TDate> {
-    return new this.SequentialRuntimeCtor(localTimezone, sequentialTimes);
+    return new this.SequentialRuntimeCtor(localTimezone, sequentialMoves);
   }
 }
 
@@ -63,6 +72,7 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   protected abstract readonly ManualRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ) => IUtcOnlyManualRuntime<TDate>;
 
   /** Constructor for the fixed runtime. */
@@ -74,15 +84,19 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   /** Constructor for the sequential runtime. */
   protected abstract readonly SequentialRuntimeCtor: new (
     localTimezone: TimezoneDefinition,
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ) => IUtcOnlyDeterministicRuntime<TDate>;
 
   #utcTimezone: TimezoneDefinition = "Etc/UTC";
 
   createManualRuntime(
     initialTime: string | EpochMilliseconds | number | TDate,
+    moveUntilTimersLimit: number,
   ): IUtcOnlyManualRuntime<TDate> {
-    return new this.ManualRuntimeCtor(this.#utcTimezone, initialTime);
+    return new this.ManualRuntimeCtor(this.#utcTimezone, initialTime, moveUntilTimersLimit);
   }
 
   createFixedRuntime(
@@ -92,8 +106,11 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
   }
 
   createSequentialRuntime(
-    sequentialTimes: (string | EpochMilliseconds | number | TDate)[],
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
   ): IUtcOnlyDeterministicRuntime<TDate> {
-    return new this.SequentialRuntimeCtor(this.#utcTimezone, sequentialTimes);
+    return new this.SequentialRuntimeCtor(this.#utcTimezone, sequentialMoves);
   }
 }
