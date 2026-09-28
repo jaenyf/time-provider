@@ -43,21 +43,6 @@ class ManualRuntime extends BaseManualRuntime<DateTime> {
   protected advanceMonths(time: DateTime<boolean>, months: number): DateTime<boolean> {
     return time.plus({ months });
   }
-  protected advanceDays(time: DateTime<boolean>, days: number): DateTime<boolean> {
-    return time.plus({ days });
-  }
-  protected advanceHours(time: DateTime<boolean>, hours: number): DateTime<boolean> {
-    return time.plus({ hours });
-  }
-  protected advanceMinutes(time: DateTime<boolean>, minutes: number): DateTime<boolean> {
-    return time.plus({ minutes });
-  }
-  protected advanceSeconds(time: DateTime<boolean>, seconds: number): DateTime<boolean> {
-    return time.plus({ seconds });
-  }
-  protected advanceMilliseconds(time: DateTime<boolean>, milliseconds: number): DateTime<boolean> {
-    return time.plus({ milliseconds });
-  }
 }
 
 export class DeterministicPlugin extends BaseDeterministicPlugin<DateTime> {
