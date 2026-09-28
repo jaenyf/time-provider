@@ -114,6 +114,13 @@ export default defineConfig({
         ],
       },
       {
+        text: "Other Test Frameworks",
+        items: [
+          { text: "Compared to Sinon", link: "/guide/vs-sinon" },
+          { text: "Compared to Jest", link: "/guide/vs-jest" },
+        ],
+      },
+      {
         text: "Plugins (Adapters)",
         items: [
           { text: "Overview", link: "/plugins/" },

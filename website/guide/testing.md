@@ -36,6 +36,9 @@ timeProvider.clock.moveBy({ seconds: 3 });
 expect(onRetry).toHaveBeenCalledTimes(3); // no await, no fake-timer setup/teardown
 ```
 
+Coming from fake timers? [Compared to Sinon](/guide/vs-sinon) and
+[Compared to Jest](/guide/vs-jest) show the same tests written both ways.
+
 ## Why this beats global fake timers
 
 - **Scoped, not global.** Only the `ITimeProvider` instance you built is

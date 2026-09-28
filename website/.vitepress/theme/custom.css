@@ -830,3 +830,23 @@
   margin: 12px 0 0;
   justify-content: center;
 }
+
+/* ── Side-by-side comparisons ─────────────────────────────────── */
+.tp-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr));
+  gap: 16px;
+}
+
+.tp-compare > div {
+  min-width: 0;
+}
+
+.tp-compare div[class*="language-"] pre {
+  padding: 16px 0;
+}
+
+.tp-compare div[class*="language-"] code {
+  padding: 0 16px;
+  font-size: 13px;
+}
