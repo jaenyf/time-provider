@@ -274,6 +274,13 @@ on monotonic time plus a wall offset, so a `snap` only shifts that offset.
   `testRuntimeBuilders`, ...), gating the local-time-specific assertions
   behind `describe.skipIf(!plugin.supportsLocalTime)` so the same suite runs
   against both kinds of plugin without duplicating it.
+- An assertion that must hold for any valid input, rather than for one chosen
+  input, is written as a [fast-check](https://fast-check.dev/) property and run
+  through `assertProperty` from `test-shared/src/property-run.ts`, which fixes
+  one literal seed and run count for every property so a red build is always
+  reproducible. Lists of deliberately chosen inputs - malformed ISO strings,
+  cron parser traps - stay `test.each` tables, since a generator would not
+  reproduce them.
 - `packages/test` has one file per plugin (`packages/test/src/plugin-*/all.test.ts`)
   that imports the built plugin and hands it to `testAll` from
   `test-shared`.
