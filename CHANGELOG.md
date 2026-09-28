@@ -4,6 +4,122 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-09-28
+
+### @time-provider/addon-animation-frame 0.6.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* **addon-compat:** match the native call shapes on compat ([8e20837](https://github.com/jaenyf/time-provider/commit/8e2083733a8f6f7cfe56c6249bbd15098b675366)), closes [#183](https://github.com/jaenyf/time-provider/issues/183)
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/addon-compat 0.3.2
+
+### Bug Fixes
+
+* **addon-compat:** match the native call shapes on compat ([8e20837](https://github.com/jaenyf/time-provider/commit/8e2083733a8f6f7cfe56c6249bbd15098b675366)), closes [#183](https://github.com/jaenyf/time-provider/issues/183)
+
+### @time-provider/addon-cron 0.5.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+### @time-provider/addon-eta 0.5.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+### @time-provider/addon-idle 0.3.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* **addon-compat:** match the native call shapes on compat ([8e20837](https://github.com/jaenyf/time-provider/commit/8e2083733a8f6f7cfe56c6249bbd15098b675366)), closes [#183](https://github.com/jaenyf/time-provider/issues/183)
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/core 4.1.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+### @time-provider/plugin-dayjs 0.7.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/plugin-luxon 0.7.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/plugin-moment 0.7.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/plugin-moment-timezone 0.6.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/plugin-native 0.7.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
+### @time-provider/plugin-temporal 0.7.0
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
 ## 2026-09-26
 
 ### @time-provider/addon-animation-frame 0.5.1
