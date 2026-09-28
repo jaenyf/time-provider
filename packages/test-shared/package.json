@@ -20,7 +20,8 @@
   "dependencies": {
     "@time-provider/addon-cron": "workspace:*",
     "@time-provider/addon-eta": "workspace:*",
-    "@time-provider/core": "workspace:*"
+    "@time-provider/core": "workspace:*",
+    "fast-check": "^4.10.2"
   },
   "peerDependencies": {
     "vite-plus": "catalog:"

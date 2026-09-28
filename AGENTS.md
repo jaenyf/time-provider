@@ -64,6 +64,10 @@ type-check or run, since workspace packages resolve through their built
   behavior_ belongs in the shared spec (`packages/test-shared`, run against
   every plugin) rather than a single plugin's test file, unless the behavior
   is genuinely plugin-specific.
+- An assertion that holds for any valid input goes in a fast-check property,
+  added through `assertProperty` from `test-shared/src/property-run.ts` so every
+  property shares one literal seed and run count. A `test.each` list of inputs
+  chosen because each is a trap stays a table.
 - A new plugin needs both a `packages/test` entry (unit-level, against
   source) and a `packages/test-e2e` entry (smoke test against the built
   `dist` output). A new addon needs its own suite under
