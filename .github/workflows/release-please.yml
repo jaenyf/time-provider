@@ -74,12 +74,19 @@ jobs:
         working-directory: tools/benchmark
         run: vp run bench:changelog
 
-      - name: Commit changelog and benchmark history
+      # The lockfile records every workspace version and core peer range, which release-please
+      # has just bumped. `vp install --frozen-lockfile` resolves and passes against a stale
+      # one, so nothing here would notice; left alone, the first plain install anyone runs
+      # rewrites it and the diff rides into an unrelated commit.
+      - name: Refresh the lockfile
+        run: vp install --lockfile-only
+
+      - name: Commit changelog, benchmark history and lockfile
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md BENCHMARK.md
-          git diff --cached --quiet || git commit -m "chore: update changelog and benchmark history [skip ci]"
+          git add CHANGELOG.md BENCHMARK.md bun.lock
+          git diff --cached --quiet || git commit -m "chore: update changelog, benchmark history and lockfile [skip ci]"
           git push
 
   resolve-publish-targets:
