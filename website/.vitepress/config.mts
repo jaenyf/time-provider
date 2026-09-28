@@ -121,6 +121,14 @@ export default defineConfig({
         ],
       },
       {
+        text: "Migration",
+        items: [
+          { text: "1. Swap the Globals", link: "/migration/" },
+          { text: "2. Use the Time-Provider API", link: "/migration/time-provider-api" },
+          { text: "3. Inject the Time-Provider", link: "/migration/injection" },
+        ],
+      },
+      {
         text: "Plugins (Adapters)",
         items: [
           { text: "Overview", link: "/plugins/" },

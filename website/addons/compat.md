@@ -48,6 +48,9 @@ to `.scheduler`, so it follows the exact same [clock strategy](/guide/clock-stra
 rules — real timers on a system clock, synchronous and in-line on
 manual/sequential, never firing on a fixed clock.
 
+See [Migration](/migration/) for the full path, from compat to an injected
+Time-Provider.
+
 ## The methods
 
 | Method                            | Delegates to                 | Cancelled by             |
