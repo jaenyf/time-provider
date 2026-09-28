@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-native.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-native)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fplugin-native.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-native)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/plugin-native?cacheSeconds=86400)](https://jsr.io/@time-provider/plugin-native)
 [![jsr score](https://jsr.io/badges/@time-provider/plugin-native/score)](https://jsr.io/@time-provider/plugin-native/score)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-native?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-native?activeTab=code)

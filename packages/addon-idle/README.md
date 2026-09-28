@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Faddon-idle.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-idle)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-idle.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-idle)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/addon-idle?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-idle)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-idle/score)](https://jsr.io/@time-provider/addon-idle/score)
 [![types](https://img.shields.io/npm/types/@time-provider/addon-idle?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-idle?activeTab=code)

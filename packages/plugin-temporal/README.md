@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-temporal.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-temporal)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fplugin-temporal.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-temporal)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/plugin-temporal?cacheSeconds=86400)](https://jsr.io/@time-provider/plugin-temporal)
 [![jsr score](https://jsr.io/badges/@time-provider/plugin-temporal/score)](https://jsr.io/@time-provider/plugin-temporal/score)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-temporal?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-temporal?activeTab=code)

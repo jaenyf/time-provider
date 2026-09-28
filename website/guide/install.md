@@ -35,6 +35,10 @@ date library? See [Addons](/addons/) — e.g.
 
 - Node.js `^18.18.0 || >= 20.4.0` (the releases exposing `Symbol.dispose`,
   which `using` relies on), or any modern browser/bundler target.
+- Deno `~1.39.1 || >= 1.43` when installing from
+  [JSR](https://jsr.io/@time-provider). 1.39.1 is the first release that
+  resolves JSR package exports, and `deno check --all` needs 1.43, which is
+  where an older Deno bug on branded types was fixed.
 - TypeScript is not required, but every type is exported and the whole
   library is written in it.
 

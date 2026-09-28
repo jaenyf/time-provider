@@ -54,6 +54,6 @@ body:
     id: runtime
     attributes:
       label: Runtime
-      placeholder: e.g. Node 22.12, Bun 1.3.14, or browser + version
+      placeholder: e.g. Node 20.4, Bun 1.3.14, Deno 2.9, or browser + version
     validations:
       required: true

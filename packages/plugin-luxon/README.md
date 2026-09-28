@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-luxon.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-luxon)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fplugin-luxon.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-luxon)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/plugin-luxon?cacheSeconds=86400)](https://jsr.io/@time-provider/plugin-luxon)
 [![jsr score](https://jsr.io/badges/@time-provider/plugin-luxon/score)](https://jsr.io/@time-provider/plugin-luxon/score)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-luxon?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-luxon?activeTab=code)

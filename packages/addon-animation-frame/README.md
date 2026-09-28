@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Faddon-animation-frame.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-animation-frame)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-animation-frame.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-animation-frame)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/addon-animation-frame?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-animation-frame)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-animation-frame/score)](https://jsr.io/@time-provider/addon-animation-frame/score)
 [![types](https://img.shields.io/npm/types/@time-provider/addon-animation-frame?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-animation-frame?activeTab=code)

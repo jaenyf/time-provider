@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Faddon-eta.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-eta.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/addon-eta?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-eta)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-eta/score)](https://jsr.io/@time-provider/addon-eta/score)
 [![types](https://img.shields.io/npm/types/@time-provider/addon-eta?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta?activeTab=code)

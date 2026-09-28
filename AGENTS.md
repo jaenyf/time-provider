@@ -76,8 +76,9 @@ type-check or run, since workspace packages resolve through their built
 - Every public API needs JSDoc, to keep JSR's documentation score at 100%.
   Keep it as short as possible, with the tags (`@param`, `@returns`,
   `@throws`, ...) kept and just as short.
-- No comments in code, which should explain itself. When new code really
-  can't, one short comment is tolerated.
+- No comment that restates what the code does - it has to read on its own. A
+  short comment is right where the reason isn't in the code: why a choice was
+  made, why the obvious alternative is wrong, or what a test pins down.
 - Extended docs live on the website. Update it, and every README, in the same
   change as the code they describe: they must never diverge from it.
 - Packages under `packages/*` are versioned and released **independently**

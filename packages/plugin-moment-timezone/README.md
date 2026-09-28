@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-moment-timezone.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fplugin-moment-timezone.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/plugin-moment-timezone?cacheSeconds=86400)](https://jsr.io/@time-provider/plugin-moment-timezone)
 [![jsr score](https://jsr.io/badges/@time-provider/plugin-moment-timezone/score)](https://jsr.io/@time-provider/plugin-moment-timezone/score)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-moment-timezone?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-moment-timezone?activeTab=code)

@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Fplugin-dayjs.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-dayjs)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/plugin-dayjs?cacheSeconds=86400)](https://jsr.io/@time-provider/plugin-dayjs)
 [![jsr score](https://jsr.io/badges/@time-provider/plugin-dayjs/score)](https://jsr.io/@time-provider/plugin-dayjs/score)
 [![types](https://img.shields.io/npm/types/@time-provider/plugin-dayjs?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-dayjs?activeTab=code)

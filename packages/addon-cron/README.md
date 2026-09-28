@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Faddon-cron.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-cron)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-cron.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-cron)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/addon-cron?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-cron)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-cron/score)](https://jsr.io/@time-provider/addon-cron/score)
 [![types](https://img.shields.io/npm/types/@time-provider/addon-cron?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-cron?activeTab=code)

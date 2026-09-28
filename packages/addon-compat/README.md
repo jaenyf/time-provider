@@ -1,4 +1,4 @@
-[![NPM](https://img.shields.io/npm/v/@time-provider%2Faddon-compat.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-compat)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-compat.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-compat)
 [![jsr](https://img.shields.io/jsr/v/@time-provider/addon-compat?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-compat)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-compat/score)](https://jsr.io/@time-provider/addon-compat/score)
 [![types](https://img.shields.io/npm/types/@time-provider/addon-compat?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-compat?activeTab=code)
