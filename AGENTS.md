@@ -94,8 +94,10 @@ and how the test suites are organized.
 
 ## Gotchas
 
-- The pre-commit hook (`.vite-hooks/pre-commit`) runs `vp staged` then `vpx
-validate-branch-name`. Both require the globally-installed `vp` toolchain
-  from Setup above.
+- The git hooks call their tools by name rather than through `vpx`:
+  `.vite-hooks/pre-commit` runs `vp staged` then `validate-branch-name`, and
+  `.vite-hooks/commit-msg` runs `commitlint --edit`. The hook runner puts the repo's
+  `node_modules/.bin` on PATH, so they resolve after `vp install` and do not need the
+  globally-installed toolchain.
 - Each plugin's `peerDependencies["@time-provider/core"]` range must be kept
   in sync with whatever `core` version the plugin actually requires.
