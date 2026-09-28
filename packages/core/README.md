@@ -49,7 +49,7 @@ vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no g
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object exposing a clock, a converter, a scheduler, and timings, swappable per
 call site.  
-Note: The _**animation-frame API** is available as [an addon](https://www.npmjs.com/package/@time-provider/addon-animation-frame)._
+_Note: Non baseline or additional features are available as [addons](#available-addons)._
 
 ## Features
 
