@@ -12,6 +12,7 @@ import {
   readSamples,
   summarize,
   median,
+  unsupportedAdapters,
 } from "./aggregate.ts";
 
 const byScenario = groupSamples(readSamples());
@@ -19,6 +20,10 @@ const byScenario = groupSamples(readSamples());
 for (const [scenario, byAdapter] of byScenario) {
   console.log(`\n${scenario}`);
   for (const [adapter, byPass] of byAdapter) {
+    if (byPass.size === 0) {
+      console.log(`  ${adapter.padEnd(30)} --`);
+      continue;
+    }
     const allValues = [...byPass.values()].flat();
     const { count, mean, min, max } = summarize(allValues);
     const passMeans = [...byPass.values()].map(
@@ -69,6 +74,9 @@ function formatVitestStyleTable(
         `±${row.rme.toFixed(2)}%`.padStart(9) +
         String(row.samples).padStart(10),
     );
+  }
+  for (const adapter of unsupportedAdapters(byAdapter)) {
+    console.log(`   · ${adapter.padEnd(27)}` + "--".padStart(10));
   }
 
   if (rows.length > 1) {

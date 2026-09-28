@@ -2,6 +2,7 @@ import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { createTimeProvider, type IDurationSpec } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
+import { addon as animationFrameAddon } from "@time-provider/addon-animation-frame/deterministic";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
 export class TimeProviderSequentialAdapter implements ITimerAdapter {
@@ -11,7 +12,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   #runtime!: {
     scheduler: {
       timers: {
-        once(ms: IDurationSpec, callback: () => void): unknown;
+        once(ms: IDurationSpec, callback: () => void): { dispose(): void };
         every(ms: IDurationSpec, callback: () => void): unknown;
       };
       microtasks: {
@@ -28,8 +29,9 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
         request(callback: () => void): unknown;
         drain(maxCount?: number): number;
       };
+      animation: { scheduleFrame(callback: () => void): unknown };
     };
-    clock: { utcNow(): unknown };
+    clock: { utcNow(): unknown; monotonicNow(): unknown };
   };
 
   /**
@@ -50,6 +52,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     const builder = createTimeProvider
       .for(plugin)
       .use(idleAddon)
+      .use(animationFrameAddon)
       .asSequential()
       .withSequentialTime(0);
     for (const timestamp of this.#plannedTimestamps) {
@@ -64,8 +67,14 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   now(): unknown {
     return this.#runtime.clock.utcNow();
   }
-  setTimeout(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
+  monotonicNow(): unknown {
+    return this.#runtime.clock.monotonicNow();
+  }
+  setTimeout(callback: () => void, delayMs: number): unknown {
+    return this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
+  }
+  clearTimeout(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   setInterval(callback: () => void, delayMs: number): void {
     this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
@@ -92,4 +101,11 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   drainIdleCallbacks(ms: number): void {
     this.#runtime.scheduler.idle.drain(ms);
   }
+  requestAnimationFrame(callback: () => void): void {
+    this.#runtime.scheduler.animation.scheduleFrame(callback);
+  }
+  /*
+    No runAll/runToNext/runToLast: moveUntil() and moveTo() exist only on the manual clock, so
+    those scenarios report "--".
+  */
 }

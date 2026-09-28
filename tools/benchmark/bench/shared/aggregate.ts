@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 
 export const RESULTS_DIR = fileURLToPath(new URL("../../bench-results/", import.meta.url));
 
-export type Sample = { adapter: string; scenario: string; elapsedMs: number; pass?: string };
+/** A sample without `elapsedMs` marks the adapter as not supporting the scenario. */
+export type Sample = { adapter: string; scenario: string; elapsedMs?: number; pass?: string };
 
-// scenario -> adapter -> pass -> elapsedMs[]
+// scenario -> adapter -> pass -> elapsedMs[] (an empty pass map for an unsupported adapter)
 export type ScenarioMap = Map<string, Map<string, Map<string, number[]>>>;
 
 export function readSamples(): Sample[] {
@@ -30,6 +31,7 @@ export function groupSamples(samples: Sample[]): ScenarioMap {
     const byAdapter =
       byScenario.get(scenario) ?? byScenario.set(scenario, new Map()).get(scenario)!;
     const byPass = byAdapter.get(adapter) ?? byAdapter.set(adapter, new Map()).get(adapter)!;
+    if (elapsedMs === undefined) continue;
     const values = byPass.get(pass) ?? byPass.set(pass, []).get(pass)!;
     values.push(elapsedMs);
   }
@@ -104,8 +106,15 @@ export function buildRow(adapter: string, byPass: Map<string, number[]>): Row {
 
 export function buildScenarioRows(byAdapter: Map<string, Map<string, number[]>>): Row[] {
   return [...byAdapter.entries()]
+    .filter(([, byPass]) => byPass.size > 0)
     .map(([adapter, byPass]) => buildRow(adapter, byPass))
     .sort((a, b) => b.hz - a.hz);
+}
+
+export function unsupportedAdapters(byAdapter: Map<string, Map<string, number[]>>): string[] {
+  return [...byAdapter.entries()]
+    .filter(([, byPass]) => byPass.size === 0)
+    .map(([adapter]) => adapter);
 }
 
 export function passCountFor(byAdapter: Map<string, Map<string, number[]>>): number {

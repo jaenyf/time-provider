@@ -9,7 +9,13 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
-import { buildScenarioRows, groupSamples, passCountFor, readSamples } from "./shared/aggregate.ts";
+import {
+  buildScenarioRows,
+  groupSamples,
+  passCountFor,
+  readSamples,
+  unsupportedAdapters,
+} from "./shared/aggregate.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const BENCHMARK_MD = fileURLToPath(new URL("../../../BENCHMARK.md", import.meta.url));
@@ -45,6 +51,9 @@ function formatEntry(): string {
       lines.push(
         `| ${row.adapter} | ${row.hz.toFixed(2)} | ${row.mean.toFixed(4)} | ${row.p99.toFixed(4)} | ${row.samples} |`,
       );
+    }
+    for (const adapter of unsupportedAdapters(byAdapter)) {
+      lines.push(`| ${adapter} | -- | -- | -- | -- |`);
     }
     lines.push("");
 

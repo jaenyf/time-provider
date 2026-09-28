@@ -5,11 +5,7 @@ import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 export class JestFakeTimersAdapter implements ITimerAdapter {
   readonly name = "jest fake-timers (modern)";
   readonly #delays: AdvanceDelayQueue;
-  #timers = new ModernFakeTimers({
-    global: globalThis,
-    //@ts-expect-error : Type '{}' is missing the following properties from type 'ProjectConfig': [...]
-    config: {},
-  });
+  #timers!: ModernFakeTimers;
 
   constructor(delaysMs: readonly number[] = []) {
     this.#delays = new AdvanceDelayQueue(delaysMs);
@@ -17,18 +13,39 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
+    /*
+      jest only fakes the APIs the global has when its fake timers are created. Node has no
+      requestAnimationFrame, but jest's jsdom environment (pretendToBeVisual) does, so placeholders
+      stand in for it here and jest replaces them with its fakes.
+    */
+    Object.assign(globalThis, { requestAnimationFrame: () => 0, cancelAnimationFrame: () => {} });
+    this.#timers = new ModernFakeTimers({
+      global: globalThis,
+      //@ts-expect-error : Type '{}' is missing the following properties from type 'ProjectConfig': [...]
+      config: {},
+    });
     this.#timers.useFakeTimers();
   }
   teardown(): void {
     this.#timers.useRealTimers();
+    // @ts-expect-error : Node's globalThis types don't declare them as optional
+    delete globalThis.requestAnimationFrame;
+    // @ts-expect-error : Node's globalThis types don't declare them as optional
+    delete globalThis.cancelAnimationFrame;
   }
 
   now(): unknown {
     //because time-provider always returns a Date object we also return one here in order to have a clean comparison (and not Date vs number comparison)
     return new Date(Date.now());
   }
-  setTimeout(callback: () => void, delayMs: number): void {
-    globalThis.setTimeout(callback, delayMs);
+  monotonicNow(): unknown {
+    return performance.now();
+  }
+  setTimeout(callback: () => void, delayMs: number): unknown {
+    return globalThis.setTimeout(callback, delayMs);
+  }
+  clearTimeout(handle: unknown): void {
+    globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>);
   }
   setInterval(callback: () => void, delayMs: number): void {
     globalThis.setInterval(callback, delayMs);
@@ -44,13 +61,22 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   advance(): void {
     this.#timers.advanceTimersByTime(this.#delays.next());
   }
-  requestIdleCallback(callback: () => void): void {
-    // jest's fake timers don't fake requestIdleCallback/cancelIdleCallback at all (confirmed:
-    // both stay undefined on globalThis once installed) - fall back to the same setTimeout-based
-    // polyfill real browsers without native support use, so this adapter stays comparable.
-    globalThis.setTimeout(callback, 0);
+  runAll(): void {
+    this.#timers.runAllTimers();
   }
-  drainIdleCallbacks(ms: number): void {
-    this.#timers.advanceTimersByTime(ms);
+  runToNext(): void {
+    this.#timers.advanceTimersToNextTimer();
   }
+  // jest has no runToLast(); runOnlyPendingTimers() fires the timers pending now, which is the same
+  // set here since the scenario's callbacks schedule nothing.
+  runToLast(): void {
+    this.#timers.runOnlyPendingTimers();
+  }
+  requestAnimationFrame(callback: () => void): void {
+    globalThis.requestAnimationFrame(callback);
+  }
+  /*
+    No requestIdleCallback: jsdom doesn't implement it either, so jest never fakes it and that
+    scenario reports "--".
+  */
 }

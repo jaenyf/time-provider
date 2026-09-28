@@ -13,7 +13,8 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    this.#clock = FakeTimers.install({ loopLimit: 5000 });
+    // runAll() throws once it has fired `loopLimit` timers, even if that was the last one.
+    this.#clock = FakeTimers.install({ loopLimit: 10_000 });
   }
   teardown(): void {
     this.#clock?.uninstall();
@@ -24,8 +25,14 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
     //because time-provider always returns a Date object we also return one here in order to have a clean comparison (and not Date vs number comparison)
     return new Date(this.#clock!.Date.now());
   }
-  setTimeout(callback: () => void, delayMs: number): void {
-    this.#clock!.setTimeout(callback, delayMs);
+  monotonicNow(): unknown {
+    return this.#clock!.performance.now();
+  }
+  setTimeout(callback: () => void, delayMs: number): unknown {
+    return this.#clock!.setTimeout(callback, delayMs);
+  }
+  clearTimeout(handle: unknown): void {
+    this.#clock!.clearTimeout(handle as FakeTimers.TimerId);
   }
   setInterval(callback: () => void, delayMs: number): void {
     this.#clock!.setInterval(callback, delayMs);
@@ -44,5 +51,17 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   }
   drainIdleCallbacks(ms: number): void {
     this.#clock!.tick(ms);
+  }
+  requestAnimationFrame(callback: () => void): void {
+    this.#clock!.requestAnimationFrame(callback);
+  }
+  runAll(): void {
+    this.#clock!.runAll();
+  }
+  runToNext(): void {
+    this.#clock!.next();
+  }
+  runToLast(): void {
+    this.#clock!.runToLast();
   }
 }
