@@ -44,7 +44,7 @@ environment's timers has an implicit dependency on the system clock. That's what
 fake-timer libraries for testing - patching `Date`/timers process-wide,
 which affects unrelated code and makes tests harder to reason about.
 
-vs. `jest.useFakeTimers()` / `sinon.useFakeTimers()`: scoped per call site, no global patch, no restore/cleanup step.
+vs. [`jest.useFakeTimers()`](https://jaenyf.github.io/time-provider/guide/vs-jest) / [`sinon.useFakeTimers()`](https://jaenyf.github.io/time-provider/guide/vs-sinon): scoped per call site, no global patch, no restore/cleanup step.
 
 `time-provider` makes time an explicit, injectable dependency instead: a
 single object exposing a clock, a converter, a scheduler, and timings, swappable per
