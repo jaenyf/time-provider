@@ -8,6 +8,7 @@
 [![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=86400)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
+[![socket](https://badge.socket.dev/npm/package/@time-provider/plugin-luxon/latest)](https://socket.dev/npm/package/@time-provider/plugin-luxon)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/plugin-luxon?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-luxon)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/plugin-luxon?activeTab=dependencies)
 [![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/plugin-luxon?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Fplugin-luxon)

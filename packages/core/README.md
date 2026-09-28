@@ -11,6 +11,7 @@
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 [![tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-tests-count-badge.json&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
+[![socket](https://badge.socket.dev/npm/package/@time-provider/core/latest)](https://socket.dev/npm/package/@time-provider/core)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/core?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
 [![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/core?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Fcore)
