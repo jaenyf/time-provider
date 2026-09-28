@@ -19,7 +19,7 @@ export function runAllPasses(totalPasses: number): void {
   for (let pass = 1; pass <= totalPasses; pass++) {
     console.log(`\n=== pass ${pass}/${totalPasses} ===`);
     for (const file of FILES) {
-      execFileSync("vp", ["test", "bench", file], {
+      execFileSync("vp", ["test", "bench", "--reporter=verbose", file], {
         stdio: "inherit",
         env: { ...process.env, TIMEPROVIDER_BENCH_PASS: String(pass) },
       });
