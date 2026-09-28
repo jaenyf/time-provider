@@ -3,6 +3,8 @@ name: Label issues awaiting release
 on:
   pull_request:
     types: [closed]
+  push:
+    branches: [main]
 
 # Shares its group with "Close released issues" so the two can never run at the same time.
 # queue: max ensures every merge to main gets processed (each is responsible for a distinct issue), none silently dropped if several land close together.
@@ -19,15 +21,17 @@ permissions:
 jobs:
   label-awaiting-release:
     if: >
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main' &&
-      !startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
+      github.event_name == 'push' || (
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        !startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
+            const prNumber = context.payload.pull_request?.number;
             const label = "awaiting-release";
 
             // Create the label if it doesn't exist yet - ignore the error if it already does.
@@ -62,9 +66,15 @@ jobs:
               }
             `;
 
-            const issueNumbers = [];
+            const fixes = [];
             let cursor = null;
-            let hasNextPage = true;
+            let hasNextPage = context.eventName === "pull_request";
+
+            for (const commit of context.payload.commits ?? []) {
+              for (const [, issueNumber] of commit.message.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)\b/gi)) {
+                fixes.push([Number(issueNumber), commit.id.slice(0, 7)]);
+              }
+            }
 
             while (hasNextPage) {
               const result = await github.graphql(query, {
@@ -79,14 +89,14 @@ jobs:
                   node.repository.owner.login === context.repo.owner &&
                   node.repository.name === context.repo.repo
                 ) {
-                  issueNumbers.push(node.number);
+                  fixes.push([node.number, `#${prNumber}`]);
                 }
               }
               hasNextPage = pageInfo.hasNextPage;
               cursor = pageInfo.endCursor;
             }
 
-            for (const issueNumber of issueNumbers) {
+            for (const [issueNumber, fixedBy] of fixes) {
               try {
                 const { data: issue } = await github.rest.issues.get({
                   owner: context.repo.owner,
@@ -94,13 +104,13 @@ jobs:
                   issue_number: issueNumber,
                 });
 
-                if (issue.state !== "open") continue;
+                if (issue.state !== "open" || issue.labels.some(({ name }) => name === label)) continue;
 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issueNumber,
-                  body: `Fixed by #${prNumber}. This issue will be closed once released.`,
+                  body: `Fixed by ${fixedBy}. This issue will be closed once released.`,
                 });
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
