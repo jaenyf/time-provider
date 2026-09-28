@@ -64,11 +64,11 @@ setTimeout(() => {
 import { timeProvider } from "./time-provider";
 
 const poll = timeProvider.compat.setInterval(refresh, 30_000);
-const start = timeProvider.compat.now();
+const start = timeProvider.compat.performance.now();
 
 timeProvider.compat.setTimeout(() => {
   timeProvider.compat.clearInterval(poll);
-  report(timeProvider.compat.now() - start);
+  report(timeProvider.compat.performance.now() - start);
 }, 60_000);
 ```
 
@@ -80,7 +80,7 @@ Everything the [compat addon](/addons/compat) covers:
 | Global                                                                                     | Compat                                                                                                  |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
 | `setTimeout`, `clearTimeout`, `setInterval`, `clearInterval`, `queueMicrotask`             | `timeProvider.compat.<same name>`                                                                       |
-| `performance.now()`, `.timeOrigin`, `.mark()`, `.measure()`, `.getEntries*()`, `.clear*()` | `timeProvider.compat.<same name>`                                                                       |
+| `performance.now()`, `.timeOrigin`, `.mark()`, `.measure()`, `.getEntries*()`, `.clear*()` | `timeProvider.compat.performance.<same name>`                                                           |
 | `requestAnimationFrame`, `cancelAnimationFrame`                                            | `timeProvider.compat.<same name>`, with [`addon-animation-frame`](/addons/animation-frame) composed too |
 | `requestIdleCallback`, `cancelIdleCallback`                                                | `timeProvider.compat.<same name>`, with [`addon-idle`](/addons/idle) composed too                       |
 
@@ -88,8 +88,6 @@ Everything the [compat addon](/addons/compat) covers:
 
 - `set*` and `request*` return an `IScheduledHandle` object, not a number.
   Pass it to the matching `clear*` or `cancel*` as before.
-- Arguments after the delay are not forwarded: `setTimeout(fn, 100, a)`
-  becomes `compat.setTimeout(() => fn(a), 100)`.
 - Compose the compat addon before `addon-animation-frame` and `addon-idle`,
   or their methods are missing from `.compat`.
 - `Date` has no compat equivalent. Each plugin returns its own date type (a

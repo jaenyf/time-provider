@@ -1,4 +1,7 @@
-import type { IScheduledHandle } from "@time-provider/core";
+import type { IScheduledHandle, MonotonicMilliseconds } from "@time-provider/core";
+
+/** Receives the frame time, on the `clock.monotonicNow()` timeline. */
+export type AnimationFrameCallback = (time: MonotonicMilliseconds) => void;
 
 /** Adds `scheduler.animation` and optional native-shaped animation aliases. */
 export type WithAnimationFrameApi<TDate> = {
@@ -8,7 +11,7 @@ export type WithAnimationFrameApi<TDate> = {
   };
   /** Optional native-shaped animation aliases. */
   compat?: {
-    requestAnimationFrame(callback: () => void): IScheduledHandle;
+    requestAnimationFrame(callback: AnimationFrameCallback): IScheduledHandle;
     cancelAnimationFrame(handle: IScheduledHandle): void;
   };
 };
@@ -19,7 +22,7 @@ export type WithAnimationFrameApi<TDate> = {
 // oxlint-disable-next-line no-unused-vars
 export interface IAnimationFrameScheduler<TDate> {
   /** Schedules `callback` once before the next frame. */
-  scheduleFrame(callback: () => void): IScheduledHandle;
+  scheduleFrame(callback: AnimationFrameCallback): IScheduledHandle;
 }
 
 /** Adds `scheduler.animation` for deterministic runtimes. */

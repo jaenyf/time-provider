@@ -70,6 +70,18 @@ describe("animationFrameAddon (deterministic, real due-heap engine)", () => {
     expect([frames, runtime.scheduler.animation.pendingCount]).toEqual([1, 0]);
   });
 
+  test("each frame callback receives the monotonic time it runs at", () => {
+    const runtime = createAnimatedRuntime();
+    const times: number[] = [];
+    const loop = (time: number) => {
+      times.push(time);
+      runtime.scheduler.animation.scheduleFrame(loop);
+    };
+    runtime.scheduler.animation.scheduleFrame(loop);
+    runtime.moveBy({ milliseconds: 50 });
+    expect(times).toEqual([1000 / 60, 2000 / 60, 3000 / 60]);
+  });
+
   test("a self-rescheduling requestAnimationFrame loop fires once per frame across a single large advance(), not once total", () => {
     const timeProvider = createAnimatedRuntime();
     let frameCount = 0;

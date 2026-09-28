@@ -65,6 +65,10 @@ const manual = createDeterministicTimeProvider
   .create();
 manual.scheduler.idle.request(() => console.log("Idle!"));
 manual.scheduler.idle.drain(); // the idle callback runs here
+
+// Like the native API, a callback receives a deadline and a request takes a timeout
+manual.scheduler.idle.request((deadline) => console.log(deadline.didTimeout), { timeout: 1000 });
+manual.clock.moveBy({ seconds: 1 }); // true: still pending at its timeout, so it ran anyway
 ```
 
 ### Simulated idle periods

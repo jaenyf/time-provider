@@ -375,17 +375,17 @@ export class E2eHelper {
     expect(() => {
       timeProvider.compat.queueMicrotask(() => {});
     }).not.toThrow("Method not implemented.");
-    expect(timeProvider.compat.now()).toBeDefined();
-    expect(timeProvider.compat.timeOrigin).toBeDefined();
+    expect(timeProvider.compat.performance.now()).toBeDefined();
+    expect(timeProvider.compat.performance.timeOrigin).toBeDefined();
     expect(() => {
-      timeProvider.compat.mark("e2e");
-      timeProvider.compat.measure("e2e-measure", "e2e");
-      timeProvider.compat.clearMeasures("e2e-measure");
-      timeProvider.compat.clearMarks("e2e");
+      timeProvider.compat.performance.mark("e2e");
+      timeProvider.compat.performance.measure("e2e-measure", "e2e");
+      timeProvider.compat.performance.clearMeasures("e2e-measure");
+      timeProvider.compat.performance.clearMarks("e2e");
     }).not.toThrow("Method not implemented.");
-    expect(timeProvider.compat.getEntries()).toBeDefined();
-    expect(timeProvider.compat.getEntriesByName("e2e")).toBeDefined();
-    expect(timeProvider.compat.getEntriesByType("mark")).toBeDefined();
+    expect(timeProvider.compat.performance.getEntries()).toBeDefined();
+    expect(timeProvider.compat.performance.getEntriesByName("e2e")).toBeDefined();
+    expect(timeProvider.compat.performance.getEntriesByType("mark")).toBeDefined();
   }
 
   private static testAddonCron<TDate>(

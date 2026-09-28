@@ -4,6 +4,7 @@ import { addon } from "./addon.ts";
 
 export type {
   ICompatApi,
+  ICompatPerformance,
   IPerformanceEntry,
   PerformanceEntryType,
   WithCompatApi,

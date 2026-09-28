@@ -27,7 +27,7 @@
 ## Description
 
 This is the compatibility addon for [Time-Provider](https://www.npmjs.com/package/@time-provider/core).  
-Extends the library with a `.compat` facade that exposes low-level-like methods signatures - the native-style timer calls and the `performance` members, flat on the same object.
+Extends the library with a `.compat` facade that exposes low-level-like methods signatures - the native-style timer calls, and the `performance` members under `.compat.performance`. Each global keeps its name, so migrating a call is a pure prefix.
 This is usefull if you want to migrate your codebase to TimeProvider while keeping your native low-level methods signatures.
 
 Just like the plugin packages, this addon is tree-shakable.  
@@ -62,9 +62,12 @@ timeProvider.compat.queueMicrotask(() => {
   console.info("Native queueMicrotask call style");
 });
 
-// The performance members are there too, with their native signatures.
-timeProvider.compat.mark("request-start");
-console.info(timeProvider.compat.now(), timeProvider.compat.timeOrigin);
+// Extra arguments are passed to the callback, as with the native functions.
+timeProvider.compat.setTimeout((name) => console.info(`Hello ${name}`), 500, "Ada");
+
+// The performance members sit under .performance, with their native signatures.
+timeProvider.compat.performance.mark("request-start");
+console.info(timeProvider.compat.performance.now(), timeProvider.compat.performance.timeOrigin);
 
 // Deterministic: runs against the runtime's own simulated clock.
 const manual = createDeterministicTimeProvider

@@ -7,6 +7,8 @@ import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 export type {
   IIdleApi,
+  IIdleDeadline,
+  IIdleRequestOptions,
   WithIdleApi,
   IDeterministicIdleApi,
   WithDeterministicIdleApi,

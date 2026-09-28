@@ -18,7 +18,8 @@ handle.dispose();
 ```
 
 `scheduleFrame` matches the native `requestAnimationFrame` contract: it fires
-**once**, not repeatedly. Call it again from inside the callback to keep
+**once**, not repeatedly, and passes the callback the frame time on the
+[`clock.monotonicNow()`](/api/clock) timeline. Call it again from inside the callback to keep
 animating. `handle.dispose()` is a no-op if the frame already ran or was
 already cancelled. The handle is an `IScheduledHandle`, the same type every
 other `@time-provider/core` timer returns.
@@ -27,7 +28,7 @@ other `@time-provider/core` timer returns.
 
 On a deterministic Time-Provider, frames are simulated against the runtime's own
 clock: a registered callback fires once "now" has moved forward by at least one
-frame duration. So a whole animation plays out inside `moveBy()`, with no real
+frame duration, and receives `clock.monotonicNow()` at that point. So a whole animation plays out inside `moveBy()`, with no real
 waiting and no dependence on a display:
 
 ```ts

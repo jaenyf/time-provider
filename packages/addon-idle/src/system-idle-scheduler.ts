@@ -1,5 +1,5 @@
 import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { IIdleApi } from "./types.ts";
+import type { IIdleApi, IIdleDeadline, IIdleRequestOptions } from "./types.ts";
 
 type NativeIdleHandle = ReturnType<typeof requestIdleCallback>;
 
@@ -101,8 +101,11 @@ export class SystemIdleScheduler<TDate>
     );
   }
 
-  request(callback: () => void): IScheduledHandle {
+  request(
+    callback: (deadline: IIdleDeadline) => void,
+    options?: IIdleRequestOptions,
+  ): IScheduledHandle {
     this.runtime.assertIsNotDisposed();
-    return new SystemIdleHandle(requestIdleCallback(callback));
+    return new SystemIdleHandle(requestIdleCallback(callback, options));
   }
 }

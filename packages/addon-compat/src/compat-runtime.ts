@@ -43,38 +43,52 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
       queueMicrotask: this.queueMicrotask.bind(this),
-      now: () => clock().monotonicNow(),
-      get timeOrigin() {
-        return clock().monotonicOrigin;
+      performance: {
+        now: () => clock().monotonicNow(),
+        get timeOrigin() {
+          return clock().monotonicOrigin;
+        },
+        getEntries: entries,
+        getEntriesByName: (name, entryType) =>
+          entries().filter(
+            (entry) =>
+              entry.name === name && (entryType === undefined || entry.entryType === entryType),
+          ),
+        getEntriesByType: (entryType) => entries().filter((entry) => entry.entryType === entryType),
+        mark: (name, options) => timings().mark(name, options),
+        measure: (name, startMarkOrOptions, endMark) =>
+          timings().measure(
+            name,
+            typeof startMarkOrOptions === "object"
+              ? startMarkOrOptions
+              : { start: startMarkOrOptions, end: endMark },
+          ),
+        clearMarks: (name) => timings().clear({ kind: "mark", name }),
+        clearMeasures: (name) => timings().clear({ kind: "measure", name }),
       },
-      getEntries: entries,
-      getEntriesByName: (name, entryType) =>
-        entries().filter(
-          (entry) =>
-            entry.name === name && (entryType === undefined || entry.entryType === entryType),
-        ),
-      getEntriesByType: (entryType) => entries().filter((entry) => entry.entryType === entryType),
-      mark: (name, options) => timings().mark(name, options),
-      measure: (name, startMarkOrOptions) =>
-        timings().measure(
-          name,
-          typeof startMarkOrOptions === "string"
-            ? { start: startMarkOrOptions }
-            : startMarkOrOptions,
-        ),
-      clearMarks: (name) => timings().clear({ kind: "mark", name }),
-      clearMeasures: (name) => timings().clear({ kind: "measure", name }),
     };
   }
 
-  setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtimeTimers.once({ milliseconds: millisecondsDelay ?? 0 }, callback);
+  setTimeout<TArgs extends unknown[]>(
+    callback: (...args: TArgs) => void,
+    millisecondsDelay?: number,
+    ...args: TArgs
+  ): IScheduledHandle {
+    return this.runtimeTimers.once({ milliseconds: millisecondsDelay ?? 0 }, () =>
+      callback(...args),
+    );
   }
   clearTimeout(handle: IScheduledHandle): void {
     handle.dispose();
   }
-  setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle {
-    return this.runtimeTimers.every({ milliseconds: millisecondsDelay ?? 0 }, callback);
+  setInterval<TArgs extends unknown[]>(
+    callback: (...args: TArgs) => void,
+    millisecondsDelay?: number,
+    ...args: TArgs
+  ): IScheduledHandle {
+    return this.runtimeTimers.every({ milliseconds: millisecondsDelay ?? 0 }, () =>
+      callback(...args),
+    );
   }
   clearInterval(handle: IScheduledHandle): void {
     handle.dispose();

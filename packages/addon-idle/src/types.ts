@@ -1,5 +1,19 @@
 import type { IScheduledHandle } from "@time-provider/core";
 
+/** Passed to an idle callback, like the native `IdleDeadline`. */
+export interface IIdleDeadline {
+  /** Whether the callback runs because its `timeout` elapsed. */
+  readonly didTimeout: boolean;
+  /** Milliseconds left in the idle period. */
+  timeRemaining(): number;
+}
+
+/** Options of an idle request, like the native `IdleRequestOptions`. */
+export interface IIdleRequestOptions {
+  /** Milliseconds after which a still-pending callback runs anyway, with `didTimeout` set. */
+  timeout?: number;
+}
+
 /**
  * Adds `scheduler.idle` exposing {@link IIdleApi}.
  */
@@ -13,7 +27,10 @@ export type WithIdleApi = {
    * `cancelIdleCallback` takes the returned handle and is a no-op after execution.
    */
   compat?: {
-    requestIdleCallback(callback: () => void): IScheduledHandle;
+    requestIdleCallback(
+      callback: (deadline: IIdleDeadline) => void,
+      options?: IIdleRequestOptions,
+    ): IScheduledHandle;
     cancelIdleCallback(handle: IScheduledHandle): void;
   };
 };
@@ -28,7 +45,10 @@ export interface IIdleApi {
    * {@link IDeterministicIdleApi.drain}.
    * Dispose the returned handle to cancel; disposing an already-run or disposed handle is a no-op.
    */
-  request(callback: () => void): IScheduledHandle;
+  request(
+    callback: (deadline: IIdleDeadline) => void,
+    options?: IIdleRequestOptions,
+  ): IScheduledHandle;
 }
 
 /**
@@ -43,7 +63,10 @@ export type WithDeterministicIdleApi = {
    * `cancelIdleCallback` takes the returned handle and is a no-op after execution.
    */
   compat?: {
-    requestIdleCallback(callback: () => void): IScheduledHandle;
+    requestIdleCallback(
+      callback: (deadline: IIdleDeadline) => void,
+      options?: IIdleRequestOptions,
+    ): IScheduledHandle;
     cancelIdleCallback(handle: IScheduledHandle): void;
   };
 };

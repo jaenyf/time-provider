@@ -109,23 +109,28 @@ describe("CompatRuntime", () => {
       expect(compat).toBeDefined();
     });
 
-    test("every member sits flat on the facade, with no timers or performance level", () => {
+    test("the timer members sit flat, the performance ones under performance", () => {
       const { compat } = composed();
       expect(Object.keys(compat).toSorted()).toEqual(
         [
           "clearInterval",
+          "clearTimeout",
+          "performance",
+          "queueMicrotask",
+          "setInterval",
+          "setTimeout",
+        ].toSorted(),
+      );
+      expect(Object.keys(compat.performance).toSorted()).toEqual(
+        [
           "clearMarks",
           "clearMeasures",
-          "clearTimeout",
           "getEntries",
           "getEntriesByName",
           "getEntriesByType",
           "mark",
           "measure",
           "now",
-          "queueMicrotask",
-          "setInterval",
-          "setTimeout",
           "timeOrigin",
         ].toSorted(),
       );
@@ -135,13 +140,14 @@ describe("CompatRuntime", () => {
   describe("timers", () => {
     test("setTimeout schedules a single run through the runtime's timers", () => {
       const { runtime, compat } = composed();
-      const callback = () => {};
-      compat.setTimeout(callback, 500);
+      let runs = 0;
+      compat.setTimeout(() => runs++, 500);
       expect(runtime.calls[0]).toMatchObject({
         method: "once",
         durationSpec: { milliseconds: 500 },
-        callback,
       });
+      runtime.calls[0]!.callback();
+      expect(runs).toBe(1);
     });
 
     test("setInterval schedules a repeating run through the runtime's timers", () => {
@@ -161,6 +167,25 @@ describe("CompatRuntime", () => {
         { milliseconds: 0 },
         { milliseconds: 0 },
       ]);
+    });
+
+    test.each([
+      [
+        "setTimeout",
+        (compat: ICompatApi<unknown>, callback: (a: number, b: string) => void) =>
+          compat.setTimeout(callback, 10, 1, "two"),
+      ],
+      [
+        "setInterval",
+        (compat: ICompatApi<unknown>, callback: (a: number, b: string) => void) =>
+          compat.setInterval(callback, 10, 1, "two"),
+      ],
+    ] as const)("%s forwards the extra arguments to the callback", (_, schedule) => {
+      const { runtime, compat } = composed();
+      const received: unknown[] = [];
+      schedule(compat, (a, b) => received.push(a, b));
+      runtime.calls[0]!.callback();
+      expect(received).toEqual([1, "two"]);
     });
 
     test.each([
@@ -185,23 +210,41 @@ describe("CompatRuntime", () => {
 
   describe("performance", () => {
     test.each([
-      ["monotonicNow", (compat: ICompatApi<unknown>) => compat.now(), []],
-      ["mark", (compat: ICompatApi<unknown>) => compat.mark("a"), ["a", undefined]],
-      ["measure", (compat: ICompatApi<unknown>) => compat.measure("a"), ["a", undefined]],
-      ["measure", (compat: ICompatApi<unknown>) => compat.measure("a", "b"), ["a", { start: "b" }]],
+      ["monotonicNow", (compat: ICompatApi<unknown>) => compat.performance.now(), []],
+      ["mark", (compat: ICompatApi<unknown>) => compat.performance.mark("a"), ["a", undefined]],
       [
         "measure",
-        (compat: ICompatApi<unknown>) => compat.measure("a", { end: "b" }),
+        (compat: ICompatApi<unknown>) => compat.performance.measure("a"),
+        ["a", { start: undefined, end: undefined }],
+      ],
+      [
+        "measure",
+        (compat: ICompatApi<unknown>) => compat.performance.measure("a", "b"),
+        ["a", { start: "b", end: undefined }],
+      ],
+      [
+        "measure",
+        (compat: ICompatApi<unknown>) => compat.performance.measure("a", "b", "c"),
+        ["a", { start: "b", end: "c" }],
+      ],
+      [
+        "measure",
+        (compat: ICompatApi<unknown>) => compat.performance.measure("a", undefined, "c"),
+        ["a", { start: undefined, end: "c" }],
+      ],
+      [
+        "measure",
+        (compat: ICompatApi<unknown>) => compat.performance.measure("a", { end: "b" }),
         ["a", { end: "b" }],
       ],
       [
         "clear",
-        (compat: ICompatApi<unknown>) => compat.clearMarks("a"),
+        (compat: ICompatApi<unknown>) => compat.performance.clearMarks("a"),
         [{ kind: "mark", name: "a" }],
       ],
       [
         "clear",
-        (compat: ICompatApi<unknown>) => compat.clearMeasures(),
+        (compat: ICompatApi<unknown>) => compat.performance.clearMeasures(),
         [{ kind: "measure", name: undefined }],
       ],
     ] as const)("%s is called on the runtime (%#)", (method, call, args) => {
@@ -212,9 +255,9 @@ describe("CompatRuntime", () => {
 
     test("timeOrigin is read from the runtime on every access, not captured once", () => {
       const { runtime, compat } = composed();
-      expect(compat.timeOrigin).toBe(1000);
+      expect(compat.performance.timeOrigin).toBe(1000);
       runtime.monotonicOrigin = toInstant({ milliseconds: 2000 });
-      expect(compat.timeOrigin).toBe(2000);
+      expect(compat.performance.timeOrigin).toBe(2000);
     });
 
     describe("on the runtime's timings", () => {
@@ -227,17 +270,19 @@ describe("CompatRuntime", () => {
       };
 
       test("getEntries lists the runtime's entries", () => {
-        expect(withEntries().getEntries()).toHaveLength(3);
+        expect(withEntries().performance.getEntries()).toHaveLength(3);
       });
 
       test("getEntriesByName filters by name, then by type", () => {
         const compat = withEntries();
-        expect(compat.getEntriesByName("a")).toHaveLength(2);
-        expect(compat.getEntriesByName("a", "measure")).toEqual([entry("a", "measure")]);
+        expect(compat.performance.getEntriesByName("a")).toHaveLength(2);
+        expect(compat.performance.getEntriesByName("a", "measure")).toEqual([
+          entry("a", "measure"),
+        ]);
       });
 
       test("getEntriesByType filters by type", () => {
-        expect(withEntries().getEntriesByType("mark")).toEqual([
+        expect(withEntries().performance.getEntriesByType("mark")).toEqual([
           entry("a", "mark"),
           entry("b", "mark"),
         ]);
@@ -249,11 +294,11 @@ describe("CompatRuntime", () => {
         const { compat } = composed(true);
         performance.mark("compat-host-mark");
         try {
-          expect(compat.getEntries()).toContainEqual(
+          expect(compat.performance.getEntries()).toContainEqual(
             expect.objectContaining({ name: "compat-host-mark" }),
           );
-          expect(compat.getEntriesByName("compat-host-mark", "mark")).toHaveLength(1);
-          expect(compat.getEntriesByType("mark")).toContainEqual(
+          expect(compat.performance.getEntriesByName("compat-host-mark", "mark")).toHaveLength(1);
+          expect(compat.performance.getEntriesByType("mark")).toContainEqual(
             expect.objectContaining({ name: "compat-host-mark" }),
           );
         } finally {

@@ -53,12 +53,15 @@ describe("SystemIdleScheduler", () => {
   describe("with a native idle callback API available", () => {
     let calls = new Map<number, () => void>();
     let nextHandle = 1;
+    let lastOptions: unknown;
     beforeEach(() => {
       calls = new Map();
       nextHandle = 1;
       (globalThis as unknown as { requestIdleCallback: unknown }).requestIdleCallback = (
         callback: () => void,
+        options?: unknown,
       ) => {
+        lastOptions = options;
         const handle = nextHandle++;
         calls.set(handle, callback);
         return handle;
@@ -112,6 +115,11 @@ describe("SystemIdleScheduler", () => {
       [...calls.values()][0]?.();
       expect(called).toBe(true);
     });
+    test("passes the request options on to the native function", () => {
+      appliedScheduler().request(() => {}, { timeout: 100 });
+      expect(lastOptions).toEqual({ timeout: 100 });
+    });
+
     test("disposing the returned handle delegates to the native cancelIdleCallback", () => {
       const sut = appliedScheduler();
       const handle = sut.request(() => {});

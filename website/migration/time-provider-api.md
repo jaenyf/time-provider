@@ -10,22 +10,23 @@ with `dispose()`, and there are primitives with no native counterpart
 (`wait`, `recurring`, [`cron`](/addons/cron)). Rewrite one call at a time;
 both styles run on the same timers.
 
-| Compat                                                           | Time-Provider API                            |
-| ---------------------------------------------------------------- | -------------------------------------------- |
-| `compat.setTimeout(fn, 5_000)`                                   | `scheduler.timers.once({ seconds: 5 }, fn)`  |
-| `compat.setInterval(fn, 60_000)`                                 | `scheduler.timers.every({ minutes: 1 }, fn)` |
-| `compat.clearTimeout(h)`, `compat.clearInterval(h)`              | `h.dispose()`                                |
-| `compat.queueMicrotask(fn)`                                      | `scheduler.microtasks.queue(fn)`             |
-| `compat.requestAnimationFrame(fn)`                               | `scheduler.animation.scheduleFrame(fn)`      |
-| `compat.requestIdleCallback(fn)`                                 | `scheduler.idle.request(fn)`                 |
-| `compat.cancelAnimationFrame(h)`, `compat.cancelIdleCallback(h)` | `h.dispose()`                                |
-| `compat.now()`                                                   | `clock.monotonicNow()`                       |
-| `compat.timeOrigin`                                              | `clock.monotonicOrigin`                      |
-| `compat.mark("a")`                                               | `timings.mark("a")`                          |
-| `compat.measure("a-b", "a")`                                     | `timings.measure("a-b", { start: "a" })`     |
-| `compat.getEntriesByName("a")`                                   | `timings.entries({ name: "a" })`             |
-| `compat.getEntriesByType("mark")`                                | `timings.entries({ kind: "mark" })`          |
-| `compat.clearMarks("a")`                                         | `timings.clear({ kind: "mark", name: "a" })` |
+| Compat                                                           | Time-Provider API                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `compat.setTimeout(fn, 5_000)`                                   | `scheduler.timers.once({ seconds: 5 }, fn)`          |
+| `compat.setTimeout(fn, 5_000, a)`                                | `scheduler.timers.once({ seconds: 5 }, () => fn(a))` |
+| `compat.setInterval(fn, 60_000)`                                 | `scheduler.timers.every({ minutes: 1 }, fn)`         |
+| `compat.clearTimeout(h)`, `compat.clearInterval(h)`              | `h.dispose()`                                        |
+| `compat.queueMicrotask(fn)`                                      | `scheduler.microtasks.queue(fn)`                     |
+| `compat.requestAnimationFrame(fn)`                               | `scheduler.animation.scheduleFrame(fn)`              |
+| `compat.requestIdleCallback(fn, { timeout: 1_000 })`             | `scheduler.idle.request(fn, { timeout: 1_000 })`     |
+| `compat.cancelAnimationFrame(h)`, `compat.cancelIdleCallback(h)` | `h.dispose()`                                        |
+| `compat.performance.now()`                                       | `clock.monotonicNow()`                               |
+| `compat.performance.timeOrigin`                                  | `clock.monotonicOrigin`                              |
+| `compat.performance.mark("a")`                                   | `timings.mark("a")`                                  |
+| `compat.performance.measure("a-b", "a", "b")`                    | `timings.measure("a-b", { start: "a", end: "b" })`   |
+| `compat.performance.getEntriesByName("a")`                       | `timings.entries({ name: "a" })`                     |
+| `compat.performance.getEntriesByType("mark")`                    | `timings.entries({ kind: "mark" })`                  |
+| `compat.performance.clearMarks("a")`                             | `timings.clear({ kind: "mark", name: "a" })`         |
 
 Every member hangs off `timeProvider`. See the [API reference](/api/) for the
 full signatures.

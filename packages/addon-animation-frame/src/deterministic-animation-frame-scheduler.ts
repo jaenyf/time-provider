@@ -4,7 +4,7 @@ import {
   ScheduledHandleKind,
   type IScheduledHandle,
 } from "@time-provider/core";
-import type { IDeterministicAnimationFrameScheduler } from "./types.ts";
+import type { AnimationFrameCallback, IDeterministicAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
 
 const ANIMATION_FRAME_TAG = Symbol("animation frame");
@@ -80,12 +80,12 @@ export class DeterministicAnimationFrameScheduler<TDate>
     return this.runtime.countSpecific(ANIMATION_FRAME_TAG);
   }
 
-  scheduleFrame(callback: () => void): IScheduledHandle {
+  scheduleFrame(callback: AnimationFrameCallback): IScheduledHandle {
     return this.runtime.specific(
       ANIMATION_FRAME_TAG,
       ScheduledHandleKind.timeout,
       { milliseconds: this.#hostFrameDurationMs },
-      callback,
+      () => callback(this.runtimeClock.monotonicNow()),
     );
   }
 }

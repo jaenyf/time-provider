@@ -5,7 +5,7 @@ import {
   type IScheduledHandle,
 } from "@time-provider/core";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
-import type { IDeterministicIdleApi } from "./types.ts";
+import type { IDeterministicIdleApi, IIdleDeadline, IIdleRequestOptions } from "./types.ts";
 
 /**
  * Tag for all entries registered by this addon.
@@ -16,6 +16,12 @@ const IDLE_TAG = Symbol("idle");
  * Delay used for `request()` placeholders; they never become due during normal tests.
  */
 const FAR_FUTURE_DELAY = { days: 365 * 100 };
+
+const IDLE_DEADLINE: IIdleDeadline = Object.freeze({ didTimeout: false, timeRemaining: () => 50 });
+const TIMED_OUT_DEADLINE: IIdleDeadline = Object.freeze({
+  didTimeout: true,
+  timeRemaining: () => 0,
+});
 
 /**
  * Implements {@link IDeterministicIdleApi} using the runtime's `specific()` and
@@ -75,8 +81,32 @@ export class DeterministicIdleScheduler<TDate>
     );
   }
 
-  request(callback: () => void): IScheduledHandle {
-    return this.runtime.specific(IDLE_TAG, ScheduledHandleKind.timeout, FAR_FUTURE_DELAY, callback);
+  request(
+    callback: (deadline: IIdleDeadline) => void,
+    options?: IIdleRequestOptions,
+  ): IScheduledHandle {
+    let timeoutHandle: IScheduledHandle | undefined;
+    const handle = this.runtime.specific(
+      IDLE_TAG,
+      ScheduledHandleKind.timeout,
+      FAR_FUTURE_DELAY,
+      () => {
+        timeoutHandle?.dispose();
+        callback(IDLE_DEADLINE);
+      },
+    );
+    const timeout = options?.timeout ?? 0;
+    if (timeout > 0) {
+      timeoutHandle = this.runtimeTimers.once(
+        { milliseconds: timeout },
+        () => {
+          handle.dispose();
+          callback(TIMED_OUT_DEADLINE);
+        },
+        { signal: handle.signal },
+      );
+    }
+    return handle;
   }
 
   get pendingCount(): number {

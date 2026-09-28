@@ -2,9 +2,10 @@
 
 [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat)
 adds a `.compat` facade exposing native-style `setTimeout`/`setInterval`/`queueMicrotask`
-call signatures on top of a Time-Provider's own timers, plus the `performance`
-members — `now`, `timeOrigin`, `mark`, `measure` and friends — flat beside
-them. Like every
+call signatures on top of a Time-Provider's own timers, plus a `performance`
+object with the members of the `performance` global. Each global keeps its
+name under `.compat`, so `performance.now()` becomes
+`timeProvider.compat.performance.now()`. Like every
 [addon](/addons/) it composes in with `.use(addon)` and ships two entry
 points — one for a system Time-Provider, one for a deterministic one:
 
@@ -53,13 +54,14 @@ Time-Provider.
 
 ## The methods
 
-| Method                            | Delegates to                 | Cancelled by             |
-| --------------------------------- | ---------------------------- | ------------------------ |
-| `setTimeout(callback, delayMs?)`  | `scheduler.timers.once`      | `clearTimeout(handle)`   |
-| `setInterval(callback, delayMs?)` | `scheduler.timers.every`     | `clearInterval(handle)`  |
-| `queueMicrotask(callback)`        | `scheduler.microtasks.queue` | nothing — it always runs |
+| Method                                     | Delegates to                 | Cancelled by             |
+| ------------------------------------------ | ---------------------------- | ------------------------ |
+| `setTimeout(callback, delayMs?, ...args)`  | `scheduler.timers.once`      | `clearTimeout(handle)`   |
+| `setInterval(callback, delayMs?, ...args)` | `scheduler.timers.every`     | `clearInterval(handle)`  |
+| `queueMicrotask(callback)`                 | `scheduler.microtasks.queue` | nothing — it always runs |
 
-`delayMs` defaults to `0` when omitted or negative, matching `.scheduler`. Each
+`delayMs` defaults to `0` when omitted or negative, matching `.scheduler`.
+Any `args` after it are passed to the callback, as the native functions do. Each
 `clear*` method is a no-op if the handle's callback already ran or was already
 cleared — it just calls `.dispose()` on the `IScheduledHandle` the matching
 `set*` method returned.
@@ -71,14 +73,15 @@ through [`scheduler.timers.recurring`](/api/scheduler).
 ## The performance members
 
 `now()`, `timeOrigin`, `getEntries()`, `getEntriesByName()`, `getEntriesByType()`,
-`mark()`, `measure()`, `clearMarks()` and `clearMeasures()` sit directly on
-`.compat` too, with the same signatures as the `performance` global:
+`mark()`, `measure()`, `clearMarks()` and `clearMeasures()` sit on
+`.compat.performance`, with the same signatures as the `performance` global,
+`measure(name, startMark?, endMark?)` included:
 
 ```ts
-timeProvider.compat.mark("request-start");
+timeProvider.compat.performance.mark("request-start");
 // ...
-timeProvider.compat.measure("request", "request-start");
-console.log(timeProvider.compat.getEntriesByName("request")[0]?.duration);
+timeProvider.compat.performance.measure("request", "request-start");
+console.log(timeProvider.compat.performance.getEntriesByName("request")[0]?.duration);
 ```
 
 They map onto the Time-Provider's own [`clock.monotonicNow()`](/api/clock),
@@ -95,15 +98,16 @@ Composing [`addon-animation-frame`](/addons/animation-frame) or
 [`addon-idle`](/addons/idle) puts their own native-shaped aliases on this same
 facade:
 
-| Method                            | Added by                | Delegates to                        |
-| --------------------------------- | ----------------------- | ----------------------------------- |
-| `requestAnimationFrame(callback)` | `addon-animation-frame` | `scheduler.animation.scheduleFrame` |
-| `cancelAnimationFrame(handle)`    | `addon-animation-frame` | `handle.dispose()`                  |
-| `requestIdleCallback(callback)`   | `addon-idle`            | `scheduler.idle.request`            |
-| `cancelIdleCallback(handle)`      | `addon-idle`            | `handle.dispose()`                  |
+| Method                                    | Added by                | Delegates to                        |
+| ----------------------------------------- | ----------------------- | ----------------------------------- |
+| `requestAnimationFrame(callback)`         | `addon-animation-frame` | `scheduler.animation.scheduleFrame` |
+| `cancelAnimationFrame(handle)`            | `addon-animation-frame` | `handle.dispose()`                  |
+| `requestIdleCallback(callback, options?)` | `addon-idle`            | `scheduler.idle.request`            |
+| `cancelIdleCallback(handle)`              | `addon-idle`            | `handle.dispose()`                  |
 
-Each `cancel*` takes the handle its `request*` returned rather than a numeric
-id, the same swap `clearTimeout` makes.
+As with the globals, a frame callback receives the frame time and an idle
+callback receives a deadline. Each `cancel*` takes the handle its `request*`
+returned rather than a numeric id, the same swap `clearTimeout` makes.
 
 **Compose this addon first.** Those addons add to a facade this one owns, so it
 has to exist by the time they are applied — `.use(compat).use(animation)`, not
@@ -121,8 +125,9 @@ tp.compat.cancelAnimationFrame(frame);
 
 ## Naming the types
 
-The `.compat` property is typed `ICompatApi`, and `WithCompatApi` names a
-Time-Provider with this addon composed in:
+The `.compat` property is typed `ICompatApi`, its `performance` object
+`ICompatPerformance`, and `WithCompatApi` names a Time-Provider with this
+addon composed in:
 
 ```ts
 import type { ICompatApi, WithCompatApi } from "@time-provider/addon-compat";
@@ -130,7 +135,7 @@ import type { ICompatApi, WithCompatApi } from "@time-provider/addon-compat";
 function pollUntilReady(compat: ICompatApi<Date>) {
   compat.setInterval(() => checkReady(), 1000);
 }
-function schedule(tp: ITimeProvider<Date> & WithCompatApi) {
+function schedule(tp: IUtcOnlyTimeProvider<Date> & WithCompatApi<Date>) {
   pollUntilReady(tp.compat);
 }
 ```

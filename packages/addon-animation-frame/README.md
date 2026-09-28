@@ -42,6 +42,8 @@ It is split into a default (system/real-time) entry point and a deterministic on
   Registered callbacks fires once this runtime's own
   "now" has moved forward by at least one simulated frame duration.
 
+Like the native `requestAnimationFrame`, each callback receives the frame time, on the `clock.monotonicNow()` timeline.
+
 ## Usage
 
 ```ts

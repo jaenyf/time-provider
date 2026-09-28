@@ -47,6 +47,7 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & {
     },
     countSpecific: () => scheduled.size - cleared.size,
     scheduler: {},
+    clock: { monotonicNow: () => 42 },
   } as unknown as IDeterministicRuntime<unknown> & {
     scheduled: Map<
       number,
@@ -100,11 +101,12 @@ describe("DeterministicAnimationFrameScheduler", () => {
       using sut = new DeterministicAnimationFrameScheduler();
       const runtime = fakeRuntime();
       sut.applyToRuntime(runtime);
-      const callback = () => {};
-      sut.scheduleFrame(callback);
+      const times: number[] = [];
+      sut.scheduleFrame((time) => times.push(time));
       expect(runtime.scheduled.size).toBe(1);
       const [entry] = runtime.scheduled.values();
-      expect(entry?.callback).toBe(callback);
+      entry?.callback();
+      expect(times).toEqual([42]);
       expect(entry?.delayMs).toBeCloseTo(1000 / 60, 5);
     });
 

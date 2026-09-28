@@ -7,6 +7,7 @@ import type { WithCompatApi } from "./types.ts";
 
 export type {
   ICompatApi,
+  ICompatPerformance,
   IPerformanceEntry,
   PerformanceEntryType,
   WithCompatApi,

@@ -37,14 +37,9 @@ export type WithCompatApi<TDate> = {
   compat: ICompatApi<TDate>;
 };
 
-/**
- * Compatibility API backed by the Time-Provider clock, timings and timers.
- */
-// Kept generic over TDate for symmetry with WithCompatApi<TDate>, even though no member here
-// happens to reference it.
-// oxlint-disable-next-line no-unused-vars
-export interface ICompatApi<TDate> {
-  /** Returns milliseconds relative to {@link ICompatApi.timeOrigin}. */
+/** Native-shaped `performance` members backed by the Time-Provider clock and timings. */
+export interface ICompatPerformance {
+  /** Returns milliseconds relative to {@link ICompatPerformance.timeOrigin}. */
   now(): MonotonicMilliseconds;
 
   /** Unix timestamp at the start of this performance timeline. */
@@ -63,28 +58,51 @@ export interface ICompatApi<TDate> {
   mark(name: string, options?: ITimingMarkOptions): ITimingMark;
 
   /** Creates a measured duration. */
-  measure(name: string, startMarkOrOptions?: string | ITimingMeasureOptions): ITimingMeasure;
+  measure(
+    name: string,
+    startMarkOrOptions?: string | ITimingMeasureOptions,
+    endMark?: string,
+  ): ITimingMeasure;
 
   /** Removes marks. */
   clearMarks(name?: string): void;
 
   /** Removes measures. */
   clearMeasures(name?: string): void;
+}
+
+/**
+ * Compatibility API backed by the Time-Provider clock, timings and timers.
+ */
+// Kept generic over TDate for symmetry with WithCompatApi<TDate>, even though no member here
+// happens to reference it.
+// oxlint-disable-next-line no-unused-vars
+export interface ICompatApi<TDate> {
+  /** Native-shaped `performance` members. */
+  readonly performance: ICompatPerformance;
 
   /**
-   * Schedules `callback` after `millisecondsDelay`; defaults to `0`.
+   * Schedules `callback(...args)` after `millisecondsDelay`; defaults to `0`.
    * @throws None beyond underlying timer behavior.
    */
-  setTimeout(callback: () => void, millisecondsDelay?: number): IScheduledHandle;
+  setTimeout<TArgs extends unknown[]>(
+    callback: (...args: TArgs) => void,
+    millisecondsDelay?: number,
+    ...args: TArgs
+  ): IScheduledHandle;
 
   /** Cancels a timeout. */
   clearTimeout(handle: IScheduledHandle): void;
 
   /**
-   * Schedules `callback` every `millisecondsDelay`; defaults to `0`, with a minimum effective
-   * interval of `1ms`.
+   * Schedules `callback(...args)` every `millisecondsDelay`; defaults to `0`, with a minimum
+   * effective interval of `1ms`.
    */
-  setInterval(callback: () => void, millisecondsDelay?: number): IScheduledHandle;
+  setInterval<TArgs extends unknown[]>(
+    callback: (...args: TArgs) => void,
+    millisecondsDelay?: number,
+    ...args: TArgs
+  ): IScheduledHandle;
 
   /** Cancels an interval. */
   clearInterval(handle: IScheduledHandle): void;

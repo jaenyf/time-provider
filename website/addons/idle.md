@@ -18,7 +18,9 @@ handle.dispose();
 ```
 
 `request` matches the native `requestIdleCallback` contract: it fires
-**once**, not repeatedly. Call it again from inside the callback to keep
+**once**, not repeatedly, passes the callback an `IIdleDeadline`
+(`didTimeout`, `timeRemaining()`), and takes an optional `{ timeout }` after
+which a still-pending callback runs anyway. Call it again from inside the callback to keep
 polling for idle time. There is no separate cancel method, so cancel through
 `handle.dispose()` as you would any other scheduled work in this library. It
 is a no-op if the callback already ran or the handle was already disposed.
@@ -58,6 +60,12 @@ timeProvider.scheduler.idle.drain(); // returns 1, running everything still pend
 console.log(ran); // ["first", "second"]
 ```
 
+A drained callback gets `didTimeout: false` and a `timeRemaining()` of `50`,
+the most a browser ever grants. A request made with `{ timeout }` runs on its
+own once the clock has moved that far, with `didTimeout: true` and
+`timeRemaining()` of `0`, and is no longer pending after that. Draining it
+first cancels the timeout.
+
 `drain(maxCount?)` runs up to `maxCount` pending callbacks, oldest request
 first, and returns how many actually ran. Omit the argument to run everything
 pending. That gives a test the thing a real host never offers: control over
@@ -96,7 +104,8 @@ function scheduleCleanup(tp: ITimeProvider<Date> & WithIdleApi) {
 }
 ```
 
-The `/deterministic` entry point exports `IDeterministicIdleApi` and
+`IIdleDeadline` and `IIdleRequestOptions` name the callback's argument and
+the request options. The `/deterministic` entry point exports `IDeterministicIdleApi` and
 `WithDeterministicIdleApi`, which extend those with `drain` and `pendingCount`. Reach for them
 when a test helper takes a Time-Provider and needs to drain it.
 

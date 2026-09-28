@@ -6,6 +6,7 @@ import type { WithDeterministicAnimationFrameApi } from "./types.ts";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 export type {
+  AnimationFrameCallback,
   IAnimationFrameScheduler as IAnimationFrameApi,
   IDeterministicAnimationFrameScheduler as IDeterministicAnimationFrameApi,
   WithAnimationFrameApi,

@@ -3,6 +3,7 @@
 import { addon } from "./addon.ts";
 
 export type {
+  AnimationFrameCallback,
   IAnimationFrameScheduler as IAnimationFrameApi,
   WithAnimationFrameApi,
 } from "./types.ts";
