@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.3.1...addon-compat-v0.3.2) (2026-09-28)
+
+
+### Bug Fixes
+
+* **addon-compat:** match the native call shapes on compat ([8e20837](https://github.com/jaenyf/time-provider/commit/8e2083733a8f6f7cfe56c6249bbd15098b675366)), closes [#183](https://github.com/jaenyf/time-provider/issues/183)
+
 ## [0.3.1](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.3.0...addon-compat-v0.3.1) (2026-09-26)
 
 

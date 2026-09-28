@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/jaenyf/time-provider/compare/core-v4.0.1...core-v4.1.0) (2026-09-28)
+
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
 ## [4.0.1](https://github.com/jaenyf/time-provider/compare/core-v4.0.0...core-v4.0.1) (2026-09-26)
 
 

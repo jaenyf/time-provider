@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-moment",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": false,
   "description": "Moment.js plugin for Time-Provider. Inject time. Control it in tests.",
   "keywords": [

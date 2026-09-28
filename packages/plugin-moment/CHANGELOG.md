@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-v0.6.1...plugin-moment-v0.7.0) (2026-09-28)
+
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
+
+### Bug Fixes
+
+* require core 4.1.0 where the clock move APIs are used ([b46c315](https://github.com/jaenyf/time-provider/commit/b46c315557b1ce514063e446d744be33903e93d2))
+
 ## [0.6.1](https://github.com/jaenyf/time-provider/compare/plugin-moment-v0.6.0...plugin-moment-v0.6.1) (2026-09-26)
 
 
