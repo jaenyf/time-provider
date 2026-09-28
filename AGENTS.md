@@ -68,7 +68,11 @@ type-check or run, since workspace packages resolve through their built
   source) and a `packages/test-e2e` entry (smoke test against the built
   `dist` output). A new addon needs its own suite under
   `packages/<addon>/test/` and a `packages/test-treeshake` fixture pair under
-  `fixtures/with-<addon>-addon/`.
+  `fixtures/with-<addon>-addon/`. Either also needs everything publishing it
+  takes - a `deno.json`, a `LICENSE` copy, the root `deno.json` workspace
+  entry, both release configs and the manifest, the standard scripts, the
+  README badges - which [CONTRIBUTING.md](./CONTRIBUTING.md#adding-a-package)
+  lists in full.
 - `@time-provider/core` has zero runtime dependencies. Each plugin depends
   only on `core` and the one date library it adapts, declared as a
   `peerDependency` (never bundled as a `dependency`); each addon depends only

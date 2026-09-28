@@ -125,6 +125,28 @@ We use [Vitest](https://vitest.dev/) via `vp test`.
   has to keep working once the addon is composed belongs in the shared spec,
   next to the cron addon's.
 
+## Adding a package
+
+A new plugin or addon publishes to npm and to [JSR](https://jsr.io/@time-provider),
+so beyond its `src/`, its tests and its README it needs:
+
+- a `deno.json` carrying `name`, `version`, `exports` and `publish.include`, kept
+  in step with `package.json` - `scripts/verify-packages.ts` fails when the name
+  or the version disagree;
+- its path in the root `deno.json` workspace array;
+- a `LICENSE` copy, byte-identical to the repository's, since npm only packs one
+  sitting in the package directory;
+- an entry in `release-please-config.json`, in `release-please-config.hotfix.json`
+  and in `.release-please-manifest.json` - a package missing from any of them
+  never publishes, and nothing else notices;
+- the same `build`, `check`, `release`, `release:dry-run` and `prepublishOnly`
+  scripts every other package has, since the check and publish jobs call them by
+  name;
+- the badge block from an existing README, retargeted at the new package.
+
+All of it is enforced somewhere in CI, so copying the closest existing package
+and renaming is the surest way not to miss one.
+
 ## Pull Request Guidelines
 
 - Keep PRs focused. One change per PR.
