@@ -43,7 +43,7 @@ This is a Bun workspace monorepo (`packages/*`, `website`, `tools/*`).
 | `vp run -r check`                 | Same, for every package, plus a JSR publish dry run and a JSDoc coverage check of each publishable one (needs Deno) |
 | `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first)                 |
 | `vp run stryker`                  | Mutation testing (Stryker). Too slow for agents: never run it unless explicitly asked                               |
-| `vp run ready`                    | Full local gate: build, check, test, stryker. Runs Stryker, so the same rule applies                                |
+| `vp run ready`                    | Full local gate: build, check, verify-packages, test, stryker. Runs Stryker, so the same rule applies               |
 | `vp run <pkg>#<script>`           | Run one package's script from the repo root, e.g. `vp run @time-provider/core#build`                                |
 
 A package normally needs to be built (`vp run build`) before another package

@@ -64,7 +64,7 @@ vp install
 | `vp run -r check`                 | Format, lint, and type-check every package, dry-run each JSR publish, and check its JSDoc coverage (needs Deno) |
 | `node scripts/verify-packages.ts` | Pack every publishable package and check the tarball's contents and `exports` (needs a build first)             |
 | `vp run stryker`                  | Run mutation testing (Stryker)                                                                                  |
-| `vp run ready`                    | Run test, build, check, and stryker - the full local gate                                                       |
+| `vp run ready`                    | Run build, check, verify-packages, test and stryker - the full local gate                                       |
 
 Run a command for a single package from its directory, or use `vp run <pkg>#<script>`
 from the repo root.
