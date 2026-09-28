@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-cron",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": false,
   "description": "Cron scheduling addon for Time-Provider. Inject time. Control it in tests.",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/core",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "private": false,
   "description": "Inject time. Control it in tests.",
   "keywords": [

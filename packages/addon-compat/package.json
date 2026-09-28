@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-compat",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": false,
   "description": "Native-style compatibility addon for Time-Provider. Inject time. Control it in tests.",
   "keywords": [

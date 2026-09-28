@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/jaenyf/time-provider/compare/addon-eta-v0.4.1...addon-eta-v0.5.0) (2026-09-28)
+
+
+### Features
+
+* clock move ([#181](https://github.com/jaenyf/time-provider/issues/181)) ([e29376b](https://github.com/jaenyf/time-provider/commit/e29376be7a42271d3e15fa9261605a50610c2605))
+
 ## [0.4.1](https://github.com/jaenyf/time-provider/compare/addon-eta-v0.4.0...addon-eta-v0.4.1) (2026-09-26)
 
 
