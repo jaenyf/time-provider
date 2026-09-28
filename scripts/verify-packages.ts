@@ -252,14 +252,18 @@ function checkCorePeerRange(pkg: PackageJson, coreVersion: string): void {
   const range = pkg.peerDependencies?.["@time-provider/core"];
   if (range === undefined) return;
 
-  // Ahead of a breaking release the ranges already point at the next major while core's own
+  // Ahead of a release the ranges already point at the next minor or major while core's own
   // version still reads the old one, since release-please never bumps peer ranges. Running
   // ahead is expected (as in workspace.test.ts); falling behind never is.
   const nextMajor = `${Number(coreVersion.split(".")[0]) + 1}.0.0`;
   const satisfied = satisfiesCaret(coreVersion, range);
   if (satisfied === undefined) {
     fail(pkg.name, `declares core peer range "${range}", which this script can't read - extend it`);
-  } else if (!satisfied && !satisfiesCaret(nextMajor, range)) {
+  } else if (
+    !satisfied &&
+    !satisfiesCaret(nextMajor, range) &&
+    !satisfiesCaret(range.slice(1), `^${coreVersion}`)
+  ) {
     fail(
       pkg.name,
       `requires core "${range}", which admits neither this repo's core ${coreVersion} nor ${nextMajor}`,

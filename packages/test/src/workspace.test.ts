@@ -31,17 +31,16 @@ describe("workspace manifests", () => {
       ([, manifest]) => manifest.peerDependencies["@time-provider/core"] as string,
     );
 
-    test("every package that peers on core declares the same range", () => {
-      // A range bumped in ten packages and missed in the eleventh publishes one package that
-      // resolves an incompatible core. Comparing them to each other catches that without
-      // hard-coding which packages exist.
-      expect(new Set(ranges).size).toBe(1);
+    test("every package that peers on core declares the same major", () => {
+      // A major bumped in ten packages and missed in the eleventh publishes one package that
+      // resolves an incompatible core. A package may ask for a later minor when it uses an API
+      // that minor added.
+      expect(new Set(ranges.map(majorOf)).size).toBe(1);
     });
 
-    test.each(declared)("%s pins a whole core major", (_packageName, manifest) => {
-      // `^N.0.0` is the convention the repo has always used, and it is what makes the major
-      // comparison below meaningful.
-      expect(manifest.peerDependencies["@time-provider/core"]).toMatch(/^\^\d+\.0\.0$/);
+    test.each(declared)("%s pins a core minor", (_packageName, manifest) => {
+      // `^N.M.0` keeps the major comparison below meaningful.
+      expect(manifest.peerDependencies["@time-provider/core"]).toMatch(/^\^\d+\.\d+\.0$/);
     });
 
     test("the declared range is not behind the core in this repo", () => {
