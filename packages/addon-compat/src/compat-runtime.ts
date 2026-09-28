@@ -1,5 +1,22 @@
-import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
-import type { ICompatApi, IPerformanceEntry } from "./types.ts";
+import {
+  AddonBase,
+  AddonHelper,
+  type IClock,
+  type IRuntime,
+  type IScheduledHandle,
+} from "@time-provider/core";
+import type { ICompatApi, ICompatPerformance, IPerformanceEntry } from "./types.ts";
+
+// A class: a getter in an object literal makes every runtime survive into the old generation.
+class CompatPerformance {
+  readonly #clock: () => IClock<unknown>;
+  constructor(clock: () => IClock<unknown>) {
+    this.#clock = clock;
+  }
+  get timeOrigin(): ICompatPerformance["timeOrigin"] {
+    return this.#clock().monotonicOrigin;
+  }
+}
 
 /** Implements {@link ICompatApi} using core APIs. */
 export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
@@ -43,11 +60,8 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
       setInterval: this.setInterval.bind(this),
       clearInterval: this.clearInterval.bind(this),
       queueMicrotask: this.queueMicrotask.bind(this),
-      performance: {
+      performance: Object.assign(new CompatPerformance(clock), {
         now: () => clock().monotonicNow(),
-        get timeOrigin() {
-          return clock().monotonicOrigin;
-        },
         getEntries: entries,
         getEntriesByName: (name, entryType) =>
           entries().filter(
@@ -65,7 +79,7 @@ export class CompatRuntime<TDate> extends AddonBase<TDate, IRuntime<TDate>> {
           ),
         clearMarks: (name) => timings().clear({ kind: "mark", name }),
         clearMeasures: (name) => timings().clear({ kind: "measure", name }),
-      },
+      } satisfies Omit<ICompatPerformance, "timeOrigin">),
     };
   }
 

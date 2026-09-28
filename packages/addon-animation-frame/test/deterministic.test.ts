@@ -61,10 +61,12 @@ describe("animationFrameAddon (deterministic)", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
     expect(runtime.scheduler.animation).not.toBeInstanceOf(DeterministicAnimationFrameScheduler);
-    expect(runtime.scheduler.animation).toStrictEqual({
+    expect(runtime.scheduler.animation).toMatchObject({
       scheduleFrame: expect.any(Function),
       pendingCount: 0,
     });
+    // A getter in an object literal would push every runtime into the old generation.
+    expect(Object.keys(runtime.scheduler.animation as object)).toEqual(["scheduleFrame"]);
   });
 
   test("applyToRuntime wires .animation to the runtime's own scheduler", () => {

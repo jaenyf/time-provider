@@ -162,6 +162,17 @@ class MicrotaskQueue {
   }
 }
 
+// A class: a getter in an object literal makes every runtime survive into the old generation.
+class MicrotasksFacade {
+  readonly #queue: MicrotaskQueue;
+  constructor(queue: MicrotaskQueue) {
+    this.#queue = queue;
+  }
+  get pendingCount(): number {
+    return this.#queue.length;
+  }
+}
+
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap<TDate> {
   /** Compact when tombstones exceed this fraction of `_entries`. */
@@ -720,14 +731,10 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   //#region microtasks management
   override get microtasks(): IDeterministicMicrotasks {
-    const microtasks = this.#microtasks;
-    return (this.#microtasksFacade ??= {
-      queue: (callback) => this.queue(callback),
+    return (this.#microtasksFacade ??= Object.assign(new MicrotasksFacade(this.#microtasks), {
+      queue: (callback: () => void) => this.queue(callback),
       drain: () => this.drain(),
-      get pendingCount() {
-        return microtasks.length;
-      },
-    });
+    }));
   }
 
   /** Queues `callback` on this runtime's microtask queue. */
@@ -755,6 +762,8 @@ export abstract class BaseDeterministicRuntime<TDate>
     /* the call that got us here ends a task, so its microtasks are owed before any timer runs */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     if (this.#dueDrainingDisabled) return;
+    const nextRunAt = this.#dueQueue.peekRunAt();
+    if (nextRunAt === undefined || nextRunAt > dueNow) return;
     this.#dueQueue.drainDue(dueNow, microtasks, coalesce);
   }
 
