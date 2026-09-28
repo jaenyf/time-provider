@@ -116,6 +116,11 @@ We use [Vitest](https://vitest.dev/) via `vp test`.
   in `packages/test-shared` (run against every plugin) rather than to a
   single plugin's test file, unless the behavior is genuinely
   plugin-specific.
+- An assertion that holds for any valid input belongs in a fast-check
+  property, added through `assertProperty` from
+  `test-shared/src/property-run.ts` so it shares the one seed and run count
+  every property uses. A list of inputs picked precisely because each one is a
+  trap stays a `test.each` table.
 - A new plugin needs an entry in `packages/test` (unit-level, against
   source) and `packages/test-e2e` (a smoke test against the built `dist`
   output).
