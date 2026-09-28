@@ -25,7 +25,9 @@
 // itself worth checking, which this also does:
 //   5. every package under packages/ that isn't private is in both the
 //      release config and the manifest, and both describe packages that
-//      exist - a package missing from either silently never publishes;
+//      exist - a package missing from either silently never publishes - and
+//      the hotfix config lists the same set, since hotfix/** branches release
+//      from it instead;
 //   6. the manifest version and the package.json version agree;
 //   7. a publishable package isn't marked private and has the `release`
 //      script the publish job runs;
@@ -133,8 +135,9 @@ function workspacePackageDirs(): string[] {
 }
 
 /**
- * The release config, the manifest and the workspace have to describe the same set of
- * packages. A package missing from either file is never released and never complains.
+ * The release config, the hotfix config, the manifest and the workspace have to describe the
+ * same set of packages. A package missing from any of them is never released and never
+ * complains.
  */
 function checkReleaseConfig(configured: string[], manifest: Record<string, string>): void {
   const inConfig = new Set(configured);
@@ -165,6 +168,26 @@ function checkReleaseConfig(configured: string[], manifest: Record<string, strin
     if (!inConfig.has(dir)) {
       failures.push(
         `.release-please-manifest.json lists "${dir}", which release-please-config.json doesn't`,
+      );
+    }
+  }
+
+  const inHotfixConfig = new Set(
+    Object.keys(
+      readJson<{ packages: Record<string, unknown> }>("release-please-config.hotfix.json").packages,
+    ),
+  );
+  for (const dir of inConfig) {
+    if (!inHotfixConfig.has(dir)) {
+      failures.push(
+        `release-please-config.hotfix.json is missing "${dir}", so no hotfix branch can release it`,
+      );
+    }
+  }
+  for (const dir of inHotfixConfig) {
+    if (!inConfig.has(dir)) {
+      failures.push(
+        `release-please-config.hotfix.json lists "${dir}", which release-please-config.json doesn't`,
       );
     }
   }
