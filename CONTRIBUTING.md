@@ -149,10 +149,12 @@ manual version bump or changelog edit.
 2. Merging a release PR triggers the changelog and `BENCHMARK.md`
    aggregation and a dry run of every released package's publish, to both
    npm and [JSR](https://jsr.io/@time-provider). Only once all of them pass
-   does a per-package publish job run the package's `release` script. It
-   stages the package on npm with `vp pm stage publish --provenance`, then
-   publishes it to JSR with `deno publish`. Both authenticate through GitHub
-   OIDC, so no registry token is stored in this repository.
+   does a per-package publish job run the package's `release` script: core
+   first, then every other package, since JSR needs the new core published
+   before a package depending on it. The script stages the package on npm
+   with `vp pm stage publish --provenance`, then publishes it to JSR with
+   `deno publish`. Both authenticate through GitHub OIDC, so no registry
+   token is stored in this repository.
 3. A maintainer approves the staged version from npm (2FA required) before
    it becomes installable there. JSR has no staging, so the JSR version is
    live as soon as the publish job succeeds. If JSR fails after npm staged
