@@ -131,9 +131,10 @@ describe("CompatRuntime", () => {
           "mark",
           "measure",
           "now",
-          "timeOrigin",
         ].toSorted(),
       );
+      // A prototype getter, as on the native performance object.
+      expect("timeOrigin" in compat.performance).toBe(true);
     });
   });
 

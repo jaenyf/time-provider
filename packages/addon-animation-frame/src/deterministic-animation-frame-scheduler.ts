@@ -9,6 +9,17 @@ import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/
 
 const ANIMATION_FRAME_TAG = Symbol("animation frame");
 
+// A class: a getter in an object literal makes every runtime survive into the old generation.
+class AnimationFacade {
+  readonly #scheduler: { readonly pendingCount: number };
+  constructor(scheduler: { readonly pendingCount: number }) {
+    this.#scheduler = scheduler;
+  }
+  get pendingCount(): number {
+    return this.#scheduler.pendingCount;
+  }
+}
+
 /** Deterministic {@link IDeterministicAnimationFrameScheduler} using simulated frames. */
 export class DeterministicAnimationFrameScheduler<TDate>
   extends AddonBase<TDate, IDeterministicRuntime<TDate>>
@@ -37,12 +48,7 @@ export class DeterministicAnimationFrameScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "scheduler.animation",
-      {
-        scheduleFrame: this.scheduleFrame.bind(this),
-        get pendingCount() {
-          return runtime.countSpecific(ANIMATION_FRAME_TAG);
-        },
-      },
+      Object.assign(new AnimationFacade(this), { scheduleFrame: this.scheduleFrame.bind(this) }),
       this,
     );
     // The native-shaped aliases, added only when the compat addon is composed before this one.

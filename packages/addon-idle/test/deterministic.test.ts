@@ -84,11 +84,13 @@ describe("idleAddon (deterministic)", () => {
   test("applyToRuntime defines .idle with a request/drain facade", () => {
     const { runtime } = fakeDeterministicRuntime();
     addonBuilderFactory().create().applyToRuntime(runtime);
-    expect(runtime.scheduler.idle).toStrictEqual({
+    expect(runtime.scheduler.idle).toMatchObject({
       request: expect.any(Function),
       drain: expect.any(Function),
       pendingCount: 0,
     });
+    // A getter in an object literal would push every runtime into the old generation.
+    expect(Object.keys(runtime.scheduler.idle as object)).toEqual(["request", "drain"]);
   });
 
   test("pendingCount counts requests until they are drained", () => {
