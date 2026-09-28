@@ -45,7 +45,7 @@ exactly two kinds of file, and no more than that:
 - Everything else is grouped by what it actually _is_, not by how many
   interfaces or classes happen to be in it:
   - `types.ts` (core) holds every pure `interface`/`type` declaration -
-    `IClock`, `IRuntime`, `IPlugin`, the builder contracts, all of it. A
+    `IClock`, `IRuntime`, `ISystemPlugin`, the builder contracts, all of it. A
     TypeScript type is erased entirely at compile time, so which file it's
     declared in has zero effect on a bundle: one interface per file adds
     navigation overhead without buying anything, so core keeps them in one
@@ -122,8 +122,9 @@ export class FixedRuntime extends BaseFixedRuntime<Date> {
 Not every date library can represent an arbitrary IANA timezone. Native
 `Date` and plain `Moment.js` cannot; Day.js, Luxon, Moment.js +
 moment-timezone, and Temporal can. `time-provider` reflects this with two
-parallel hierarchies (`IPlugin`/`IRuntime`/`IClock` vs. `IUtcOnlyPlugin`/
-`IUtcOnlyRuntime`/`IUtcOnlyClock`) rather than one interface with an optional
+parallel hierarchies (`ISystemPlugin`/`IRuntime`/`IClock` vs.
+`IUtcOnlySystemPlugin`/`IUtcOnlyRuntime`/`IUtcOnlyClock`, and the same pair for
+the deterministic plugins) rather than one interface with an optional
 or runtime-checked `localNow()`.
 
 This is deliberate.  
@@ -136,7 +137,8 @@ with an optional method:
   into one signature would force one side to accept a parameter it can't
   honor or silently ignore one it needs.
 - **The two are not distinguishable by a boolean check that TypeScript can
-  narrow.** `IPlugin<TDate>` structurally satisfies `IUtcOnlyPlugin<TDate>`
+  narrow.** `ISystemPlugin<TDate>` structurally satisfies
+  `IUtcOnlySystemPlugin<TDate>`
   (a "full" plugin has every member a "UTC-only" one needs, plus more), so a
   conditional type or overload keyed only on the union of the two, without
   narrowing through the `supportsLocalTime` discriminant property first,
