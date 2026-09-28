@@ -43,21 +43,6 @@ class ManualRuntime extends BaseManualRuntime<moment.Moment> {
   protected advanceMonths(time: moment.Moment, months: number): moment.Moment {
     return time.add({ months });
   }
-  protected advanceDays(time: moment.Moment, days: number): moment.Moment {
-    return time.add({ days });
-  }
-  protected advanceHours(time: moment.Moment, hours: number): moment.Moment {
-    return time.add({ hours });
-  }
-  protected advanceMinutes(time: moment.Moment, minutes: number): moment.Moment {
-    return time.add({ minutes });
-  }
-  protected advanceSeconds(time: moment.Moment, seconds: number): moment.Moment {
-    return time.add({ seconds });
-  }
-  protected advanceMilliseconds(time: moment.Moment, milliseconds: number): moment.Moment {
-    return time.add({ milliseconds });
-  }
 }
 
 export class DeterministicPlugin extends BaseUtcOnlyDeterministicPlugin<moment.Moment> {

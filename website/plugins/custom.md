@@ -178,7 +178,7 @@ export const plugin: ISystemPlugin<MyDate> = new SystemPlugin();
 **Deterministic** (`deterministic.ts`) — three runtimes (fixed, manual,
 sequential), each extending the matching `Base*Runtime` from
 `@time-provider/core/deterministic`. Only the manual one needs the
-`advance*` methods, since only it implements `IAdvanceable`:
+`advanceYears` and `advanceMonths` methods, since only it implements `IAdvanceable`:
 
 ```ts
 import {
@@ -208,21 +208,6 @@ class ManualRuntime extends BaseManualRuntime<MyDate> {
     /* ... */
   }
   protected advanceMonths(time: MyDate, months: number): MyDate {
-    /* ... */
-  }
-  protected advanceDays(time: MyDate, days: number): MyDate {
-    /* ... */
-  }
-  protected advanceHours(time: MyDate, hours: number): MyDate {
-    /* ... */
-  }
-  protected advanceMinutes(time: MyDate, minutes: number): MyDate {
-    /* ... */
-  }
-  protected advanceSeconds(time: MyDate, seconds: number): MyDate {
-    /* ... */
-  }
-  protected advanceMilliseconds(time: MyDate, milliseconds: number): MyDate {
     /* ... */
   }
 }
