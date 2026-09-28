@@ -23,6 +23,17 @@ const TIMED_OUT_DEADLINE: IIdleDeadline = Object.freeze({
   timeRemaining: () => 0,
 });
 
+// A class: a getter in an object literal makes every runtime survive into the old generation.
+class IdleFacade {
+  readonly #scheduler: IDeterministicIdleApi;
+  constructor(scheduler: IDeterministicIdleApi) {
+    this.#scheduler = scheduler;
+  }
+  get pendingCount(): number {
+    return this.#scheduler.pendingCount;
+  }
+}
+
 /**
  * Implements {@link IDeterministicIdleApi} using the runtime's `specific()` and
  * `takeOutSpecificCallbacks()` APIs.
@@ -55,13 +66,10 @@ export class DeterministicIdleScheduler<TDate>
     AddonHelper.extendRuntimeWithProperty(
       runtime,
       "scheduler.idle",
-      {
+      Object.assign(new IdleFacade(this), {
         request: this.request.bind(this),
         drain: this.drain.bind(this),
-        get pendingCount() {
-          return runtime.countSpecific(IDLE_TAG);
-        },
-      },
+      }),
       this,
     );
     // The native-shaped aliases, added only when the compat addon is composed before this one.
