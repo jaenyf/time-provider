@@ -60,6 +60,9 @@ Timers are due on monotonic time, so a snap neither fires nor delays them.
   timer fires at, or `undefined`.
 - `pendingCount`: the number of pending timers.
 
+A `once()` or `recurring()` timer is not pending while its own callback runs.
+An `every()` timer is, already re-armed for its next due time.
+
 `moveTo("nextTimer")` and `moveTo("lastTimer")` flow to those times, and throw
 when no timer is pending. `moveUntil("noTimers")` moves from timer to timer
 until none is left, including the ones those timers schedule. It takes
