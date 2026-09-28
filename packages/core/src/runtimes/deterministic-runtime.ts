@@ -1084,29 +1084,19 @@ export abstract class BaseManualRuntime<TDate>
 
   /** Applies `spec` to the current time, in {@link IMoveSpec} field order. */
   #targetOf(spec: IMoveSpec): EpochMilliseconds {
-    let time = this.convertToUtcDateImpl(this.timestampNow());
-    if (spec.years) time = this.advanceYears(time, spec.years);
-    if (spec.months) time = this.advanceMonths(time, spec.months);
-    if (spec.days) time = this.advanceDays(time, spec.days);
-    if (spec.hours) time = this.advanceHours(time, spec.hours);
-    if (spec.minutes) time = this.advanceMinutes(time, spec.minutes);
-    if (spec.seconds) time = this.advanceSeconds(time, spec.seconds);
-    if (spec.milliseconds) time = this.advanceMilliseconds(time, spec.milliseconds);
-    return this.convertToEpochTimestampImpl(time);
+    let timestamp: number = this.timestampNow();
+    // Only years and months vary in length on the UTC calendar; the rest is plain arithmetic.
+    if (spec.years || spec.months) {
+      let time = this.convertToUtcDateImpl(timestamp as EpochMilliseconds);
+      if (spec.years) time = this.advanceYears(time, spec.years);
+      if (spec.months) time = this.advanceMonths(time, spec.months);
+      timestamp = this.convertToEpochTimestampImpl(time);
+    }
+    return (timestamp + toDuration(spec)) as EpochMilliseconds;
   }
 
   /** Returns `time` shifted by `years`. */
   protected abstract advanceYears(time: TDate, years: number): TDate;
   /** Returns `time` shifted by `months`. */
   protected abstract advanceMonths(time: TDate, months: number): TDate;
-  /** Returns `time` shifted by `days`. */
-  protected abstract advanceDays(time: TDate, days: number): TDate;
-  /** Returns `time` shifted by `hours`. */
-  protected abstract advanceHours(time: TDate, hours: number): TDate;
-  /** Returns `time` shifted by `minutes`. */
-  protected abstract advanceMinutes(time: TDate, minutes: number): TDate;
-  /** Returns `time` shifted by `seconds`. */
-  protected abstract advanceSeconds(time: TDate, seconds: number): TDate;
-  /** Returns `time` shifted by `milliseconds`. */
-  protected abstract advanceMilliseconds(time: TDate, milliseconds: number): TDate;
 }
