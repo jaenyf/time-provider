@@ -59,7 +59,17 @@ That is why the two dependency checks in CI are deliberately asymmetric:
   visible instead.
 
 Packages are published from CI with npm provenance, so each published version carries
-a signed attestation tying it to the commit and workflow that built it.
+a signed attestation tying it to the commit and workflow that built it. You can check it
+yourself: `npm audit signatures` verifies it from an installed tree, and each version's
+page on npm shows the same attestation under Provenance.
+
+Two more checks report on this repository from outside its workflows, so there is nothing
+in `.github/` to find them by and they are named here instead. **Socket Security** posts a
+project report on every pull request, which is where the dependency SBOM lives, alongside
+per-pull-request alerts. **GitHub code scanning** runs CodeQL over both the TypeScript
+sources and the workflow files. Together with `dependency-review` and `bun audit` above,
+that means the dependency posture is re-confirmed on every pull request rather than audited
+once.
 
 ## Supported Versions
 
