@@ -115,6 +115,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # A push to a branch with an open PR also runs as pull_request - mutate once, not twice.
+      RUN_STRYKER: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -171,3 +174,49 @@ jobs:
           label: tests
           message: ${{ steps.extract-tests-count.outputs.count }}
           color: brightgreen
+
+      # Only main writes the incremental cache: a pull_request cache is scoped to its merge ref,
+      # so nothing else could read it. Caches are immutable, hence one key per commit.
+      - name: Restore Stryker incremental results
+        if: env.RUN_STRYKER == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.sha }}
+          restore-keys: stryker-incremental-
+
+      - if: env.RUN_STRYKER == 'true'
+        run: vp run stryker
+
+      - name: Save Stryker incremental results
+        if: ${{ !cancelled() && env.RUN_STRYKER == 'true' && github.ref == 'refs/heads/main' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.sha }}
+
+      - name: Extract mutation score
+        id: extract-mutation-score
+        if: env.RUN_STRYKER == 'true'
+        run: |
+          node -e '
+            const { files } = JSON.parse(require("fs").readFileSync("reports/mutation/mutation.json", "utf8"));
+            const count = {};
+            for (const { mutants } of Object.values(files))
+              for (const { status } of mutants) count[status] = (count[status] ?? 0) + 1;
+            const detected = (count.Killed ?? 0) + (count.Timeout ?? 0);
+            const score = (100 * detected) / (detected + (count.Survived ?? 0) + (count.NoCoverage ?? 0));
+            console.log(`score=${score.toFixed(2)}`);
+            console.log(`color=${score >= 80 ? "brightgreen" : score >= 60 ? "yellow" : "red"}`);
+          ' >> "$GITHUB_OUTPUT"
+
+      - name: Update mutation score badge
+        if: env.RUN_STRYKER == 'true' && github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@28b0fa8bdeb46170ac397105ece0c1fe58f68910 # v1.9.0
+        with:
+          auth: ${{ secrets.GIST_TESTS_COUNTER_SECRET }}
+          gistID: 5c996e614c598efb1231d96c28444493
+          filename: time-provider-mutation-score-badge.json
+          label: mutation score
+          message: ${{ steps.extract-mutation-score.outputs.score }}%
+          color: ${{ steps.extract-mutation-score.outputs.color }}
