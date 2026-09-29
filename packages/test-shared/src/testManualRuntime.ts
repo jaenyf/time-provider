@@ -739,6 +739,15 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          test("clearing a fired timer leaves dispose reaching the pending ones", () => {
+            const sut = createSUT();
+            const fired = sut.once({ milliseconds: 1 }, () => {});
+            const pending = sut.once({ milliseconds: 100 }, () => {});
+            sut.clock.moveBy({ milliseconds: 1 });
+            sut.clearTimer(fired);
+            sut.dispose();
+            expect(pending.isDisposed).toBe(true);
+          });
           describe("issue#105", () => {
             test("does not invoke callback B if callback A cancels it during the same time advance", () => {
               const sut = createSUT();

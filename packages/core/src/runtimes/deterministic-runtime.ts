@@ -797,10 +797,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     // Only this class's own once()/every()/recurring() ever construct a handle for this runtime,
     // and they always hand back the DueEntry itself - safe to assume that shape here.
     const entry = handle as DueEntry<TDate>;
-    if (entry.owner === this.#dueQueue) {
-      entry.cancelled = true;
-      this.#dueQueue.retireEntry(entry);
-    }
+    if (entry.owner === this.#dueQueue) entry.dispose();
   }
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
