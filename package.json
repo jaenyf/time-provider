@@ -15,7 +15,7 @@
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports",
     "test": "vp test",
     "check": "vp check && vp run -r check",
-    "stryker": "stryker run"
+    "stryker": "node scripts/check-stryker-runner.ts && stryker run"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -39,6 +39,9 @@
   "catalog": {
     "vite-plus": "1.0.0",
     "vitest": "5.0.1"
+  },
+  "patchedDependencies": {
+    "@stryker-mutator/vitest-runner@10.0.0": "patches/@stryker-mutator%2Fvitest-runner@10.0.0.patch"
   },
   "validate-branch-name": {
     "pattern": "^(main)$|^(ai|bugfix|chore|ci|dependabot|docs|feat|feature|fix|hotfix|perf|release|refactor|test)/.+$|^release-please--branches--.+$",
