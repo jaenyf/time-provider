@@ -1,0 +1,22 @@
+name: Stryker cache keep-alive
+
+# GitHub evicts a cache entry after 7 days without access. Restoring main's latest Stryker
+# incremental results resets that clock, so a quiet week doesn't force a full mutation run.
+on:
+  schedule:
+    - cron: "0 4 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      # The exact key never exists, so the prefix picks the most recent main entry.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-incremental-keepalive
+          restore-keys: stryker-incremental-
