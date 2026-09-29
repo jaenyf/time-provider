@@ -77,6 +77,17 @@ describe("BaseSystemRuntime", () => {
       expect(called).toBe(true);
     });
 
+    test("arms a delay of exactly the native limit as a single native timer", () => {
+      const spy = vi.spyOn(globalThis, "setTimeout");
+      let called = false;
+      sut.once({ milliseconds: MAX_NATIVE_DELAY }, () => {
+        called = true;
+      });
+      vi.advanceTimersByTime(MAX_NATIVE_DELAY);
+      expect(called).toBe(true);
+      expect(spy).toHaveBeenCalledExactlyOnceWith(expect.any(Function), MAX_NATIVE_DELAY);
+    });
+
     test("cancels a chunked delay disposed before it is due", () => {
       let called = false;
       const handle = sut.once({ milliseconds: MAX_NATIVE_DELAY * 2 }, () => {
@@ -105,6 +116,12 @@ describe("BaseSystemRuntime", () => {
       const spy = vi.spyOn(globalThis, "setInterval");
       sut.every({ milliseconds: 42 }, () => {});
       expect(spy).toHaveBeenCalledWith(expect.any(Function), 42);
+    });
+
+    test("arms a period of exactly the native limit as a native interval", () => {
+      const spy = vi.spyOn(globalThis, "setInterval");
+      sut.every({ milliseconds: MAX_NATIVE_DELAY }, () => {});
+      expect(spy).toHaveBeenCalledWith(expect.any(Function), MAX_NATIVE_DELAY);
     });
 
     test("re-arms a period past the native limit rather than letting the clock clamp it", () => {
@@ -258,6 +275,21 @@ describe("BaseSystemRuntime", () => {
       expect(callbackCounts).toEqual(1);
     });
 
+    test("cancels the schedule re-armed by the last run", () => {
+      let callbackCounts = 0;
+      const handle = sut.recurring(
+        () => {
+          ++callbackCounts;
+          return { milliseconds: 50 };
+        },
+        { milliseconds: 10 },
+      );
+      vi.advanceTimersByTime(10);
+      handle.dispose();
+      expect(vi.getTimerCount()).toEqual(0);
+      expect(callbackCounts).toEqual(1);
+    });
+
     test.each([4, 42, 100])("cancels pending recurring callback", (delay) => {
       let callbackCounts = 0;
       const handle = sut.recurring(
@@ -271,6 +303,17 @@ describe("BaseSystemRuntime", () => {
       vi.advanceTimersByTime(1);
       expect(callbackCounts).toEqual(0);
     });
+  });
+
+  test("timings entries leave out host entries other than marks and measures", () => {
+    const getEntries = vi
+      .spyOn(performance, "getEntries")
+      .mockReturnValue([{ entryType: "resource", name: "x" } as PerformanceEntry]);
+    try {
+      expect(sut.timings.entries()).toEqual([]);
+    } finally {
+      getEntries.mockRestore();
+    }
   });
 
   describe("on real timers", () => {

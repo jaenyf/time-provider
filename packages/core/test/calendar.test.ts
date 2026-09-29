@@ -90,6 +90,12 @@ describe("DefaultCalendarScheme", () => {
     expect(sut.compose(CalendarSchemeFieldsHelper.toComposable(fields), "Etc/UTC")).toBe(timestamp);
   });
 
+  test("compose keeps the offset in force before a fall-back when the time only exists there", () => {
+    // 2024-10-27 01:30 in Paris is still summer time (UTC+2), an hour before the clocks go back.
+    const fields = { year: 2024, month: 10, day: 27, hour: 1, minute: 30 };
+    expect(sut.compose(fields, "Europe/Paris")).toBe(Date.UTC(2024, 9, 26, 23, 30));
+  });
+
   test("decompose reports wall-clock fields as observed in the given timezone", () => {
     // 2024-06-15T14:30Z is 23:30 the same day in Tokyo (UTC+9, no DST).
     const fields = sut.decompose(Date.UTC(2024, 5, 15, 14, 30), "Asia/Tokyo");

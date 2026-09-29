@@ -59,6 +59,10 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & {
 
 describe("DeterministicAnimationFrameScheduler", () => {
   describe("dispose", () => {
+    test("a new instance is not disposed", () => {
+      using sut = new DeterministicAnimationFrameScheduler();
+      expect(sut.isDisposed).toBe(false);
+    });
     test("explicit dispose call disposes instance", () => {
       using sut = new DeterministicAnimationFrameScheduler();
       sut.applyToRuntime(fakeRuntime());

@@ -119,3 +119,42 @@ describe("BaseRuntime Timers wait", () => {
     await expect(waitPromise).resolves.toBeUndefined();
   });
 });
+
+describe("BaseRuntime disposal", () => {
+  const converter: ITimeConverter<unknown> = {
+    convertToTimestamp: () => asEpochMilliseconds(),
+    convertToUtcDate: (time) => time,
+    convertToLocalDate: (_timezone, time) => time,
+  };
+
+  test("disposes each registered addon once, however many times the runtime is disposed", () => {
+    const sut = new FakeRuntime(converter);
+    const addon = { dispose: vi.fn() };
+    sut.registerAddon(addon as never);
+
+    sut.dispose();
+    sut.dispose();
+
+    expect(addon.dispose).toHaveBeenCalledOnce();
+  });
+
+  test("hands out the same signal on every read", () => {
+    const sut = new FakeRuntime(converter);
+    expect(sut.signal).toBe(sut.signal);
+  });
+
+  test("disposes a timer when its options signal aborts", () => {
+    vi.useFakeTimers();
+    try {
+      const sut = new FakeRuntime(converter);
+      const controller = new AbortController();
+      const handle = sut.once({ milliseconds: 10 }, () => {}, { signal: controller.signal });
+
+      controller.abort();
+
+      expect(handle.isDisposed).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

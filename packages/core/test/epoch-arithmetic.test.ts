@@ -18,19 +18,19 @@ describe("asEpoch", () => {
 });
 
 describe("toInstant", () => {
-  test.each([1, 2, 3])("milliseconds converts to milliseconds", (value) => {
+  test.each([0, 1, 2, 3])("milliseconds converts to milliseconds", (value) => {
     expect(toInstant({ milliseconds: value })).toEqual(value * 1);
   });
-  test.each([1, 2, 3])("seconds converts to milliseconds", (value) => {
+  test.each([0, 1, 2, 3])("seconds converts to milliseconds", (value) => {
     expect(toInstant({ seconds: value })).toEqual(value * 1000);
   });
-  test.each([1, 2, 3])("minutes converts to milliseconds", (value) => {
+  test.each([0, 1, 2, 3])("minutes converts to milliseconds", (value) => {
     expect(toInstant({ minutes: value })).toEqual(value * 1000 * 60);
   });
-  test.each([1, 2, 3])("hours converts to milliseconds", (value) => {
+  test.each([0, 1, 2, 3])("hours converts to milliseconds", (value) => {
     expect(toInstant({ hours: value })).toEqual(value * 1000 * 60 * 60);
   });
-  test.each([1, 2, 3])("days converts to milliseconds", (value) => {
+  test.each([0, 1, 2, 3])("days converts to milliseconds", (value) => {
     expect(toInstant({ days: value })).toEqual(value * 1000 * 60 * 60 * 24);
   });
 

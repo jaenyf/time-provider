@@ -59,6 +59,10 @@ describe("timer-handle", () => {
   });
 
   describe("abort", () => {
+    test("hands out the same signal on every read", () => {
+      const sut = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, createFakeRuntime(), undefined);
+      expect(sut.signal).toBe(sut.signal);
+    });
     test("signal is not declared aborted by default", () => {
       const sut = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, createFakeRuntime(), undefined);
       expect(sut.signal.aborted).toBe(false);

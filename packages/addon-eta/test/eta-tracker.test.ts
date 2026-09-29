@@ -81,7 +81,9 @@ describe("EtaTrackBuilder.withKnownTotal", () => {
   test("rejects a negative total", () => {
     const runtime = fakeRuntime(() => asEpochMilliseconds());
     const sut = new EtaTrackBuilder(runtime);
-    expect(() => sut.withKnownTotal(-1)).toThrow(/Invalid ETA configuration/);
+    expect(() => sut.withKnownTotal(-1)).toThrow(
+      "Invalid ETA configuration: total must be >= 0 (was -1)",
+    );
   });
 
   test("accepts a zero total", () => {
@@ -102,7 +104,7 @@ describe("EtaTrackBuilder.withStages", () => {
   test("rejects an empty stage list", () => {
     const runtime = fakeRuntime(() => asEpochMilliseconds());
     const sut = new EtaTrackBuilder(runtime);
-    expect(() => sut.withStages([])).toThrow(/Invalid ETA configuration/);
+    expect(() => sut.withStages([])).toThrow("Invalid ETA configuration: stages must not be empty");
   });
 
   test("rejects a negative stage weight", () => {
@@ -111,9 +113,9 @@ describe("EtaTrackBuilder.withStages", () => {
     expect(() =>
       sut.withStages([
         { weight: -1, total: 10 },
-        { weight: 1, total: 10 },
+        { weight: 2, total: 10 },
       ]),
-    ).toThrow(/Invalid ETA configuration/);
+    ).toThrow("Invalid ETA configuration: stage weight must be >= 0 (was -1)");
   });
 
   test("rejects stages that all have a zero weight", () => {
@@ -124,7 +126,7 @@ describe("EtaTrackBuilder.withStages", () => {
         { weight: 0, total: 10 },
         { weight: 0, total: 10 },
       ]),
-    ).toThrow(/Invalid ETA configuration/);
+    ).toThrow("Invalid ETA configuration: at least one stage must have a weight greater than 0");
   });
 
   test("accepts a zero-weight stage alongside at least one positive-weight stage", () => {
@@ -156,12 +158,76 @@ describe("EtaTrackBuilder.withStages", () => {
   });
 });
 
+describe("staged overall progress", () => {
+  function stagedTracker(stages: { weight: number; total: number }[]) {
+    let now = 0;
+    const runtime = fakeRuntime(() => toInstant({ milliseconds: now }));
+    let latest: IStagedEtaProgressSnapshot | undefined;
+    const tracker = new EtaTrackBuilder(runtime)
+      .withStages(stages)
+      .start((snapshot) => (latest = snapshot));
+    return {
+      tracker,
+      at(milliseconds: number) {
+        now = milliseconds;
+      },
+      snapshot() {
+        runtime.intervals[0]!.callback();
+        return latest!;
+      },
+      latest: () => latest!,
+    };
+  }
+
+  test("weights a partly done stage by its normalized weight", () => {
+    const sut = stagedTracker([
+      { weight: 3, total: 10 },
+      { weight: 1, total: 10 },
+    ]);
+    sut.at(1000);
+    sut.tracker.progressTo(5); // half of 0.75, so 0.375 of the whole job in 1000ms
+    expect(sut.snapshot().remainingMilliseconds).toBeCloseTo((0.625 / 0.375) * 1000);
+  });
+
+  test("counts a finished stage's whole weight once the next one starts", () => {
+    const sut = stagedTracker([
+      { weight: 1, total: 10 },
+      { weight: 1, total: 10 },
+    ]);
+    sut.at(1000);
+    sut.tracker.nextStage();
+    sut.tracker.progressTo(5); // 0.5 + 0.25 of the whole job in 1000ms
+    expect(sut.snapshot().remainingMilliseconds).toBeCloseTo((0.25 / 0.75) * 1000);
+  });
+
+  test("reads the whole job as complete once done, from any stage", () => {
+    const sut = stagedTracker([
+      { weight: 1, total: 10 },
+      { weight: 1, total: 10 },
+    ]);
+    sut.at(1000);
+    sut.tracker.progressTo(5);
+    sut.tracker.done();
+    expect(sut.latest().remainingMilliseconds).toBe(0);
+  });
+
+  test("counts a stage with nothing to do as complete", () => {
+    const sut = stagedTracker([
+      { weight: 1, total: 0 },
+      { weight: 1, total: 10 },
+    ]);
+    sut.at(1000);
+    sut.tracker.progressTo(0); // the empty stage alone is half the job
+    expect(sut.snapshot().remainingMilliseconds).toBeCloseTo(1000);
+  });
+});
+
 describe("EtaTrackBuilder.withEstimatedDuration", () => {
   test("rejects a negative duration", () => {
     const runtime = fakeRuntime(() => asEpochMilliseconds());
     const sut = new EtaTrackBuilder(runtime);
     expect(() => sut.withEstimatedDuration(-1 as DurationMilliseconds)).toThrow(
-      /Invalid ETA configuration/,
+      "Invalid ETA configuration: expectedDurationMilliseconds must be >= 0 (was -1)",
     );
   });
 

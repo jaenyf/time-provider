@@ -89,6 +89,10 @@ function fakeRuntime(): IDeterministicRuntime<unknown> & { registeredCount: () =
 
 describe("DeterministicIdleScheduler", () => {
   describe("dispose", () => {
+    test("a new instance is not disposed", () => {
+      using sut = new DeterministicIdleScheduler();
+      expect(sut.isDisposed).toBe(false);
+    });
     test("explicit dispose call disposes instance", () => {
       using sut = new DeterministicIdleScheduler();
       sut.applyToRuntime(fakeRuntime());

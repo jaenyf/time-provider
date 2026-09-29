@@ -264,6 +264,13 @@ describe("DeterministicRuntimeBuilder", () => {
 });
 
 describe("DeterministicPluggedRuntimeBuilder", () => {
+  describe("asManual().withMoveUntilTimersLimit", () => {
+    test("accepts the smallest limit, 1", () => {
+      const builder = createDeterministicTimeProvider.for(fakeDeterministicPlugin()).asManual();
+      expect(() => builder.withMoveUntilTimersLimit(1)).not.toThrow();
+    });
+  });
+
   describe("asSequential().create()", () => {
     test("defaults to a single epoch-0 entry when withSequentialTime was never called", () => {
       const { plugin, getLastSequentialTimes } = fakeSequentialTimesCapturingDeterministicPlugin();

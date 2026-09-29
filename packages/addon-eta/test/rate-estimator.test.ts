@@ -35,6 +35,13 @@ describe("CompleteRateEstimator", () => {
     sut.addSample(10_000, 200); // then nothing for a while
     expect(sut.estimateRate()).toBe(200 / 10_000);
   });
+
+  test("measures from the first sample, wherever it starts", () => {
+    const sut = createRateEstimator("complete");
+    sut.addSample(1000, 10);
+    sut.addSample(2000, 30);
+    expect(sut.estimateRate()).toBe(20 / 1000);
+  });
 });
 
 describe("WindowedRateEstimator", () => {
@@ -57,6 +64,22 @@ describe("WindowedRateEstimator", () => {
     sut.addSample(0, 0);
     sut.addSample(5000, 50);
     expect(sut.estimateRate()).toBe(50 / 5000);
+  });
+
+  test("keeps a sample exactly at the window's start", () => {
+    const sut = createRateEstimator("windowed");
+    sut.addSample(0, 0);
+    sut.addSample(1000, 50);
+    sut.addSample(11_000, 110);
+    expect(sut.estimateRate()).toBe(110 / 11_000);
+  });
+
+  test("keeps every sample within the window, not just the last two", () => {
+    const sut = createRateEstimator("windowed");
+    sut.addSample(0, 0);
+    sut.addSample(5000, 10);
+    sut.addSample(8000, 80);
+    expect(sut.estimateRate()).toBe(80 / 8000);
   });
 
   test("drops samples older than the window once newer ones push them out", () => {

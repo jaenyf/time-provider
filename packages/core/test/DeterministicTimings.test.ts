@@ -22,6 +22,9 @@ describe("DeterministicTimings", () => {
   });
 
   describe("entries", () => {
+    test("are empty before any mark or measure", () => {
+      expect(createSUT().entries()).toEqual([]);
+    });
     test("are assignable to the native entry types", () => {
       const sut = createSUT();
       const mark: PerformanceEntry = sut.mark("a", { detail: 1 });

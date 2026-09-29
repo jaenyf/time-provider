@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import type { IRuntime } from "@time-provider/core";
 import { SystemAnimationFrameScheduler } from "../src/system-animation-frame-scheduler.ts";
 
@@ -193,12 +193,28 @@ describe("SystemAnimationFrameScheduler", () => {
       [...calls.values()][0]?.();
       expect(called).toBe(true);
     });
-    test("disposing handle delegates cancelAnimationFrame to the native function", () => {
+    test("disposing handle delegates cancelAnimationFrame to the native function, once", () => {
+      const cancel = vi.spyOn(globalThis, "cancelAnimationFrame");
       const sut = new SystemAnimationFrameScheduler();
       sut.applyToRuntime(fakeRuntime());
       const handle = sut.scheduleFrame(() => {});
       handle.dispose();
-      expect(calls.has(handle as unknown as number)).toBe(false);
+      handle.dispose();
+      expect(cancel).toHaveBeenCalledExactlyOnceWith(1);
+    });
+    test("implicit dispose of a handle cancels its native frame", () => {
+      const sut = new SystemAnimationFrameScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      {
+        using _handle = sut.scheduleFrame(() => {});
+      }
+      expect(calls.size).toBe(0);
+    });
+    test("a handle hands out the same signal on every read", () => {
+      const sut = new SystemAnimationFrameScheduler();
+      sut.applyToRuntime(fakeRuntime());
+      using handle = sut.scheduleFrame(() => {});
+      expect(handle.signal).toBe(handle.signal);
     });
   });
 });

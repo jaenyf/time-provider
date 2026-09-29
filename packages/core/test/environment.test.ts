@@ -42,6 +42,12 @@ describe("shouldRethrowTimerErrors", () => {
     expect(shouldRethrowTimerErrors()).toBe(false);
   });
 
+  test("process present without versions -> logs instead of rethrowing", () => {
+    vi.stubGlobal("window", undefined);
+    vi.stubGlobal("process", {});
+    expect(shouldRethrowTimerErrors()).toBe(false);
+  });
+
   test("Electron renderer process: window wins over process.versions.node -> logs instead of rethrowing", () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("process", { versions: { node: "20.11.0", electron: "30.0.0" } });

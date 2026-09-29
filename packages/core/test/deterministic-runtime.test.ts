@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseManualRuntime } from "../src/runtimes/deterministic-runtime.ts";
+import { BaseManualRuntime, BaseSequentialRuntime } from "../src/runtimes/deterministic-runtime.ts";
 import {
   DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
   ScheduledHandleKind,
@@ -15,8 +15,8 @@ const identityConverter: ITimeConverter<number> = {
 };
 
 class FakeManualRuntime extends BaseManualRuntime<number> {
-  constructor(initialTime: number) {
-    super("Etc/UTC", initialTime, DEFAULT_MOVE_UNTIL_TIMERS_LIMIT, identityConverter);
+  constructor(initialTime: number, moveUntilTimersLimit = DEFAULT_MOVE_UNTIL_TIMERS_LIMIT) {
+    super("Etc/UTC", initialTime, moveUntilTimersLimit, identityConverter);
   }
   protected advanceYears(time: number, years: number): number {
     return time + years * 365 * 24 * 60 * 60 * 1000;
@@ -915,6 +915,23 @@ describe("BaseManualRuntime tagged timers", () => {
       expect(order.slice(6)).toEqual(["a", "b", "c", "d"]);
     });
 
+    test("compaction re-heapifies survivors that were below the taken entries", () => {
+      const sut = new FakeManualRuntime(0);
+      const order: string[] = [];
+      // The tagged entries are due first, so they fill the top of the heap: once taken, the
+      // survivors left in array order ([40, 10, 30, 20]) are not a heap until rebuilt.
+      for (let i = 1; i <= 6; i++) {
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: i }, () => {});
+      }
+      for (const delay of [40, 10, 30, 20]) {
+        sut.scheduler.timers.once({ milliseconds: delay }, () => order.push(`${delay}`));
+      }
+
+      sut.takeOutSpecificCallbacks("tag", Number.POSITIVE_INFINITY);
+      sut.advance({ milliseconds: 40 });
+      expect(order).toEqual(["10", "20", "30", "40"]);
+    });
+
     test("repeated register/take cycles across many compactions stay correct", () => {
       const sut = new FakeManualRuntime(0);
       for (let round = 0; round < 20; round++) {
@@ -1055,5 +1072,123 @@ describe("BaseManualRuntime microtasks and dispose", () => {
     expect(() => sut.scheduler.microtasks.drain()).not.toThrow();
     // m1 disposed the runtime mid-checkpoint, clearing the queue before m2 got its turn.
     expect(log).toEqual(["m1"]);
+  });
+});
+
+describe("BaseManualRuntime recurring and ordering", () => {
+  test("a recurring timer that returns false leaves its handle disposed", () => {
+    const sut = new FakeManualRuntime(0);
+    const handle = sut.scheduler.timers.recurring(() => false, { milliseconds: 10 });
+    sut.advance({ milliseconds: 10 });
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  test("clearing another runtime's handle leaves that handle's schedule alone", () => {
+    const sut = new FakeManualRuntime(0);
+    const other = new FakeManualRuntime(0);
+    let runs = 0;
+    const handle = other.scheduler.timers.recurring(
+      () => {
+        ++runs;
+        return { milliseconds: 10 };
+      },
+      { milliseconds: 10 },
+    );
+    sut.clearTimer(handle);
+    other.advance({ milliseconds: 20 });
+    expect(runs).toBe(2);
+  });
+
+  test("a recurring timer re-armed to a due time fires before a timer registered after it for that time", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.scheduler.timers.recurring(
+      () => {
+        order.push("recurring");
+        return order.length < 2 ? { milliseconds: 10 } : false;
+      },
+      { milliseconds: 10 },
+    );
+    sut.advance({ milliseconds: 10 });
+    sut.scheduler.timers.once({ milliseconds: 10 }, () => order.push("once"));
+    sut.advance({ milliseconds: 10 });
+    expect(order).toEqual(["recurring", "recurring", "once"]);
+  });
+
+  test("an interval with a negative period is clamped to 0, so it fires once when armed", () => {
+    const sut = new FakeManualRuntime(0);
+    let runs = 0;
+    sut.scheduler.timers.every({ milliseconds: -5 }, () => ++runs);
+    expect(runs).toBe(1);
+  });
+
+  test("specific() on a disposed runtime throws", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.dispose();
+    expect(() =>
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 0 }, () => {}),
+    ).toThrow("Invalid operation on a disposed runtime");
+  });
+
+  test("a tagged interval keeps its period", () => {
+    const sut = new FakeManualRuntime(0);
+    let runs = 0;
+    sut.specific("tag", ScheduledHandleKind.interval, { milliseconds: 10 }, () => ++runs, 10);
+    sut.advance({ milliseconds: 25 });
+    expect(runs).toBe(2);
+  });
+
+  test("disposing the middle, then the tail, of a tag's entries leaves only the head", () => {
+    const sut = new FakeManualRuntime(0);
+    const [head, middle, tail] = ["head", "middle", "tail"].map((name) =>
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => name),
+    );
+    middle!.dispose();
+    tail!.dispose();
+    expect(sut.countSpecific("tag")).toBe(1);
+    expect(head!.isDisposed).toBe(false);
+  });
+
+  test("a tag's entry added after its tail was disposed is still counted", () => {
+    const sut = new FakeManualRuntime(0);
+    const register = () =>
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+    register();
+    register();
+    register().dispose();
+    register();
+    expect(sut.countSpecific("tag")).toBe(3);
+  });
+
+  test("moveUntil rejects invalid move options", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.scheduler.timers.once({ milliseconds: 10 }, () => {});
+    expect(() => sut.moveUntil("noTimers", { as: "bogus" as "flow" })).toThrow(
+      "Invalid move options",
+    );
+  });
+
+  test("moveUntil counts due timers against its limit after a paused snap", () => {
+    const sut = new FakeManualRuntime(0, 1);
+    const fired: number[] = [];
+    sut.moveBy({ milliseconds: 1000 }, { as: "snap" });
+    sut.scheduler.timers.once({ milliseconds: 10 }, () => fired.push(10));
+    sut.scheduler.timers.once({ milliseconds: 20 }, () => fired.push(20));
+    expect(() => sut.moveUntil("noTimers")).toThrow("Timers still pending after 1 fired");
+    expect(fired).toEqual([10]);
+  });
+});
+
+describe("BaseSequentialRuntime moves", () => {
+  class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
+    constructor(moves: { time: number; as?: "flow" | "sleep" | "snap" }[]) {
+      super("Etc/UTC", moves, identityConverter);
+    }
+  }
+
+  test("accepts a backward move given as a snap", () => {
+    expect(
+      () => new FakeSequentialRuntime([{ time: 200 }, { time: 100, as: "snap" }]),
+    ).not.toThrow();
   });
 });

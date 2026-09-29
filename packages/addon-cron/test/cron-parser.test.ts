@@ -877,3 +877,38 @@ describe("cronExpressionToSpec", () => {
     );
   });
 });
+
+describe("parseCronExpression bounds", () => {
+  test("accepts a step of 1 and a single-value range", () => {
+    const parsed = parseCronExpression("*/1 5-5 * * *", defaultCalendarScheme);
+    expect(parsed.minute.values.size).toBe(60);
+    expect([...parsed.hour.values]).toEqual([5]);
+  });
+
+  test("accepts leading, trailing and repeated whitespace between fields", () => {
+    expect(() => parseCronExpression("  0  9 *\t* *  ", defaultCalendarScheme)).not.toThrow();
+  });
+});
+
+describe("parseCronSpec bounds", () => {
+  test("accepts a single-value range, and a range includes its end", () => {
+    const parsed = parseCronSpec(
+      { minute: { from: 5, to: 5 }, hour: { from: 1, to: 3 } },
+      defaultCalendarScheme,
+    );
+    expect([...parsed.minute.values]).toEqual([5]);
+    expect([...parsed.hour.values]).toEqual([1, 2, 3]);
+  });
+
+  test.each([
+    ["minute", { minute: 60 }],
+    ["hour", { hour: 24 }],
+    ["dayOfMonth", { dayOfMonth: 0 }],
+    ["month", { month: 13 }],
+    ["dayOfWeek", { dayOfWeek: 8 }],
+  ] as const)("names the %s field of an out-of-range value", (field, spec) => {
+    expect(() => parseCronSpec(spec as ICronSpec, defaultCalendarScheme)).toThrow(
+      `Invalid cron spec field "${field}"`,
+    );
+  });
+});

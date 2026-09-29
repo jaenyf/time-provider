@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import type { IRuntime } from "@time-provider/core";
 import { SystemIdleScheduler } from "../src/system-idle-scheduler.ts";
 
@@ -77,6 +77,10 @@ describe("SystemIdleScheduler", () => {
     });
 
     describe("dispose", () => {
+      test("a new instance is not disposed", () => {
+        using sut = new SystemIdleScheduler();
+        expect(sut.isDisposed).toBe(false);
+      });
       test("explicit dispose call disposes instance", () => {
         const sut = new SystemIdleScheduler();
         sut.dispose();
@@ -128,11 +132,17 @@ describe("SystemIdleScheduler", () => {
       expect(calls.size).toBe(0);
     });
     test("disposing the returned handle is a no-op the second time", () => {
+      const cancel = vi.spyOn(globalThis, "cancelIdleCallback");
       const sut = appliedScheduler();
       const handle = sut.request(() => {});
       handle.dispose();
       expect(() => handle.dispose()).not.toThrow();
       expect(handle.isDisposed).toBe(true);
+      expect(cancel).toHaveBeenCalledOnce();
+    });
+    test("the returned handle hands out the same signal on every read", () => {
+      using handle = appliedScheduler().request(() => {});
+      expect(handle.signal).toBe(handle.signal);
     });
     test("implicit dispose (using) delegates to the native cancelIdleCallback", () => {
       const sut = appliedScheduler();

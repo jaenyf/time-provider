@@ -10,7 +10,9 @@ import {
   type ITimingEntry,
   type ITimers,
 } from "@time-provider/core";
+import { addon } from "../src/addon.ts";
 import { CompatRuntime } from "../src/compat-runtime.ts";
+import { addon as deterministicAddon } from "../src/deterministic.ts";
 import type { ICompatApi } from "../src/types.ts";
 
 type ScheduledCall = {
@@ -308,7 +310,31 @@ describe("CompatRuntime", () => {
     });
   });
 
+  describe("builders", () => {
+    const entry = { name: "runtime-mark", entryType: "mark" } as ITimingEntry;
+
+    test("the system addon reads the host timeline", () => {
+      const runtime = fakeRuntime();
+      runtime.entries = [entry];
+      addon().create().applyToRuntime(runtime);
+      expect(runtime.compat!.performance.getEntries()).not.toContain(entry);
+    });
+
+    test("the deterministic addon reads the runtime's timings", () => {
+      const runtime = fakeRuntime();
+      runtime.entries = [entry];
+      deterministicAddon()
+        .create()
+        .applyToRuntime(runtime as never);
+      expect(runtime.compat!.performance.getEntries()).toEqual([entry]);
+    });
+  });
+
   describe("dispose", () => {
+    test("a new instance is not disposed", () => {
+      using sut = new CompatRuntime<unknown>(false);
+      expect(sut.isDisposed).toBe(false);
+    });
     test("explicit dispose call disposes instance", () => {
       const sut = new CompatRuntime<unknown>(false);
       sut.applyToRuntime(fakeRuntime());
