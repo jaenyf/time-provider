@@ -1,27 +1,27 @@
-[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-eta.svg?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta)
-[![jsr](https://img.shields.io/jsr/v/@time-provider/addon-eta?cacheSeconds=86400)](https://jsr.io/@time-provider/addon-eta)
+[![npm](https://img.shields.io/npm/v/@time-provider%2Faddon-eta.svg?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/addon-eta)
+[![jsr](https://img.shields.io/jsr/v/@time-provider/addon-eta?cacheSeconds=43200)](https://jsr.io/@time-provider/addon-eta)
 [![jsr score](https://jsr.io/badges/@time-provider/addon-eta/score)](https://jsr.io/@time-provider/addon-eta/score)
-[![types](https://img.shields.io/npm/types/@time-provider/addon-eta?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta?activeTab=code)
-[![Node.js ^18.18 || >=20.4](https://img.shields.io/badge/node-%5E18.18%20%7C%7C%20%3E%3D20.4-blue?logo=node.js&logoColor=white&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/package.json)
-[![Deno ~1.39.1 || >=1.43](https://img.shields.io/badge/deno-~1.39.1%20%7C%7C%20%3E%3D1.43-blue?logo=deno&logoColor=white&cacheSeconds=86400)](https://jsr.io/@time-provider/addon-eta)
-[![module ESM + CJS](https://img.shields.io/badge/module-ESM%20%2B%20CJS-blue?logo=javascript&logoColor=white&cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/packages/addon-eta/package.json)
-[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=86400)](https://github.com/jaenyf/time-provider)
+[![types](https://img.shields.io/npm/types/@time-provider/addon-eta?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/addon-eta?activeTab=code)
+[![Node.js ^18.18 || >=20.4](https://img.shields.io/badge/node-%5E18.18%20%7C%7C%20%3E%3D20.4-blue?logo=node.js&logoColor=white&cacheSeconds=43200)](https://github.com/jaenyf/time-provider/blob/main/package.json)
+[![Deno ~1.39.1 || >=1.43](https://img.shields.io/badge/deno-~1.39.1%20%7C%7C%20%3E%3D1.43-blue?logo=deno&logoColor=white&cacheSeconds=43200)](https://jsr.io/@time-provider/addon-eta)
+[![module ESM + CJS](https://img.shields.io/badge/module-ESM%20%2B%20CJS-blue?logo=javascript&logoColor=white&cacheSeconds=43200)](https://github.com/jaenyf/time-provider/blob/main/packages/addon-eta/package.json)
+[![CodeQL](https://img.shields.io/badge/CodeQL-enabled-blue?logo=github&cacheSeconds=43200)](https://github.com/jaenyf/time-provider)
 [![check](https://github.com/jaenyf/time-provider/actions/workflows/check.yml/badge.svg)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 [![socket](https://badge.socket.dev/npm/package/@time-provider/addon-eta/latest)](https://socket.dev/npm/package/@time-provider/addon-eta)
-[![npm downloads](https://img.shields.io/npm/dm/@time-provider/addon-eta?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta)
-[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=86400)](https://www.npmjs.com/package/@time-provider/addon-eta?activeTab=dependencies)
-[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/addon-eta?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Faddon-eta)
-[![minified size](https://img.shields.io/bundlejs/size/@time-provider/addon-eta?cacheSeconds=86400)](https://bundlejs.com/?q=%40time-provider%2Faddon-eta)
+[![npm downloads](https://img.shields.io/npm/dm/@time-provider/addon-eta?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/addon-eta)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/addon-eta?activeTab=dependencies)
+[![unpacked-size](https://img.shields.io/npm/unpacked-size/@time-provider/addon-eta?cacheSeconds=43200)](https://bundlejs.com/?q=%40time-provider%2Faddon-eta)
+[![minified size](https://img.shields.io/bundlejs/size/@time-provider/addon-eta?cacheSeconds=43200)](https://bundlejs.com/?q=%40time-provider%2Faddon-eta)
 [![openssf best practices](https://www.bestpractices.dev/projects/13697/badge)](https://www.bestpractices.dev/en/projects/13697)
-[![license](https://img.shields.io/npm/l/@time-provider/addon-eta?cacheSeconds=86400)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/@time-provider/addon-eta?cacheSeconds=43200)](https://github.com/jaenyf/time-provider/blob/main/LICENSE)
 
 # [Time-Provider ~ ETA Addon](https://github.com/jaenyf/time-provider)
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://jaenyf.github.io/time-provider/logo-with-text-dark.svg">
-    <img alt="Time-Provider" src="https://jaenyf.github.io/time-provider/logo-with-text-light.svg" width="325">
+    <img alt="Time-Provider" src="https://jaenyf.github.io/time-provider/logo-with-text-light.svg" width="285">
   </picture>
 </p>
 

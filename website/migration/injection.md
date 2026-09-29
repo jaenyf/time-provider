@@ -76,7 +76,7 @@ const timeProvider = createTimeProvider.for(plugin).create();
 const reminders = new ReminderService(timeProvider);
 ```
 
-## Control it in tests
+## Better tests
 
 The same code now runs on a manual clock, with no fake timers to install or
 restore:
