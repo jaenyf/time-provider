@@ -199,17 +199,29 @@ jobs:
     steps: *publish-steps
 
   close-released-issues:
-    needs: [publish-core, publish]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && contains(needs.*.result, 'success') }}
+    needs: [resolve-publish-targets, publish-core, publish]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (needs.publish-core.result == 'success' || needs.publish.result == 'success') }}
     permissions:
+      contents: read
       issues: write
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          RELEASED_PATHS: ${{ needs.resolve-publish-targets.outputs.paths }}
         with:
           script: |
             const label = "awaiting-release";
+            const released = JSON.parse(process.env.RELEASED_PATHS).map((path) => path.split("/").pop());
+
+            const { data: configFile } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: "release-please-config.json",
+              ref: context.sha,
+            });
+            const packageNames = Object.keys(JSON.parse(Buffer.from(configFile.content, "base64").toString()).packages).map((path) => path.split("/").pop());
 
             const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
@@ -219,6 +231,8 @@ jobs:
             });
 
             for (const issue of issues) {
+              const packages = issue.labels.map(({ name }) => name).filter((name) => packageNames.includes(name));
+              if (!packages.every((name) => released.includes(name))) continue;
               try {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
