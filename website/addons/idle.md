@@ -105,9 +105,8 @@ function scheduleCleanup(tp: ITimeProvider<Date> & WithIdleApi) {
 ```
 
 `IIdleDeadline` and `IIdleRequestOptions` name the callback's argument and
-the request options. The `/deterministic` entry point exports `IDeterministicIdleApi` and
-`WithDeterministicIdleApi`, which extend those with `drain` and `pendingCount`. Reach for them
-when a test helper takes a Time-Provider and needs to drain it.
+the request options. From the `/deterministic` entry point, `IIdleApi` and `WithIdleApi` add
+`drain` and `pendingCount`, so a test helper that takes a Time-Provider can drain it.
 
 The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemIdleScheduler` from the root entry

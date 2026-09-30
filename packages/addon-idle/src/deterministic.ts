@@ -6,12 +6,10 @@ import type { WithDeterministicIdleApi } from "./types.ts";
 import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 export type {
-  IIdleApi,
+  IDeterministicIdleApi as IIdleApi,
   IIdleDeadline,
   IIdleRequestOptions,
-  WithIdleApi,
-  IDeterministicIdleApi,
-  WithDeterministicIdleApi,
+  WithDeterministicIdleApi as WithIdleApi,
 } from "./types.ts";
 export { DeterministicIdleScheduler } from "./deterministic-idle-scheduler.ts";
 

@@ -6,7 +6,7 @@ import {
   type IDurationSpec,
 } from "@time-provider/core";
 import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
-import { addon as addonBuilderFactory } from "../src/deterministic.ts";
+import { addon as addonBuilderFactory, type WithIdleApi } from "../src/deterministic.ts";
 
 type FakeRuntime = IDeterministicRuntime<unknown> & {
   scheduler: { idle?: unknown };
@@ -185,5 +185,14 @@ describe("idleAddon (deterministic)", () => {
 
     expect(firstRegisteredCount()).toBe(0);
     expect(secondRegisteredCount()).toBe(0);
+  });
+
+  test("the entry point's WithIdleApi types the deterministic facade", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    const idle = (runtime as unknown as WithIdleApi).scheduler.idle;
+    idle.request(() => {});
+    expect(idle.pendingCount).toBe(1);
+    expect(idle.drain()).toBe(1);
   });
 });

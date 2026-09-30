@@ -121,8 +121,8 @@ The implementation classes are exported too, for the rare case of building a
 facade outside the addon pipeline: `SystemAnimationFrameScheduler` from the
 root entry point, and `DeterministicAnimationFrameScheduler` from
 `/deterministic`, which exposes a readable and writable `hostFramesRate`.
-`/deterministic` also exports `IDeterministicAnimationFrameApi` and
-`WithDeterministicAnimationFrameApi`, which add `pendingCount`.
+From `/deterministic`, `IAnimationFrameApi` and `WithAnimationFrameApi` add
+`pendingCount`.
 
 ## With the compat addon
 

@@ -7,10 +7,8 @@ import type { IDeterministicAddon } from "@time-provider/core/deterministic";
 
 export type {
   AnimationFrameCallback,
-  IAnimationFrameScheduler as IAnimationFrameApi,
-  IDeterministicAnimationFrameScheduler as IDeterministicAnimationFrameApi,
-  WithAnimationFrameApi,
-  WithDeterministicAnimationFrameApi,
+  IDeterministicAnimationFrameScheduler as IAnimationFrameApi,
+  WithDeterministicAnimationFrameApi as WithAnimationFrameApi,
 } from "./types.ts";
 export { DeterministicAnimationFrameScheduler } from "./deterministic-animation-frame-scheduler.ts";
 

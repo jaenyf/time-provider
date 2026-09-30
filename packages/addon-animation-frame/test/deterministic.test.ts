@@ -6,7 +6,7 @@ import {
   type IDurationSpec,
 } from "@time-provider/core";
 import type { IDeterministicRuntime } from "@time-provider/core/deterministic";
-import { addon as addonBuilderFactory } from "../src/deterministic.ts";
+import { addon as addonBuilderFactory, type WithAnimationFrameApi } from "../src/deterministic.ts";
 import { DeterministicAnimationFrameScheduler } from "../src/deterministic-animation-frame-scheduler.ts";
 
 type FakeRuntime = IDeterministicRuntime<unknown> & {
@@ -148,4 +148,12 @@ describe("animationFrameAddon (deterministic)", () => {
       expect(secondDelays).toStrictEqual([1000 / fps]);
     },
   );
+
+  test("the entry point's WithAnimationFrameApi types the deterministic facade", () => {
+    const { runtime } = fakeDeterministicRuntime();
+    addonBuilderFactory().create().applyToRuntime(runtime);
+    const animation = (runtime as unknown as WithAnimationFrameApi<unknown>).scheduler.animation;
+    animation.scheduleFrame(() => {});
+    expect(animation.pendingCount).toBe(1);
+  });
 });
