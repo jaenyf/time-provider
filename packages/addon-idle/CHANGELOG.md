@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.3.0...addon-idle-v0.3.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **addon-idle,addon-animation-frame:** type With*Api from /deterministic as deterministic ([3123515](https://github.com/jaenyf/time-provider/commit/31235158d8e0a36fe858745c17972eb39b271ba4)), closes [#184](https://github.com/jaenyf/time-provider/issues/184)
+
 ## [0.3.0](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.2.1...addon-idle-v0.3.0) (2026-09-28)
 
 
