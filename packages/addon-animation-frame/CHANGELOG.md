@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.1](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.6.0...addon-animation-frame-v0.6.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* **addon-idle,addon-animation-frame:** type With*Api from /deterministic as deterministic ([3123515](https://github.com/jaenyf/time-provider/commit/31235158d8e0a36fe858745c17972eb39b271ba4)), closes [#184](https://github.com/jaenyf/time-provider/issues/184)
+
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
 ## [0.6.0](https://github.com/jaenyf/time-provider/compare/addon-animation-frame-v0.5.1...addon-animation-frame-v0.6.0) (2026-09-28)
 
 
