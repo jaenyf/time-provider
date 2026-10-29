@@ -11,7 +11,6 @@ import type {
   IDeterministicTimers,
   IManualClock,
   IManualRuntime,
-  IRuntime,
   ITimeConverter,
   ScheduledHandleKind,
   TimezoneDefinition,
@@ -53,12 +52,10 @@ class DueEntry<TDate> implements IScheduledHandle {
   tag: unknown;
   _tagPrev: DueEntry<TDate> | undefined;
   _tagNext: DueEntry<TDate> | undefined;
-  readonly #runtime: IRuntime<TDate>;
   #abortController?: AbortController;
 
   constructor(
     kind: ScheduledHandleKind,
-    runtime: IRuntime<TDate>,
     owner: DueHeap<TDate>,
     runAt: number,
     seq: number,
@@ -66,7 +63,6 @@ class DueEntry<TDate> implements IScheduledHandle {
     callback: (() => void) | (() => IDurationSpec | false),
   ) {
     this.kind = kind;
-    this.#runtime = runtime;
     this.owner = owner;
     this.runAt = runAt;
     this.seq = seq;
@@ -86,13 +82,14 @@ class DueEntry<TDate> implements IScheduledHandle {
     if (this.isDisposed) return;
     // Set before abort(): abort() can synchronously re-enter dispose() through this entry's own
     // "abort" listener below, and that reentrant call must see isDisposed already true and return
-    // immediately - otherwise it reaches clearTimer()/retireEntry() a second time, and the live
-    // list's unlink isn't safe to run twice.
+    // immediately - otherwise it reaches retireEntry() a second time, and the live list's unlink
+    // isn't safe to run twice.
     this.isDisposed = true;
     if (this.#abortController !== undefined) {
       this.#abortController.abort("Timer handle is being disposed");
     }
-    this.#runtime.clearTimer(this);
+    this.cancelled = true;
+    this.owner.retireEntry(this);
   }
 
   [Symbol.dispose](): void {
@@ -165,6 +162,17 @@ class MicrotaskQueue {
   }
 }
 
+// A class: a getter in an object literal makes every runtime survive into the old generation.
+class MicrotasksFacade {
+  readonly #queue: MicrotaskQueue;
+  constructor(queue: MicrotaskQueue) {
+    this.#queue = queue;
+  }
+  get pendingCount(): number {
+    return this.#queue.length;
+  }
+}
+
 /** Binary min-heap of due entries, ordered by `(runAt, seq)`. */
 class DueHeap<TDate> {
   /** Compact when tombstones exceed this fraction of `_entries`. */
@@ -179,6 +187,8 @@ class DueHeap<TDate> {
   private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
   /** Number of tombstoned entries in `_entries`. */
   private _deadCount = 0;
+  /** Number of live untagged entries in `_entries`. */
+  private _untaggedCount = 0;
   constructor() {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
@@ -249,18 +259,17 @@ class DueHeap<TDate> {
   registerSpecific(
     tag: unknown,
     kind: ScheduledHandleKind,
-    runtime: IRuntime<TDate>,
     runAt: number,
     delay: number,
     callback: (() => void) | (() => IDurationSpec | false),
   ): DueEntry<TDate> {
-    const entry = new DueEntry(kind, runtime, this, runAt, this._nextSeq++, delay, callback);
-    this._insert(entry);
-    this._linkLive(entry);
+    const entry = new DueEntry(kind, this, runAt, this._nextSeq++, delay, callback);
     if (tag !== undefined) {
       entry.tag = tag;
       this._linkTag(entry, tag);
     }
+    this._insert(entry);
+    this._linkLive(entry);
     return entry;
   }
 
@@ -288,55 +297,55 @@ class DueHeap<TDate> {
     this._deadCount = 0;
   }
 
-  registerTimeout(runtime: IRuntime<TDate>, runAt: number, callback: () => void): DueEntry<TDate> {
-    return this.registerSpecific(
-      undefined,
-      SCHEDULED_TIMER_KIND_TIMEOUT,
-      runtime,
-      runAt,
-      0,
-      callback,
-    );
+  registerTimeout(runAt: number, callback: () => void): DueEntry<TDate> {
+    return this.registerSpecific(undefined, SCHEDULED_TIMER_KIND_TIMEOUT, runAt, 0, callback);
   }
 
-  registerInterval(
-    runtime: IRuntime<TDate>,
-    runAt: number,
-    delay: number,
-    callback: () => void,
-  ): DueEntry<TDate> {
-    return this.registerSpecific(
-      undefined,
-      SCHEDULED_TIMER_KIND_INTERVAL,
-      runtime,
-      runAt,
-      delay,
-      callback,
-    );
+  registerInterval(runAt: number, delay: number, callback: () => void): DueEntry<TDate> {
+    return this.registerSpecific(undefined, SCHEDULED_TIMER_KIND_INTERVAL, runAt, delay, callback);
   }
 
-  registerRecurring(
-    runtime: IRuntime<TDate>,
-    runAt: number,
-    callback: () => IDurationSpec | false,
-  ): DueEntry<TDate> {
-    return this.registerSpecific(
-      undefined,
-      SCHEDULED_TIMER_KIND_RECURRING,
-      runtime,
-      runAt,
-      0,
-      callback,
-    );
+  registerRecurring(runAt: number, callback: () => IDurationSpec | false): DueEntry<TDate> {
+    return this.registerSpecific(undefined, SCHEDULED_TIMER_KIND_RECURRING, runAt, 0, callback);
   }
 
-  /** Live entries registered without a tag. */
-  untagged(): DueEntry<TDate>[] {
-    const entries: DueEntry<TDate>[] = [];
-    for (let entry = this._liveHead; entry !== undefined; entry = entry._liveNext) {
-      if (entry.tag === undefined) entries.push(entry);
+  /** Number of pending untagged entries. */
+  get untaggedCount(): number {
+    return this._untaggedCount;
+  }
+
+  /** Earliest `runAt` of a pending untagged entry in the subtree at `index`, or `Infinity`. */
+  firstUntaggedRunAt(index = 0): number {
+    const entry = this._entries[index];
+    if (entry === undefined) return Infinity;
+    if (entry.tag === undefined && !entry.isDisposed) return entry.runAt;
+    return Math.min(this.firstUntaggedRunAt(index * 2 + 1), this.firstUntaggedRunAt(index * 2 + 2));
+  }
+
+  /** Latest `runAt` of a pending untagged entry. */
+  lastUntaggedRunAt(): number | undefined {
+    let runAt: number | undefined;
+    for (const entry of this._entries) {
+      if (
+        entry.tag === undefined &&
+        !entry.isDisposed &&
+        (runAt === undefined || entry.runAt > runAt)
+      ) {
+        runAt = entry.runAt;
+      }
     }
-    return entries;
+    return runAt;
+  }
+
+  /** Number of pending untagged entries due at or before `runAt` in the subtree at `index`. */
+  countUntaggedDueBy(runAt: number, index = 0): number {
+    const entry = this._entries[index];
+    if (entry === undefined || entry.runAt > runAt) return 0;
+    return (
+      (entry.tag === undefined && !entry.isDisposed ? 1 : 0) +
+      this.countUntaggedDueBy(runAt, index * 2 + 1) +
+      this.countUntaggedDueBy(runAt, index * 2 + 2)
+    );
   }
 
   /** Number of live entries under `tag`. */
@@ -353,6 +362,7 @@ class DueHeap<TDate> {
     this._unlinkLive(entry);
     if (entry.tag !== undefined) this._unlinkTag(entry);
     if (entry.heapIndex < 0) return;
+    if (entry.tag === undefined) this._untaggedCount--;
     this._deadCount++;
     if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
   }
@@ -363,6 +373,7 @@ class DueHeap<TDate> {
       entry.heapIndex = -1;
     }
     this._entries = [];
+    this._untaggedCount = 0;
     let entry = this._liveHead;
     this._liveHead = undefined;
     this._liveTail = undefined;
@@ -378,6 +389,7 @@ class DueHeap<TDate> {
   /** Appends `entry` and sifts it up. */
   private _insert(entry: DueEntry<TDate>): void {
     const index = this._entries.length;
+    if (entry.tag === undefined) this._untaggedCount++;
     this._entries.push(entry);
     this._siftUp(entry, index);
   }
@@ -487,6 +499,7 @@ class DueHeap<TDate> {
               this._deadCount--;
               continue;
             }
+            if (root.tag === undefined) this._untaggedCount--;
             if (rethrowTimersErrors) {
               root.callback();
             } else {
@@ -552,6 +565,7 @@ class DueHeap<TDate> {
               this._deadCount--;
               continue;
             }
+            this._untaggedCount--;
             const previousRunAt = coalesce && root.runAt < now ? now : root.runAt;
             // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
             const recurringCallback = root.callback as () => IDurationSpec | false;
@@ -692,29 +706,24 @@ export abstract class BaseDeterministicRuntime<TDate>
   }
 
   get nextDueTime(): EpochMilliseconds | undefined {
-    return this.#dueTime(-1);
+    const runAt = this.#dueQueue.firstUntaggedRunAt();
+    return this.#toWallTime(runAt === Infinity ? undefined : runAt);
   }
 
   get lastDueTime(): EpochMilliseconds | undefined {
-    return this.#dueTime(1);
+    return this.#toWallTime(this.#dueQueue.lastUntaggedRunAt());
   }
 
   get pendingCount(): number {
-    return this.#dueQueue.untagged().length;
+    return this.#dueQueue.untaggedCount;
   }
 
   /** Number of untagged timers due at or before the wall time `time`. */
   protected countTimersDueBy(time: number): number {
-    const runAt = time - this.#wallClockTimeOffset;
-    return this.#dueQueue.untagged().filter((entry) => entry.runAt <= runAt).length;
+    return this.#dueQueue.countUntaggedDueBy(time - this.#wallClockTimeOffset);
   }
 
-  /** Wall time of the earliest (`-1`) or latest (`1`) untagged timer. */
-  #dueTime(sign: 1 | -1): EpochMilliseconds | undefined {
-    let runAt: number | undefined;
-    for (const entry of this.#dueQueue.untagged()) {
-      if (runAt === undefined || (entry.runAt - runAt) * sign > 0) runAt = entry.runAt;
-    }
+  #toWallTime(runAt: number | undefined): EpochMilliseconds | undefined {
     return runAt === undefined
       ? undefined
       : ((runAt + this.#wallClockTimeOffset) as EpochMilliseconds);
@@ -722,14 +731,10 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   //#region microtasks management
   override get microtasks(): IDeterministicMicrotasks {
-    const microtasks = this.#microtasks;
-    return (this.#microtasksFacade ??= {
-      queue: (callback) => this.queue(callback),
+    return (this.#microtasksFacade ??= Object.assign(new MicrotasksFacade(this.#microtasks), {
+      queue: (callback: () => void) => this.queue(callback),
       drain: () => this.drain(),
-      get pendingCount() {
-        return microtasks.length;
-      },
-    });
+    }));
   }
 
   /** Queues `callback` on this runtime's microtask queue. */
@@ -757,6 +762,8 @@ export abstract class BaseDeterministicRuntime<TDate>
     /* the call that got us here ends a task, so its microtasks are owed before any timer runs */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     if (this.#dueDrainingDisabled) return;
+    const nextRunAt = this.#dueQueue.peekRunAt();
+    if (nextRunAt === undefined || nextRunAt > dueNow) return;
     this.#dueQueue.drainDue(dueNow, microtasks, coalesce);
   }
 
@@ -790,10 +797,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     // Only this class's own once()/every()/recurring() ever construct a handle for this runtime,
     // and they always hand back the DueEntry itself - safe to assume that shape here.
     const entry = handle as DueEntry<TDate>;
-    if (entry.owner === this.#dueQueue) {
-      entry.cancelled = true;
-      this.#dueQueue.retireEntry(entry);
-    }
+    if (entry.owner === this.#dueQueue) entry.dispose();
   }
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
@@ -801,7 +805,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.#dueTimestampNow();
-    const entry = this.#dueQueue.registerTimeout(this, now + msDelay, callback);
+    const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
     this.#drain(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
@@ -812,7 +816,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     let msDelay = toDuration(delay);
     if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
     const now = this.#dueTimestampNow();
-    const entry = this.#dueQueue.registerInterval(this, now + msDelay, msDelay, callback);
+    const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
     this.#drain(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
@@ -826,7 +830,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     this.assertIsNotDisposed();
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.#dueTimestampNow();
-    const entry = this.#dueQueue.registerRecurring(this, now + msInitialDelay, callback);
+    const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
     this.#drain(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
@@ -846,7 +850,6 @@ export abstract class BaseDeterministicRuntime<TDate>
     const entry = this.#dueQueue.registerSpecific(
       tag,
       kind,
-      this,
       now + msDelay,
       intervalDelay ?? 0,
       callback,
@@ -1078,29 +1081,19 @@ export abstract class BaseManualRuntime<TDate>
 
   /** Applies `spec` to the current time, in {@link IMoveSpec} field order. */
   #targetOf(spec: IMoveSpec): EpochMilliseconds {
-    let time = this.convertToUtcDateImpl(this.timestampNow());
-    if (spec.years) time = this.advanceYears(time, spec.years);
-    if (spec.months) time = this.advanceMonths(time, spec.months);
-    if (spec.days) time = this.advanceDays(time, spec.days);
-    if (spec.hours) time = this.advanceHours(time, spec.hours);
-    if (spec.minutes) time = this.advanceMinutes(time, spec.minutes);
-    if (spec.seconds) time = this.advanceSeconds(time, spec.seconds);
-    if (spec.milliseconds) time = this.advanceMilliseconds(time, spec.milliseconds);
-    return this.convertToEpochTimestampImpl(time);
+    let timestamp: number = this.timestampNow();
+    // Only years and months vary in length on the UTC calendar; the rest is plain arithmetic.
+    if (spec.years || spec.months) {
+      let time = this.convertToUtcDateImpl(timestamp as EpochMilliseconds);
+      if (spec.years) time = this.advanceYears(time, spec.years);
+      if (spec.months) time = this.advanceMonths(time, spec.months);
+      timestamp = this.convertToEpochTimestampImpl(time);
+    }
+    return (timestamp + toDuration(spec)) as EpochMilliseconds;
   }
 
   /** Returns `time` shifted by `years`. */
   protected abstract advanceYears(time: TDate, years: number): TDate;
   /** Returns `time` shifted by `months`. */
   protected abstract advanceMonths(time: TDate, months: number): TDate;
-  /** Returns `time` shifted by `days`. */
-  protected abstract advanceDays(time: TDate, days: number): TDate;
-  /** Returns `time` shifted by `hours`. */
-  protected abstract advanceHours(time: TDate, hours: number): TDate;
-  /** Returns `time` shifted by `minutes`. */
-  protected abstract advanceMinutes(time: TDate, minutes: number): TDate;
-  /** Returns `time` shifted by `seconds`. */
-  protected abstract advanceSeconds(time: TDate, seconds: number): TDate;
-  /** Returns `time` shifted by `milliseconds`. */
-  protected abstract advanceMilliseconds(time: TDate, milliseconds: number): TDate;
 }

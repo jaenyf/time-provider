@@ -29,21 +29,6 @@ class RealManualRuntime extends BaseManualRuntime<number> {
   protected advanceMonths(time: number, months: number): number {
     return time + months * 30 * 24 * 60 * 60 * 1000;
   }
-  protected advanceDays(time: number, days: number): number {
-    return time + days * 24 * 60 * 60 * 1000;
-  }
-  protected advanceHours(time: number, hours: number): number {
-    return time + hours * 60 * 60 * 1000;
-  }
-  protected advanceMinutes(time: number, minutes: number): number {
-    return time + minutes * 60 * 1000;
-  }
-  protected advanceSeconds(time: number, seconds: number): number {
-    return time + seconds * 1000;
-  }
-  protected advanceMilliseconds(time: number, milliseconds: number): number {
-    return time + milliseconds;
-  }
 }
 
 function createIdleRuntime(): RealManualRuntime & WithDeterministicIdleApi {

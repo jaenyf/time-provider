@@ -169,4 +169,24 @@ export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRu
     }
     expect(handleRef.isDisposed).toBe(true);
   });
+  test("dispose aborts the signal of every pending handle", () => {
+    const sut = createSUT();
+    // Read before dispose(): a disposed handle hands back a signal that is already aborted.
+    const signals = [
+      sut.once({ milliseconds: 10 }, () => {}),
+      sut.every({ milliseconds: 10 }, () => {}),
+      sut.recurring(() => ({ milliseconds: 10 }), { milliseconds: 10 }),
+    ].map((handle) => handle.signal);
+    sut.dispose();
+    expect(signals.map((signal) => signal.aborted)).toEqual([true, true, true]);
+  });
+  test("clearing a handle, then disposing it, leaves dispose reaching the other handles", () => {
+    const sut = createSUT();
+    const cleared = sut.once({ milliseconds: 10 }, () => {});
+    const pending = sut.once({ milliseconds: 20 }, () => {});
+    sut.clearTimer(cleared);
+    cleared.dispose();
+    sut.dispose();
+    expect(pending.isDisposed).toBe(true);
+  });
 }

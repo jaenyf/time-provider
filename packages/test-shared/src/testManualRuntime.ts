@@ -549,6 +549,20 @@ export function testManualRuntime<TDate>(
         expect(sut.clock.timestampNow()).toBe(t0 + 3);
       });
 
+      test("moveUntil counts neither cancelled timers nor tagged entries toward the limit", () => {
+        const sut = getDeterministicBuilderFor(plugin)
+          .asManual()
+          .withInitialTime(t0)
+          .withMoveUntilTimersLimit(2)
+          .create() as unknown as IDeterministicRuntime<TDate> & ReturnType<typeof createAtT0>;
+        sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 5 }, () => {});
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => {}).dispose();
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => {});
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => {});
+        sut.moveUntil("noTimers");
+        expect([sut.timestampNow(), sut.countSpecific("tag")]).toEqual([t0 + 10, 0]);
+      });
+
       test.each<[number, number, boolean]>([
         [3, 10, true],
         [4, 20, false],
@@ -637,6 +651,23 @@ export function testManualRuntime<TDate>(
         expect(sut.countSpecific("tag")).toBe(0);
       });
 
+      // As in sinon: a firing one-shot or recurrence has left the queue, a firing interval is re-armed.
+      test("skip the one-shot or recurrence that is firing, not an interval", () => {
+        const sut = createAtT0();
+        const { timers } = sut.scheduler;
+        const seen: unknown[] = [];
+        const read = () => seen.push([timers.nextDueTime, timers.lastDueTime, timers.pendingCount]);
+        timers.once({ milliseconds: 10 }, read);
+        timers.recurring(() => (read(), false), { milliseconds: 20 });
+        timers.every({ milliseconds: 30 }, read);
+        sut.moveBy({ milliseconds: 30 });
+        expect(seen).toEqual([
+          [t0 + 20, t0 + 30, 2],
+          [t0 + 30, t0 + 30, 1],
+          [t0 + 60, t0 + 60, 1],
+        ]);
+      });
+
       test("count queued microtasks", () => {
         const { microtasks } = createAtT0().scheduler;
         microtasks.queue(() => {});
@@ -644,6 +675,8 @@ export function testManualRuntime<TDate>(
         expect(microtasks.pendingCount).toBe(2);
         microtasks.drain();
         expect(microtasks.pendingCount).toBe(0);
+        // A getter in an object literal would push every runtime into the old generation.
+        expect(Object.keys(microtasks)).toEqual(["queue", "drain"]);
       });
     });
 
@@ -706,6 +739,15 @@ export function testManualRuntime<TDate>(
               expect(callbackBCalled).toBe(false);
             },
           );
+          test("clearing a fired timer leaves dispose reaching the pending ones", () => {
+            const sut = createSUT();
+            const fired = sut.once({ milliseconds: 1 }, () => {});
+            const pending = sut.once({ milliseconds: 100 }, () => {});
+            sut.clock.moveBy({ milliseconds: 1 });
+            sut.clearTimer(fired);
+            sut.dispose();
+            expect(pending.isDisposed).toBe(true);
+          });
           describe("issue#105", () => {
             test("does not invoke callback B if callback A cancels it during the same time advance", () => {
               const sut = createSUT();
