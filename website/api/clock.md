@@ -114,7 +114,7 @@ though the names aren't importable. Derive them from the provider type as shown
 
 - **`moveBy(spec, options)`** — moves the clock by `spec`. When more than one
   field is set, they apply to the current time in the fixed order `years →
-months → days → hours → minutes → seconds → milliseconds`, since combining
+  months → days → hours → minutes → seconds → milliseconds`, since combining
   calendar-variable fields with others can otherwise give a different result
   depending on the order.
 - **`moveTo(time, options)`** — moves the clock to `time`: an ISO string,

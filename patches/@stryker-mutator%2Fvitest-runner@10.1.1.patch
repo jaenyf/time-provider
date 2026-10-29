@@ -1,0 +1,26 @@
+diff --git a/dist/src/stryker-setup.js b/dist/src/stryker-setup.js
+index 7c6eedeb4a8ec308a53a246c73a3e15cca15b949..6ff538cbe32c1331227d094fe3d0db58f3a72832 100644
+--- a/dist/src/stryker-setup.js
++++ b/dist/src/stryker-setup.js
+@@ -65,7 +65,7 @@ function collectTestName({ name, suite, }, separator) {
+         nameParts.unshift(currentSuite.name);
+         currentSuite = currentSuite.suite;
+     }
+-    return nameParts.join(separator).trim();
++    return nameParts.map((part) => part.trim()).filter((part) => part !== '').join(' > ');
+ }
+ function toRawTestId(test, separator) {
+     return `${test.file?.filepath ?? 'unknown.js'}#${collectTestName(test, separator)}`;
+diff --git a/dist/src/test-helpers.js b/dist/src/test-helpers.js
+index 5ae66d92bff96a05a61ce25b849c05f633b8e6e5..a38898c2707514492ba3e776d4a74fd04a1c1efc 100644
+--- a/dist/src/test-helpers.js
++++ b/dist/src/test-helpers.js
+@@ -8,7 +8,7 @@
+  * @see https://vitest.dev/guide/migration/
+  */
+ export const VITEST_MODERN_TEST_NAME_SEPARATOR = ' > ';
+-export const VITEST_LEGACY_TEST_NAME_SEPARATOR = ' ';
++export const VITEST_LEGACY_TEST_NAME_SEPARATOR = ' > ';
+ export function collectTestName({ name, suite, }, separator = VITEST_LEGACY_TEST_NAME_SEPARATOR) {
+     const nameParts = [name];
+     let currentSuite = suite;

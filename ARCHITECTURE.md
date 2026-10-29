@@ -144,7 +144,7 @@ with an optional method:
   narrowing through the `supportsLocalTime` discriminant property first,
   resolves to the narrower branch for _both_ kinds - silently. Each `Plugin`
   therefore declares `readonly supportsLocalTime: true` or `readonly
-supportsLocalTime: false` as a literal-typed discriminant, and any code
+  supportsLocalTime: false` as a literal-typed discriminant, and any code
   that needs to treat the two differently must narrow on it explicitly
   (`plugin.supportsLocalTime ? ... : ...`), even when, as in
   `RuntimeBuilder.for()`, both branches happen to call the same
