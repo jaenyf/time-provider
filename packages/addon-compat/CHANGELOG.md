@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.3.2...addon-compat-v0.3.3) (2026-10-29)
+
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
 ## [0.3.2](https://github.com/jaenyf/time-provider/compare/addon-compat-v0.3.1...addon-compat-v0.3.2) (2026-09-28)
 
 
