@@ -4,6 +4,78 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-10-29
+
+### @time-provider/addon-animation-frame 0.6.1
+
+### Bug Fixes
+
+* **addon-idle,addon-animation-frame:** type With*Api from /deterministic as deterministic ([3123515](https://github.com/jaenyf/time-provider/commit/31235158d8e0a36fe858745c17972eb39b271ba4)), closes [#184](https://github.com/jaenyf/time-provider/issues/184)
+
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/addon-compat 0.3.3
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/addon-idle 0.3.1
+
+### Bug Fixes
+
+* **addon-idle,addon-animation-frame:** type With*Api from /deterministic as deterministic ([3123515](https://github.com/jaenyf/time-provider/commit/31235158d8e0a36fe858745c17972eb39b271ba4)), closes [#184](https://github.com/jaenyf/time-provider/issues/184)
+
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/core 4.1.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-dayjs 0.7.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-luxon 0.7.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-moment 0.7.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-moment-timezone 0.6.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-native 0.7.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
+### @time-provider/plugin-temporal 0.7.1
+
+### Performance Improvements
+
+* **core,plugins,addons:** improve overall performances ([#187](https://github.com/jaenyf/time-provider/issues/187)) ([515897b](https://github.com/jaenyf/time-provider/commit/515897b90571e8f80dd41fbb10e56be8c298866e))
+
 ## 2026-09-28
 
 ### @time-provider/addon-animation-frame 0.6.0
