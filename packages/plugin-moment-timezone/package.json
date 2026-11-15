@@ -78,7 +78,7 @@
   "devDependencies": {
     "@time-provider/core": "workspace:*",
     "moment": "~2.31.0",
-    "moment-timezone": "~0.6.3"
+    "moment-timezone": "~0.6.6"
   },
   "peerDependencies": {
     "@time-provider/core": "^4.1.0",

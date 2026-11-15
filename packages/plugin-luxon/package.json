@@ -73,7 +73,7 @@
   },
   "devDependencies": {
     "@time-provider/core": "workspace:*",
-    "@types/luxon": "^3.7.2",
+    "@types/luxon": "^3.7.6",
     "luxon": "^3.7.2"
   },
   "peerDependencies": {

@@ -91,7 +91,7 @@
       "version": "0.7.1",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
-        "@types/luxon": "^3.7.2",
+        "@types/luxon": "^3.7.6",
         "luxon": "^3.7.2",
       },
       "peerDependencies": {
@@ -117,7 +117,7 @@
       "devDependencies": {
         "@time-provider/core": "workspace:*",
         "moment": "~2.31.0",
-        "moment-timezone": "~0.6.3",
+        "moment-timezone": "~0.6.6",
       },
       "peerDependencies": {
         "@time-provider/core": "^4.1.0",
@@ -158,11 +158,11 @@
         "@time-provider/plugin-native": "workspace:*",
         "@time-provider/plugin-temporal": "workspace:*",
         "@time-provider/test-shared": "workspace:*",
-        "@types/luxon": "^3.7.2",
+        "@types/luxon": "^3.7.6",
         "dayjs": "~1.11.23",
         "luxon": "^3.7.2",
         "moment": "~2.31.0",
-        "moment-timezone": "0.6.4",
+        "moment-timezone": "0.6.6",
       },
     },
     "packages/test-e2e": {
@@ -182,11 +182,11 @@
         "@time-provider/plugin-native": "workspace:*",
         "@time-provider/plugin-temporal": "workspace:*",
         "@time-provider/test-shared": "workspace:*",
-        "@types/luxon": "^3.7.2",
+        "@types/luxon": "^3.7.6",
         "dayjs": "~1.11.23",
         "luxon": "^3.7.2",
         "moment": "~2.31.0",
-        "moment-timezone": "0.6.4",
+        "moment-timezone": "0.6.6",
       },
     },
     "packages/test-shared": {
@@ -248,7 +248,7 @@
         "dayjs": "~1.11.23",
         "luxon": "^3.7.2",
         "moment": "~2.31.0",
-        "moment-timezone": "~0.6.3",
+        "moment-timezone": "~0.6.6",
       },
       "devDependencies": {
         "shiki": "4.4.3",
@@ -833,7 +833,7 @@
 
     "@types/linkify-it": ["@types/linkify-it@5.0.0", "", {}, "sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q=="],
 
-    "@types/luxon": ["@types/luxon@3.7.5", "", {}, "sha512-jJ41Q4z6ZVO260MNDdHfW7+7a5iMiX8Mr6ZJHcmgrvhZha6dz5704o/lF2kKl6URjH6ivEL97w9xS/MgpJEphg=="],
+    "@types/luxon": ["@types/luxon@3.7.6", "", {}, "sha512-6KSjliQAXK8ZLgFQO4B7iE4Rpf/B3rItzCFuXezBY/XIAGxOdLd7vRNK9/StRPwiS/yJsVbB7HKpW46B8tcEuQ=="],
 
     "@types/markdown-it": ["@types/markdown-it@14.2.0", "", { "dependencies": { "@types/linkify-it": "^5", "@types/mdurl": "^2" } }, "sha512-NoQ2yGlLWj4wpxMs+TYmRKk3thDrQ97agr7sFqfLsAlvoS8SNQuTrlObhFqG9iugdTtgOE9jpJ6FNM4ZGsa5xQ=="],
 
@@ -1343,7 +1343,7 @@
 
     "moment": ["moment@2.31.0", "", {}, "sha512-0acOTfMiWOheYS4eoWb80yYMb/JLvVv9SHbs2PehaDzfUG0Bw855SKyk0IKTnPGa5+U2bmi3W68l1+sGLX/pvw=="],
 
-    "moment-timezone": ["moment-timezone@0.6.4", "", { "dependencies": { "moment": "^2.29.4" } }, "sha512-JHUK8Mgheach4uMQmIV/pIfrv0ubPiDCPPqc7Mi604je1UblP6Gbm+FfV+Oh88KP03rZqGCZG3t0wmpfdlDv+w=="],
+    "moment-timezone": ["moment-timezone@0.6.6", "", { "dependencies": { "moment": "^2.29.4" } }, "sha512-LF5AAYsMduXFW2ungr/D9JqNq9ykZyhWgYG6wFtdGZW5ZlBDTBgTUFqW8EC7Fa+Dvs3IMZxlWkSR09sW2D/+0w=="],
 
     "mrmime": ["mrmime@2.0.1", "", {}, "sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ=="],
 
