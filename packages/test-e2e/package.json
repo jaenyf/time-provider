@@ -29,10 +29,10 @@
     "@time-provider/plugin-native": "workspace:*",
     "@time-provider/plugin-temporal": "workspace:*",
     "@time-provider/test-shared": "workspace:*",
-    "@types/luxon": "^3.7.2",
+    "@types/luxon": "^3.7.6",
     "dayjs": "~1.11.23",
     "luxon": "^3.7.2",
     "moment": "~2.31.0",
-    "moment-timezone": "0.6.4"
+    "moment-timezone": "0.6.6"
   }
 }
