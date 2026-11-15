@@ -25,10 +25,7 @@ export function testFixedRuntime<TDate>(
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
 ) {
-  const createFixedRuntime = (
-    timezone: TimezoneDefinition,
-    initialTime: string | number | TDate,
-  ) =>
+  const createFixedRuntime = (timezone: TimezoneDefinition, initialTime: string | number | TDate) =>
     plugin.supportsLocalTime
       ? plugin.createFixedRuntime(timezone, initialTime)
       : plugin.createFixedRuntime(initialTime);

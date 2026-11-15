@@ -272,10 +272,7 @@
           </div>
           <div class="pg-timer-list">
             <div class="pg-timer-row" v-for="row in schedulerRows" :key="row.id">
-              <span
-                ><span class="pg-timer-kind">{{ row.kind }}</span
-                >{{ describeTimer(row) }}</span
-              >
+              <span><span class="pg-timer-kind">{{ row.kind }}</span>{{ describeTimer(row) }}</span>
               <button class="pg-btn" @click="removeTimer(row)">Clear</button>
             </div>
           </div>
@@ -456,10 +453,7 @@
           </div>
           <div class="pg-timer-list pg-timer-list-frames">
             <div class="pg-timer-row" v-for="row in frameRows" :key="row.id">
-              <span
-                ><span class="pg-timer-kind">{{ row.kind }}</span
-                >{{ describeTimer(row) }}</span
-              >
+              <span><span class="pg-timer-kind">{{ row.kind }}</span>{{ describeTimer(row) }}</span>
               <button class="pg-btn" @click="removeTimer(row)">Cancel</button>
             </div>
           </div>
@@ -632,10 +626,7 @@
           </div>
           <div class="pg-timer-list pg-timer-list-cron">
             <div class="pg-timer-row" v-for="row in cronRows" :key="row.id">
-              <span
-                ><span class="pg-timer-kind">{{ row.kind }}</span
-                >{{ describeTimer(row) }}</span
-              >
+              <span><span class="pg-timer-kind">{{ row.kind }}</span>{{ describeTimer(row) }}</span>
               <button class="pg-btn" @click="removeTimer(row)">Unschedule</button>
             </div>
           </div>
@@ -865,10 +856,7 @@
           </div>
           <div class="pg-timer-list pg-timer-list-idle">
             <div class="pg-timer-row" v-for="row in idleRows" :key="row.id">
-              <span
-                ><span class="pg-timer-kind">{{ row.kind }}</span
-                >{{ describeTimer(row) }}</span
-              >
+              <span><span class="pg-timer-kind">{{ row.kind }}</span>{{ describeTimer(row) }}</span>
               <button class="pg-btn" @click="removeTimer(row)">Cancel</button>
             </div>
           </div>
