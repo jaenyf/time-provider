@@ -2,7 +2,7 @@
   "name": "@time-provider/plugin-luxon",
   "version": "0.7.1",
   "private": false,
-  "description": "Luxon plugin for Time-Provider. Inject time. Control it in tests.",
+  "description": "Luxon plugin for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [
     "clock",
     "date",

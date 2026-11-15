@@ -2,7 +2,7 @@
   "name": "@time-provider/core",
   "version": "4.1.1",
   "private": false,
-  "description": "Inject time. Control it in tests.",
+  "description": "Solid clock. Own time. Better tests.",
   "keywords": [
     "clock",
     "date",

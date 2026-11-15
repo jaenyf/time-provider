@@ -5,7 +5,7 @@ titleTemplate: false
 hero:
   name: Time-Provider
   text: Time is a dependency.
-  tagline: Inject time. Control it in tests.
+  tagline: Solid clock. Own time. Better tests.
   image:
     light: /logo-light.svg
     dark: /logo-dark.svg

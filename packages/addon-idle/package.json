@@ -2,7 +2,7 @@
   "name": "@time-provider/addon-idle",
   "version": "0.3.1",
   "private": false,
-  "description": "Idle callback addon for Time-Provider. Inject time. Control it in tests.",
+  "description": "Idle callback addon for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [
     "clock",
     "date",
