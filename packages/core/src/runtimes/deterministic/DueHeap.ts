@@ -153,6 +153,8 @@ export class DueHeap<TDate> {
 
   /** Earliest `runAt` of a pending untagged entry in the subtree at `index`, or `Infinity`. */
   firstUntaggedRunAt(index = 0): number {
+    if (this._untaggedCount === 0) return Infinity;
+
     const entry = this._entries[index];
     if (entry === undefined) return Infinity;
     if (entry.tag === undefined && !entry.isDisposed) return entry.runAt;

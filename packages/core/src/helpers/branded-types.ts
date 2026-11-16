@@ -28,13 +28,21 @@ function assertFiniteMilliseconds(milliseconds: number, kind: "duration" | "inst
  * @throws If `milliseconds` is negative.
  */
 function assertNonNegativeInstant(spec: IEpochInstantSpec): void {
-  const values = [spec.milliseconds, spec.seconds, spec.minutes, spec.hours, spec.days];
+  assertNonNegative(spec.milliseconds);
+  assertNonNegative(spec.seconds);
+  assertNonNegative(spec.minutes);
+  assertNonNegative(spec.hours);
+  assertNonNegative(spec.days);
+}
 
-  for (const value of values) {
-    if (value !== undefined && value < 0) {
-      throw new Error("Invalid operation");
-    }
+function assertNonNegative(value: number | undefined): void {
+  if (value !== undefined && value < 0) {
+    throw new Error("Invalid operation");
   }
+}
+
+function msOf(value: number | undefined, unit: number): number {
+  return value === undefined ? 0 : value * unit;
 }
 
 type TimeSpec = {
@@ -46,19 +54,12 @@ type TimeSpec = {
 };
 
 function sumMilliseconds(spec: TimeSpec): number {
-  const multipliers = [
-    1,
-    MILLISECONDS_PER_SECOND,
-    MILLISECONDS_PER_MINUTE,
-    MILLISECONDS_PER_HOUR,
-    MILLISECONDS_PER_DAY,
-  ];
-
-  const values = [spec.milliseconds, spec.seconds, spec.minutes, spec.hours, spec.days];
-
-  return values.reduce<number>(
-    (total, value, index) => total + (value ?? 0) * multipliers[index],
-    0,
+  return (
+    msOf(spec.milliseconds, 1) +
+    msOf(spec.seconds, MILLISECONDS_PER_SECOND) +
+    msOf(spec.minutes, MILLISECONDS_PER_MINUTE) +
+    msOf(spec.hours, MILLISECONDS_PER_HOUR) +
+    msOf(spec.days, MILLISECONDS_PER_DAY)
   );
 }
 

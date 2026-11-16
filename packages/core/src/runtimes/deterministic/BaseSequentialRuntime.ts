@@ -109,7 +109,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
       next.time = moves[index].time;
       this.#sequentialIndex++;
 
-      const as = next.as ?? "flow";
+      const as = next.as as MoveKind;
       this.moveClockWithOptions(target, as, DEFAULT_MONOTONIC[as]);
     }
 
