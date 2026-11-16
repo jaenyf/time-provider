@@ -12,6 +12,7 @@
 [![codecov](https://codecov.io/gh/jaenyf/time-provider/graph/badge.svg)](https://codecov.io/gh/jaenyf/time-provider)
 [![tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-tests-count-badge.json&cacheSeconds=43200)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![mutation score](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-mutation-score-badge.json&cacheSeconds=43200)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
+[![CRAP score](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jaenyf/5c996e614c598efb1231d96c28444493/raw/time-provider-crap-score-badge.json&cacheSeconds=43200)](https://github.com/jaenyf/time-provider/actions/workflows/check.yml)
 [![socket](https://badge.socket.dev/npm/package/@time-provider/core/latest)](https://socket.dev/npm/package/@time-provider/core)
 [![npm downloads](https://img.shields.io/npm/dm/@time-provider/core?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/core)
 [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?cacheSeconds=43200)](https://www.npmjs.com/package/@time-provider/core?activeTab=dependencies)
