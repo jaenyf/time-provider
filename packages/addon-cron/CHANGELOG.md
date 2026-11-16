@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.5.0...addon-cron-v0.6.0) (2026-11-16)
+
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
 ## [0.5.0](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.4.1...addon-cron-v0.5.0) (2026-09-28)
 
 
