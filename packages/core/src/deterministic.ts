@@ -27,11 +27,9 @@ export {
   BaseDeterministicPlugin,
   BaseUtcOnlyDeterministicPlugin,
 } from "./plugins/deterministic-plugin.ts";
-export {
-  BaseFixedRuntime,
-  BaseManualRuntime,
-  BaseSequentialRuntime,
-} from "./runtimes/deterministic-runtime.ts";
+export { BaseFixedRuntime } from "./runtimes/deterministic/BaseFixedRuntime.ts";
+export { BaseManualRuntime } from "./runtimes/deterministic/BaseManualRuntime.ts";
+export { BaseSequentialRuntime } from "./runtimes/deterministic/BaseSequentialRuntime.ts";
 export { createDeterministicTimeProvider as createTimeProvider } from "./builders/deterministic-builder.ts";
 export type {
   IAddon,
