@@ -160,12 +160,16 @@ export interface IMoveSpec {
 /** @deprecated Use {@link IMoveSpec}. */
 export type IAdvanceOptions = IMoveSpec;
 
+/** Describe a clock move. `"flow"` (default): time passes; `"sleep"`: overdue timers fire once; `"snap"`: only the wall clock moves. */
+export type MoveKind = "flow" | "sleep" | "snap";
+/** Describe a monotonic kind. Either `"paused"` or `"running"`. */
+export type MonotonicKind = "running" | "paused";
 /** How a clock move happens. */
 export interface IMoveOptions {
   /** `"flow"` (default): time passes; `"sleep"`: overdue timers fire once; `"snap"`: only the wall clock moves. */
-  as?: "flow" | "sleep" | "snap";
+  as?: MoveKind;
   /** Defaults to `"paused"` for `"snap"`, `"running"` otherwise; only `"sleep"` accepts either. */
-  monotonic?: "running" | "paused";
+  monotonic?: MonotonicKind;
 }
 
 /** A clock that can be moved. */

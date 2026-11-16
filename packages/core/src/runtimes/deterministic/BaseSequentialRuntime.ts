@@ -1,8 +1,18 @@
 import type { EpochMilliseconds } from "../../deterministic.ts";
-import type { IMoveOptions, TimezoneDefinition, ITimeConverter } from "../../types/types.ts";
+import type {
+  IMoveOptions,
+  TimezoneDefinition,
+  ITimeConverter,
+  MoveKind,
+  MonotonicKind,
+} from "../../types/types.ts";
 import { BaseDeterministicRuntime } from "./BaseDeterministicRuntime.ts";
 
-const MOVE_KINDS: readonly string[] = ["flow", "sleep", "snap"];
+const DEFAULT_MONOTONIC: Record<MoveKind, MonotonicKind> = {
+  flow: "running",
+  sleep: "running",
+  snap: "paused",
+};
 
 /** Base class for deterministic sequential runtimes. */
 
@@ -26,20 +36,42 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     converter: ITimeConverter<TDate>,
   ) {
     super(localTimezone, converter);
-    const moves = sequentialMoves.map((move) => ({
+    this._sequentialMoves = this.initializeSequentialMoves(sequentialMoves);
+    this.startMonotonicClock();
+  }
+
+  private initializeSequentialMoves(
+    sequentialMoves: {
+      time: string | EpochMilliseconds | number | TDate;
+      as?: IMoveOptions["as"];
+    }[],
+  ): { time: number; as: IMoveOptions["as"] }[] {
+    const moves: { time: number; as: IMoveOptions["as"] }[] = sequentialMoves.map((move) => ({
       time: this.convertToEpochTimestampImpl(move.time) as number,
       as: move.as,
     }));
-    for (let i = 1; i < moves.length; i++) {
-      const backward = moves[i].time < moves[i - 1].time;
-      if (moves[i].as === undefined) moves[i].as = backward ? "snap" : "flow";
-      else if (backward && moves[i].as !== "snap") {
-        throw new Error(`A clock can't ${moves[i].as} backward. Use { as: "snap" }`);
-      }
-    }
-    this._sequentialMoves = moves;
 
-    this.startMonotonicClock();
+    for (let i = 1; i < moves.length; i++) {
+      this.validateSequentialMove(moves[i], moves[i - 1]);
+    }
+
+    return moves;
+  }
+
+  private validateSequentialMove(
+    current: { time: number; as: IMoveOptions["as"] },
+    previous: { time: number; as: IMoveOptions["as"] },
+  ): void {
+    const backward = current.time < previous.time;
+
+    if (current.as === undefined) {
+      current.as = backward ? "snap" : "flow";
+      return;
+    }
+
+    if (backward && current.as !== "snap") {
+      throw new Error(`A clock can't ${current.as} backward. Use { as: "snap" }`);
+    }
   }
 
   localNowImpl(): TDate {
@@ -84,28 +116,55 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
    * @throws If the options are invalid or conflict, or a flow or sleep goes backward.
    */
   protected moveClock(targetTimestamp: EpochMilliseconds, options?: IMoveOptions): this {
-    const as = options?.as ?? "flow";
-    const monotonic = options?.monotonic ?? (as === "snap" ? "paused" : "running");
-    if (
-      !MOVE_KINDS.includes(as) ||
-      (monotonic !== "running" && monotonic !== "paused") ||
-      (as === "flow" && monotonic === "paused") ||
-      (as === "snap" && monotonic === "running")
-    ) {
-      throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
-    }
+    const { as, monotonic } = this.resolveMoveOptions(options);
     const delta = targetTimestamp - this.timestampNow();
-    if (delta < 0 && as !== "snap") {
-      throw new Error(`A clock can't ${as} backward. Use { as: "snap" }`);
-    }
+
+    this.assertMoveIsAllowed(as, delta);
+
     if (as === "flow") {
       this.flowTo(targetTimestamp);
       return this;
     }
-    if (monotonic === "paused") this.snapWallClockTime(delta);
+
+    if (monotonic === "paused") {
+      this.snapWallClockTime(delta);
+    }
     this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
     this.mayRunDueCallbacks(true);
     return this;
+  }
+
+  private assertMoveIsAllowed(as: MoveKind, delta: number): void {
+    if (delta < 0 && as !== "snap") {
+      throw new Error(`A clock can't ${as} backward. Use { as: "snap" }`);
+    }
+  }
+
+  private resolveMoveOptions(options?: IMoveOptions) {
+    const as = options?.as ?? "flow";
+    const monotonic = options?.monotonic ?? DEFAULT_MONOTONIC[as];
+
+    return {
+      as,
+      monotonic: this.getValidMonotonic(as, monotonic),
+    };
+  }
+
+  private getValidMonotonic(as: MoveKind, monotonic: MonotonicKind): MonotonicKind {
+    if (this.isValidMonotonic(as, monotonic)) return monotonic;
+
+    throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
+  }
+
+  private isValidMonotonic(as: MoveKind, monotonic: MonotonicKind): boolean {
+    switch (as) {
+      case "flow":
+        return monotonic === "running";
+      case "sleep":
+        return true;
+      case "snap":
+        return monotonic === "paused";
+    }
   }
 
   /** Moves the clock to `targetTimestamp`, firing each due callback at its due time. */
