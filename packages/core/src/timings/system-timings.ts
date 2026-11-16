@@ -9,6 +9,14 @@ import type {
 } from "../types/types.ts";
 import { assertMeasureOptions, matchesTimingsFilter } from "./timings-helpers.ts";
 
+function shouldClearMarks(filter?: ITimingsFilter): boolean {
+  return filter?.kind !== "measure";
+}
+
+function shouldClearMeasures(filter?: ITimingsFilter): boolean {
+  return filter?.kind !== "mark";
+}
+
 /** Marks and measures on the host performance timeline. */
 export class SystemTimings implements ITimings {
   entries = (filter?: ITimingsFilter): readonly ITimingEntry[] =>
@@ -19,10 +27,10 @@ export class SystemTimings implements ITimings {
     );
 
   clear = (filter?: ITimingsFilter): void => {
-    if (filter?.kind !== "measure") {
+    if (shouldClearMarks(filter)) {
       performance.clearMarks(filter?.name);
     }
-    if (filter?.kind !== "mark") {
+    if (shouldClearMeasures(filter)) {
       performance.clearMeasures(filter?.name);
     }
   };
