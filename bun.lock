@@ -44,7 +44,7 @@
     },
     "packages/addon-cron": {
       "name": "@time-provider/addon-cron",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
       },
@@ -74,7 +74,7 @@
     },
     "packages/core": {
       "name": "@time-provider/core",
-      "version": "4.1.1",
+      "version": "4.2.0",
     },
     "packages/plugin-dayjs": {
       "name": "@time-provider/plugin-dayjs",
@@ -89,7 +89,7 @@
     },
     "packages/plugin-luxon": {
       "name": "@time-provider/plugin-luxon",
-      "version": "0.7.1",
+      "version": "0.8.0",
       "devDependencies": {
         "@time-provider/core": "workspace:*",
         "@types/luxon": "^3.7.6",

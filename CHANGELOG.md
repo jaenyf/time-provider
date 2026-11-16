@@ -4,6 +4,26 @@
 
 <!-- aggregate-changelog:start -->
 
+## 2026-11-16
+
+### @time-provider/addon-cron 0.6.0
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
+### @time-provider/core 4.2.0
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
+### @time-provider/plugin-luxon 0.8.0
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
 ## 2026-10-29
 
 ### @time-provider/addon-animation-frame 0.6.1
