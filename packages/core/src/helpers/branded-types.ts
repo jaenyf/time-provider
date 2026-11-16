@@ -23,6 +23,45 @@ function assertFiniteMilliseconds(milliseconds: number, kind: "duration" | "inst
   }
 }
 
+/**
+ * Validates a non-negative instant component.
+ * @throws If `milliseconds` is negative.
+ */
+function assertNonNegativeInstant(spec: IEpochInstantSpec): void {
+  const values = [spec.milliseconds, spec.seconds, spec.minutes, spec.hours, spec.days];
+
+  for (const value of values) {
+    if (value !== undefined && value < 0) {
+      throw new Error("Invalid operation");
+    }
+  }
+}
+
+type TimeSpec = {
+  milliseconds?: number;
+  seconds?: number;
+  minutes?: number;
+  hours?: number;
+  days?: number;
+};
+
+function sumMilliseconds(spec: TimeSpec): number {
+  const multipliers = [
+    1,
+    MILLISECONDS_PER_SECOND,
+    MILLISECONDS_PER_MINUTE,
+    MILLISECONDS_PER_HOUR,
+    MILLISECONDS_PER_DAY,
+  ];
+
+  const values = [spec.milliseconds, spec.seconds, spec.minutes, spec.hours, spec.days];
+
+  return values.reduce<number>(
+    (total, value, index) => total + (value ?? 0) * multipliers[index],
+    0,
+  );
+}
+
 /** Describes a duration in days, hours, minutes, seconds and milliseconds. */
 export interface IDurationSpec {
   milliseconds?: number;
@@ -39,32 +78,8 @@ export interface IDurationSpec {
  * @throws If the fields do not produce finite milliseconds.
  */
 export function toDuration(durationSpec: IDurationSpec): DurationMilliseconds {
-  let ms: number = 0;
+  const ms = sumMilliseconds(durationSpec);
 
-  if (durationSpec.milliseconds !== undefined) {
-    ms += durationSpec.milliseconds;
-  }
-
-  if (durationSpec.seconds !== undefined) {
-    ms += durationSpec.seconds * MILLISECONDS_PER_SECOND;
-  }
-
-  if (durationSpec.minutes !== undefined) {
-    ms += durationSpec.minutes * MILLISECONDS_PER_MINUTE;
-  }
-
-  if (durationSpec.hours !== undefined) {
-    ms += durationSpec.hours * MILLISECONDS_PER_HOUR;
-  }
-
-  if (durationSpec.days !== undefined) {
-    ms += durationSpec.days * MILLISECONDS_PER_DAY;
-  }
-
-  // `NaN` and `Infinity` are not rejected by the branded type, which is a compile-time construct,
-  // and every runtime mishandles them differently once they reach a timer: a deterministic one
-  // treats a `NaN` delay as perpetually due and spins forever, a system one chunks an infinite
-  // delay into 24.8-day timeouts that never end. Reject them here, where the value is built.
   assertFiniteMilliseconds(ms, "duration");
 
   return ms as DurationMilliseconds;
@@ -102,42 +117,9 @@ export interface IEpochInstantSpec {
  * @throws If a field is negative or the total is not finite.
  */
 export function toInstant(instantSpec: IEpochInstantSpec): EpochMilliseconds {
-  let ms: number = 0;
+  assertNonNegativeInstant(instantSpec);
 
-  if (instantSpec.milliseconds !== undefined) {
-    if (instantSpec.milliseconds < 0) {
-      throw new Error("Invalid operation");
-    }
-    ms += instantSpec.milliseconds;
-  }
-
-  if (instantSpec.seconds !== undefined) {
-    if (instantSpec.seconds < 0) {
-      throw new Error("Invalid operation");
-    }
-    ms += instantSpec.seconds * MILLISECONDS_PER_SECOND;
-  }
-
-  if (instantSpec.minutes !== undefined) {
-    if (instantSpec.minutes < 0) {
-      throw new Error("Invalid operation");
-    }
-    ms += instantSpec.minutes * MILLISECONDS_PER_MINUTE;
-  }
-
-  if (instantSpec.hours !== undefined) {
-    if (instantSpec.hours < 0) {
-      throw new Error("Invalid operation");
-    }
-    ms += instantSpec.hours * MILLISECONDS_PER_HOUR;
-  }
-
-  if (instantSpec.days !== undefined) {
-    if (instantSpec.days < 0) {
-      throw new Error("Invalid operation");
-    }
-    ms += instantSpec.days * MILLISECONDS_PER_DAY;
-  }
+  const ms = sumMilliseconds(instantSpec);
 
   assertFiniteMilliseconds(ms, "instant");
 
