@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.0](https://github.com/jaenyf/time-provider/compare/core-v4.1.1...core-v4.2.0) (2026-11-16)
+
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
 ## [4.1.1](https://github.com/jaenyf/time-provider/compare/core-v4.1.0...core-v4.1.1) (2026-10-29)
 
 

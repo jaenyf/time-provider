@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/jaenyf/time-provider/compare/plugin-luxon-v0.7.1...plugin-luxon-v0.8.0) (2026-11-16)
+
+
+### Features
+
+* **crap-score:** introduce code quality crap score threshold ([#191](https://github.com/jaenyf/time-provider/issues/191)) ([9ac078a](https://github.com/jaenyf/time-provider/commit/9ac078aa1178344d007299b27a5b2244112d834e))
+
 ## [0.7.1](https://github.com/jaenyf/time-provider/compare/plugin-luxon-v0.7.0...plugin-luxon-v0.7.1) (2026-10-29)
 
 
