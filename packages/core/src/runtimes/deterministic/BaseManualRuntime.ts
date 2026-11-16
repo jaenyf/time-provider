@@ -68,22 +68,40 @@ export abstract class BaseManualRuntime<TDate>
     return this.moveClock(this.convertToEpochTimestampImpl(time), options);
   }
 
-  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): IManualRuntime<TDate> {
-    this.assertIsNotDisposed();
-    const as: unknown = options?.as;
+  assertValidMoveUntilArguments(until: string, as: unknown): asserts until is "noTimers" {
     if (until !== "noTimers" || as === "snap") {
       throw new Error(`Invalid moveUntil arguments ('${until}', as: '${String(as)}')`);
     }
+  }
+
+  #moveUntilNextTimer(
+    next: EpochMilliseconds,
+    fired: number,
+    as: "flow" | "sleep" | undefined,
+  ): number {
+    const nextFired = fired + this.countTimersDueBy(next);
+
+    if (nextFired > this.moveUntilTimersLimit) {
+      throw new Error(
+        `Timers still pending after ${this.moveUntilTimersLimit} fired; see withMoveUntilTimersLimit()`,
+      );
+    }
+
+    this.moveClock(next, { as });
+    return nextFired;
+  }
+
+  moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): IManualRuntime<TDate> {
+    this.assertIsNotDisposed();
+
+    const as: unknown = options?.as;
+    this.assertValidMoveUntilArguments(until, as);
+
     let fired = 0;
     for (let next = this.nextDueTime; next !== undefined; next = this.nextDueTime) {
-      fired += this.countTimersDueBy(next);
-      if (fired > this.moveUntilTimersLimit) {
-        throw new Error(
-          `Timers still pending after ${this.moveUntilTimersLimit} fired; see withMoveUntilTimersLimit()`,
-        );
-      }
-      this.moveClock(next, { as: options?.as });
+      fired = this.#moveUntilNextTimer(next, fired, options?.as);
     }
+
     return this;
   }
 
