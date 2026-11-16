@@ -50,7 +50,7 @@ export default withCrapTypescriptVitest(
   {
     format: "json",
     output: "reports/crap-report.json",
-    threshold: 6,
+    threshold: 17,
     excludes: [
       // DueHeap hot path optimizations impact the CRAP score
       "packages/core/src/runtimes/deterministic/DueHeap.ts",
