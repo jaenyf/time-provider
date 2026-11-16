@@ -18,6 +18,22 @@ import { IntlFormatterCache } from "./intl-formatter-cache.ts";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+function onlyBeforeRoundTrips(before: boolean, after: boolean): boolean {
+  return before && !after;
+}
+
+function onlyAfterRoundTrips(before: boolean, after: boolean): boolean {
+  return after && !before;
+}
+
+function selectAmbiguousCandidate(
+  before: number,
+  after: number,
+  roundTripsBefore: boolean,
+): number {
+  return roundTripsBefore ? Math.min(before, after) : Math.max(before, after);
+}
+
 /** Default shared Gregorian/`Intl` {@link ICalendarScheme}. */
 export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
   TDate,
@@ -113,6 +129,51 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     );
   }
 
+  static #selectTransitionCandidate(
+    candidateBefore: number,
+    candidateAfter: number,
+    roundTripsBefore: boolean,
+    roundTripsAfter: boolean,
+  ): number {
+    if (onlyBeforeRoundTrips(roundTripsBefore, roundTripsAfter)) {
+      return candidateBefore;
+    }
+    if (onlyAfterRoundTrips(roundTripsBefore, roundTripsAfter)) {
+      return candidateAfter;
+    }
+
+    return selectAmbiguousCandidate(candidateBefore, candidateAfter, roundTripsBefore);
+  }
+
+  static #resolveTransition(
+    target: number,
+    fields: ComposableCalendarSchemeFields,
+    timezone: string,
+    offsetBefore: number,
+    offsetAfter: number,
+  ): EpochMilliseconds {
+    const candidateBefore = target - offsetBefore;
+    const candidateAfter = target - offsetAfter;
+
+    const roundTripsBefore = CalendarSchemeFieldsHelper.equals(
+      DefaultCalendarScheme.#decomposeAt(candidateBefore, timezone),
+      fields,
+    );
+    const roundTripsAfter = CalendarSchemeFieldsHelper.equals(
+      DefaultCalendarScheme.#decomposeAt(candidateAfter, timezone),
+      fields,
+    );
+
+    return toInstant({
+      milliseconds: DefaultCalendarScheme.#selectTransitionCandidate(
+        candidateBefore,
+        candidateAfter,
+        roundTripsBefore,
+        roundTripsAfter,
+      ),
+    });
+  }
+
   /** Resolves local `fields` in `timezone` to an epoch timestamp. */
   static #composeAt(fields: ComposableCalendarSchemeFields, timezone: string): EpochMilliseconds {
     const target = DefaultCalendarScheme.#fieldsAsUtcMs(fields);
@@ -123,28 +184,12 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
       return toInstant({ milliseconds: target - offsetBefore });
     }
 
-    const candidateBefore = target - offsetBefore;
-    const candidateAfter = target - offsetAfter;
-    const roundTripsBefore = CalendarSchemeFieldsHelper.equals(
-      DefaultCalendarScheme.#decomposeAt(candidateBefore, timezone),
+    return DefaultCalendarScheme.#resolveTransition(
+      target,
       fields,
+      timezone,
+      offsetBefore,
+      offsetAfter,
     );
-    const roundTripsAfter = CalendarSchemeFieldsHelper.equals(
-      DefaultCalendarScheme.#decomposeAt(candidateAfter, timezone),
-      fields,
-    );
-
-    if (roundTripsBefore && !roundTripsAfter) {
-      return toInstant({ milliseconds: candidateBefore });
-    }
-    if (roundTripsAfter && !roundTripsBefore) {
-      return toInstant({ milliseconds: candidateAfter });
-    }
-    return toInstant({
-      milliseconds:
-        roundTripsBefore && roundTripsAfter
-          ? Math.min(candidateBefore, candidateAfter) // fall-back overlap: the earlier of the two.
-          : Math.max(candidateBefore, candidateAfter),
-    }); // spring-forward gap: past the gap.
   }
 }

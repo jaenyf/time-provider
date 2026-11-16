@@ -26,6 +26,18 @@ export class SystemHelper {
 
 /** Validates time and timezone inputs for plugin authors. */
 export class TimeInputValidator {
+  private static isMissingTime(time: unknown): boolean {
+    return time === undefined || time === null;
+  }
+
+  private static isInvalidNumber(time: unknown): boolean {
+    return typeof time === "number" && Number.isNaN(time);
+  }
+
+  private static isBlankString(time: unknown): boolean {
+    return typeof time === "string" && time.trim() === "";
+  }
+
   /**
    * Validates `time`.
    * @throws If `time` is `undefined`, `null`, `NaN`, or blank.
@@ -35,10 +47,9 @@ export class TimeInputValidator {
     time: string | number | TDate,
   ): asserts time is string | number | TDate {
     if (
-      time === undefined ||
-      time === null ||
-      (typeof time === "number" && Number.isNaN(time)) ||
-      (typeof time === "string" && time.trim() === "")
+      TimeInputValidator.isMissingTime(time) ||
+      TimeInputValidator.isInvalidNumber(time) ||
+      TimeInputValidator.isBlankString(time)
     ) {
       this.throwInvalidTimeValue(time);
     }

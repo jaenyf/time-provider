@@ -149,6 +149,47 @@ jobs:
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
 
+      - name: Extract maximum CRAP score
+        id: crap-score
+        run: |
+          MAX_CRAP=$(node -e "
+            const report = require('./reports/crap-report.json');
+            if (!Array.isArray(report.methods) || report.methods.length === 0) {
+              throw new Error('CRAP report methods array is missing or empty');
+            }
+
+            const scores = report.methods.map(method => Number(method.crap));
+            if (scores.some(score => !Number.isFinite(score))) {
+              throw new Error('Invalid CRAP score in report');
+            }
+
+            console.log(Math.max(...scores).toFixed(1));
+          ")
+
+          COLOR=$(node -e "
+            const score = Number(process.argv[1]);
+            console.log(
+              score <= 5 ? 'brightgreen' :
+              score <= 15 ? 'yellow' :
+              score <= 30 ? 'orange' :
+              'red'
+            );
+          " "$MAX_CRAP")
+
+          echo "score=$MAX_CRAP" >> "$GITHUB_OUTPUT"
+          echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+
+      - name: Update CRAP score badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@28b0fa8bdeb46170ac397105ece0c1fe58f68910 # v1.9.0
+        with:
+          auth: ${{ secrets.GIST_TESTS_COUNTER_SECRET }}
+          gistID: 5c996e614c598efb1231d96c28444493
+          filename: time-provider-crap-score-badge.json
+          label: CRAP score
+          message: ${{ steps.crap-score.outputs.score }}
+          color: ${{ steps.crap-score.outputs.color }}
+
       - name: Upload coverage to Codecov
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { BaseManualRuntime, BaseSequentialRuntime } from "../src/runtimes/deterministic-runtime.ts";
+import { BaseManualRuntime } from "../src/runtimes/deterministic/BaseManualRuntime.ts";
+import { BaseSequentialRuntime } from "../src/runtimes/deterministic/BaseSequentialRuntime.ts";
 import {
   DEFAULT_MOVE_UNTIL_TIMERS_LIMIT,
   ScheduledHandleKind,

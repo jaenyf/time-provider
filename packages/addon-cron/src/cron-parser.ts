@@ -104,40 +104,59 @@ function parseToken(token: string, bounds: FieldBounds, expression: string): num
   }
   return value;
 }
+function parsePartRange(
+  rangeOrStar: string,
+  bounds: FieldBounds,
+  expression: string,
+): { start: number; end: number } {
+  if (rangeOrStar === "*") {
+    return { start: bounds.min, end: bounds.max };
+  }
+
+  if (!rangeOrStar.includes("-")) {
+    const value = parseToken(rangeOrStar, bounds, expression);
+    return { start: value, end: value };
+  }
+
+  const segments = rangeOrStar.split("-");
+  if (segments.length !== 2) {
+    throwInvalidCronExpression(expression, `range "${rangeOrStar}" is malformed`);
+  }
+
+  const [fromText, toText] = segments;
+  const start = parseToken(fromText, bounds, expression);
+  const end = parseToken(toText, bounds, expression);
+
+  if (end < start) {
+    throwInvalidCronExpression(expression, `range "${rangeOrStar}" is out of order`);
+  }
+
+  return { start, end };
+}
+
+function parsePartStep(stepText: string | undefined, expression: string): number {
+  if (stepText === undefined) {
+    return 1;
+  }
+
+  const step = parseStrictInteger(stepText);
+  if (step === undefined || step < 1) {
+    throwInvalidCronExpression(expression, `"${stepText}" is not a valid step`);
+  }
+
+  return step;
+}
 
 function parsePart(part: string, bounds: FieldBounds, expression: string, into: Set<number>): void {
   const stepSegments = part.split("/");
   if (stepSegments.length > 2) {
     throwInvalidCronExpression(expression, `"${part}" has more than one step`);
   }
+
   const [rangeOrStar, stepText] = stepSegments;
-  let start: number;
-  let end: number;
-  if (rangeOrStar === "*") {
-    start = bounds.min;
-    end = bounds.max;
-  } else if (rangeOrStar.includes("-")) {
-    const rangeSegments = rangeOrStar.split("-");
-    if (rangeSegments.length > 2) {
-      throwInvalidCronExpression(expression, `range "${rangeOrStar}" is malformed`);
-    }
-    const [fromText, toText] = rangeSegments;
-    start = parseToken(fromText, bounds, expression);
-    end = parseToken(toText, bounds, expression);
-    if (end < start) {
-      throwInvalidCronExpression(expression, `range "${rangeOrStar}" is out of order`);
-    }
-  } else {
-    start = end = parseToken(rangeOrStar, bounds, expression);
-  }
-  let step = 1;
-  if (stepText !== undefined) {
-    const parsedStep = parseStrictInteger(stepText);
-    if (parsedStep === undefined || parsedStep < 1) {
-      throwInvalidCronExpression(expression, `"${stepText}" is not a valid step`);
-    }
-    step = parsedStep;
-  }
+  const { start, end } = parsePartRange(rangeOrStar, bounds, expression);
+  const step = parsePartStep(stepText, expression);
+
   for (let value = start; value <= end; value += step) {
     into.add(applyMaxAlias(value, bounds));
   }
@@ -257,30 +276,38 @@ function throwInvalidCronSpec(fieldName: string, reason: string): never {
   throw new Error(`Invalid cron spec field "${fieldName}": ${reason}`);
 }
 
-function resolveSpecAtom(atom: number | string, bounds: FieldBounds, fieldName: string): number {
-  let value: number;
-  if (typeof atom === "string") {
-    const named = resolveName(atom, bounds);
-    if (named !== undefined) {
-      return named;
-    }
-    const parsed = parseStrictInteger(atom);
-    if (parsed === undefined) {
-      throwInvalidCronSpec(fieldName, `"${atom}" is not a valid value`);
-    }
-    value = parsed;
-  } else {
-    if (!Number.isInteger(atom)) {
-      throwInvalidCronSpec(fieldName, `${atom} is not a valid value`);
-    }
-    value = atom;
+function resolveSpecString(atom: string, bounds: FieldBounds, fieldName: string): number {
+  const named = resolveName(atom, bounds);
+  if (named !== undefined) {
+    return named;
   }
+
+  const parsed = parseStrictInteger(atom);
+  if (parsed === undefined) {
+    throwInvalidCronSpec(fieldName, `"${atom}" is not a valid value`);
+  }
+
+  return parsed;
+}
+
+function assertSpecValueInRange(value: number, bounds: FieldBounds, fieldName: string): void {
   if (value < bounds.min || value > bounds.max) {
     throwInvalidCronSpec(
       fieldName,
       `${value} is out of range (expected ${bounds.min}-${bounds.max})`,
     );
   }
+}
+
+function resolveSpecAtom(atom: number | string, bounds: FieldBounds, fieldName: string): number {
+  const value = typeof atom === "string" ? resolveSpecString(atom, bounds, fieldName) : atom;
+
+  if (typeof atom === "number" && !Number.isInteger(value)) {
+    throwInvalidCronSpec(fieldName, `${value} is not a valid value`);
+  }
+
+  assertSpecValueInRange(value, bounds, fieldName);
+
   return value;
 }
 
@@ -292,6 +319,59 @@ function wildcardField(bounds: FieldBounds): ParsedField {
   return { values, isWildcard: true };
 }
 
+function addSpecAtom(
+  atom: number | string | { from: number | string; to: number | string; step?: number },
+  bounds: FieldBounds,
+  fieldName: string,
+  values: Set<number>,
+): void {
+  if (typeof atom !== "object") {
+    values.add(applyMaxAlias(resolveSpecAtom(atom, bounds, fieldName), bounds));
+    return;
+  }
+
+  addSpecRange(atom, bounds, fieldName, values);
+}
+
+function assertValidSpecRange(
+  start: number,
+  end: number,
+  range: { from: number | string; to: number | string; step?: number },
+  fieldName: string,
+): void {
+  if (end < start) {
+    throwInvalidCronSpec(fieldName, `range ${JSON.stringify(range)} is out of order`);
+  }
+}
+
+function resolveSpecStep(step: number | undefined, fieldName: string): number {
+  const resolved = step ?? 1;
+
+  if (!Number.isInteger(resolved) || resolved < 1) {
+    throwInvalidCronSpec(fieldName, `step ${JSON.stringify(step)} is not valid`);
+  }
+
+  return resolved;
+}
+
+function addSpecRange(
+  range: { from: number | string; to: number | string; step?: number },
+  bounds: FieldBounds,
+  fieldName: string,
+  values: Set<number>,
+): void {
+  const start = resolveSpecAtom(range.from, bounds, fieldName);
+  const end = resolveSpecAtom(range.to, bounds, fieldName);
+
+  assertValidSpecRange(start, end, range, fieldName);
+
+  const step = resolveSpecStep(range.step, fieldName);
+
+  for (let value = start; value <= end; value += step) {
+    values.add(applyMaxAlias(value, bounds));
+  }
+}
+
 function parseSpecField(
   fieldValue: AnyCronFieldSpec | undefined,
   bounds: FieldBounds,
@@ -300,26 +380,14 @@ function parseSpecField(
   if (fieldValue === undefined || fieldValue === "*") {
     return wildcardField(bounds);
   }
+
   const values = new Set<number>();
   const atoms = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+
   for (const atom of atoms) {
-    if (typeof atom === "object") {
-      const start = resolveSpecAtom(atom.from, bounds, fieldName);
-      const end = resolveSpecAtom(atom.to, bounds, fieldName);
-      if (end < start) {
-        throwInvalidCronSpec(fieldName, `range ${JSON.stringify(atom)} is out of order`);
-      }
-      const step = atom.step ?? 1;
-      if (!Number.isInteger(step) || step < 1) {
-        throwInvalidCronSpec(fieldName, `step ${JSON.stringify(atom.step)} is not valid`);
-      }
-      for (let value = start; value <= end; value += step) {
-        values.add(applyMaxAlias(value, bounds));
-      }
-    } else {
-      values.add(applyMaxAlias(resolveSpecAtom(atom, bounds, fieldName), bounds));
-    }
+    addSpecAtom(atom, bounds, fieldName, values);
   }
+
   return { values, isWildcard: false };
 }
 
@@ -371,14 +439,14 @@ export function cronExpressionToSpec<TDate, TMonthName extends string, TWeekdayN
 
 function dayMatches(parsed: ParsedCronExpression, fields: CalendarSchemeFields): boolean {
   const { dayOfMonth, dayOfWeek } = parsed;
-  if (dayOfMonth.isWildcard && dayOfWeek.isWildcard) {
-    return true;
-  }
+
   const domMatches = dayOfMonth.values.has(fields.day);
   const dowMatches = dayOfWeek.values.has(fields.weekday);
+
   if (dayOfMonth.isWildcard) {
-    return dowMatches;
+    return dayOfWeek.isWildcard || dowMatches;
   }
+
   if (dayOfWeek.isWildcard) {
     return domMatches;
   }
@@ -399,6 +467,48 @@ function dayMatches(parsed: ParsedCronExpression, fields: CalendarSchemeFields):
  */
 const MAX_SEARCH_YEARS_AHEAD = 10;
 
+function advanceSearch(
+  parsed: ParsedCronExpression,
+  fields: CalendarSchemeFields,
+  step: (fields: ComposableCalendarSchemeFields) => CalendarSchemeFields,
+): CalendarSchemeFields | undefined {
+  if (!parsed.month.values.has(fields.month)) {
+    return step({
+      year: fields.year,
+      month: fields.month + 1,
+      day: 1,
+      hour: 0,
+      minute: 0,
+    });
+  }
+
+  if (!dayMatches(parsed, fields)) {
+    return step({
+      ...CalendarSchemeFieldsHelper.toComposable(fields),
+      day: fields.day + 1,
+      hour: 0,
+      minute: 0,
+    });
+  }
+
+  if (!parsed.hour.values.has(fields.hour)) {
+    return step({
+      ...CalendarSchemeFieldsHelper.toComposable(fields),
+      hour: fields.hour + 1,
+      minute: 0,
+    });
+  }
+
+  if (!parsed.minute.values.has(fields.minute)) {
+    return step({
+      ...CalendarSchemeFieldsHelper.toComposable(fields),
+      minute: fields.minute + 1,
+    });
+  }
+
+  return undefined;
+}
+
 /**
  * Computes the next matching `TDate` strictly after `from`.
  * @throws If no match is found within the search bound.
@@ -412,51 +522,25 @@ export function computeNextOccurrence<TDate>(
   const fromFields = calendarScheme.decompose(from, timezone);
   const step = (fields: ComposableCalendarSchemeFields): CalendarSchemeFields =>
     calendarScheme.normalize(fields);
+
   let fields = step({
     ...CalendarSchemeFieldsHelper.toComposable(fromFields),
     minute: fromFields.minute + 1,
   });
+
   const searchLimitYear = fromFields.year + MAX_SEARCH_YEARS_AHEAD;
 
   while (fields.year <= searchLimitYear) {
-    if (!parsed.month.values.has(fields.month)) {
-      fields = step({
-        year: fields.year,
-        month: fields.month + 1,
-        day: 1,
-        hour: 0,
-        minute: 0,
-      });
+    const nextFields = advanceSearch(parsed, fields, step);
+
+    if (nextFields !== undefined) {
+      fields = nextFields;
       continue;
     }
-    if (!dayMatches(parsed, fields)) {
-      fields = step({
-        ...CalendarSchemeFieldsHelper.toComposable(fields),
-        day: fields.day + 1,
-        hour: 0,
-        minute: 0,
-      });
-      continue;
-    }
-    if (!parsed.hour.values.has(fields.hour)) {
-      fields = step({
-        ...CalendarSchemeFieldsHelper.toComposable(fields),
-        hour: fields.hour + 1,
-        minute: 0,
-      });
-      continue;
-    }
-    if (!parsed.minute.values.has(fields.minute)) {
-      fields = step({
-        ...CalendarSchemeFieldsHelper.toComposable(fields),
-        minute: fields.minute + 1,
-      });
-      continue;
-    }
-    // Every intermediate step above stayed in pure calendar-field arithmetic (adapter.normalize),
-    // never touching the timezone - DST ambiguity is only resolved here, once, for the actual match.
+
     return calendarScheme.compose(CalendarSchemeFieldsHelper.toComposable(fields), timezone);
   }
+
   throw new Error("No matching cron occurrence found - this expression can never match");
 }
 

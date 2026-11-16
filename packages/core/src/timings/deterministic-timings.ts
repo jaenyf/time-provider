@@ -50,6 +50,40 @@ class DeterministicTimingEntry<TKind extends TimingKind> {
   }
 }
 
+function applyMeasureDuration(
+  options: ITimingMeasureOptions | undefined,
+  startTime: MonotonicMilliseconds,
+  endTime: MonotonicMilliseconds,
+): { startTime: MonotonicMilliseconds; endTime: MonotonicMilliseconds } {
+  if (options?.duration === undefined) {
+    return { startTime, endTime };
+  }
+
+  if (options.start !== undefined) {
+    return {
+      startTime,
+      endTime: monotonicArithmetic.addDuration(startTime, options.duration),
+    };
+  }
+
+  return {
+    startTime: monotonicArithmetic.subtractDuration(endTime, options.duration),
+    endTime,
+  };
+}
+
+function resolveMeasureInterval(
+  options: ITimingMeasureOptions | undefined,
+  clock: { monotonicNow(): MonotonicMilliseconds },
+  resolve: (instantOrMarkName: string | MonotonicMilliseconds) => MonotonicMilliseconds,
+): { startTime: MonotonicMilliseconds; endTime: MonotonicMilliseconds } {
+  const startTime = options?.start === undefined ? toMonotonic({}) : resolve(options.start);
+
+  const endTime = options?.end === undefined ? clock.monotonicNow() : resolve(options.end);
+
+  return applyMeasureDuration(options, startTime, endTime);
+}
+
 /** Deterministic marks and measures on a monotonic clock. */
 export class DeterministicTimings implements ITimings {
   #clock: { monotonicNow(): MonotonicMilliseconds };
@@ -84,26 +118,11 @@ export class DeterministicTimings implements ITimings {
   measure = (name: string, options?: ITimingMeasureOptions): ITimingMeasure => {
     assertMeasureOptions(options);
 
-    let startTime: MonotonicMilliseconds = toMonotonic({});
-    let endTime: MonotonicMilliseconds = this.#clock.monotonicNow();
-
-    if (options) {
-      if (options.start !== undefined) {
-        startTime = this.#resolve(options.start);
-      }
-
-      if (options.end !== undefined) {
-        endTime = this.#resolve(options.end);
-      }
-
-      if (options.duration !== undefined) {
-        if (options.start !== undefined) {
-          endTime = monotonicArithmetic.addDuration(startTime, options.duration);
-        } else {
-          startTime = monotonicArithmetic.subtractDuration(endTime, options.duration);
-        }
-      }
-    }
+    const { startTime, endTime } = resolveMeasureInterval(
+      options,
+      this.#clock,
+      (instantOrMarkName) => this.#resolve(instantOrMarkName),
+    );
 
     const entry = new DeterministicTimingEntry(
       name,

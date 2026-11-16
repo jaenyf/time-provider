@@ -75,6 +75,26 @@ describe("toInstant", () => {
       toInstant({ days: Number.MAX_VALUE, hours: Number.MAX_VALUE });
     }).toThrow("Invalid instant value (value was 'Infinity')");
   });
+  test("adds multiple fields together", () => {
+    expect(
+      toInstant({
+        milliseconds: 5,
+        seconds: 2,
+        minutes: 3,
+        hours: 1,
+        days: 1,
+      }),
+    ).toEqual(5 + 2_000 + 180_000 + 3_600_000 + 86_400_000);
+  });
+  test("treats omitted fields as zero", () => {
+    expect(toInstant({ seconds: 2, hours: 1 })).toEqual(3_602_000);
+  });
+  test("returns zero for an empty spec", () => {
+    expect(toInstant({})).toEqual(0);
+  });
+  test("uses zero for omitted fields", () => {
+    expect(toInstant({ seconds: 2 })).toBe(2_000);
+  });
 });
 
 describe("toDuration", () => {
@@ -128,6 +148,27 @@ describe("toDuration", () => {
   });
   test("accepts an absurd but finite number of days", () => {
     expect(toDuration({ days: 1_000_000 })).toEqual(86_400_000_000_000);
+  });
+  test("adds multiple fields together", () => {
+    expect(
+      toDuration({
+        milliseconds: 5,
+        seconds: 2,
+        minutes: 3,
+        hours: 1,
+        days: 1,
+      }),
+    ).toEqual(5 + 2_000 + 180_000 + 3_600_000 + 86_400_000);
+  });
+
+  test("treats omitted fields as zero", () => {
+    expect(toDuration({ seconds: 2, hours: 1 })).toEqual(3_602_000);
+  });
+  test("returns zero for an empty spec", () => {
+    expect(toDuration({})).toEqual(0);
+  });
+  test("uses zero for omitted fields", () => {
+    expect(toDuration({ seconds: 2 })).toBe(2_000);
   });
 });
 
