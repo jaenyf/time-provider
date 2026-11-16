@@ -74,11 +74,7 @@ export abstract class BaseManualRuntime<TDate>
     }
   }
 
-  #moveUntilNextTimer(
-    next: EpochMilliseconds,
-    fired: number,
-    as: "flow" | "sleep" | undefined,
-  ): number {
+  #moveUntilNextTimer(next: EpochMilliseconds, fired: number, options: IMoveOptions): number {
     const nextFired = fired + this.countTimersDueBy(next);
 
     if (nextFired > this.moveUntilTimersLimit) {
@@ -87,19 +83,21 @@ export abstract class BaseManualRuntime<TDate>
       );
     }
 
-    this.moveClock(next, { as });
+    this.moveClock(next, options);
     return nextFired;
   }
 
   moveUntil(until: "noTimers", options?: { as?: "flow" | "sleep" }): IManualRuntime<TDate> {
     this.assertIsNotDisposed();
 
-    const as: unknown = options?.as;
+    const as = options?.as;
     this.assertValidMoveUntilArguments(until, as);
 
+    const moveOptions = { as };
     let fired = 0;
+
     for (let next = this.nextDueTime; next !== undefined; next = this.nextDueTime) {
-      fired = this.#moveUntilNextTimer(next, fired, options?.as);
+      fired = this.#moveUntilNextTimer(next, fired, moveOptions);
     }
 
     return this;
@@ -107,15 +105,18 @@ export abstract class BaseManualRuntime<TDate>
 
   /** Applies `spec` to the current time, in {@link IMoveSpec} field order. */
   #targetOf(spec: IMoveSpec): EpochMilliseconds {
-    let timestamp: number = this.timestampNow();
-    // Only years and months vary in length on the UTC calendar; the rest is plain arithmetic.
-    if (spec.years || spec.months) {
-      let time = this.convertToUtcDateImpl(timestamp as EpochMilliseconds);
-      if (spec.years) time = this.advanceYears(time, spec.years);
-      if (spec.months) time = this.advanceMonths(time, spec.months);
-      timestamp = this.convertToEpochTimestampImpl(time);
+    const duration = toDuration(spec);
+
+    if (!spec.years && !spec.months) {
+      return (this.timestampNow() + duration) as EpochMilliseconds;
     }
-    return (timestamp + toDuration(spec)) as EpochMilliseconds;
+
+    let time = this.convertToUtcDateImpl(this.timestampNow() as EpochMilliseconds);
+
+    if (spec.years) time = this.advanceYears(time, spec.years);
+    if (spec.months) time = this.advanceMonths(time, spec.months);
+
+    return (this.convertToEpochTimestampImpl(time) + duration) as EpochMilliseconds;
   }
 
   /** Returns `time` shifted by `years`. */

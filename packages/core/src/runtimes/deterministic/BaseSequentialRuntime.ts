@@ -101,13 +101,18 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   private consumeNextSequentialMove(): { time: number; as?: IMoveOptions["as"] } {
     const moves = this._sequentialMoves;
     const index = this.#sequentialIndex;
+
     if (this.#hasBeenRead && index < moves.length - 1) {
       const next = moves[index + 1];
       const target = next.time as EpochMilliseconds;
+
       next.time = moves[index].time;
       this.#sequentialIndex++;
-      this.moveClock(target, { as: next.as });
+
+      const as = next.as ?? "flow";
+      this.moveClockWithOptions(target, as, DEFAULT_MONOTONIC[as]);
     }
+
     this.#hasBeenRead = true;
     return moves[this.#sequentialIndex] ?? { time: 0 };
   }
@@ -116,21 +121,22 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
    * @throws If the options are invalid or conflict, or a flow or sleep goes backward.
    */
   protected moveClock(targetTimestamp: EpochMilliseconds, options?: IMoveOptions): this {
-    const { as, monotonic } = this.resolveMoveOptions(options);
-    const delta = targetTimestamp - this.timestampNow();
+    const as = options?.as ?? "flow";
+    const monotonic = options?.monotonic ?? DEFAULT_MONOTONIC[as];
 
+    return this.moveClockWithOptions(targetTimestamp, as, monotonic);
+  }
+
+  private moveClockWithOptions(
+    targetTimestamp: EpochMilliseconds,
+    as: MoveKind,
+    monotonic: MonotonicKind,
+  ): this {
+    this.assertValidMoveOptions(as, monotonic);
+    const delta = targetTimestamp - this.timestampNow();
     this.assertMoveIsAllowed(as, delta);
 
-    if (as === "flow") {
-      this.flowTo(targetTimestamp);
-      return this;
-    }
-
-    if (monotonic === "paused") {
-      this.snapWallClockTime(delta);
-    }
-    this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
-    this.mayRunDueCallbacks(true);
+    this.applyMove(targetTimestamp, as, monotonic, delta);
     return this;
   }
 
@@ -140,20 +146,27 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     }
   }
 
-  private resolveMoveOptions(options?: IMoveOptions) {
-    const as = options?.as ?? "flow";
-    const monotonic = options?.monotonic ?? DEFAULT_MONOTONIC[as];
-
-    return {
-      as,
-      monotonic: this.getValidMonotonic(as, monotonic),
-    };
+  private assertValidMoveOptions(as: MoveKind, monotonic: MonotonicKind): void {
+    if (!this.isValidMonotonic(as, monotonic)) {
+      throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
+    }
   }
 
-  private getValidMonotonic(as: MoveKind, monotonic: MonotonicKind): MonotonicKind {
-    if (this.isValidMonotonic(as, monotonic)) return monotonic;
+  private applyMove(
+    targetTimestamp: EpochMilliseconds,
+    as: MoveKind,
+    monotonic: MonotonicKind,
+    delta: number,
+  ): void {
+    if (as === "flow") {
+      this.flowTo(targetTimestamp);
+      return;
+    }
 
-    throw new Error(`Invalid move options (as: '${as}', monotonic: '${monotonic}')`);
+    if (monotonic === "paused") this.snapWallClockTime(delta);
+
+    this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
+    this.mayRunDueCallbacks(true);
   }
 
   private isValidMonotonic(as: MoveKind, monotonic: MonotonicKind): boolean {

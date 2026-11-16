@@ -24,24 +24,25 @@ export class MicrotaskQueue {
     }
   }
 
-  private runCallbacks(
-    queue: (() => void)[],
-    rethrowErrors: boolean,
-    progress: { ranCount: number },
-  ): void {
-    if (rethrowErrors) {
-      while (progress.ranCount < queue.length) {
-        queue[progress.ranCount++]();
-      }
-      return;
-    }
+  private runCallbacks(queue: (() => void)[], rethrowErrors: boolean): void {
+    let ranCount = 0;
 
-    while (progress.ranCount < queue.length) {
-      try {
-        queue[progress.ranCount++]();
-      } catch (error) {
-        console.error(error);
+    try {
+      if (rethrowErrors) {
+        while (ranCount < queue.length) {
+          queue[ranCount++]();
+        }
+        return;
       }
+      while (ranCount < queue.length) {
+        try {
+          queue[ranCount++]();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    } finally {
+      this.removeExecutedCallbacks(queue, ranCount);
     }
   }
 
@@ -53,13 +54,11 @@ export class MicrotaskQueue {
     if (this._draining) return;
 
     const queue = this._queue;
-    const progress = { ranCount: 0 };
     this._draining = true;
 
     try {
-      this.runCallbacks(queue, rethrowErrors, progress);
+      this.runCallbacks(queue, rethrowErrors);
     } finally {
-      this.removeExecutedCallbacks(queue, progress.ranCount);
       this._draining = false;
     }
   }
