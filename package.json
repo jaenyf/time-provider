@@ -40,11 +40,11 @@
     "vitepress>vite": "^6.4.3"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=26.13.1"
   },
   "packageManager": "bun@1.4.4",
   "catalog": {
-    "vite-plus": "~1.6.0",
+    "vite-plus": "~1.7.0",
     "vitest": "~5.1.0"
   },
   "patchedDependencies": {
