@@ -289,4 +289,8 @@ on monotonic time plus a wall offset, so a `snap` only shifts that offset.
   so every plugin is exercised with the cron addon composed onto it.
 
 Coverage (`vp test --coverage`) is enforced in CI; see the `build-test` job
-in [`.github/workflows/check.yml`](.github/workflows/check.yml).
+in [`.github/workflows/check.yml`](.github/workflows/check.yml).  
+The enforced code coverage target is 100%.
+
+Cyclomatic complexity and CRAP scores are computed as part of the code coverage step.  
+The enforced CRAP score target is below 6.

@@ -58,7 +58,7 @@ vp install
 | Command                           | What it does                                                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `vp test`                         | Run all tests                                                                                                      |
-| `vp test --coverage`              | Run all tests with coverage (also runs in CI)                                                                      |
+| `vp test --coverage`              | Run all tests with coverage and ensure a CRAP score below 6 (also runs in CI)                                      |
 | `vp run build`                    | Build every package                                                                                                |
 | `vp check`                        | Format, lint, and type-check the current package                                                                   |
 | `vp run -r check`                 | Format, lint, and type-check every package, dry-run each JSR publish, and check its JSDoc coverage (needs Deno)    |
@@ -80,8 +80,8 @@ from the repo root.
    contributors. This is enforced by `validate-branch-name` (configured in
    the root `package.json`), both locally by the `pre-commit` hook
    (`.vite-hooks/pre-commit`) and again in CI.
-3. Write or update tests for your change. New code is expected to keep
-   coverage where it is; see [ARCHITECTURE.md](./ARCHITECTURE.md#testing) for
+3. Write or update tests for your changes. New code is expected to keep
+   code coverage at 100% and have a CRAP score below 6; see [ARCHITECTURE.md](./ARCHITECTURE.md#testing) for
    how the test suites are organized.
 4. Run the full local gate before pushing:
    ```bash

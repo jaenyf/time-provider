@@ -37,7 +37,7 @@ This is a Bun workspace monorepo (`packages/*`, `website`, `tools/*`).
 | Command                           | What it does                                                                                                        |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `vp test`                         | Run all tests                                                                                                       |
-| `vp test --coverage`              | Run all tests with coverage (matches CI)                                                                            |
+| `vp test --coverage`              | Run all tests with coverage and ensure a CRAP score below 6 (also runs in CI)                                       |
 | `vp run build`                    | Build every package                                                                                                 |
 | `vp check`                        | Format, lint, and type-check the **current** package (run it from inside `packages/<name>/`)                        |
 | `vp run -r check`                 | Same, for every package, plus a JSR publish dry run and a JSDoc coverage check of each publishable one (needs Deno) |
