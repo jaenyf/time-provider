@@ -99,5 +99,7 @@ it("sends the reminder after five minutes", () => {
 ```
 
 [Testing With Time-Provider](/guide/testing) covers the other clock
-strategies. Coming from `jest.useFakeTimers()` or `sinon.useFakeTimers()`? See
+strategies, and [Dependency Injection](/dependency-injection/) wires the
+Time-Provider into NestJS, Angular and other containers. Coming from
+`jest.useFakeTimers()` or `sinon.useFakeTimers()`? See
 [Compared to Jest](/guide/vs-jest) and [Compared to Sinon](/guide/vs-sinon).
