@@ -31,7 +31,7 @@
 <div align="center">
  🌳 Tree-shakable |  
  📦 Zero runtime dependencies |  
- 🧪 No global monkey-patching |  
+ 🔀 DI-friendly |  
  🛡️ Type-safe |  
  ⏱️ Deterministic timers |  
  🕓 Four clock strategies |  

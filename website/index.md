@@ -32,10 +32,10 @@ features:
     title: Zero runtime dependencies
     link: guide/#zero-runtime-dependencies
     details: Core library ships nothing into your dependency tree and each plugin depends only on core and its own date library.
-  - icon: 🧪
-    title: No global monkey-patching
-    link: guide/#why-not-just-mock-date
-    details: Scoped per call site, no process-wide patch, no restore/cleanup step.
+  - icon: 🔀
+    title: DI-friendly
+    link: dependency-injection/
+    details: Plain object scoped per call site. No process-wide patch, no restore/cleanup step.
   - icon: 🛡️
     title: Type-safe
     link: guide/#type-safe-end-to-end

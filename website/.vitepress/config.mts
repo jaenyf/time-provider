@@ -114,6 +114,19 @@ export default defineConfig({
         ],
       },
       {
+        text: "Dependency Injection",
+        items: [
+          { text: "Overview", link: "/dependency-injection/" },
+          { text: "With NestJS", link: "/dependency-injection/nestjs" },
+          { text: "With Angular", link: "/dependency-injection/angular" },
+          { text: "With InversifyJS", link: "/dependency-injection/inversify" },
+          { text: "With tsyringe", link: "/dependency-injection/tsyringe" },
+          { text: "With TypeDI", link: "/dependency-injection/typedi" },
+          { text: "With Awilix", link: "/dependency-injection/awilix" },
+          { text: "With typed-inject", link: "/dependency-injection/typed-inject" },
+        ],
+      },
+      {
         text: "Other Test Frameworks",
         items: [
           { text: "Compared to Sinon", link: "/guide/vs-sinon" },
