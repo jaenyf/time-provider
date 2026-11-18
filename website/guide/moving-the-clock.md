@@ -1,11 +1,60 @@
 # Moving the Clock
 
-A manual clock keeps two times. The wall clock is what `timestampNow()`,
-`utcNow()` and `localNow()` read. Monotonic time is what `monotonicNow()`
-reads, and it is what timers and [timings](/guide/timings) run on. On a real
-machine the two drift apart: NTP corrects the wall clock, a user changes it,
-a laptop sleeps. `moveBy()` and `moveTo()` reproduce those cases, and their
-`as` option says which one.
+## Wall clock and monotonic time
+
+A clock reads two times: **wall clock time** and **monotonic time**.
+
+The wall clock is what `timestampNow()`, `utcNow()` and `localNow()` read.  
+Monotonic time is what `monotonicNow()` reads, and it is what [timers](/guide/timers) and [timings](/guide/timings) run on.
+
+The two often drift apart: NTP corrects the wall clock, a user changes it, a laptop sleeps.
+
+### The three moves: Flow / Snap / Sleep
+
+A clock move comes in three kinds:
+
+- **Flow**: time passes normally, and each timer fires at its own due time.
+- **Snap**: the wall clock is set, forward or backward (e.g. an NTP sync, or the user changing the time). The monotonic clock doesn’t move and no timer fires.
+- **Sleep**: the system is suspended (e.g. hibernation). On wake-up the wall clock jumps forward, and each overdue timer fires once, in due order.
+
+The wall clock moves in every case. What changes is the monotonic clock and the pending timers:
+
+| `as`             | `monotonic`         | **wall clock** | **monotonic time** | **pending timers**                                                                                 | **backward** |
+| ---------------- | ------------------- | -------------- | ------------------ | -------------------------------------------------------------------------------------------------- | ------------ |
+| `flow` (default) | `running`           | moves          | moves              | each fires at its due time, in due order, and reads that time                                      | throws       |
+| `snap`           | `paused` (default)  | moves          | unchanged          | nothing fires; each keeps the delay it had left                                                    | allowed      |
+| `sleep`          | `running` (default) | moves          | moves              | each overdue timer fires once at wake-up, in due order; intervals and recurrences re-arm from then | throws       |
+| `sleep`          | `paused`            | moves          | unchanged          | nothing fires (the same as a forward snap)                                                         | throws       |
+
+`monotonic` defaults to `"running"` for `flow` and `sleep`, and to `"paused"`
+for `snap`. Only `sleep` accepts both. `flow` with `"paused"` and `snap` with
+`"running"` throw.
+
+::: warning Only a snap goes backward  
+A negative `flow` or `sleep` throws `A clock can't flow backward. Use { as: "snap" }`.  
+Only the wall clock can go back, and that is what `snap` is for.  
+_Note: the deprecated
+`advance()` still accepts negative values, and moves monotonic time back with
+the wall clock._
+:::
+
+`sleep` wakes up inside the call: when `moveBy()` returns, the overdue timers
+have run.
+
+### Which move matches the host
+
+- Time passing: `flow`.
+- A wall-clock correction (NTP, a user changing the time, a timezone database
+  update): `snap`.
+- A suspend where the host's monotonic clock keeps counting: `sleep`.
+- A suspend on Linux: Node.js's `performance.now()` does not count time spent
+  suspended there, so after waking the wall clock is ahead and monotonic time
+  is not. That is `{ as: "sleep", monotonic: "paused" }`.
+
+## Manual clock
+
+`moveBy()` and `moveTo()` reproduce these moves on a manual clock.  
+The `as` option picks the kind.
 
 ```ts
 timeProvider.clock.moveBy({ seconds: 3 }); // time passes
@@ -18,40 +67,7 @@ timeProvider.clock.moveTo("2026-03-29T01:00:00.000Z"); // time passes up to that
 order. `moveTo()` takes an ISO string, `EpochMilliseconds` (see
 `toInstant()`) or a `TDate`.
 
-## The three moves
-
-| `as`             | `monotonic`         | wall clock | monotonic time | pending timers                                                                                     | backward |
-| ---------------- | ------------------- | ---------- | -------------- | -------------------------------------------------------------------------------------------------- | -------- |
-| `flow` (default) | `running`           | moves      | moves          | each fires at its due time, in due order, and reads that time                                      | throws   |
-| `sleep`          | `running` (default) | moves      | moves          | each overdue timer fires once at wake-up, in due order; intervals and recurrences re-arm from then | throws   |
-| `sleep`          | `paused`            | moves      | unchanged      | nothing fires (the same as a forward snap)                                                         | throws   |
-| `snap`           | `paused` (default)  | moves      | unchanged      | nothing fires; each keeps the delay it had left                                                    | allowed  |
-
-`monotonic` defaults to `"running"` for `flow` and `sleep`, and to `"paused"`
-for `snap`. Only `sleep` accepts both. `flow` with `"paused"` and `snap` with
-`"running"` throw.
-
-::: warning Only a snap goes backward
-A negative `flow` or `sleep` throws `A clock can't flow backward. Use { as: "snap" }`.
-Moving time back is something only the wall clock does. The deprecated
-`advance()` still accepts negative values, and moves monotonic time back with
-the wall clock.
-:::
-
-`sleep` wakes up inside the call: when `moveBy()` returns, the overdue timers
-have run.
-
-## Which move matches the host
-
-- Time passing: `flow`.
-- A wall-clock correction (NTP, a user changing the time, a timezone database
-  update): `snap`.
-- A suspend where the host's monotonic clock keeps counting: `sleep`.
-- A suspend on Linux: Node.js's `performance.now()` does not count time spent
-  suspended there, so after waking the wall clock is ahead and monotonic time
-  is not. That is `{ as: "sleep", monotonic: "paused" }`.
-
-## Stepping through timers
+### Stepping through timers
 
 Timers are due on monotonic time, so a snap neither fires nor delays them.
 `scheduler.timers` reports what is pending:
@@ -83,7 +99,7 @@ them, and `scheduler.microtasks.pendingCount` counts queued microtasks.
 
 ::: tip Coming from Vitest or sinon fake timers
 
-| fake timers                                     | Time-Provider                                   |
+| Fake timers                                     | Time-Provider                                   |
 | ----------------------------------------------- | ----------------------------------------------- |
 | `vi.advanceTimersByTime(ms)`, `clock.tick(ms)`  | `moveBy({ milliseconds: ms })`                  |
 | `clock.jump(ms)`                                | `moveBy({ milliseconds: ms }, { as: "sleep" })` |
@@ -97,7 +113,7 @@ them, and `scheduler.microtasks.pendingCount` counts queued microtasks.
 microtasks. `timers.pendingCount` counts timers only.
 :::
 
-## Sequential clocks
+## Sequential clock
 
 Each read of a [sequential clock](/guide/sequential-clock) moves it to the
 next instant. A backward instant is a snap and a forward one a flow, unless
