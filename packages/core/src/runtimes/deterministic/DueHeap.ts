@@ -150,15 +150,19 @@ export class DueHeap<TDate> {
     return runAt;
   }
 
-  /** Number of pending untagged entries due at or before `runAt` in the subtree at `index`. */
+  /** Number of pending untagged entries due at or before `runAt` in the subtree at `index`, whose entry must be due. */
   countUntaggedDueBy(runAt: number, index = 0): number {
-    const entry = this._entries[index];
-    if (entry === undefined || entry.runAt > runAt) return 0;
-    return (
-      (entry.tag === undefined && !entry.isDisposed ? 1 : 0) +
-      this.countUntaggedDueBy(runAt, index * 2 + 1) +
-      this.countUntaggedDueBy(runAt, index * 2 + 2)
-    );
+    const entries = this._entries;
+    const entry = entries[index];
+    let count = entry.tag === undefined && !entry.isDisposed ? 1 : 0;
+    const left = index * 2 + 1;
+    if (left < entries.length && entries[left].runAt <= runAt) {
+      count += this.countUntaggedDueBy(runAt, left);
+    }
+    if (left + 1 < entries.length && entries[left + 1].runAt <= runAt) {
+      count += this.countUntaggedDueBy(runAt, left + 1);
+    }
+    return count;
   }
 
   /** Number of live entries under `tag`. */
