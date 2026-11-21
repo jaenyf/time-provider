@@ -7,18 +7,19 @@ import { fileURLToPath } from "node:url";
   Fresh V8/JIT/GC state each time, tagging every recorded sample with which pass it came from via TIMEPROVIDER_BENCH_PASS.
   It is exported for generate-benchmark-md.ts.
 */
-const FILES = [
-  "bench/manual-scheduling.bench.ts",
-  "bench/sequential-scheduling.bench.ts",
-  "bench/clock-read.bench.ts",
-];
+const FILES = {
+  "bench/manual-scheduling.bench.ts": "time-provider (manual) vs sinon vs jest",
+  "bench/sequential-scheduling.bench.ts": "time-provider (sequential) vs sinon vs jest",
+  "bench/clock-read.bench.ts": "clock reads",
+};
 const resultsDirectory = fileURLToPath(new URL("../bench-results", import.meta.url));
 
 export function runAllPasses(totalPasses: number): void {
   rmSync(resultsDirectory, { recursive: true, force: true });
   for (let pass = 1; pass <= totalPasses; pass++) {
     console.log(`\n=== pass ${pass}/${totalPasses} ===`);
-    for (const file of FILES) {
+    for (const [file, label] of Object.entries(FILES)) {
+      console.log(`\n--- ${label} ---`);
       execFileSync("vp", ["test", "bench", "--reporter=verbose", file], {
         stdio: "inherit",
         env: { ...process.env, TIMEPROVIDER_BENCH_PASS: String(pass) },
