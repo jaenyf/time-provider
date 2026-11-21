@@ -5,6 +5,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-11-16T23:56:29.446Z - ([2dcb96d](https://github.com/jaenyf/time-provider/commit/2dcb96d))
 
+Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -298,6 +300,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 9.18x faster than jest fake-timers (modern)
 
 ## 2026-10-29T14:26:50.220Z - ([6f85ab4](https://github.com/jaenyf/time-provider/commit/6f85ab4))
+
+Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -593,6 +597,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-09-28T10:02:02.689Z - ([747a37c](https://github.com/jaenyf/time-provider/commit/747a37c))
 
+Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -771,6 +777,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 4.28x faster than sinon fake-timers
 
 ## 2026-09-26T14:31:54.095Z - ([2da21ad](https://github.com/jaenyf/time-provider/commit/2da21ad))
+
+Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -951,6 +959,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-09-24T04:51:36.187Z - ([5248781](https://github.com/jaenyf/time-provider/commit/5248781))
 
+Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -1129,6 +1139,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 3.81x faster than sinon fake-timers
 
 ## 2026-09-22T09:50:54.317Z - ([fc202d0](https://github.com/jaenyf/time-provider/commit/fc202d0))
+
+Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -1309,6 +1321,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-09-20T22:23:03.364Z - ([b8f1384](https://github.com/jaenyf/time-provider/commit/b8f1384))
 
+Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.2
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -1488,6 +1502,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-09-14T07:43:01.800Z - ([a703555](https://github.com/jaenyf/time-provider/commit/a703555))
 
+Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.5.1
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -1562,6 +1578,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 7.33x faster than jest fake-timers (modern)
 
 ## 2026-08-10T15:36:38.670Z - ([4c87692](https://github.com/jaenyf/time-provider/commit/4c87692))
+
+Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.4.1
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
@@ -1638,6 +1656,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-08-01T10:30:35.885Z - ([83a25f0](https://github.com/jaenyf/time-provider/commit/83a25f0))
 
+Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.4.1
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -1713,6 +1733,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 
 ## 2026-08-01T10:05:36.991Z - ([8b09e42](https://github.com/jaenyf/time-provider/commit/8b09e42))
 
+Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.4.1
+
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
 | name                       |      hz | mean (ms) | p99 (ms) | samples |
@@ -1787,6 +1809,8 @@ Auto-generated and triggered by [last release](https://github.com/jaenyf/time-pr
 - 6.87x faster than sinon fake-timers
 
 ## 2026-07-25T20:16:36.601Z - ([6a2a3d5](https://github.com/jaenyf/time-provider/commit/6a2a3d5))
+
+Benchmarked with: Node v24 · @time-provider/core 1.2.0 · @sinonjs/fake-timers 15.4.0 · @jest/fake-timers 30.4.1
 
 ### schedule 5000 timeouts, without time advance _(median across 5 passes)_
 
