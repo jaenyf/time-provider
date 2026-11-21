@@ -14,18 +14,11 @@ Swap `plugin-native` for one of:
 - `@time-provider/plugin-moment`
 - `@time-provider/plugin-moment-timezone`
 - `@time-provider/plugin-temporal`
+- your custom adapter for any other cases
 
 Each plugin depends only on `@time-provider/core` and its own date library
 (a peer dependency) — see [Plugins](/plugins/) for which one fits your
 codebase, and which support real IANA timezones vs. UTC-only.
-
-Every package — `core` and each plugin — ships **two entry points**: the
-default one (`@time-provider/core`, `@time-provider/plugin-dayjs`, ...) for a
-production, system (real time) Time-Provider, and a `/deterministic`
-subpath (`@time-provider/core/deterministic`,
-`@time-provider/plugin-dayjs/deterministic`, ...) for the fixed/manual/sequential
-strategies used in tests. See [Mental Model](/guide/mental-model) for why
-they're split, and [Quick Start](/guide/quick-start) for both in use.
 
 Want to extend a Time-Provider with extra functionality instead of a new
 date library? See [Addons](/addons/) — e.g.
@@ -50,7 +43,7 @@ date library? See [Addons](/addons/) — e.g.
 
 ```
 @time-provider/core                    abstractions, base classes, the builders
-@time-provider/plugin-native           native Date (UTC-only)
+@time-provider/plugin-native           native javascript Date (UTC-only)
 @time-provider/plugin-dayjs            Day.js
 @time-provider/plugin-luxon            Luxon
 @time-provider/plugin-moment           Moment.js (UTC-only)

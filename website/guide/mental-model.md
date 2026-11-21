@@ -1,7 +1,7 @@
 # Mental Model
 
-`time-provider` turns a plugin (an adapter for a date library) into an
-`ITimeProvider` through one pipeline:
+One pipeline turns a plugin (an adapter for a date library) into an
+`ITimeProvider`:
 
 ```
 Plugin (adapter)
@@ -20,9 +20,8 @@ it advances.
 
 ## Two entry points, on purpose
 
-`.create()` alone only ever builds a **system** (real time) runtime. Fixed,
-manual, and sequential runtimes live behind a separate entry point instead
-of extra methods on the same builder:
+`.create()` alone only ever builds a **system** (system live time) runtime.  
+**Fixed**, **manual**, and **sequential** runtimes live behind a separate **deterministic** entry point:
 
 ```ts
 // production

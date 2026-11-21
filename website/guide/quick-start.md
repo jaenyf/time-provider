@@ -25,10 +25,7 @@ directly, just wrapped behind the `ITimeProvider` interface.
 
 Deterministic strategies live behind a separate entry point,
 `@time-provider/core/deterministic`, and require the plugin's own
-`/deterministic` subpath — see [Mental Model](/guide/mental-model) for why.
-Swap in `.asManual()...create()` (or `.asFixed()`, `.asSequential()`) —
-`UserService` itself never changes, it still just receives an
-`ITimeProvider`:
+`/deterministic` subpath — see [Mental Model](/guide/mental-model).
 
 ```ts
 import { createTimeProvider } from "@time-provider/core/deterministic";
@@ -47,14 +44,15 @@ timeProvider.clock.moveBy({ seconds: 3 });
 expect(retries).toBe(3);
 ```
 
-Manual and sequential clocks run synchronously: a due timer callback fires in-line, as a direct side effect of the call
-that made it due (`moveBy()` — or `localNow()`, `utcNow()` on sequential
-clocks) — not on a real event-loop tick. Use `timestampNow()` instead when
-you only need a value to compute with; it never triggers this. No `await`,
-no fake-timer install/restore boilerplate.
+Deterministic clocks run synchronously: a due timer callback fires in-line, as a direct side effect of the call
+that made it due (`moveBy()` on manual clocks — or `localNow()` and `utcNow()` on sequential
+clocks) — not on a real event-loop tick.
+
+Use `timestampNow()` instead when
+you only need a value to compute with; it never triggers this.
+
+No `await`,no fake-timer install/restore boilerplate.
 
 ## Try it live
 
-The [Playground](/playground) lets you pick a plugin and a clock strategy,
-read `localNow()`/`utcNow()`, register timers, and advance time — without
-installing anything.
+The [Playground](/playground) lets you pick a plugin, and perform all the operation the library exposes.
