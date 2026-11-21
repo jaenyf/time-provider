@@ -5,8 +5,8 @@ aside: false
 # Compared to Jest
 
 Each section below shows a test written with Jest's fake timers on the left and
-the same test written with Time-Provider on the right. Every sample was run
-against Jest <!-- version -->.
+the same test written with Time-Provider on the right.  
+Every sample was run against Jest v<!-- version --> [(see below)](#how-the-timings-were-measured).
 
 ## Setup
 
