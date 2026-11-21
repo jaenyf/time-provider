@@ -19,9 +19,6 @@ export class DueEntry<TDate> implements IScheduledHandle {
   readonly owner: DueHeap<TDate>;
   /** Recurrence result; ignored otherwise. */
   callback: (() => void) | (() => IDurationSpec | false);
-  /** Links in the live-entry list. */
-  _livePrev: DueEntry<TDate> | undefined;
-  _liveNext: DueEntry<TDate> | undefined;
   /** Tag and links used by {@link DueHeap.registerSpecific}. */
   tag: unknown;
   _tagPrev: DueEntry<TDate> | undefined;
@@ -45,8 +42,6 @@ export class DueEntry<TDate> implements IScheduledHandle {
     this.cancelled = false;
     this.callback = callback;
     this.isDisposed = false;
-    this._livePrev = undefined;
-    this._liveNext = undefined;
     this.tag = undefined;
     this._tagPrev = undefined;
     this._tagNext = undefined;
@@ -56,8 +51,8 @@ export class DueEntry<TDate> implements IScheduledHandle {
     if (this.isDisposed) return;
     // Set before abort(): abort() can synchronously re-enter dispose() through this entry's own
     // "abort" listener below, and that reentrant call must see isDisposed already true and return
-    // immediately - otherwise it reaches retireEntry() a second time, and the live list's unlink
-    // isn't safe to run twice.
+    // immediately - otherwise it reaches retireEntry() a second time, and neither the tag unlink
+    // nor the dead count is safe to run twice.
     this.isDisposed = true;
     if (this.#abortController !== undefined) {
       this.#abortController.abort("Timer handle is being disposed");

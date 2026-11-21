@@ -609,8 +609,8 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
   test("disposing a handle after its signal was accessed still disposes it, and leaves other live handles reachable", () => {
     // Regression test: dispose() aborting this handle's own AbortController re-enters dispose()
     // synchronously through the "abort" listener signal wires up. If dispose() didn't guard against
-    // that reentrant call before reaching the heap's live-entry list, the second (redundant) unlink
-    // corrupted the list, silently orphaning any other live entry from runtime.dispose()'s sweep.
+    // that reentrant call, the second (redundant) retire could orphan other live entries from
+    // runtime.dispose()'s sweep.
     const sut = new FakeManualRuntime(0);
     const a = sut.scheduler.timers.once({ milliseconds: 100 }, () => {});
     const b = sut.scheduler.timers.once({ milliseconds: 200 }, () => {});
@@ -625,7 +625,7 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
 
   test("disposing the runtime from inside a timer callback disposes the timer running it", () => {
     // The entry running its callback is the only one that has left the due heap without being
-    // disposed, so the runtime's sweep reaches it through the live-entry list rather than the
+    // disposed, so the runtime's sweep reaches it through the running entries rather than the
     // heap array. Asserted from inside the callback: a one-shot disposes itself on the way out
     // regardless, which would hide the difference.
     const sut = new FakeManualRuntime(0);
@@ -658,6 +658,26 @@ describe("BaseManualRuntime timer handle signal/dispose", () => {
     sut.clock.advance({ milliseconds: 1000 });
 
     expect(ticks).toBe(1);
+    expect(sut.scheduler.timers.pendingCount).toBe(0);
+  });
+
+  test("disposing the runtime from a nested drain stops the outer recurring callback too", () => {
+    const sut = new FakeManualRuntime(0);
+    let ticks = 0;
+    sut.scheduler.timers.recurring(
+      () => {
+        ticks++;
+        sut.scheduler.timers.once({ milliseconds: 10 }, () => sut.dispose());
+        sut.clock.advance({ milliseconds: 10 });
+        return { milliseconds: 100 };
+      },
+      { milliseconds: 100 },
+    );
+
+    sut.clock.advance({ milliseconds: 1000 });
+
+    expect(ticks).toBe(1);
+    expect(sut.scheduler.timers.pendingCount).toBe(0);
   });
 });
 
