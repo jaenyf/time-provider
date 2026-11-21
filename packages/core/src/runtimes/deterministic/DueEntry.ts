@@ -5,24 +5,24 @@ import { BaseRuntime } from "../runtime-base.ts";
 
 /** Pending timer entry and {@link IScheduledHandle}. */
 export class DueEntry<TDate> implements IScheduledHandle {
-  runAt: number;
-  seq: number;
+  declare runAt: number;
+  declare seq: number;
   /** Heap position, or `-1` when detached. */
-  heapIndex: number;
+  declare heapIndex: number;
   /** Used only for intervals; `0` otherwise. */
-  delay: number;
+  declare delay: number;
   /** Used only for recurrences. */
-  cancelled: boolean;
-  isDisposed: boolean;
-  readonly kind: ScheduledHandleKind;
+  declare cancelled: boolean;
+  declare isDisposed: boolean;
+  declare readonly kind: ScheduledHandleKind;
   /** Owning heap. */
-  readonly owner: DueHeap<TDate>;
+  declare readonly owner: DueHeap<TDate>;
   /** Recurrence result; ignored otherwise. */
-  callback: (() => void) | (() => IDurationSpec | false);
+  declare callback: (() => void) | (() => IDurationSpec | false);
   /** Tag and links used by {@link DueHeap.registerSpecific}. */
-  tag: unknown;
-  _tagPrev: DueEntry<TDate> | undefined;
-  _tagNext: DueEntry<TDate> | undefined;
+  declare tag: unknown;
+  declare _tagPrev: DueEntry<TDate> | undefined;
+  declare _tagNext: DueEntry<TDate> | undefined;
   #abortController?: AbortController;
 
   constructor(
