@@ -115,6 +115,7 @@ for (const [page, framework] of Object.entries(pages)) {
   const versions = [...commonVersions, ...runner, `${framework} ${version(framework)}`];
   timings[page] = {
     measuredWith: `Measured on ${measuredOn} with: ${versions.join(" · ")}`,
+    version: version(framework),
     left: medians("left"),
     right: medians("right"),
   };

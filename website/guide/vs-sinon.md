@@ -6,7 +6,7 @@ aside: false
 
 Each section below shows a test written with Sinon's fake timers on the left and
 the same test written with Time-Provider on the right. Every sample was run
-against Sinon 22.
+against Sinon <!-- version -->.
 
 ## Setup
 

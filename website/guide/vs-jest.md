@@ -6,7 +6,7 @@ aside: false
 
 Each section below shows a test written with Jest's fake timers on the left and
 the same test written with Time-Provider on the right. Every sample was run
-against Jest 30.
+against Jest <!-- version -->.
 
 ## Setup
 
