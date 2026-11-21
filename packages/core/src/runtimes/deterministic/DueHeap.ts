@@ -289,10 +289,17 @@ export class DueHeap<TDate> {
   /**
    * Runs callbacks due at or before `now` and checkpoints microtasks after each one.
    * @param coalesce Re-arms overdue intervals and recurrences from `now`, so each fires once.
+   * @param onDueTime Called with each new due time before its callbacks run.
    */
-  drainDue(now: number, microtasks: MicrotaskQueue, coalesce = false): void {
+  drainDue(
+    now: number,
+    microtasks: MicrotaskQueue,
+    coalesce = false,
+    onDueTime?: (runAt: number) => void,
+  ): void {
     const entries = this._entries;
     const rethrowTimersErrors = this._shouldRethrowTimerErrors;
+    let dueTime: number | undefined;
 
     try {
       for (;;) {
@@ -301,6 +308,7 @@ export class DueHeap<TDate> {
         const root = entries[0];
         //#endregion inlining of DueHeap.peek
         if (root.runAt > now) break;
+        if (onDueTime !== undefined && root.runAt !== dueTime) onDueTime((dueTime = root.runAt));
 
         switch (root.kind) {
           case SCHEDULED_TIMER_KIND_TIMEOUT: {
@@ -427,20 +435,6 @@ export class DueHeap<TDate> {
     } finally {
       /* a due callback that threw still leaves the checkpoint owed, as it would natively */
       if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
-    }
-  }
-
-  /** Drains due entries up to `targetTimestamp`, updating the clock to each due time. */
-  drainDueAdvancing(
-    targetTimestamp: number,
-    setCurrentTimestamp: (runAt: number) => void,
-    microtasks: MicrotaskQueue,
-  ): void {
-    for (;;) {
-      const nextDue = this.peekRunAt();
-      if (nextDue === undefined || nextDue > targetTimestamp) break;
-      setCurrentTimestamp(nextDue);
-      this.drainDue(nextDue, microtasks);
     }
   }
 }

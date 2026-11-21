@@ -425,8 +425,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
 
     test("a due callback's microtasks run before the next due callback at a later runAt, within the same advance()", () => {
       // Same point as above, but the two due callbacks land at different runAt values within one
-      // advance() walk (drainDueAdvancing's own loop over several drainDue calls), rather than
-      // sharing a single drainDue batch.
+      // advance() walk, rather than sharing a single due time.
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
       const log: string[] = [];
@@ -444,7 +443,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
     test("advance() drains pending microtasks even when nothing ends up due", () => {
       // advance() reaches drainDueAdvancing directly, bypassing mayRunDueCallbacks - so unlike a
       // once()/every()/recurring() call, it has no pre-checkpoint of its own by default.
-      // drainDueAdvancing's loop only checkpoints as a side effect of a due callback actually
+      // The drainDue loop only checkpoints as a side effect of a due callback actually
       // running, so with nothing due at all it would never run one without an explicit guard.
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
