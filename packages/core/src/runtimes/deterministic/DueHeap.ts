@@ -233,12 +233,12 @@ export class DueHeap<TDate> {
     this._siftUp(entry, index);
   }
 
-  /** Sifts `moving` up using the hole algorithm. */
-  private _siftUp(moving: DueEntry<TDate>, index: number): void {
+  /** Sifts `moving` up to at most `top` using the hole algorithm. */
+  private _siftUp(moving: DueEntry<TDate>, index: number, top = 0): void {
     const entries = this._entries;
     const movingRunAt = moving.runAt;
     const movingSeq = moving.seq;
-    while (index > 0) {
+    while (index > top) {
       const parentIndex = (index - 1) >>> 1;
       const parent = entries[parentIndex];
       const parentRunAt = parent.runAt;
@@ -256,50 +256,34 @@ export class DueHeap<TDate> {
     moving.heapIndex = index;
   }
 
-  /** Sifts `moving` down using the hole algorithm. */
+  /** Sifts `moving` down: hole to a leaf, then back up (Floyd), fewer compares than top-down. */
   private _siftDown(moving: DueEntry<TDate>, index: number): void {
+    const top = index;
     const entries = this._entries;
     const length = entries.length;
-    const movingRunAt = moving.runAt;
-    const movingSeq = moving.seq;
     for (;;) {
       const left = index * 2 + 1;
       if (left >= length) break;
+      let childIndex = left;
+      let child = entries[left];
       const right = left + 1;
-      let smallestIndex = left;
-      let smallest = entries[left];
-      let smallestRunAt = smallest.runAt;
-      let smallestSeq = smallest.seq;
       if (right < length) {
         const rightEntry = entries[right];
-        const rightRunAt = rightEntry.runAt;
-        const rightSeq = rightEntry.seq;
         //#region inlining of isBefore
         if (
-          rightRunAt < smallestRunAt ||
-          (rightRunAt === smallestRunAt && rightSeq < smallestSeq)
+          rightEntry.runAt < child.runAt ||
+          (rightEntry.runAt === child.runAt && rightEntry.seq < child.seq)
         ) {
-          smallestIndex = right;
-          smallest = rightEntry;
-          smallestRunAt = rightRunAt;
-          smallestSeq = rightSeq;
+          childIndex = right;
+          child = rightEntry;
         }
         //#endregion inlining of isBefore
       }
-      //#region inlining of isBefore
-      if (
-        movingRunAt < smallestRunAt ||
-        (movingRunAt === smallestRunAt && movingSeq <= smallestSeq)
-      ) {
-        break;
-      }
-      //#endregion inlining of isBefore
-      entries[index] = smallest;
-      smallest.heapIndex = index;
-      index = smallestIndex;
+      entries[index] = child;
+      child.heapIndex = index;
+      index = childIndex;
     }
-    entries[index] = moving;
-    moving.heapIndex = index;
+    this._siftUp(moving, index, top);
   }
 
   /**
