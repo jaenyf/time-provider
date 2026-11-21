@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/core",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "private": false,
   "description": "Solid clock. Own time. Better tests.",
   "keywords": [
