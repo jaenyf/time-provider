@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@jest/fake-timers": "^30",
-    "@sinonjs/fake-timers": "^15",
+    "@sinonjs/fake-timers": "^15.5.0",
     "@time-provider/addon-animation-frame": "workspace:*",
     "@time-provider/addon-idle": "workspace:*",
     "@time-provider/core": "workspace:*",
