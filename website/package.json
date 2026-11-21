@@ -5,7 +5,7 @@
   "scripts": {
     "check": "vp check && vue-tsc --noEmit",
     "dev": "vitepress dev .",
-    "build": "vitepress build .",
+    "build": "node scripts/measure-samples.ts && vitepress build .",
     "preview": "vitepress preview ."
   },
   "dependencies": {
@@ -27,9 +27,15 @@
     "moment-timezone": "~0.6.6"
   },
   "devDependencies": {
+    "@swc/core": "^1.16.22",
+    "@swc/jest": "^0.2.39",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
     "shiki": "4.6.0",
+    "sinon": "^22.1.0",
     "typescript": "npm:typescript-native-bridge@6.0.3-bridge.19.tsgo.7.0.2",
     "vitepress": "^1.6.4",
+    "vitest": "catalog:",
     "vue": "^3.5.46",
     "vue-tsc": "^3.3.14"
   }
