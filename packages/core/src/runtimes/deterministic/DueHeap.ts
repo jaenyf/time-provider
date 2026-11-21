@@ -197,12 +197,12 @@ export class DueHeap<TDate> {
     this._siftUp(entry, index);
   }
 
-  /** Sifts `moving` up to at most `top` using the hole algorithm. */
-  private _siftUp(moving: DueEntry<TDate>, index: number, top = 0): void {
+  /** Sifts `moving` up using the hole algorithm. */
+  private _siftUp(moving: DueEntry<TDate>, index: number): void {
     const entries = this._entries;
     const movingRunAt = moving.runAt;
     const movingSeq = moving.seq;
-    while (index > top) {
+    while (index > 0) {
       const parentIndex = (index - 1) >>> 1;
       const parent = entries[parentIndex];
       const parentRunAt = parent.runAt;
@@ -220,11 +220,11 @@ export class DueHeap<TDate> {
     moving.heapIndex = index;
   }
 
-  /** Sifts `moving` down: hole to a leaf, then back up (Floyd), fewer compares than top-down. */
-  private _siftDown(moving: DueEntry<TDate>, index: number): void {
-    const top = index;
+  /** Sifts a popped heap's new root down: hole to a leaf, then back up (Floyd). */
+  private _siftDownFromRoot(moving: DueEntry<TDate>): void {
     const entries = this._entries;
     const length = entries.length;
+    let index = 0;
     for (;;) {
       const left = index * 2 + 1;
       if (left >= length) break;
@@ -247,7 +247,53 @@ export class DueHeap<TDate> {
       child.heapIndex = index;
       index = childIndex;
     }
-    this._siftUp(moving, index, top);
+    this._siftUp(moving, index);
+  }
+
+  /** Sifts `moving` down using the hole algorithm. */
+  private _siftDown(moving: DueEntry<TDate>, index: number): void {
+    const entries = this._entries;
+    const length = entries.length;
+    const movingRunAt = moving.runAt;
+    const movingSeq = moving.seq;
+    for (;;) {
+      const left = index * 2 + 1;
+      if (left >= length) break;
+      const right = left + 1;
+      let smallestIndex = left;
+      let smallest = entries[left];
+      let smallestRunAt = smallest.runAt;
+      let smallestSeq = smallest.seq;
+      if (right < length) {
+        const rightEntry = entries[right];
+        const rightRunAt = rightEntry.runAt;
+        const rightSeq = rightEntry.seq;
+        //#region inlining of isBefore
+        if (
+          rightRunAt < smallestRunAt ||
+          (rightRunAt === smallestRunAt && rightSeq < smallestSeq)
+        ) {
+          smallestIndex = right;
+          smallest = rightEntry;
+          smallestRunAt = rightRunAt;
+          smallestSeq = rightSeq;
+        }
+        //#endregion inlining of isBefore
+      }
+      //#region inlining of isBefore
+      if (
+        movingRunAt < smallestRunAt ||
+        (movingRunAt === smallestRunAt && movingSeq <= smallestSeq)
+      ) {
+        break;
+      }
+      //#endregion inlining of isBefore
+      entries[index] = smallest;
+      smallest.heapIndex = index;
+      index = smallestIndex;
+    }
+    entries[index] = moving;
+    moving.heapIndex = index;
   }
 
   /**
@@ -284,7 +330,7 @@ export class DueHeap<TDate> {
             const lastIndex = entries.length - 1;
             if (lastIndex > 0) {
               const last = entries.pop()!;
-              this._siftDown(last, 0);
+              this._siftDownFromRoot(last);
             } else {
               entries.pop();
             }
@@ -320,7 +366,7 @@ export class DueHeap<TDate> {
               const lastIndex = entries.length - 1;
               if (lastIndex > 0) {
                 const last = entries.pop()!;
-                this._siftDown(last, 0);
+                this._siftDownFromRoot(last);
               } else {
                 entries.pop();
               }
@@ -353,7 +399,7 @@ export class DueHeap<TDate> {
             const lastIndex = entries.length - 1;
             if (lastIndex > 0) {
               const last = entries.pop()!;
-              this._siftDown(last, 0);
+              this._siftDownFromRoot(last);
             } else {
               entries.pop();
             }
