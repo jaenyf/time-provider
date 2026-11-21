@@ -181,10 +181,8 @@ export abstract class BaseDeterministicRuntime<TDate>
        due at all. */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     const offset = this.#wallClockTimeOffset;
-    this.#dueQueue.drainDueAdvancing(
-      targetTimestamp - offset,
-      (runAt) => setCurrentTimestamp(runAt + offset),
-      microtasks,
+    this.#dueQueue.drainDue(targetTimestamp - offset, microtasks, false, (runAt) =>
+      setCurrentTimestamp(runAt + offset),
     );
   }
 

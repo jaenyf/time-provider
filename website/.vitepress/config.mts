@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import { sampleTimings } from "./sample-timings.ts";
 
 export default defineConfig({
   title: "Time-Provider",
@@ -9,6 +10,7 @@ export default defineConfig({
   lastUpdated: true,
   sitemap: { hostname: "https://jaenyf.github.io/time-provider/" },
   vite: {
+    plugins: [sampleTimings()],
     build: {
       chunkSizeWarningLimit: 1200,
     },

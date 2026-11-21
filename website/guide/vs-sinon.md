@@ -97,7 +97,7 @@ it("sends the reminder after 5 minutes", () => {
   sinon.assert.calledOnce(send);
   clock.restore();
 });
-// roughly measured to run in 3.2 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -116,7 +116,7 @@ it("sends the reminder after 5 minutes", () => {
   timeProvider.clock.moveBy({ minutes: 1 });
   expect(sent).toBe(1);
 });
-// roughly measured to run in 1.0 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -175,7 +175,7 @@ it("polls four times in two minutes", () => {
   sinon.assert.callCount(poll, 4);
   clock.restore();
 });
-// roughly measured to run in 1.2 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -193,7 +193,7 @@ it("polls four times in two minutes", () => {
 
   expect(polls).toBe(4);
 });
-// roughly measured to run in 0.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -249,7 +249,7 @@ it("stamps the order", () => {
   expect(createOrder().createdAt).toEqual(now);
   clock.restore();
 });
-// roughly measured to run in 1.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -269,7 +269,7 @@ it("stamps the order", () => {
 
   expect(createOrder(timeProvider).createdAt).toEqual(now);
 });
-// roughly measured to run in 0.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -338,7 +338,7 @@ it("retries three times", () => {
   sinon.assert.calledThrice(attempt);
   clock.restore();
 });
-// roughly measured to run in 1.0 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -357,7 +357,7 @@ it("retries three times", () => {
   timeProvider.clock.moveUntil("noTimers");
   expect(attempts).toBe(3);
 });
-// roughly measured to run in 0.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -421,7 +421,7 @@ it("loads after a second", async () => {
   expect(await result).toBe("loaded");
   clock.restore();
 });
-// roughly measured to run in 1.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -438,7 +438,7 @@ it("loads after a second", async () => {
 
   expect(await result).toBe("loaded");
 });
-// roughly measured to run in 0.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -511,7 +511,7 @@ it("publishes after saving", () => {
     publishedAt: new Date(250),
   });
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -571,7 +571,7 @@ it("checks once after sleeping", () => {
   sinon.assert.calledOnce(check);
   clock.restore();
 });
-// roughly measured to run in 1.0 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -589,7 +589,7 @@ it("checks once after sleeping", () => {
 
   expect(checks).toBe(1);
 });
-// roughly measured to run in 0.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -649,7 +649,7 @@ it("saves the user", async () => {
 
   expect(saved).toEqual(user);
 });
-// roughly measured to run in 5.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -683,7 +683,7 @@ it("draws a second of frames", () => {
   expect(frames).toBe(62);
   clock.restore();
 });
-// roughly measured to run in 1.8 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -708,7 +708,7 @@ it("draws a second of frames", () => {
 
   expect(frames).toBe(60);
 });
-// roughly measured to run in 0.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -738,7 +738,7 @@ it("prefetches when idle", () => {
   expect(done).toEqual(["/a", "/b"]);
   clock.restore();
 });
-// roughly measured to run in 1.2 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -762,7 +762,7 @@ it("prefetches one page per idle period", () => {
 
   expect(done).toEqual(["/a"]);
 });
-// roughly measured to run in 0.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -789,7 +789,7 @@ it("runs a queued microtask", () => {
   expect(log).toEqual(["m"]);
   clock.restore();
 });
-// roughly measured to run in 0.7 ms (see below).
+// roughly measured to run in ? ms (see below).
 
 it("runs microtasks between timers", () => {
   const clock = sinon.useFakeTimers();
@@ -805,7 +805,7 @@ it("runs microtasks between timers", () => {
   expect(log).toEqual(["t1", "m1", "t2"]);
   clock.restore();
 });
-// roughly measured to run in 0.7 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -824,7 +824,7 @@ it("runs a queued microtask", () => {
 
   expect(log).toEqual(["m"]);
 });
-// roughly measured to run in 0.2 ms (see below).
+// roughly measured to run in ? ms (see below).
 
 it("runs microtasks between timers", () => {
   using timeProvider = createTimeProvider.for(plugin).asManual().create();
@@ -840,7 +840,7 @@ it("runs microtasks between timers", () => {
 
   expect(log).toEqual(["t1", "m1", "t2"]);
 });
-// roughly measured to run in 0.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -850,12 +850,12 @@ See [Microtasks](/guide/microtasks).
 
 ## How the timings were measured
 
-Every sample on this page ran as a real test under Jest 30 on Node.js 22, with
-TypeScript compiled by SWC. The Sinon samples used Sinon 22. Sinon only replaces
+<!-- measured-with -->
+
+Every sample on this page ran as a real test under Vitest. Sinon only replaces
 `requestAnimationFrame` and `requestIdleCallback` when the host has them, so its
-samples ran with no-op versions of both installed first. A wrapper around `it`
-read the real `performance.now()`, saved before any fake timers were installed,
-just before and just after the test body, so hooks and runner overhead are left
-out. Each file ran seven times and the figure is the median. The first test of
+samples ran with no-op versions of both installed first. A wrapper around `it` read the real
+`performance.now()`, saved before any fake timers were installed, just before
+and just after the test body, so hooks and runner overhead are left out. Each file ran seven times and the figure is the median. The first test of
 each file includes warm-up. The numbers depend on the machine: compare the two
 columns with each other, not with your own runs.

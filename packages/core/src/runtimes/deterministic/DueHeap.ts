@@ -17,9 +17,9 @@ export class DueHeap<TDate> {
   private _entries: DueEntry<TDate>[] = [];
   private _nextSeq = 1;
   private _shouldRethrowTimerErrors: boolean;
-  /** Intrusive list of all undisposed entries. */
-  private _liveHead: DueEntry<TDate> | undefined;
-  private _liveTail: DueEntry<TDate> | undefined;
+  /** Entries whose callback is running, one slot per nested drain; only they leave the heap undisposed. */
+  private readonly _running: (DueEntry<TDate> | undefined)[] = [];
+  private _runningDepth = 0;
   /** Intrusive lists keyed by tag. */
   private _tagLists = new Map<unknown, { head: DueEntry<TDate>; tail: DueEntry<TDate> }>();
   /** Number of tombstoned entries in `_entries`. */
@@ -33,31 +33,6 @@ export class DueHeap<TDate> {
   /** The earliest pending `runAt`, or `undefined` if empty. */
   peekRunAt(): number | undefined {
     return this._entries.length > 0 ? this._entries[0].runAt : undefined;
-  }
-
-  private _linkLive(entry: DueEntry<TDate>): void {
-    entry._livePrev = this._liveTail;
-    if (this._liveTail !== undefined) {
-      this._liveTail._liveNext = entry;
-    } else {
-      this._liveHead = entry;
-    }
-    this._liveTail = entry;
-  }
-
-  private _unlinkLive(entry: DueEntry<TDate>): void {
-    if (entry._livePrev !== undefined) {
-      entry._livePrev._liveNext = entry._liveNext;
-    } else {
-      this._liveHead = entry._liveNext;
-    }
-    if (entry._liveNext !== undefined) {
-      entry._liveNext._livePrev = entry._livePrev;
-    } else {
-      this._liveTail = entry._livePrev;
-    }
-    entry._livePrev = undefined;
-    entry._liveNext = undefined;
   }
 
   private _linkTag(entry: DueEntry<TDate>, tag: unknown): void {
@@ -106,7 +81,6 @@ export class DueHeap<TDate> {
       this._linkTag(entry, tag);
     }
     this._insert(entry);
-    this._linkLive(entry);
     return entry;
   }
 
@@ -196,9 +170,8 @@ export class DueHeap<TDate> {
     return count;
   }
 
-  /** Retires an entry from the live/tag lists and lazily from the heap. */
+  /** Retires an entry from its tag list and lazily from the heap. */
   retireEntry(entry: DueEntry<TDate>): void {
-    this._unlinkLive(entry);
     if (entry.tag !== undefined) this._unlinkTag(entry);
     if (entry.heapIndex < 0) return;
     if (entry.tag === undefined) this._untaggedCount--;
@@ -206,23 +179,14 @@ export class DueHeap<TDate> {
     if (this._deadCount > this._entries.length * DueHeap.COMPACTION_THRESHOLD) this._compact();
   }
 
-  /** Disposes all entries and clears the heap and live list. */
+  /** Disposes all entries, including those running, and clears the heap. */
   disposeAll(): void {
-    for (const entry of this._entries) {
-      entry.heapIndex = -1;
-    }
+    const entries = this._entries;
     this._entries = [];
     this._untaggedCount = 0;
-    let entry = this._liveHead;
-    this._liveHead = undefined;
-    this._liveTail = undefined;
-    while (entry !== undefined) {
-      const next = entry._liveNext;
-      entry._livePrev = undefined;
-      entry._liveNext = undefined;
-      entry.dispose();
-      entry = next;
-    }
+    for (const entry of entries) entry.heapIndex = -1;
+    for (const entry of entries) entry.dispose();
+    for (const entry of this._running) entry?.dispose();
   }
 
   /** Appends `entry` and sifts it up. */
@@ -233,12 +197,12 @@ export class DueHeap<TDate> {
     this._siftUp(entry, index);
   }
 
-  /** Sifts `moving` up using the hole algorithm. */
-  private _siftUp(moving: DueEntry<TDate>, index: number): void {
+  /** Sifts `moving` up to at most `top` using the hole algorithm. */
+  private _siftUp(moving: DueEntry<TDate>, index: number, top = 0): void {
     const entries = this._entries;
     const movingRunAt = moving.runAt;
     const movingSeq = moving.seq;
-    while (index > 0) {
+    while (index > top) {
       const parentIndex = (index - 1) >>> 1;
       const parent = entries[parentIndex];
       const parentRunAt = parent.runAt;
@@ -256,59 +220,52 @@ export class DueHeap<TDate> {
     moving.heapIndex = index;
   }
 
-  /** Sifts `moving` down using the hole algorithm. */
+  /** Sifts `moving` down: hole to a leaf, then back up (Floyd), fewer compares than top-down. */
   private _siftDown(moving: DueEntry<TDate>, index: number): void {
+    const top = index;
     const entries = this._entries;
     const length = entries.length;
-    const movingRunAt = moving.runAt;
-    const movingSeq = moving.seq;
     for (;;) {
       const left = index * 2 + 1;
       if (left >= length) break;
+      let childIndex = left;
+      let child = entries[left];
       const right = left + 1;
-      let smallestIndex = left;
-      let smallest = entries[left];
-      let smallestRunAt = smallest.runAt;
-      let smallestSeq = smallest.seq;
       if (right < length) {
         const rightEntry = entries[right];
-        const rightRunAt = rightEntry.runAt;
-        const rightSeq = rightEntry.seq;
         //#region inlining of isBefore
         if (
-          rightRunAt < smallestRunAt ||
-          (rightRunAt === smallestRunAt && rightSeq < smallestSeq)
+          rightEntry.runAt < child.runAt ||
+          (rightEntry.runAt === child.runAt && rightEntry.seq < child.seq)
         ) {
-          smallestIndex = right;
-          smallest = rightEntry;
-          smallestRunAt = rightRunAt;
-          smallestSeq = rightSeq;
+          childIndex = right;
+          child = rightEntry;
         }
         //#endregion inlining of isBefore
       }
-      //#region inlining of isBefore
-      if (
-        movingRunAt < smallestRunAt ||
-        (movingRunAt === smallestRunAt && movingSeq <= smallestSeq)
-      ) {
-        break;
-      }
-      //#endregion inlining of isBefore
-      entries[index] = smallest;
-      smallest.heapIndex = index;
-      index = smallestIndex;
+      entries[index] = child;
+      child.heapIndex = index;
+      index = childIndex;
     }
-    entries[index] = moving;
-    moving.heapIndex = index;
+    this._siftUp(moving, index, top);
   }
 
   /**
    * Runs callbacks due at or before `now` and checkpoints microtasks after each one.
    * @param coalesce Re-arms overdue intervals and recurrences from `now`, so each fires once.
+   * @param onDueTime Called with each new due time before its callbacks run.
    */
-  drainDue(now: number, microtasks: MicrotaskQueue, coalesce = false): void {
+  drainDue(
+    now: number,
+    microtasks: MicrotaskQueue,
+    coalesce = false,
+    onDueTime?: (runAt: number) => void,
+  ): void {
     const entries = this._entries;
     const rethrowTimersErrors = this._shouldRethrowTimerErrors;
+    const running = this._running;
+    const runningDepth = this._runningDepth++;
+    let dueTime: number | undefined;
 
     try {
       for (;;) {
@@ -317,6 +274,7 @@ export class DueHeap<TDate> {
         const root = entries[0];
         //#endregion inlining of DueHeap.peek
         if (root.runAt > now) break;
+        if (onDueTime !== undefined && root.runAt !== dueTime) onDueTime((dueTime = root.runAt));
 
         switch (root.kind) {
           case SCHEDULED_TIMER_KIND_TIMEOUT: {
@@ -339,6 +297,7 @@ export class DueHeap<TDate> {
               continue;
             }
             if (root.tag === undefined) this._untaggedCount--;
+            running[runningDepth] = root;
             if (rethrowTimersErrors) {
               root.callback();
             } else {
@@ -408,6 +367,7 @@ export class DueHeap<TDate> {
             const previousRunAt = coalesce && root.runAt < now ? now : root.runAt;
             // root.kind === SCHEDULED_TIMER_KIND_RECURRING here guarantees callback has this shape.
             const recurringCallback = root.callback as () => IDurationSpec | false;
+            running[runningDepth] = root;
             let next: IDurationSpec | false;
 
             if (rethrowTimersErrors) {
@@ -441,22 +401,10 @@ export class DueHeap<TDate> {
         if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
       }
     } finally {
+      running[runningDepth] = undefined;
+      this._runningDepth = runningDepth;
       /* a due callback that threw still leaves the checkpoint owed, as it would natively */
       if (microtasks.length !== 0) microtasks.runCheckpoint(rethrowTimersErrors);
-    }
-  }
-
-  /** Drains due entries up to `targetTimestamp`, updating the clock to each due time. */
-  drainDueAdvancing(
-    targetTimestamp: number,
-    setCurrentTimestamp: (runAt: number) => void,
-    microtasks: MicrotaskQueue,
-  ): void {
-    for (;;) {
-      const nextDue = this.peekRunAt();
-      if (nextDue === undefined || nextDue > targetTimestamp) break;
-      setCurrentTimestamp(nextDue);
-      this.drainDue(nextDue, microtasks);
     }
   }
 }

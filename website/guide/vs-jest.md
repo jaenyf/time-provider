@@ -95,7 +95,7 @@ it("sends the reminder after 5 minutes", () => {
   expect(send).toHaveBeenCalledTimes(1);
   jest.useRealTimers();
 });
-// roughly measured to run in 3.1 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -114,7 +114,7 @@ it("sends the reminder after 5 minutes", () => {
   timeProvider.clock.moveBy({ minutes: 1 });
   expect(sent).toBe(1);
 });
-// roughly measured to run in 1.8 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -173,7 +173,7 @@ it("polls four times in two minutes", () => {
   expect(poll).toHaveBeenCalledTimes(4);
   jest.useRealTimers();
 });
-// roughly measured to run in 0.8 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -191,7 +191,7 @@ it("polls four times in two minutes", () => {
 
   expect(polls).toBe(4);
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -247,7 +247,7 @@ it("stamps the order", () => {
   expect(createOrder().createdAt).toEqual(now);
   jest.useRealTimers();
 });
-// roughly measured to run in 0.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -267,7 +267,7 @@ it("stamps the order", () => {
 
   expect(createOrder(timeProvider).createdAt).toEqual(now);
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -336,7 +336,7 @@ it("retries three times", () => {
   expect(attempt).toHaveBeenCalledTimes(3);
   jest.useRealTimers();
 });
-// roughly measured to run in 0.7 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -355,7 +355,7 @@ it("retries three times", () => {
   timeProvider.clock.moveUntil("noTimers");
   expect(attempts).toBe(3);
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -420,7 +420,7 @@ it("loads after a second", async () => {
   expect(await result).toBe("loaded");
   jest.useRealTimers();
 });
-// roughly measured to run in 3.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -437,7 +437,7 @@ it("loads after a second", async () => {
 
   expect(await result).toBe("loaded");
 });
-// roughly measured to run in 0.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -510,7 +510,7 @@ it("publishes after saving", () => {
     publishedAt: new Date(250),
   });
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -576,7 +576,7 @@ it("checks once after sleeping", () => {
 
   expect(checks).toBe(1);
 });
-// roughly measured to run in 0.4 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -636,7 +636,7 @@ it("saves the user", async () => {
 
   expect(saved).toEqual(user);
 });
-// roughly measured to run in 5.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -669,7 +669,7 @@ it("draws a second of frames", () => {
   expect(frames).toBe(62);
   jest.useRealTimers();
 });
-// roughly measured to run in 1.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -694,7 +694,7 @@ it("draws a second of frames", () => {
 
   expect(frames).toBe(60);
 });
-// roughly measured to run in 1.3 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -734,7 +734,7 @@ it("prefetches one page per idle period", () => {
 
   expect(done).toEqual(["/a"]);
 });
-// roughly measured to run in 0.7 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -761,7 +761,7 @@ it("runs a queued microtask", () => {
   expect(log).toEqual(["m"]);
   jest.useRealTimers();
 });
-// roughly measured to run in 0.6 ms (see below).
+// roughly measured to run in ? ms (see below).
 
 it("runs microtasks between timers", () => {
   jest.useFakeTimers();
@@ -777,7 +777,7 @@ it("runs microtasks between timers", () => {
   expect(log).toEqual(["t1", "m1", "t2"]);
   jest.useRealTimers();
 });
-// roughly measured to run in 0.9 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -796,7 +796,7 @@ it("runs a queued microtask", () => {
 
   expect(log).toEqual(["m"]);
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 
 it("runs microtasks between timers", () => {
   using timeProvider = createTimeProvider.for(plugin).asManual().create();
@@ -812,7 +812,7 @@ it("runs microtasks between timers", () => {
 
   expect(log).toEqual(["t1", "m1", "t2"]);
 });
-// roughly measured to run in 0.5 ms (see below).
+// roughly measured to run in ? ms (see below).
 ```
 
 </div>
@@ -822,8 +822,10 @@ See [Microtasks](/guide/microtasks).
 
 ## How the timings were measured
 
-Every sample on this page ran as a real test under Jest 30 on Node.js 22, with
-TypeScript compiled by SWC. The Jest samples ran under `testEnvironment:
+<!-- measured-with -->
+
+Every sample on this page ran as a real test under Jest, with TypeScript
+compiled by SWC. The Jest samples ran under `testEnvironment:
 "jsdom"`, the Time-Provider ones under `"node"`. A wrapper around `it` read the
 real `performance.now()`, saved before any fake timers were installed, just
 before and just after the test body, so hooks and runner overhead are left out.

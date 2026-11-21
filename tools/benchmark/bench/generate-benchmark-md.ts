@@ -7,6 +7,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
 import {
@@ -30,13 +31,24 @@ function currentCommitRef(): string {
     .trim();
 }
 
+function versionsLine(): string {
+  const require = createRequire(import.meta.url);
+  const version = (name: string) => `${name} ${require(`${name}/package.json`).version}`;
+  return [
+    `Benchmarked with: Node ${process.version}`,
+    version("@time-provider/core"),
+    version("@sinonjs/fake-timers"),
+    version("@jest/fake-timers"),
+  ].join(" · ");
+}
+
 function formatEntry(): string {
   const byScenario = groupSamples(readSamples());
   const timestamp = new Date().toISOString();
   const commitRef = currentCommitRef();
 
   const commitLink = `([${commitRef}](https://github.com/jaenyf/time-provider/commit/${commitRef}))`;
-  const lines: string[] = [`## ${timestamp} - ${commitLink}`, ""];
+  const lines: string[] = [`## ${timestamp} - ${commitLink}`, "", versionsLine(), ""];
 
   for (const [scenario, byAdapter] of byScenario) {
     const rows = buildScenarioRows(byAdapter);
