@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/jaenyf/time-provider/compare/core-v4.2.0...core-v4.2.1) (2026-11-21)
+
+
+### Performance Improvements
+
+* **core:** improvement of core performances and better benchmark logging ([#194](https://github.com/jaenyf/time-provider/issues/194)) ([decd19f](https://github.com/jaenyf/time-provider/commit/decd19f328f1a4fcd715e66a38b0f60ccf25e53f))
+
 ## [4.2.0](https://github.com/jaenyf/time-provider/compare/core-v4.1.1...core-v4.2.0) (2026-11-16)
 
 
