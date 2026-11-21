@@ -224,6 +224,10 @@ jobs:
 
       # Only main writes the incremental cache: a pull_request cache is scoped to its merge ref,
       # so nothing else could read it. Caches are immutable, hence one key per commit.
+      # Fails when Time-Provider's lead over Sinon or Jest dropped more than the
+      # threshold in tools/benchmark's bench:gate script, against BENCHMARK.md.
+      - run: vp run @time-provider/benchmark#bench:gate
+
       - name: Restore Stryker incremental results
         if: env.RUN_STRYKER == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
