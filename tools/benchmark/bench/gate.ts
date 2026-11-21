@@ -1,14 +1,16 @@
 /**
- * Runs one benchmark pass and fails when Time-Provider's lead over another adapter dropped by more
- * than the given percentage (first argument, default 5) against the newest BENCHMARK.md entry.
+ * Runs `passes:N` benchmark passes (default 2) and fails when Time-Provider's lead over another
+ * adapter dropped by more than `percentThreshold:N` percent (default 5) against the newest
+ * BENCHMARK.md entry.
  */
 import { readFileSync } from "node:fs";
 import { runAllPasses } from "./run-multi.ts";
 import { buildScenarioRows, groupSamples, readSamples } from "./shared/aggregate.ts";
 import { BENCHMARK_MD, delta, previousRatio, previousScenarios } from "./shared/previous.ts";
 
-const maxLoss = Number(process.argv[2] ?? 5);
-runAllPasses(1);
+const args = Object.fromEntries(process.argv.slice(2).map((arg) => arg.split(":")));
+const maxLoss = Number(args.percentThreshold ?? 5);
+runAllPasses(Number(args.passes ?? 2));
 
 const previous = previousScenarios(readFileSync(BENCHMARK_MD, "utf8"));
 const losses: string[] = [];
