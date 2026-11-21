@@ -18,9 +18,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 19.74x faster than sinon fake-timers
-- 20.29x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.1%, previous was 1.00x)
+- 19.74x faster than sinon fake-timers (-14.5%, previous was 23.08x)
+- 20.29x faster than jest fake-timers (modern) (-16.3%, previous was 24.23x)
 
 ### schedule 5000 timeouts, and clear them _(median across 5 passes)_
 
@@ -33,9 +33,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 26.26x faster than sinon fake-timers
-- 27.73x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+10.2%, previous was 0.92x)
+- 26.26x faster than sinon fake-timers (+24.0%, previous was 21.17x)
+- 27.73x faster than jest fake-timers (modern) (+19.5%, previous was 23.21x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -48,9 +48,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.03x faster than time-provider (sequential)
-- 16.02x faster than sinon fake-timers
-- 16.31x faster than jest fake-timers (modern)
+- 1.03x faster than time-provider (sequential) (+2.0%, previous was 1.01x)
+- 16.02x faster than sinon fake-timers (-19.4%, previous was 19.87x)
+- 16.31x faster than jest fake-timers (modern) (-24.1%, previous was 21.49x)
 
 ### schedule 5000 timeouts, with 5000 time advances of 1ms _(median across 5 passes)_
 
@@ -63,9 +63,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.68x faster than time-provider (sequential)
-- 137.04x faster than sinon fake-timers
-- 137.50x faster than jest fake-timers (modern)
+- 1.68x faster than time-provider (sequential) (-0.6%, previous was 1.69x)
+- 137.04x faster than sinon fake-timers (-12.0%, previous was 155.75x)
+- 137.50x faster than jest fake-timers (modern) (-12.5%, previous was 157.06x)
 
 ### chain 5000 timeouts, each scheduling the next, with time advance _(median across 5 passes)_
 
@@ -78,9 +78,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.03x faster than time-provider (manual)
-- 27.86x faster than sinon fake-timers
-- 28.25x faster than jest fake-timers (modern)
+- 1.03x faster than time-provider (manual) (+3.4%, previous was 1.00x)
+- 27.86x faster than sinon fake-timers (-1.6%, previous was 28.32x)
+- 28.25x faster than jest fake-timers (modern) (-0.9%, previous was 28.51x)
 
 ### schedule 5000 timeouts, and run all _(median across 5 passes)_
 
@@ -93,8 +93,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 10.19x faster than sinon fake-timers
-- 10.36x faster than jest fake-timers (modern)
+- 10.19x faster than sinon fake-timers (+4.0%, previous was 9.80x)
+- 10.36x faster than jest fake-timers (modern) (+1.3%, previous was 10.23x)
 
 ### schedule 5000 timeouts, and step to each next one _(median across 5 passes)_
 
@@ -107,8 +107,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 10.47x faster than sinon fake-timers
-- 148.49x faster than jest fake-timers (modern)
+- 10.47x faster than sinon fake-timers (+0.6%, previous was 10.41x)
+- 148.49x faster than jest fake-timers (modern) (-12.9%, previous was 170.50x)
 
 ### schedule 5000 timeouts, and run to the last one _(median across 5 passes)_
 
@@ -121,8 +121,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 12.46x faster than sinon fake-timers
-- 12.48x faster than jest fake-timers (modern)
+- 12.46x faster than sinon fake-timers (-2.1%, previous was 12.73x)
+- 12.48x faster than jest fake-timers (modern) (-6.2%, previous was 13.30x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -135,9 +135,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 14.21x faster than sinon fake-timers
-- 14.33x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+0.0%, previous was 1.00x)
+- 14.21x faster than sinon fake-timers (-14.8%, previous was 16.67x)
+- 14.33x faster than jest fake-timers (modern) (-18.1%, previous was 17.50x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -150,9 +150,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 13.57x faster than sinon fake-timers
-- 13.88x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+1.2%, previous was 0.99x)
+- 13.57x faster than sinon fake-timers (-3.9%, previous was 14.12x)
+- 13.88x faster than jest fake-timers (modern) (-9.7%, previous was 15.37x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -165,9 +165,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.03x faster than time-provider (sequential)
-- 23.36x faster than sinon fake-timers
-- 23.63x faster than jest fake-timers (modern)
+- 1.03x faster than time-provider (sequential) (+3.7%, previous was 0.99x)
+- 23.36x faster than sinon fake-timers (+11.1%, previous was 21.03x)
+- 23.63x faster than jest fake-timers (modern) (+5.9%, previous was 22.32x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -180,9 +180,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 16.21x faster than sinon fake-timers
-- 16.62x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.0%, previous was 1.00x)
+- 16.21x faster than sinon fake-timers (-13.3%, previous was 18.69x)
+- 16.62x faster than jest fake-timers (modern) (-14.2%, previous was 19.37x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -195,9 +195,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 24.15x faster than sinon fake-timers
-- 24.40x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+1.0%, previous was 1.00x)
+- 24.15x faster than sinon fake-timers (-2.1%, previous was 24.66x)
+- 24.40x faster than jest fake-timers (modern) (-6.3%, previous was 26.04x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -210,9 +210,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 20.35x faster than sinon fake-timers
-- 20.62x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (manual) (+0.7%, previous was 0.99x)
+- 20.35x faster than sinon fake-timers (-1.6%, previous was 20.68x)
+- 20.62x faster than jest fake-timers (modern) (-4.2%, previous was 21.52x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -225,9 +225,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 5.56x faster than sinon fake-timers
-- 5.97x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+3.2%, previous was 0.98x)
+- 5.56x faster than sinon fake-timers (+34.8%, previous was 4.13x)
+- 5.97x faster than jest fake-timers (modern) (+36.2%, previous was 4.38x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -240,9 +240,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 5.68x faster than sinon fake-timers
-- 6.15x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+2.0%, previous was 0.98x)
+- 5.68x faster than sinon fake-timers (+40.6%, previous was 4.04x)
+- 6.15x faster than jest fake-timers (modern) (+42.0%, previous was 4.33x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -255,8 +255,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.03x faster than time-provider (manual)
-- 31.06x faster than sinon fake-timers
+- 1.03x faster than time-provider (manual) (+3.0%, previous was 1.00x)
+- 31.06x faster than sinon fake-timers (+6.0%, previous was 29.31x)
 
 ### request 5000 animation frames, with time advance _(median across 5 passes)_
 
@@ -269,9 +269,9 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 19.67x faster than sinon fake-timers
-- 19.84x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+0.0%, previous was 1.00x)
+- 19.67x faster than sinon fake-timers (-6.6%, previous was 21.07x)
+- 19.84x faster than jest fake-timers (modern) (-7.2%, previous was 21.39x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -283,8 +283,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 7.37x faster than jest fake-timers (modern)
-- 7.47x faster than sinon fake-timers
+- 7.37x faster than jest fake-timers (modern) (-9.0%, previous was 8.10x)
+- 7.47x faster than sinon fake-timers (-10.8%, previous was 8.37x)
 
 ### read monotonic now 5000 times _(median across 5 passes)_
 
@@ -296,8 +296,8 @@ Benchmarked with: Node v26.13.1 · @time-provider/core 4.2.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 7.13x faster than sinon fake-timers
-- 9.18x faster than jest fake-timers (modern)
+- 7.13x faster than sinon fake-timers (-9.1%, previous was 7.84x)
+- 9.18x faster than jest fake-timers (modern) (-7.0%, previous was 9.87x)
 
 ## 2026-10-29T14:26:50.220Z - ([6f85ab4](https://github.com/jaenyf/time-provider/commit/6f85ab4))
 
@@ -314,9 +314,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 23.10x faster than sinon fake-timers
-- 24.26x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+1.8%, previous was 0.98x)
+- 23.10x faster than sinon fake-timers (+303.3%, previous was 5.73x)
+- 24.26x faster than jest fake-timers (modern) (+307.4%, previous was 5.95x)
 
 ### schedule 5000 timeouts, and clear them _(median across 5 passes)_
 
@@ -344,9 +344,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 19.87x faster than sinon fake-timers
-- 21.49x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+2.2%, previous was 0.99x)
+- 19.87x faster than sinon fake-timers (+177.4%, previous was 7.16x)
+- 21.49x faster than jest fake-timers (modern) (+198.2%, previous was 7.21x)
 
 ### schedule 5000 timeouts, with 5000 time advances of 1ms _(median across 5 passes)_
 
@@ -431,9 +431,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 16.67x faster than sinon fake-timers
-- 17.50x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (-1.0%, previous was 1.01x)
+- 16.67x faster than sinon fake-timers (+178.3%, previous was 5.99x)
+- 17.50x faster than jest fake-timers (modern) (+187.8%, previous was 6.08x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -446,9 +446,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 14.28x faster than sinon fake-timers
-- 15.55x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.5%, previous was 1.00x)
+- 14.28x faster than sinon fake-timers (+146.5%, previous was 5.79x)
+- 15.55x faster than jest fake-timers (modern) (+159.3%, previous was 6.00x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -461,9 +461,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 21.17x faster than sinon fake-timers
-- 22.48x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+2.5%, previous was 0.99x)
+- 21.17x faster than sinon fake-timers (+257.5%, previous was 5.92x)
+- 22.48x faster than jest fake-timers (modern) (+272.9%, previous was 6.03x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -476,9 +476,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 18.70x faster than sinon fake-timers
-- 19.38x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (-1.0%, previous was 1.01x)
+- 18.70x faster than sinon fake-timers (-7.0%, previous was 20.11x)
+- 19.38x faster than jest fake-timers (modern) (-5.9%, previous was 20.60x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -491,9 +491,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 24.66x faster than sinon fake-timers
-- 26.04x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (-2.0%, previous was 1.02x)
+- 24.66x faster than sinon fake-timers (+235.5%, previous was 7.35x)
+- 26.04x faster than jest fake-timers (modern) (+256.2%, previous was 7.31x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -506,9 +506,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 20.83x faster than sinon fake-timers
-- 21.67x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+0.0%, previous was 1.01x)
+- 20.83x faster than sinon fake-timers (+191.3%, previous was 7.15x)
+- 21.67x faster than jest fake-timers (modern) (+194.8%, previous was 7.35x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -521,9 +521,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 4.21x faster than sinon fake-timers
-- 4.48x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (sequential) (+2.7%, previous was 0.99x)
+- 4.21x faster than sinon fake-timers (+0.1%, previous was 4.20x)
+- 4.48x faster than jest fake-timers (modern) (+0.3%, previous was 4.47x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -536,9 +536,9 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 4.12x faster than sinon fake-timers
-- 4.42x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+3.7%, previous was 0.98x)
+- 4.12x faster than sinon fake-timers (-1.0%, previous was 4.16x)
+- 4.42x faster than jest fake-timers (modern) (+0.7%, previous was 4.39x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -551,8 +551,8 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 29.31x faster than sinon fake-timers
+- 1.00x faster than time-provider (manual) (-7.4%, previous was 1.08x)
+- 29.31x faster than sinon fake-timers (+65.4%, previous was 17.72x)
 
 ### request 5000 animation frames, with time advance _(median across 5 passes)_
 
@@ -579,8 +579,8 @@ Benchmarked with: Node v24.22.2 · @time-provider/core 4.1.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 8.10x faster than jest fake-timers (modern)
-- 8.37x faster than sinon fake-timers
+- 8.10x faster than jest fake-timers (modern) (+95.2%, previous was 4.15x)
+- 8.37x faster than sinon fake-timers (+95.6%, previous was 4.28x)
 
 ### read monotonic now 5000 times _(median across 5 passes)_
 
@@ -610,9 +610,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 5.83x faster than sinon fake-timers
-- 6.06x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (-12.1%, previous was 1.16x)
+- 5.83x faster than sinon fake-timers (-46.9%, previous was 10.97x)
+- 6.06x faster than jest fake-timers (modern) (-45.0%, previous was 11.01x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -625,9 +625,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 7.25x faster than sinon fake-timers
-- 7.29x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (-10.6%, previous was 1.13x)
+- 7.25x faster than sinon fake-timers (-30.0%, previous was 10.36x)
+- 7.29x faster than jest fake-timers (modern) (-32.2%, previous was 10.76x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -640,9 +640,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 5.99x faster than sinon fake-timers
-- 6.08x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+22.7%, previous was 0.82x)
+- 5.99x faster than sinon fake-timers (-24.6%, previous was 7.95x)
+- 6.08x faster than jest fake-timers (modern) (-25.3%, previous was 8.14x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -655,9 +655,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 5.82x faster than sinon fake-timers
-- 6.02x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+14.7%, previous was 0.87x)
+- 5.82x faster than sinon fake-timers (-38.0%, previous was 9.39x)
+- 6.02x faster than jest fake-timers (modern) (-38.3%, previous was 9.75x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -670,9 +670,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 6.01x faster than sinon fake-timers
-- 6.12x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+2.8%, previous was 0.98x)
+- 6.01x faster than sinon fake-timers (-39.8%, previous was 9.99x)
+- 6.12x faster than jest fake-timers (modern) (-40.1%, previous was 10.22x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -685,9 +685,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 20.11x faster than sinon fake-timers
-- 20.60x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+1.8%, previous was 0.99x)
+- 20.11x faster than sinon fake-timers (+15.4%, previous was 17.43x)
+- 20.60x faster than jest fake-timers (modern) (+16.2%, previous was 17.72x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -700,9 +700,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 7.31x faster than jest fake-timers (modern)
-- 7.35x faster than sinon fake-timers
+- 1.02x faster than time-provider (sequential) (+4.5%, previous was 0.98x)
+- 7.31x faster than jest fake-timers (modern) (-41.4%, previous was 12.47x)
+- 7.35x faster than sinon fake-timers (-39.1%, previous was 12.07x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -715,9 +715,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 7.15x faster than sinon fake-timers
-- 7.35x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+2.5%, previous was 0.99x)
+- 7.15x faster than sinon fake-timers (-40.3%, previous was 11.97x)
+- 7.35x faster than jest fake-timers (modern) (-41.0%, previous was 12.46x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -730,9 +730,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 4.23x faster than sinon fake-timers
-- 4.50x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.5%, previous was 1.00x)
+- 4.23x faster than sinon fake-timers (-26.3%, previous was 5.74x)
+- 4.50x faster than jest fake-timers (modern) (-23.6%, previous was 5.89x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -745,9 +745,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 4.23x faster than sinon fake-timers
-- 4.47x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (sequential) (+1.0%, previous was 1.01x)
+- 4.23x faster than sinon fake-timers (-26.9%, previous was 5.79x)
+- 4.47x faster than jest fake-timers (modern) (-26.4%, previous was 6.07x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -760,8 +760,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.08x faster than time-provider (manual)
-- 17.72x faster than sinon fake-timers
+- 1.08x faster than time-provider (manual) (+9.4%, previous was 0.99x)
+- 17.72x faster than sinon fake-timers (-4.8%, previous was 18.62x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -773,8 +773,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.1.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 4.15x faster than jest fake-timers (modern)
-- 4.28x faster than sinon fake-timers
+- 4.15x faster than jest fake-timers (modern) (+6.7%, previous was 3.89x)
+- 4.28x faster than sinon fake-timers (+8.4%, previous was 3.95x)
 
 ## 2026-09-26T14:31:54.095Z - ([2da21ad](https://github.com/jaenyf/time-provider/commit/2da21ad))
 
@@ -791,9 +791,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.16x faster than time-provider (manual)
-- 10.97x faster than sinon fake-timers
-- 11.01x faster than jest fake-timers (modern)
+- 1.16x faster than time-provider (manual) (+13.7%, previous was 1.02x)
+- 10.97x faster than sinon fake-timers (-14.8%, previous was 12.88x)
+- 11.01x faster than jest fake-timers (modern) (-15.1%, previous was 12.97x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -806,9 +806,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.13x faster than time-provider (manual)
-- 10.36x faster than sinon fake-timers
-- 10.76x faster than jest fake-timers (modern)
+- 1.13x faster than time-provider (manual) (+9.7%, previous was 1.03x)
+- 10.36x faster than sinon fake-timers (-15.2%, previous was 12.22x)
+- 10.76x faster than jest fake-timers (modern) (-14.9%, previous was 12.64x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -821,9 +821,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.22x faster than time-provider (manual)
-- 9.66x faster than sinon fake-timers
-- 9.89x faster than jest fake-timers (modern)
+- 1.22x faster than time-provider (manual) (+19.6%, previous was 1.02x)
+- 9.66x faster than sinon fake-timers (-10.9%, previous was 10.84x)
+- 9.89x faster than jest fake-timers (modern) (-10.9%, previous was 11.10x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -836,9 +836,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.15x faster than time-provider (manual)
-- 10.77x faster than sinon fake-timers
-- 11.19x faster than jest fake-timers (modern)
+- 1.15x faster than time-provider (manual) (+12.7%, previous was 1.02x)
+- 10.77x faster than sinon fake-timers (-1.7%, previous was 10.96x)
+- 11.19x faster than jest fake-timers (modern) (-2.7%, previous was 11.50x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -851,9 +851,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 10.16x faster than sinon fake-timers
-- 10.40x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+2.0%, previous was 1.00x)
+- 10.16x faster than sinon fake-timers (-11.1%, previous was 11.43x)
+- 10.40x faster than jest fake-timers (modern) (-13.0%, previous was 11.95x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -866,9 +866,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 17.56x faster than sinon fake-timers
-- 17.86x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+0.0%, previous was 1.01x)
+- 17.56x faster than sinon fake-timers (-7.8%, previous was 19.05x)
+- 17.86x faster than jest fake-timers (modern) (-9.2%, previous was 19.68x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -881,9 +881,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 12.37x faster than sinon fake-timers
-- 12.78x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+3.9%, previous was 0.98x)
+- 12.37x faster than sinon fake-timers (-7.0%, previous was 13.30x)
+- 12.78x faster than jest fake-timers (modern) (-6.8%, previous was 13.71x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -896,9 +896,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 12.14x faster than sinon fake-timers
-- 12.64x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+2.9%, previous was 0.98x)
+- 12.14x faster than sinon fake-timers (-6.2%, previous was 12.95x)
+- 12.64x faster than jest fake-timers (modern) (-6.2%, previous was 13.47x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -911,9 +911,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 5.77x faster than sinon fake-timers
-- 5.92x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+1.8%, previous was 0.98x)
+- 5.77x faster than sinon fake-timers (-9.8%, previous was 6.40x)
+- 5.92x faster than jest fake-timers (modern) (-12.5%, previous was 6.76x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -926,9 +926,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 5.79x faster than sinon fake-timers
-- 6.07x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+1.7%, previous was 0.99x)
+- 5.79x faster than sinon fake-timers (-14.8%, previous was 6.80x)
+- 6.07x faster than jest fake-timers (modern) (-14.7%, previous was 7.11x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -941,8 +941,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 18.86x faster than sinon fake-timers
+- 1.01x faster than time-provider (sequential) (-5.6%, previous was 1.07x)
+- 18.86x faster than sinon fake-timers (+6.9%, previous was 17.64x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -954,8 +954,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 3.89x faster than jest fake-timers (modern)
-- 3.95x faster than sinon fake-timers
+- 3.89x faster than jest fake-timers (modern) (+5.4%, previous was 3.69x)
+- 3.95x faster than sinon fake-timers (+3.7%, previous was 3.81x)
 
 ## 2026-09-24T04:51:36.187Z - ([5248781](https://github.com/jaenyf/time-provider/commit/5248781))
 
@@ -972,9 +972,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 12.88x faster than sinon fake-timers
-- 12.97x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+3.1%, previous was 0.99x)
+- 12.88x faster than sinon fake-timers (-5.4%, previous was 13.61x)
+- 12.97x faster than jest fake-timers (modern) (-4.8%, previous was 13.63x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -987,9 +987,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.03x faster than time-provider (manual)
-- 12.22x faster than sinon fake-timers
-- 12.64x faster than jest fake-timers (modern)
+- 1.03x faster than time-provider (manual) (-2.8%, previous was 1.06x)
+- 12.22x faster than sinon fake-timers (-7.2%, previous was 13.17x)
+- 12.64x faster than jest fake-timers (modern) (-9.1%, previous was 13.91x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1002,9 +1002,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 10.84x faster than sinon fake-timers
-- 11.10x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (-4.7%, previous was 1.07x)
+- 10.84x faster than sinon fake-timers (-4.2%, previous was 11.32x)
+- 11.10x faster than jest fake-timers (modern) (-7.2%, previous was 11.96x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -1017,9 +1017,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 10.96x faster than sinon fake-timers
-- 11.50x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (-3.8%, previous was 1.06x)
+- 10.96x faster than sinon fake-timers (-5.8%, previous was 11.64x)
+- 11.50x faster than jest fake-timers (modern) (-8.4%, previous was 12.55x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1032,9 +1032,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 11.43x faster than sinon fake-timers
-- 11.95x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (manual) (+0.4%, previous was 1.00x)
+- 11.43x faster than sinon fake-timers (-27.0%, previous was 15.66x)
+- 11.95x faster than jest fake-timers (modern) (-25.5%, previous was 16.05x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1047,9 +1047,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 19.05x faster than sinon fake-timers
-- 19.68x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (-1.0%, previous was 1.02x)
+- 19.05x faster than sinon fake-timers (+24.4%, previous was 15.31x)
+- 19.68x faster than jest fake-timers (modern) (+14.8%, previous was 17.14x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1062,9 +1062,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 13.54x faster than sinon fake-timers
-- 13.96x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (sequential) (+1.0%, previous was 1.01x)
+- 13.54x faster than sinon fake-timers (-22.2%, previous was 17.40x)
+- 13.96x faster than jest fake-timers (modern) (-22.2%, previous was 17.94x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -1077,9 +1077,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 13.20x faster than sinon fake-timers
-- 13.73x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (sequential) (+3.6%, previous was 0.98x)
+- 13.20x faster than sinon fake-timers (-17.7%, previous was 16.04x)
+- 13.73x faster than jest fake-timers (modern) (-18.2%, previous was 16.79x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -1092,9 +1092,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 6.52x faster than sinon fake-timers
-- 6.89x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+1.0%, previous was 1.01x)
+- 6.52x faster than sinon fake-timers (-9.3%, previous was 7.19x)
+- 6.89x faster than jest fake-timers (modern) (-10.1%, previous was 7.66x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -1107,9 +1107,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 6.84x faster than sinon fake-timers
-- 7.16x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+0.0%, previous was 1.01x)
+- 6.84x faster than sinon fake-timers (-9.5%, previous was 7.56x)
+- 7.16x faster than jest fake-timers (modern) (-12.9%, previous was 8.22x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -1122,8 +1122,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.07x faster than time-provider (sequential)
-- 17.64x faster than sinon fake-timers
+- 1.07x faster than time-provider (sequential) (+0.9%, previous was 1.06x)
+- 17.64x faster than sinon fake-timers (-34.9%, previous was 27.10x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1135,8 +1135,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 4.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 3.69x faster than jest fake-timers (modern)
-- 3.81x faster than sinon fake-timers
+- 3.69x faster than jest fake-timers (modern) (-49.0%, previous was 7.23x)
+- 3.81x faster than sinon fake-timers (-46.8%, previous was 7.16x)
 
 ## 2026-09-22T09:50:54.317Z - ([fc202d0](https://github.com/jaenyf/time-provider/commit/fc202d0))
 
@@ -1153,9 +1153,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 13.76x faster than sinon fake-timers
-- 13.78x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+4.9%, previous was 0.96x)
+- 13.76x faster than sinon fake-timers (+5.9%, previous was 12.99x)
+- 13.78x faster than jest fake-timers (modern) (+5.9%, previous was 13.01x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1168,9 +1168,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.06x faster than time-provider (manual)
-- 13.17x faster than sinon fake-timers
-- 13.91x faster than jest fake-timers (modern)
+- 1.06x faster than time-provider (manual) (+1.9%, previous was 1.04x)
+- 13.17x faster than sinon fake-timers (+2.3%, previous was 12.88x)
+- 13.91x faster than jest fake-timers (modern) (+3.2%, previous was 13.48x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1183,9 +1183,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.07x faster than time-provider (manual)
-- 11.32x faster than sinon fake-timers
-- 11.96x faster than jest fake-timers (modern)
+- 1.07x faster than time-provider (manual) (+3.9%, previous was 1.03x)
+- 11.32x faster than sinon fake-timers (+0.1%, previous was 11.31x)
+- 11.96x faster than jest fake-timers (modern) (+1.4%, previous was 11.80x)
 
 ### schedule 5000 timeouts queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -1198,9 +1198,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.06x faster than time-provider (manual)
-- 11.64x faster than sinon fake-timers
-- 12.55x faster than jest fake-timers (modern)
+- 1.06x faster than time-provider (manual) (+2.9%, previous was 1.03x)
+- 11.64x faster than sinon fake-timers (-2.3%, previous was 11.91x)
+- 12.55x faster than jest fake-timers (modern) (-5.2%, previous was 13.24x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1213,9 +1213,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 15.72x faster than sinon fake-timers
-- 16.11x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (+1.4%, previous was 0.99x)
+- 15.72x faster than sinon fake-timers (+2.2%, previous was 15.38x)
+- 16.11x faster than jest fake-timers (modern) (+0.0%, previous was 16.11x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1228,9 +1228,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 15.31x faster than sinon fake-timers
-- 17.14x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+0.0%, previous was 1.02x)
+- 15.31x faster than sinon fake-timers (+6.0%, previous was 14.45x)
+- 17.14x faster than jest fake-timers (modern) (+3.9%, previous was 16.49x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1243,9 +1243,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 17.40x faster than sinon fake-timers
-- 17.94x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+3.4%, previous was 0.98x)
+- 17.40x faster than sinon fake-timers (+4.8%, previous was 16.61x)
+- 17.94x faster than jest fake-timers (modern) (+2.3%, previous was 17.54x)
 
 ### schedule 5000 intervals queueing 10 microtasks each, with time advance and drain _(median across 5 passes)_
 
@@ -1258,9 +1258,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 16.29x faster than sinon fake-timers
-- 17.05x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+2.5%, previous was 1.00x)
+- 16.29x faster than sinon fake-timers (-1.4%, previous was 16.53x)
+- 17.05x faster than jest fake-timers (modern) (-0.9%, previous was 17.21x)
 
 ### queue 5000 microtasks, and drain without time advance _(median across 5 passes)_
 
@@ -1273,9 +1273,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 7.19x faster than sinon fake-timers
-- 7.66x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+2.7%, previous was 0.98x)
+- 7.19x faster than sinon fake-timers (-0.3%, previous was 7.21x)
+- 7.66x faster than jest fake-timers (modern) (+2.1%, previous was 7.50x)
 
 ### queue 5000 microtasks, with time advance and drain _(median across 5 passes)_
 
@@ -1288,9 +1288,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 7.56x faster than sinon fake-timers
-- 8.22x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (-1.0%, previous was 1.02x)
+- 7.56x faster than sinon fake-timers (+2.2%, previous was 7.40x)
+- 8.22x faster than jest fake-timers (modern) (+4.4%, previous was 7.87x)
 
 ### request 5000 idle callbacks, and drain _(median across 5 passes)_
 
@@ -1303,8 +1303,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.06x faster than time-provider (sequential)
-- 27.10x faster than sinon fake-timers
+- 1.06x faster than time-provider (sequential) (+5.0%, previous was 1.01x)
+- 27.10x faster than sinon fake-timers (-3.9%, previous was 28.20x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1316,8 +1316,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.1 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 7.16x faster than sinon fake-timers
-- 7.23x faster than jest fake-timers (modern)
+- 7.16x faster than sinon fake-timers (+4.7%, previous was 6.84x)
+- 7.23x faster than jest fake-timers (modern) (+6.5%, previous was 6.79x)
 
 ## 2026-09-20T22:23:03.364Z - ([b8f1384](https://github.com/jaenyf/time-provider/commit/b8f1384))
 
@@ -1334,9 +1334,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.04x faster than time-provider (manual)
-- 13.49x faster than sinon fake-timers
-- 13.51x faster than jest fake-timers (modern)
+- 1.04x faster than time-provider (manual) (+4.0%, previous was 1.00x)
+- 13.49x faster than sinon fake-timers (-12.6%, previous was 15.43x)
+- 13.51x faster than jest fake-timers (modern) (-11.6%, previous was 15.28x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1349,9 +1349,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.04x faster than time-provider (manual)
-- 12.88x faster than sinon fake-timers
-- 13.48x faster than jest fake-timers (modern)
+- 1.04x faster than time-provider (manual) (+1.0%, previous was 1.03x)
+- 12.88x faster than sinon fake-timers (-12.7%, previous was 14.75x)
+- 13.48x faster than jest fake-timers (modern) (-14.4%, previous was 15.75x)
 
 ### schedule 5000 timeouts queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1394,9 +1394,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 15.60x faster than sinon fake-timers
-- 16.33x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+0.0%, previous was 1.01x)
+- 15.60x faster than sinon fake-timers (-17.4%, previous was 18.88x)
+- 16.33x faster than jest fake-timers (modern) (-17.8%, previous was 19.86x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1409,9 +1409,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 14.45x faster than sinon fake-timers
-- 16.49x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (+2.0%, previous was 1.00x)
+- 14.45x faster than sinon fake-timers (-14.5%, previous was 16.90x)
+- 16.49x faster than jest fake-timers (modern) (-8.0%, previous was 17.92x)
 
 ### schedule 5000 intervals queueing 1 microtask each, with time advance and drain _(median across 5 passes)_
 
@@ -1497,8 +1497,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 3.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 6.79x faster than jest fake-timers (modern)
-- 6.84x faster than sinon fake-timers
+- 6.79x faster than jest fake-timers (modern) (-7.4%, previous was 7.33x)
+- 6.84x faster than sinon fake-timers (-6.7%, previous was 7.33x)
 
 ## 2026-09-14T07:43:01.800Z - ([a703555](https://github.com/jaenyf/time-provider/commit/a703555))
 
@@ -1515,9 +1515,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 15.28x faster than jest fake-timers (modern)
-- 15.43x faster than sinon fake-timers
+- 1.00x faster than time-provider (manual) (-9.1%, previous was 1.10x)
+- 15.28x faster than jest fake-timers (modern) (-30.2%, previous was 21.89x)
+- 15.43x faster than sinon fake-timers (-28.4%, previous was 21.55x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1530,9 +1530,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.03x faster than time-provider (manual)
-- 14.75x faster than sinon fake-timers
-- 15.75x faster than jest fake-timers (modern)
+- 1.03x faster than time-provider (manual) (+2.0%, previous was 1.01x)
+- 14.75x faster than sinon fake-timers (-23.9%, previous was 19.37x)
+- 15.75x faster than jest fake-timers (modern) (-23.1%, previous was 20.48x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1545,9 +1545,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 18.88x faster than sinon fake-timers
-- 19.86x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.2%, previous was 1.00x)
+- 18.88x faster than sinon fake-timers (-29.4%, previous was 26.75x)
+- 19.86x faster than jest fake-timers (modern) (-28.7%, previous was 27.84x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1560,9 +1560,9 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 16.90x faster than sinon fake-timers
-- 17.92x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (manual) (+0.7%, previous was 0.99x)
+- 16.90x faster than sinon fake-timers (+6.5%, previous was 15.86x)
+- 17.92x faster than jest fake-timers (modern) (+6.8%, previous was 16.78x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1574,8 +1574,8 @@ Benchmarked with: Node v24.21.0 · @time-provider/core 2.0.0 · @sinonjs/fake-ti
 
 **✅ time-provider (manual)** is fastest:
 
-- 7.33x faster than sinon fake-timers
-- 7.33x faster than jest fake-timers (modern)
+- 7.33x faster than sinon fake-timers (+5.6%, previous was 6.94x)
+- 7.33x faster than jest fake-timers (modern) (+7.8%, previous was 6.80x)
 
 ## 2026-08-10T15:36:38.670Z - ([4c87692](https://github.com/jaenyf/time-provider/commit/4c87692))
 
@@ -1592,9 +1592,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.10x faster than time-provider (manual)
-- 21.55x faster than sinon fake-timers
-- 21.89x faster than jest fake-timers (modern)
+- 1.10x faster than time-provider (manual) (+11.1%, previous was 0.99x)
+- 21.55x faster than sinon fake-timers (-8.4%, previous was 23.53x)
+- 21.89x faster than jest fake-timers (modern) (-11.2%, previous was 24.65x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1607,9 +1607,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 19.37x faster than sinon fake-timers
-- 20.48x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+1.0%, previous was 1.00x)
+- 19.37x faster than sinon fake-timers (+19.2%, previous was 16.25x)
+- 20.48x faster than jest fake-timers (modern) (+22.1%, previous was 16.78x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1622,9 +1622,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 26.79x faster than sinon fake-timers
-- 27.88x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (sequential) (-2.0%, previous was 1.02x)
+- 26.79x faster than sinon fake-timers (+19.4%, previous was 22.44x)
+- 27.88x faster than jest fake-timers (modern) (+20.8%, previous was 23.08x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1637,9 +1637,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 15.99x faster than sinon fake-timers
-- 16.91x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+1.4%, previous was 1.00x)
+- 15.99x faster than sinon fake-timers (+16.3%, previous was 13.74x)
+- 16.91x faster than jest fake-timers (modern) (+16.8%, previous was 14.48x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1651,8 +1651,8 @@ Benchmarked with: Node v24 · @time-provider/core 1.4.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 6.80x faster than jest fake-timers (modern)
-- 6.94x faster than sinon fake-timers
+- 6.80x faster than jest fake-timers (modern) (+5.3%, previous was 6.46x)
+- 6.94x faster than sinon fake-timers (+5.8%, previous was 6.56x)
 
 ## 2026-08-01T10:30:35.885Z - ([83a25f0](https://github.com/jaenyf/time-provider/commit/83a25f0))
 
@@ -1669,9 +1669,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.01x faster than time-provider (sequential)
-- 23.76x faster than sinon fake-timers
-- 24.89x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (sequential) (+1.0%, previous was 1.00x)
+- 23.76x faster than sinon fake-timers (-8.4%, previous was 25.95x)
+- 24.89x faster than jest fake-timers (modern) (-3.3%, previous was 25.74x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1684,9 +1684,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 16.25x faster than sinon fake-timers
-- 16.78x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (manual) (-1.0%, previous was 1.01x)
+- 16.25x faster than sinon fake-timers (-35.6%, previous was 25.22x)
+- 16.78x faster than jest fake-timers (modern) (-37.2%, previous was 26.73x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1699,9 +1699,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.02x faster than time-provider (sequential)
-- 22.44x faster than sinon fake-timers
-- 23.08x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (sequential) (+4.1%, previous was 0.98x)
+- 22.44x faster than sinon fake-timers (-31.9%, previous was 32.94x)
+- 23.08x faster than jest fake-timers (modern) (-33.3%, previous was 34.59x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1714,9 +1714,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.00x faster than time-provider (manual)
-- 13.80x faster than sinon fake-timers
-- 14.55x faster than jest fake-timers (modern)
+- 1.00x faster than time-provider (manual) (-5.7%, previous was 1.06x)
+- 13.80x faster than sinon fake-timers (-27.1%, previous was 18.93x)
+- 14.55x faster than jest fake-timers (modern) (-26.1%, previous was 19.70x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1728,8 +1728,8 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 6.46x faster than jest fake-timers (modern)
-- 6.56x faster than sinon fake-timers
+- 6.46x faster than jest fake-timers (modern) (-4.4%, previous was 6.76x)
+- 6.56x faster than sinon fake-timers (-4.5%, previous was 6.87x)
 
 ## 2026-08-01T10:05:36.991Z - ([8b09e42](https://github.com/jaenyf/time-provider/commit/8b09e42))
 
@@ -1746,9 +1746,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 1.00x faster than time-provider (sequential)
-- 25.74x faster than jest fake-timers (modern)
-- 25.95x faster than sinon fake-timers
+- 1.00x faster than time-provider (sequential) (-1.0%, previous was 1.01x)
+- 25.74x faster than jest fake-timers (modern) (+64.6%, previous was 15.64x)
+- 25.95x faster than sinon fake-timers (+72.9%, previous was 15.01x)
 
 ### schedule 5000 timeouts, with time advance _(median across 5 passes)_
 
@@ -1761,9 +1761,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.01x faster than time-provider (manual)
-- 25.22x faster than sinon fake-timers
-- 26.73x faster than jest fake-timers (modern)
+- 1.01x faster than time-provider (manual) (+0.0%, previous was 1.01x)
+- 25.22x faster than sinon fake-timers (+65.1%, previous was 15.28x)
+- 26.73x faster than jest fake-timers (modern) (+67.2%, previous was 15.99x)
 
 ### schedule 5000 intervals, without time advance _(median across 5 passes)_
 
@@ -1776,9 +1776,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.02x faster than time-provider (manual)
-- 33.60x faster than sinon fake-timers
-- 35.29x faster than jest fake-timers (modern)
+- 1.02x faster than time-provider (manual) (-1.0%, previous was 1.03x)
+- 33.60x faster than sinon fake-timers (+106.8%, previous was 16.25x)
+- 35.29x faster than jest fake-timers (modern) (+106.1%, previous was 17.12x)
 
 ### schedule 5000 intervals, with time advance _(median across 5 passes)_
 
@@ -1791,9 +1791,9 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (sequential)** is fastest:
 
-- 1.06x faster than time-provider (manual)
-- 18.93x faster than sinon fake-timers
-- 19.70x faster than jest fake-timers (modern)
+- 1.06x faster than time-provider (manual) (+6.1%, previous was 1.00x)
+- 18.93x faster than sinon fake-timers (+17.9%, previous was 16.06x)
+- 19.70x faster than jest fake-timers (modern) (+16.0%, previous was 16.98x)
 
 ### read now 5000 times _(median across 5 passes)_
 
@@ -1805,8 +1805,8 @@ Benchmarked with: Node v24 · @time-provider/core 1.3.0 · @sinonjs/fake-timers 
 
 **✅ time-provider (manual)** is fastest:
 
-- 6.76x faster than jest fake-timers (modern)
-- 6.87x faster than sinon fake-timers
+- 6.76x faster than jest fake-timers (modern) (+7.8%, previous was 6.27x)
+- 6.87x faster than sinon fake-timers (+11.0%, previous was 6.19x)
 
 ## 2026-07-25T20:16:36.601Z - ([6a2a3d5](https://github.com/jaenyf/time-provider/commit/6a2a3d5))
 
