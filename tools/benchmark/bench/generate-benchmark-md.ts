@@ -42,7 +42,42 @@ function versionsLine(): string {
   ].join(" · ");
 }
 
-function formatEntry(): string {
+interface PreviousScenario {
+  hz: Map<string, number>;
+  fastest?: string;
+  ratios: Map<string, number>;
+}
+
+function previousScenarios(content: string | undefined): Map<string, PreviousScenario> {
+  const byScenario = new Map<string, PreviousScenario>();
+  const entry = content?.split(START_MARKER)[1]?.split(/\n## /)[1] ?? "";
+  let current: PreviousScenario = { hz: new Map(), ratios: new Map() };
+  for (const line of entry.split("\n")) {
+    const scenario = /^### (.+?) _\(/.exec(line)?.[1];
+    if (scenario) byScenario.set(scenario, (current = { hz: new Map(), ratios: new Map() }));
+    const row = /^\| (.+?) +\| +([\d.]+) +\|/.exec(line);
+    if (row) current.hz.set(row[1]!, Number(row[2]));
+    current.fastest = /^\*\*\S+ (.+)\*\* is fastest:/.exec(line)?.[1] ?? current.fastest;
+    const ratio = /^- ([\d.]+)x faster than (.+?)(?: \([+-][\d.]+%, previous was [\d.]+x\))?$/.exec(
+      line,
+    );
+    if (ratio) current.ratios.set(ratio[2]!, Number(ratio[1]));
+  }
+  return byScenario;
+}
+
+function previousRatio(previous: PreviousScenario | undefined, fastest: string, other: string) {
+  if (previous?.fastest === fastest && previous.ratios.has(other))
+    return previous.ratios.get(other);
+  return previous && previous.hz.get(fastest)! / previous.hz.get(other)!;
+}
+
+function delta(ratio: number, previous: number): string {
+  const change = Number(((ratio / previous - 1) * 100).toFixed(1));
+  return ` (${change < 0 ? "-" : "+"}${Math.abs(change).toFixed(1)}%, previous was ${previous.toFixed(2)}x)`;
+}
+
+function formatEntry(previous: Map<string, PreviousScenario>): string {
   const byScenario = groupSamples(readSamples());
   const timestamp = new Date().toISOString();
   const commitRef = currentCommitRef();
@@ -75,7 +110,11 @@ function formatEntry(): string {
         `**${fastest.adapter.startsWith("time-provider") ? "✅" : "❌"} ${fastest.adapter}** is fastest:`,
       );
       for (const row of rest) {
-        lines.push(`- ${(fastest.hz / row.hz).toFixed(2)}x faster than ${row.adapter}`);
+        const ratio = (fastest.hz / row.hz).toFixed(2);
+        const before = previousRatio(previous.get(scenario), fastest.adapter, row.adapter);
+        lines.push(
+          `- ${ratio}x faster than ${row.adapter}${before ? delta(fastest.hz / row.hz, before) : ""}`,
+        );
       }
       lines.push("");
     }
@@ -100,7 +139,7 @@ function upsertEntry(existingContent: string | undefined, newEntry: string): str
 const totalPasses = Number(process.env.TIMEPROVIDER_BENCH_PASSES ?? 5);
 runAllPasses(totalPasses);
 
-const entry = formatEntry();
 const existing = existsSync(BENCHMARK_MD) ? readFileSync(BENCHMARK_MD, "utf8") : undefined;
+const entry = formatEntry(previousScenarios(existing));
 writeFileSync(BENCHMARK_MD, upsertEntry(existing, entry));
 console.log(`\nUpdated ${BENCHMARK_MD}`);
