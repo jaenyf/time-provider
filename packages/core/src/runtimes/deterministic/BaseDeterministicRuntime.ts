@@ -202,22 +202,20 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
-    this.#drain(now);
+    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
-    this.#drain(now);
+    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }

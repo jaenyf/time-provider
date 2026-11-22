@@ -30,6 +30,11 @@ export class DueHeap<TDate> {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
 
+  /** Whether an entry is due at or before `now`. */
+  hasDueBy(now: number): boolean {
+    return this._entries.length > 0 && this._entries[0].runAt <= now;
+  }
+
   /** The earliest pending `runAt`, or `undefined` if empty. */
   peekRunAt(): number | undefined {
     return this._entries.length > 0 ? this._entries[0].runAt : undefined;
