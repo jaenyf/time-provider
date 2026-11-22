@@ -154,6 +154,7 @@ export abstract class BaseDeterministicRuntime<TDate>
    * @param coalesce Fires each overdue timer once; see {@link DueHeap.drainDue}.
    */
   protected mayRunDueCallbacks(coalesce = false): void {
+    if (this.#dueQueue.isDraining) return;
     this.#drain(this.#dueTimestampNow(), coalesce);
   }
 
@@ -169,8 +170,11 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   /** Drains after a registration, unless a running drain will pick the new entry up. */
   #drainIfIdle(now: number): void {
-    if (this.#dueQueue.isDraining) return;
-    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
+    if (
+      (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) &&
+      !this.#dueQueue.isDraining
+    )
+      this.#drain(now);
   }
 
   /** Drains due entries while advancing the wall clock. */

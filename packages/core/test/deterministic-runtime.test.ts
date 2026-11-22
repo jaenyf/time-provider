@@ -1262,8 +1262,7 @@ describe("BaseManualRuntime timers scheduled from a firing timer", () => {
 });
 
 describe("a clock read from a timer firing during a sleep", () => {
-  // Each overdue interval should fire once, but the read starts a drain that doesn't coalesce.
-  test.fails("doesn't make the other overdue intervals catch up, on a manual runtime", () => {
+  test("doesn't make the other overdue intervals catch up, on a manual runtime", () => {
     const sut = new FakeManualRuntime(0);
     let fires = 0;
     sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
@@ -1274,7 +1273,19 @@ describe("a clock read from a timer firing during a sleep", () => {
     expect(fires).toEqual(1);
   });
 
-  test.fails("doesn't make the other overdue intervals catch up, on a sequential runtime", () => {
+  test("doesn't make the other overdue intervals catch up, on a sequential runtime", () => {
+    const sut = new FakeSequentialRuntime([{ time: 0 }, { time: 10, as: "sleep" }]);
+    let fires = 0;
+    sut.clock.utcNow();
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.clock.utcNow();
+
+    expect(fires).toEqual(1);
+  });
+
+  test.fails("doesn't make the other overdue intervals catch up, when the read moves a sequential clock", () => {
     const sut = new FakeSequentialRuntime([{ time: 0 }, { time: 10, as: "sleep" }, { time: 10 }]);
     let fires = 0;
     sut.clock.utcNow();
