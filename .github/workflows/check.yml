@@ -227,6 +227,7 @@ jobs:
 
       # The gate's baseline is the build of the newest BENCHMARK.md entry's commit. Any branch saves
       # it on a miss: a branch's copy is only visible to that branch, and unread caches expire.
+      # Its key hashes the files that decide its content, so adding a package rebuilds it.
       - name: Find benchmark baseline
         id: baseline
         run: echo "sha=$(grep -m1 -oP '^## .*?\(\[\K[0-9a-f]+' BENCHMARK.md)" >> "$GITHUB_OUTPUT"
@@ -236,7 +237,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/time-provider-baseline-${{ steps.baseline.outputs.sha }}
-          key: bench-dist-${{ steps.baseline.outputs.sha }}
+          key: bench-dist-${{ steps.baseline.outputs.sha }}-${{ hashFiles('tools/benchmark/bench/gate.ts', 'tools/benchmark/bench/shared/adapters/kit.ts') }}
 
       # Fails when a Time-Provider adapter is more than the percentThreshold in tools/benchmark's
       # bench:gate script slower than the same adapter on the baseline, measured on this runner.
@@ -247,7 +248,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/time-provider-baseline-${{ steps.baseline.outputs.sha }}
-          key: bench-dist-${{ steps.baseline.outputs.sha }}
+          key: bench-dist-${{ steps.baseline.outputs.sha }}-${{ hashFiles('tools/benchmark/bench/gate.ts', 'tools/benchmark/bench/shared/adapters/kit.ts') }}
 
       - name: Restore Stryker incremental results
         if: env.RUN_STRYKER == 'true'
