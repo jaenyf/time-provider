@@ -11,7 +11,12 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   readonly #kit: TimeProviderKit;
   #runtime!: {
     compat: {
-      performance: { now(): number };
+      performance: {
+        now(): number;
+        mark(name: string): unknown;
+        measure(name: string, startMark: string, endMark: string): unknown;
+        getEntries(): unknown;
+      };
       setTimeout(callback: () => void, delay: number): unknown;
       clearTimeout(handle: unknown): void;
       setInterval(callback: () => void, delay: number): unknown;
@@ -52,14 +57,8 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
     // Nothing to release - the runtime is just discarded.
   }
 
-  now(): unknown {
-    return this.#runtime.clock.utcNow();
-  }
   monotonicNow(): unknown {
     return this.#runtime.compat.performance.now();
-  }
-  timestampNow(): number {
-    return this.#runtime.clock.timestampNow();
   }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return this.#runtime.compat.setTimeout(callback, delayMs);
@@ -101,8 +100,17 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   cancelAnimationFrame(handle: unknown): void {
     this.#runtime.compat.cancelAnimationFrame(handle);
   }
+  mark(name: string): void {
+    this.#runtime.compat.performance.mark(name);
+  }
+  measure(name: string, startMark: string, endMark: string): void {
+    this.#runtime.compat.performance.measure(name, startMark, endMark);
+  }
+  timingEntries(): unknown {
+    return this.#runtime.compat.performance.getEntries();
+  }
   /*
-    Clock moves and timer counts have no native-shaped equivalent: those scenarios report "--"
-    here, the manual adapter covers them.
+    Wall clock reads, clock moves, timer counts and conversions have no native-shaped
+    equivalent: those scenarios report "--" here, the manual adapter covers them.
   */
 }

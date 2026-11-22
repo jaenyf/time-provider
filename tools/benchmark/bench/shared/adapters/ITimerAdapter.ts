@@ -14,11 +14,11 @@ export interface ITimerAdapter {
   //#endregion
 
   /** Reads the adapter's current fake "now". */
-  now(): unknown;
+  now?(): unknown;
   /** Reads the adapter's current fake monotonic time (`performance.now()` or equivalent). */
   monotonicNow(): unknown;
   /** Reads the adapter's current fake "now" as epoch milliseconds (`Date.now()` or equivalent). */
-  timestampNow(): number;
+  timestampNow?(): number;
   /** Returns whatever handle `clearTimeout()` takes. */
   setTimeout(callback: () => void, delayMs: number): unknown;
   /** Returns whatever handle `clearInterval()` takes. */

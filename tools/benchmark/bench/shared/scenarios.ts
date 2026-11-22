@@ -27,9 +27,10 @@ const measureNames = Array.from({ length: samplesCount }, (_, i) => `measure ${i
 export const clockReadScenarios: Scenario[] = [
   {
     name: `read now ${samplesCount} times`,
+    requires: ["now"],
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
-        adapter.now();
+        adapter.now!();
       }
     },
   },
@@ -43,9 +44,10 @@ export const clockReadScenarios: Scenario[] = [
   },
   {
     name: `read timestamp now ${samplesCount} times`,
+    requires: ["timestampNow"],
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
-        adapter.timestampNow();
+        adapter.timestampNow!();
       }
     },
   },
@@ -138,7 +140,7 @@ export const schedulingScenarios: Scenario[] = [
     name: `schedule ${samplesCount} timeouts, with ${samplesCount} moves to absolute times 1ms apart`,
     requires: ["advanceTo"],
     run: (adapter) => {
-      const start = adapter.timestampNow();
+      const start = adapter.timestampNow!();
       for (let i = 0; i < samplesCount; i++) {
         adapter.setTimeout(() => {}, i);
       }
