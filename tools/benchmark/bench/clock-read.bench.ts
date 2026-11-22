@@ -6,10 +6,12 @@ import { TimeProviderManualAdapter } from "./shared/adapters/TimeProviderManualA
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
 import { realNow } from "./shared/realNow.ts";
+import { baselineKit } from "./shared/baseline.ts";
 
 const guard = new GlobalGuard();
 const adapters = [
   new TimeProviderManualAdapter(),
+  ...(baselineKit ? [new TimeProviderManualAdapter([], baselineKit)] : []),
   new SinonFakeTimersAdapter(),
   new JestFakeTimersAdapter(),
 ];

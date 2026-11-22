@@ -1,13 +1,13 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider, type IDurationSpec } from "@time-provider/core/deterministic";
-import { plugin } from "@time-provider/plugin-native/deterministic";
-import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
-import { addon as animationFrameAddon } from "@time-provider/addon-animation-frame/deterministic";
+import type { IDurationSpec } from "@time-provider/core/deterministic";
+import * as headKit from "./kit.ts";
+import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
 export class TimeProviderSequentialAdapter implements ITimerAdapter {
-  readonly name = "time-provider (sequential)";
+  readonly name: string;
   readonly #delays: AdvanceDelayQueue;
+  readonly #kit: TimeProviderKit;
   readonly #plannedTimestamps: number[];
   #runtime!: {
     scheduler: {
@@ -41,7 +41,9 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
    * front: `delaysMs` (the same deltas every other adapter gets) is folded here into absolute,
    * cumulative timestamps and pre-seeded in setup().
    */
-  constructor(delaysMs: readonly number[] = []) {
+  constructor(delaysMs: readonly number[] = [], baseline?: TimeProviderKit) {
+    this.name = `time-provider (sequential)${baseline ? BASELINE_SUFFIX : ""}`;
+    this.#kit = baseline ?? headKit;
     this.#delays = new AdvanceDelayQueue(delaysMs);
     let target = 0;
     this.#plannedTimestamps = delaysMs.map((delta) => (target += delta));
@@ -49,6 +51,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon } = this.#kit;
     const builder = createTimeProvider
       .for(plugin)
       .use(idleAddon)

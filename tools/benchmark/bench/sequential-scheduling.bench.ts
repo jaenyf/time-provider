@@ -6,6 +6,7 @@ import { TimeProviderSequentialAdapter } from "./shared/adapters/TimeProviderSeq
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
 import { realNow } from "./shared/realNow.ts";
+import { baselineKit } from "./shared/baseline.ts";
 
 const guard = new GlobalGuard();
 
@@ -13,6 +14,9 @@ for (const scenario of schedulingScenarios) {
   test(scenario.name, async ({ bench }) => {
     const adapters = [
       new TimeProviderSequentialAdapter(scenario.advanceDelaysMs ?? []),
+      ...(baselineKit
+        ? [new TimeProviderSequentialAdapter(scenario.advanceDelaysMs ?? [], baselineKit)]
+        : []),
       new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
       new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
     ];

@@ -1,14 +1,13 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider } from "@time-provider/core/deterministic";
-import { plugin } from "@time-provider/plugin-native/deterministic";
-import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
-import { addon as animationFrameAddon } from "@time-provider/addon-animation-frame/deterministic";
+import * as headKit from "./kit.ts";
+import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 import { IDurationSpec } from "@time-provider/core";
 
 export class TimeProviderManualAdapter implements ITimerAdapter {
-  readonly name = "time-provider (manual)";
+  readonly name: string;
   readonly #delays: AdvanceDelayQueue;
+  readonly #kit: TimeProviderKit;
   #runtime!: {
     scheduler: {
       timers: {
@@ -34,12 +33,15 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     };
   };
 
-  constructor(delaysMs: readonly number[] = []) {
+  constructor(delaysMs: readonly number[] = [], baseline?: TimeProviderKit) {
+    this.name = `time-provider (manual)${baseline ? BASELINE_SUFFIX : ""}`;
     this.#delays = new AdvanceDelayQueue(delaysMs);
+    this.#kit = baseline ?? headKit;
   }
 
   setup(): void {
     this.#delays.reset();
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon } = this.#kit;
     this.#runtime = createTimeProvider
       .for(plugin)
       .use(idleAddon)
