@@ -19,6 +19,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
+import { args } from "./shared/args.ts";
 import { buildScenarioRows, groupSamples, readSamples } from "./shared/aggregate.ts";
 import { BASELINE_SUFFIX } from "./shared/baseline.ts";
 import { BENCHMARK_MD, START_MARKER } from "./shared/previous.ts";
@@ -87,7 +88,6 @@ function measure(testNamePattern?: string): Change[] {
 
 const list = (changes: Change[]) => changes.map(({ line }) => `- ${line}`).join("\n");
 
-const args = Object.fromEntries(process.argv.slice(2).map((arg) => arg.split(":")));
 const maxLoss = Number(args.percentThreshold ?? 5);
 const retryLoss = Number(args.retryThreshold ?? 20);
 const retryLimit = Number(args.retryLimit ?? 5);

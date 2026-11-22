@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "bench": "rimraf bench-results && vp test bench --reporter=verbose bench/clock-read.bench.ts && vp test bench --reporter=verbose bench/manual-scheduling.bench.ts && vp test bench --reporter=verbose bench/sequential-scheduling.bench.ts && node bench/shared/report.ts",
-    "bench:multi": "node bench/run-multi.ts",
+    "bench:multi": "node bench/run-multi.ts passes:5",
     "bench:report": "node bench/shared/report.ts",
-    "bench:changelog": "node bench/generate-benchmark-md.ts",
+    "bench:changelog": "node bench/generate-benchmark-md.ts passes:5",
     "bench:gate": "node bench/gate.ts percentThreshold:5 retryThreshold:20 retryLimit:5 passes:2"
   },
   "devDependencies": {

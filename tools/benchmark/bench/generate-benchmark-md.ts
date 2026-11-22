@@ -1,15 +1,16 @@
 /**
  * Runs the full multi-pass benchmark suite and prepends a dated entry with the results to BENCHMARK.md at the repo root
  *
- * `TIMEPROVIDER_BENCH_PASSES` controls how many independent passes to run (default 5, same as
- * run-multi.ts). GITHUB_SHA is used for the commit reference when present (CI); otherwise it
- * falls back to the local git HEAD, so a manual local run still produces a sensible entry.
+ * `passes:N` sets how many independent passes to run (default 5, same as run-multi.ts).
+ * GITHUB_SHA is used for the commit reference when present (CI); otherwise it falls back to the
+ * local git HEAD, so a manual local run still produces a sensible entry.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
+import { args } from "./shared/args.ts";
 import {
   buildScenarioRows,
   groupSamples,
@@ -107,7 +108,7 @@ function upsertEntry(existingContent: string | undefined, newEntry: string): str
   return `${intro}\n${START_MARKER}\n\n${newEntry}\n${END_MARKER}\n`;
 }
 
-const totalPasses = Number(process.env.TIMEPROVIDER_BENCH_PASSES ?? 5);
+const totalPasses = Number(args.passes ?? 5);
 runAllPasses(totalPasses);
 
 const existing = existsSync(BENCHMARK_MD) ? readFileSync(BENCHMARK_MD, "utf8") : undefined;

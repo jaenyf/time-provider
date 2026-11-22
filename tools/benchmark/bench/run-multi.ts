@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { args } from "./shared/args.ts";
 
 /*
   The intent of this file is to run the whole bench suite as `totalPasses` independent process invocations.
@@ -41,7 +42,7 @@ export function runAllPasses(totalPasses: number, testNamePattern?: string): voi
 
 // CLI entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const totalPasses = Number(process.env.TIMEPROVIDER_BENCH_PASSES ?? 5);
+  const totalPasses = Number(args.passes ?? 5);
   runAllPasses(totalPasses);
   console.log(`\n=== median across ${totalPasses} passes ===`);
   execFileSync("node", ["bench/shared/report.ts"], { stdio: "inherit" });
