@@ -174,6 +174,18 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `chain ${samplesCount} 0ms timeouts, each scheduling the next, with time advance`,
+    advanceDelaysMs: [0],
+    run: (adapter) => {
+      let remaining = samplesCount;
+      const next = () => {
+        if (--remaining > 0) adapter.setTimeout(next, 0);
+      };
+      adapter.setTimeout(next, 0);
+      adapter.advance();
+    },
+  },
+  {
     name: `schedule ${samplesCount} timeouts with an AbortSignal, and abort them`,
     requires: ["setTimeoutWithSignal"],
     run: (adapter) => {

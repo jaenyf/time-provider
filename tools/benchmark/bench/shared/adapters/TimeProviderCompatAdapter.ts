@@ -5,7 +5,7 @@ import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 import * as mimic from "./mimic.ts";
 
 // Read once: the bench module runner turns every imported-name use into a counted getter call.
-const { timeoutWithSignal } = mimic;
+const { recurringTimeout, timeoutWithSignal } = mimic;
 
 /** A manual runtime driven through the compat addon's native-shaped functions, like sinon's. */
 export class TimeProviderCompatAdapter implements ITimerAdapter {
@@ -86,6 +86,9 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   }
   setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
     timeoutWithSignal(this, callback, delayMs, signal);
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    recurringTimeout(this, callback, initialDelayMs);
   }
   requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
     const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };
