@@ -2,6 +2,7 @@ import { ITimerAdapter } from "./ITimerAdapter.ts";
 import * as headKit from "./kit.ts";
 import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
+import { timeoutWithSignal } from "./mimic.ts";
 
 /** A manual runtime driven through the compat addon's native-shaped functions, like sinon's. */
 export class TimeProviderCompatAdapter implements ITimerAdapter {
@@ -80,6 +81,9 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    timeoutWithSignal(this, callback, delayMs, signal);
   }
   requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
     const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };

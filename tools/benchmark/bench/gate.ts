@@ -25,7 +25,14 @@ import { BASELINE_SUFFIX } from "./shared/baseline.ts";
 import { BENCHMARK_MD, START_MARKER } from "./shared/previous.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
-const PACKAGES = ["core", "plugin-native", "addon-idle", "addon-animation-frame", "addon-compat"];
+const PACKAGES = [
+  "core",
+  "plugin-native",
+  "addon-idle",
+  "addon-animation-frame",
+  "addon-compat",
+  "addon-cron",
+];
 const PREFIX = "time-provider-baseline-";
 
 /** Builds the bench's packages at `sha` into a folder, reused in CI when its cache restored it. */

@@ -1,6 +1,7 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { ModernFakeTimers } from "@jest/fake-timers";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
+import { recurringTimeout, timeoutWithSignal } from "./mimic.ts";
 
 export class JestFakeTimersAdapter implements ITimerAdapter {
   readonly name = "jest fake-timers (modern)";
@@ -72,6 +73,12 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   }
   jumpWallClock(ms: number): void {
     this.#timers.setSystemTime(Date.now() + ms);
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    timeoutWithSignal(this, callback, delayMs, signal);
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    recurringTimeout(this, callback, initialDelayMs);
   }
   runAll(): void {
     this.#timers.runAllTimers();

@@ -54,6 +54,24 @@ export interface ITimerAdapter {
   advanceTo?(timestamp: number): void;
   /** Moves the wall clock by `ms` without firing timers (`setSystemTime()` or equivalent). */
   jumpWallClock?(ms: number): void;
+  /** Moves the clock by `ms`, firing each overdue timer once (`as: "sleep"`). */
+  sleep?(ms: number): void;
+  /** Moves the clock until no timer is pending, firing each overdue timer once. */
+  sleepUntilNoTimers?(): void;
+  /** Schedules a timeout cancelled when `signal` aborts. */
+  setTimeoutWithSignal?(callback: () => void, delayMs: number, signal: AbortSignal): void;
+  /** Calls `callback` after `initialDelayMs`, then after each delay it returns, until `false`. */
+  recurring?(callback: () => number | false, initialDelayMs: number): void;
+  /** Schedules `callback` from a 5-field cron expression. */
+  cron?(expression: string, callback: () => void): void;
+  /** Converts an ISO string to a UTC date. */
+  convertToUtc?(time: string): unknown;
+  /** Records a named instant. */
+  mark?(name: string): void;
+  /** Records the timespan between two marks. */
+  measure?(name: string, startMark: string, endMark: string): void;
+  /** Reads the recorded marks and measures. */
+  timingEntries?(): unknown;
   /** Fires timers one after another, including ones they schedule, until none is pending. */
   runAll?(): void;
   /** Moves the clock to the next pending timer and fires it. */

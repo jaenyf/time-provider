@@ -14,6 +14,12 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
         every(ms: IDurationSpec, callback: () => void): { dispose(): void };
+        once(
+          ms: IDurationSpec,
+          callback: () => void,
+          options: { signal: AbortSignal },
+        ): { dispose(): void };
+        recurring(callback: () => IDurationSpec | false, initialDelay: IDurationSpec): unknown;
         readonly pendingCount: number;
       };
       microtasks: {
@@ -30,6 +36,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
         request(callback: () => void, options?: { timeout: number }): unknown;
         drain(maxCount?: number): number;
       };
+      cron: { schedule(expression: string, callback: () => void): unknown };
       animation: { scheduleFrame(callback: () => void): { dispose(): void } };
     };
     clock: { utcNow(): unknown; monotonicNow(): unknown; timestampNow(): number };
@@ -52,11 +59,12 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    const { createTimeProvider, plugin, idleAddon, animationFrameAddon } = this.#kit;
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon, cronAddon } = this.#kit;
     const builder = createTimeProvider
       .for(plugin)
       .use(idleAddon)
       .use(animationFrameAddon)
+      .use(cronAddon)
       .asSequential()
       .withSequentialTime(0);
     for (const timestamp of this.#plannedTimestamps) {
@@ -107,6 +115,21 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   }
   countTimers(): number {
     return this.#runtime.scheduler.timers.pendingCount;
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback, { signal });
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    this.#runtime.scheduler.timers.recurring(
+      () => {
+        const delayMs = callback();
+        return delayMs === false ? false : { milliseconds: delayMs };
+      },
+      { milliseconds: initialDelayMs },
+    );
+  }
+  cron(expression: string, callback: () => void): void {
+    this.#runtime.scheduler.cron.schedule(expression, callback);
   }
   requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
     const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };

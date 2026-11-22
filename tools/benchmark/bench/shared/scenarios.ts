@@ -18,6 +18,12 @@ export type Scenario = {
 
 const samplesCount = 5000;
 
+const isoStrings = Array.from({ length: samplesCount }, (_, i) =>
+  new Date(i * 60_000).toISOString(),
+);
+const markNames = Array.from({ length: samplesCount }, (_, i) => `mark ${i}`);
+const measureNames = Array.from({ length: samplesCount }, (_, i) => `measure ${i}`);
+
 export const clockReadScenarios: Scenario[] = [
   {
     name: `read now ${samplesCount} times`,
@@ -41,6 +47,27 @@ export const clockReadScenarios: Scenario[] = [
       for (let i = 0; i < samplesCount; i++) {
         adapter.timestampNow();
       }
+    },
+  },
+  {
+    name: `convert ${samplesCount} ISO strings to UTC dates`,
+    requires: ["convertToUtc"],
+    run: (adapter) => {
+      for (const time of isoStrings) {
+        adapter.convertToUtc!(time);
+      }
+    },
+  },
+  {
+    name: `record ${samplesCount} marks, measure between each pair, and read the entries`,
+    requires: ["mark", "measure", "timingEntries"],
+    run: (adapter) => {
+      adapter.mark!(markNames[0]);
+      for (let i = 1; i < samplesCount; i++) {
+        adapter.mark!(markNames[i]);
+        adapter.measure!(measureNames[i], markNames[i - 1], markNames[i]);
+      }
+      adapter.timingEntries!();
     },
   },
 ];
@@ -145,6 +172,52 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `schedule ${samplesCount} timeouts with an AbortSignal, and abort them`,
+    requires: ["setTimeoutWithSignal"],
+    run: (adapter) => {
+      const controllers = [];
+      for (let i = 0; i < samplesCount; i++) {
+        const controller = new AbortController();
+        adapter.setTimeoutWithSignal!(() => {}, i + 1, controller.signal);
+        controllers.push(controller);
+      }
+      for (const controller of controllers) {
+        controller.abort();
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} recurring timers firing 10 times each, with time advance`,
+    requires: ["recurring"],
+    advanceDelaysMs: [10],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        let left = 10;
+        adapter.recurring!(() => (--left > 0 ? 1 : false), 1);
+      }
+      adapter.advance();
+    },
+  },
+  {
+    name: `fire an every-minute cron ${samplesCount} times, with time advance`,
+    requires: ["cron"],
+    advanceDelaysMs: [samplesCount * 60_000],
+    run: (adapter) => {
+      adapter.cron!("* * * * *", () => {});
+      adapter.advance();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, and sleep until none is pending`,
+    requires: ["sleepUntilNoTimers"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+      }
+      adapter.sleepUntilNoTimers!();
+    },
+  },
+  {
     name: `schedule ${samplesCount} timeouts, and run all`,
     requires: ["runAll"],
     run: (adapter) => {
@@ -236,6 +309,16 @@ export const schedulingScenarios: Scenario[] = [
         adapter.setInterval(() => {}, (i + 1) * 10);
       }
       adapter.advance();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} intervals, with one sleep past them`,
+    requires: ["sleep"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setInterval(() => {}, (i + 1) * 10);
+      }
+      adapter.sleep!(intervalsAdvanceMs);
     },
   },
   /*

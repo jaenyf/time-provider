@@ -1,6 +1,7 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import FakeTimers from "@sinonjs/fake-timers";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
+import { recurringTimeout, timeoutWithSignal } from "./mimic.ts";
 
 export class SinonFakeTimersAdapter implements ITimerAdapter {
   readonly name = "sinon fake-timers";
@@ -76,6 +77,12 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   }
   cancelAnimationFrame(handle: unknown): void {
     this.#clock!.cancelAnimationFrame(handle as FakeTimers.TimerId);
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    timeoutWithSignal(this, callback, delayMs, signal);
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    recurringTimeout(this, callback, initialDelayMs);
   }
   runAll(): void {
     this.#clock!.runAll();

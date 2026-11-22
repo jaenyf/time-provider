@@ -2,7 +2,10 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ITimerAdapter } from "./adapters/ITimerAdapter.ts";
 import type { Scenario } from "./scenarios.ts";
-import { BASELINE_SUFFIX } from "./baseline.ts";
+import { BASELINE_SUFFIX, baselineKit } from "./baseline.ts";
+import type { TestContext } from "vite-plus/test";
+import { GlobalGuard } from "./globalGuard.ts";
+import { realNow } from "./realNow.ts";
 
 const RESULTS_DIR = join(import.meta.dirname, "..", "..", "bench-results");
 
@@ -81,4 +84,33 @@ export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario
     ready = ready.filter((adapter) => warmedUp(adapter, scenario));
   }
   return ready;
+}
+
+const guard = new GlobalGuard();
+
+/**
+ * Times the adapters able to run `scenario`, recording each iteration's elapsed time. A lone
+ * adapter runs on its own (`bench.compare()` needs two), except in the gate where it has no baseline.
+ */
+export async function benchAdapters(
+  bench: TestContext["bench"],
+  adapters: ITimerAdapter[],
+  scenario: Scenario,
+): Promise<void> {
+  const registrations = prepareAdapters(adapters, scenario).map((adapter) =>
+    bench(adapter.name, () => {
+      adapter.setup();
+      const start = realNow();
+      try {
+        scenario.run(adapter);
+      } finally {
+        const elapsedMs = realNow() - start;
+        adapter.teardown();
+        guard.assertPristine(adapter.name);
+        recordSample(adapter.name, scenario.name, elapsedMs);
+      }
+    }),
+  );
+  if (registrations.length > 1) await bench.compare(...registrations);
+  else if (registrations.length === 1 && !baselineKit) await registrations[0].run();
 }
