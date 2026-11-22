@@ -676,7 +676,7 @@ export function testManualRuntime<TDate>(
         microtasks.drain();
         expect(microtasks.pendingCount).toBe(0);
         // A getter in an object literal would push every runtime into the old generation.
-        expect(Object.keys(microtasks)).toEqual(["queue", "drain"]);
+        expect(Object.keys(microtasks)).toEqual([]);
       });
     });
 

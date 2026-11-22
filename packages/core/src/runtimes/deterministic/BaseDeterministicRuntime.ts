@@ -135,10 +135,7 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   //#region microtasks management
   override get microtasks(): IDeterministicMicrotasks {
-    return (this.#microtasksFacade ??= Object.assign(new MicrotasksFacade(this.#microtasks), {
-      queue: (callback: () => void) => this.queue(callback),
-      drain: () => this.drain(),
-    }));
+    return (this.#microtasksFacade ??= new MicrotasksFacade(this, this.#microtasks));
   }
 
   /** Queues `callback` on this runtime's microtask queue. */
