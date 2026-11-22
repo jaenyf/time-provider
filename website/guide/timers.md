@@ -20,6 +20,12 @@ This is what makes manual/sequential tests deterministic without `await`,
 call ordering can differ subtly from a real async run, since a callback can
 now execute in the middle of the call that triggered it.
 
+The exception is a timer scheduled from inside a running callback: it never
+fires inside that `once()`/`every()` call. The drain already running picks it
+up once the current callback returns, in due-time order, as native timers would.
+So a chain of `0`-delay timers, each scheduling the next, runs one after the
+other instead of nesting.
+
 For example, jumping 5 seconds past a 1-second `every` fires it 5 times,
 synchronously, before `moveBy()` returns:
 
@@ -35,8 +41,7 @@ ticks; // 5
 as the other two. A due `recurring` entry is pulled out of the heap
 before its run happens, and only reinserted afterward if the run's return
 value is actually rearming it. That's what keeps it safe for the run to
-itself schedule new work (on a manual/sequential clock, that reentrantly
-drains the same heap) without the entry being visible to that nested drain
+itself schedule new work without the entry being visible to the drain
 while its own fate is still being decided.
 
 Microtasks are a separate facet from timers - see

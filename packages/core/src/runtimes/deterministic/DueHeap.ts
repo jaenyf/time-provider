@@ -30,6 +30,11 @@ export class DueHeap<TDate> {
     this._shouldRethrowTimerErrors = shouldRethrowTimerErrors();
   }
 
+  /** Whether a drain is running; it picks up entries that come due meanwhile. */
+  get isDraining(): boolean {
+    return this._runningDepth !== 0;
+  }
+
   /** Whether an entry is due at or before `now`. */
   hasDueBy(now: number): boolean {
     return this._entries.length > 0 && this._entries[0].runAt <= now;

@@ -167,6 +167,12 @@ export abstract class BaseDeterministicRuntime<TDate>
     this.#dueQueue.drainDue(dueNow, microtasks, coalesce);
   }
 
+  /** Drains after a registration, unless a running drain will pick the new entry up. */
+  #drainIfIdle(now: number): void {
+    if (this.#dueQueue.isDraining) return;
+    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
+  }
+
   /** Drains due entries while advancing the wall clock. */
   protected drainDueAdvancing(
     targetTimestamp: number,
@@ -205,7 +211,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
-    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
@@ -215,7 +221,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
-    if (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
@@ -229,7 +235,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
-    this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
@@ -252,7 +258,7 @@ export abstract class BaseDeterministicRuntime<TDate>
       intervalDelay ?? 0,
       callback,
     );
-    this.#drain(now);
+    this.#drainIfIdle(now);
     return entry;
   }
 

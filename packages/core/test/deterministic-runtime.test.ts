@@ -1203,7 +1203,7 @@ describe("BaseManualRuntime timers scheduled from a firing timer", () => {
   const ZERO_DELAY_CHAIN_LENGTH = 5000;
   const RESCHEDULING_TIMERS = 7500;
 
-  test.fails("a chain of 0ms timers, each scheduling the next, doesn't overflow the stack", () => {
+  test("a chain of 0ms timers, each scheduling the next, doesn't overflow the stack", () => {
     const sut = new FakeManualRuntime(0);
     let fires = 0;
     const next = () => {
@@ -1216,7 +1216,7 @@ describe("BaseManualRuntime timers scheduled from a firing timer", () => {
     expect(fires).toBe(ZERO_DELAY_CHAIN_LENGTH);
   });
 
-  test.fails("many 1ms timers rescheduling themselves within one move don't overflow the stack", () => {
+  test("many 1ms timers rescheduling themselves within one move don't overflow the stack", () => {
     const sut = new FakeManualRuntime(0);
     let fires = 0;
     for (let i = 0; i < RESCHEDULING_TIMERS; i++) {
@@ -1231,5 +1231,32 @@ describe("BaseManualRuntime timers scheduled from a firing timer", () => {
     sut.moveBy({ milliseconds: 2 });
 
     expect(fires).toBe(RESCHEDULING_TIMERS * 2);
+  });
+
+  test("a timer due on insert fires after the callback that scheduled it returns", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.scheduler.timers.once({ milliseconds: 1 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 0 }, () => order.push("scheduled"));
+      order.push("scheduler returned");
+    });
+
+    sut.advance({ milliseconds: 1 });
+
+    expect(order).toEqual(["scheduler returned", "scheduled"]);
+  });
+
+  test("scheduling a timer doesn't run the firing callback's pending microtasks", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.scheduler.timers.once({ milliseconds: 1 }, () => {
+      sut.scheduler.microtasks.queue(() => order.push("microtask"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {});
+      order.push("callback end");
+    });
+
+    sut.advance({ milliseconds: 1 });
+
+    expect(order).toEqual(["callback end", "microtask"]);
   });
 });
