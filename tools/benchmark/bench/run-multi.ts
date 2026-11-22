@@ -11,6 +11,7 @@ import { args } from "./shared/args.ts";
 const FILES = {
   "bench/manual-scheduling.bench.ts": "time-provider (manual) vs competitors",
   "bench/sequential-scheduling.bench.ts": "time-provider (sequential) vs competitors",
+  "bench/compat-scheduling.bench.ts": "time-provider (compat) vs competitors",
   "bench/clock-read.bench.ts": "clock reads",
 };
 const resultsDirectory = fileURLToPath(new URL("../bench-results", import.meta.url));
