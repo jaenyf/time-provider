@@ -22,7 +22,7 @@ export function runAllPasses(totalPasses: number): void {
     for (const [index, [file, label]] of files.entries()) {
       const step = (pass - 1) * files.length + index;
       console.log(
-        `\n--- [pass ${pass}/${totalPasses}] (${Math.floor((step / steps) * 100)}%) ${label} ---`,
+        `\n--- [pass ${pass}/${totalPasses}] (${Math.floor((step / steps) * 100)}%) ${process.env.TIMEPROVIDER_BENCH_BASELINE ? label.replace("competitors", "baseline") : label} ---`,
       );
       execFileSync("vp", ["test", "bench", "--reporter=verbose", file], {
         stdio: "inherit",

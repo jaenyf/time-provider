@@ -11,15 +11,18 @@ import { baselineKit } from "./shared/baseline.ts";
 const guard = new GlobalGuard();
 const adapters = [
   new TimeProviderManualAdapter(),
-  ...(baselineKit ? [new TimeProviderManualAdapter([], baselineKit)] : []),
-  new SinonFakeTimersAdapter(),
-  new JestFakeTimersAdapter(),
+  ...(baselineKit
+    ? [new TimeProviderManualAdapter([], baselineKit)]
+    : [new SinonFakeTimersAdapter(), new JestFakeTimersAdapter()]),
 ];
 
 for (const [index, scenario] of clockReadScenarios.entries()) {
   test(progress(index, clockReadScenarios.length) + scenario.name, async ({ bench }) => {
+    const ready = prepareAdapters(adapters, scenario);
+    // bench.compare() needs two rows: the gate's Time-Provider row alone has nothing to compare to.
+    if (ready.length < 2) return;
     await bench.compare(
-      ...prepareAdapters(adapters, scenario).map((adapter) =>
+      ...ready.map((adapter) =>
         bench(adapter.name, () => {
           adapter.setup();
           const start = realNow();

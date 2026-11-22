@@ -16,12 +16,16 @@ for (const [index, scenario] of schedulingScenarios.entries()) {
       new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? []),
       ...(baselineKit
         ? [new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? [], baselineKit)]
-        : []),
-      new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
-      new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
+        : [
+            new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
+            new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
+          ]),
     ];
+    const ready = prepareAdapters(adapters, scenario);
+    // bench.compare() needs two rows: the gate's Time-Provider row alone has nothing to compare to.
+    if (ready.length < 2) return;
     await bench.compare(
-      ...prepareAdapters(adapters, scenario).map((adapter) =>
+      ...ready.map((adapter) =>
         bench(adapter.name, () => {
           adapter.setup();
           const start = realNow();

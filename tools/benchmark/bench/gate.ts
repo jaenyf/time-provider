@@ -77,14 +77,17 @@ try {
 const losses: string[] = [];
 console.log(`\nTime-Provider against its ${sha} build, same machine:`);
 for (const [scenario, byAdapter] of groupSamples(readSamples())) {
+  // An adapter skipped by `requires` records its own "--" row; one with no row ran fine.
+  for (const [adapter, byPass] of byAdapter) {
+    const head = adapter.slice(0, -BASELINE_SUFFIX.length);
+    if (adapter.endsWith(BASELINE_SUFFIX) && byPass.size === 0 && !byAdapter.has(head)) {
+      console.log(`- ${scenario}: ${head} has no baseline (API not in ${sha}), skipped`);
+    }
+  }
   const rows = new Map(buildScenarioRows(byAdapter).map((row) => [row.adapter, row]));
   for (const [adapter, head] of rows) {
-    if (!adapter.startsWith("time-provider") || adapter.endsWith(BASELINE_SUFFIX)) continue;
     const baseline = rows.get(adapter + BASELINE_SUFFIX);
-    if (!baseline) {
-      console.log(`- ${scenario}: ${adapter} has no baseline (API not in ${sha}), skipped`);
-      continue;
-    }
+    if (!baseline) continue;
     const change = Number(((head.hz / baseline.hz - 1) * 100).toFixed(1));
     const line = `${scenario}: ${adapter} ${change < 0 ? "" : "+"}${change.toFixed(1)}%`;
     console.log(`- ${line}`);
