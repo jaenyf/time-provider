@@ -1197,3 +1197,39 @@ describe("BaseSequentialRuntime moves", () => {
     ).not.toThrow();
   });
 });
+
+describe("BaseManualRuntime timers scheduled from a firing timer", () => {
+  // About 3x the depth at which these overflowed the default Node stack.
+  const ZERO_DELAY_CHAIN_LENGTH = 5000;
+  const RESCHEDULING_TIMERS = 7500;
+
+  test.fails("a chain of 0ms timers, each scheduling the next, doesn't overflow the stack", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    const next = () => {
+      if (++fires < ZERO_DELAY_CHAIN_LENGTH) sut.scheduler.timers.once({ milliseconds: 0 }, next);
+    };
+
+    sut.scheduler.timers.once({ milliseconds: 0 }, next);
+    sut.advance({ milliseconds: 0 });
+
+    expect(fires).toBe(ZERO_DELAY_CHAIN_LENGTH);
+  });
+
+  test.fails("many 1ms timers rescheduling themselves within one move don't overflow the stack", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    for (let i = 0; i < RESCHEDULING_TIMERS; i++) {
+      let left = 2;
+      const tick = () => {
+        fires++;
+        if (--left > 0) sut.scheduler.timers.once({ milliseconds: 1 }, tick);
+      };
+      sut.scheduler.timers.once({ milliseconds: 1 }, tick);
+    }
+
+    sut.moveBy({ milliseconds: 2 });
+
+    expect(fires).toBe(RESCHEDULING_TIMERS * 2);
+  });
+});
