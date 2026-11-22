@@ -1,7 +1,10 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import FakeTimers from "@sinonjs/fake-timers";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
-import { recurringTimeout, timeoutWithSignal } from "./mimic.ts";
+import * as mimic from "./mimic.ts";
+
+// Read once: the bench module runner turns every imported-name use into a counted getter call.
+const { recurringTimeout, timeoutWithSignal } = mimic;
 
 export class SinonFakeTimersAdapter implements ITimerAdapter {
   readonly name = "sinon fake-timers";

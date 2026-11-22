@@ -1,7 +1,10 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { ModernFakeTimers } from "@jest/fake-timers";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
-import { recurringTimeout, timeoutWithSignal } from "./mimic.ts";
+import * as mimic from "./mimic.ts";
+
+// Read once: the bench module runner turns every imported-name use into a counted getter call.
+const { recurringTimeout, timeoutWithSignal } = mimic;
 
 export class JestFakeTimersAdapter implements ITimerAdapter {
   readonly name = "jest fake-timers (modern)";

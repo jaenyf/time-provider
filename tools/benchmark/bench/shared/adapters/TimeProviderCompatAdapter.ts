@@ -2,7 +2,10 @@ import { ITimerAdapter } from "./ITimerAdapter.ts";
 import * as headKit from "./kit.ts";
 import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
-import { timeoutWithSignal } from "./mimic.ts";
+import * as mimic from "./mimic.ts";
+
+// Read once: the bench module runner turns every imported-name use into a counted getter call.
+const { timeoutWithSignal } = mimic;
 
 /** A manual runtime driven through the compat addon's native-shaped functions, like sinon's. */
 export class TimeProviderCompatAdapter implements ITimerAdapter {
