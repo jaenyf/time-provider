@@ -3,6 +3,7 @@ import { schedulingScenarios } from "./shared/scenarios.ts";
 import { GlobalGuard } from "./shared/globalGuard.ts";
 import { prepareAdapters, progress, recordSample } from "./shared/measure.ts";
 import { TimeProviderManualAdapter } from "./shared/adapters/TimeProviderManualAdapter.ts";
+import { TimeProviderCompatAdapter } from "./shared/adapters/TimeProviderCompatAdapter.ts";
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
 import { realNow } from "./shared/realNow.ts";
@@ -14,8 +15,12 @@ for (const [index, scenario] of schedulingScenarios.entries()) {
   test(progress(index, schedulingScenarios.length) + scenario.name, async ({ bench }) => {
     const adapters = [
       new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? []),
+      new TimeProviderCompatAdapter(scenario.advanceDelaysMs ?? []),
       ...(baselineKit
-        ? [new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? [], baselineKit)]
+        ? [
+            new TimeProviderManualAdapter(scenario.advanceDelaysMs ?? [], baselineKit),
+            new TimeProviderCompatAdapter(scenario.advanceDelaysMs ?? [], baselineKit),
+          ]
         : [
             new SinonFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
             new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
