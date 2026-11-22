@@ -16,8 +16,12 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
       setInterval(callback: () => void, delay: number): unknown;
       clearInterval(handle: unknown): void;
       queueMicrotask(callback: () => void): void;
+      requestIdleCallback(callback: () => void, options?: { timeout: number }): unknown;
+      cancelIdleCallback(handle: unknown): void;
+      requestAnimationFrame(callback: () => void): unknown;
+      cancelAnimationFrame(handle: unknown): void;
     };
-    scheduler: { microtasks: { drain(): void } };
+    scheduler: { microtasks: { drain(): void }; idle: { drain(maxCount?: number): number } };
     clock: {
       utcNow(): unknown;
       timestampNow(): number;
@@ -33,8 +37,15 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
-    const { createTimeProvider, plugin, compatAddon } = this.#kit;
-    this.#runtime = createTimeProvider.for(plugin).use(compatAddon).asManual().create();
+    const { createTimeProvider, plugin, compatAddon, idleAddon, animationFrameAddon } = this.#kit;
+    // The idle and frame addons add their compat functions only when composed after compat.
+    this.#runtime = createTimeProvider
+      .for(plugin)
+      .use(compatAddon)
+      .use(idleAddon)
+      .use(animationFrameAddon)
+      .asManual()
+      .create();
   }
   teardown(): void {
     // Nothing to release - the runtime is just discarded.
@@ -70,8 +81,24 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });
   }
+  requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
+    const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };
+    return this.#runtime.compat.requestIdleCallback(callback, options);
+  }
+  cancelIdleCallback(handle: unknown): void {
+    this.#runtime.compat.cancelIdleCallback(handle);
+  }
+  drainIdleCallbacks(ms: number): void {
+    this.#runtime.scheduler.idle.drain(ms);
+  }
+  requestAnimationFrame(callback: () => void): unknown {
+    return this.#runtime.compat.requestAnimationFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    this.#runtime.compat.cancelAnimationFrame(handle);
+  }
   /*
-    Clock moves, idle callbacks and animation frames don't go through compat: those scenarios
-    report "--" here, the manual adapter covers them.
+    Clock moves and timer counts have no native-shaped equivalent: those scenarios report "--"
+    here, the manual adapter covers them.
   */
 }
