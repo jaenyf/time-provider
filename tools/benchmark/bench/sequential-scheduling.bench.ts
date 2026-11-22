@@ -1,7 +1,7 @@
 import { test } from "vite-plus/test";
 import { schedulingScenarios } from "./shared/scenarios.ts";
 import { GlobalGuard } from "./shared/globalGuard.ts";
-import { recordSample, prepareAdapters } from "./shared/measure.ts";
+import { prepareAdapters, progress, recordSample } from "./shared/measure.ts";
 import { TimeProviderSequentialAdapter } from "./shared/adapters/TimeProviderSequentialAdapter.ts";
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
@@ -10,8 +10,8 @@ import { baselineKit } from "./shared/baseline.ts";
 
 const guard = new GlobalGuard();
 
-for (const scenario of schedulingScenarios) {
-  test(scenario.name, async ({ bench }) => {
+for (const [index, scenario] of schedulingScenarios.entries()) {
+  test(progress(index, schedulingScenarios.length) + scenario.name, async ({ bench }) => {
     const adapters = [
       new TimeProviderSequentialAdapter(scenario.advanceDelaysMs ?? []),
       ...(baselineKit

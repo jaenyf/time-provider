@@ -1,7 +1,7 @@
 import { test } from "vite-plus/test";
 import { clockReadScenarios } from "./shared/scenarios.ts";
 import { GlobalGuard } from "./shared/globalGuard.ts";
-import { recordSample, prepareAdapters } from "./shared/measure.ts";
+import { prepareAdapters, progress, recordSample } from "./shared/measure.ts";
 import { TimeProviderManualAdapter } from "./shared/adapters/TimeProviderManualAdapter.ts";
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
@@ -16,8 +16,8 @@ const adapters = [
   new JestFakeTimersAdapter(),
 ];
 
-for (const scenario of clockReadScenarios) {
-  test(scenario.name, async ({ bench }) => {
+for (const [index, scenario] of clockReadScenarios.entries()) {
+  test(progress(index, clockReadScenarios.length) + scenario.name, async ({ bench }) => {
     await bench.compare(
       ...prepareAdapters(adapters, scenario).map((adapter) =>
         bench(adapter.name, () => {

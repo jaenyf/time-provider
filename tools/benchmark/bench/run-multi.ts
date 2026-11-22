@@ -8,21 +8,30 @@ import { fileURLToPath } from "node:url";
   It is exported for generate-benchmark-md.ts.
 */
 const FILES = {
-  "bench/manual-scheduling.bench.ts": "time-provider (manual) vs sinon vs jest",
-  "bench/sequential-scheduling.bench.ts": "time-provider (sequential) vs sinon vs jest",
+  "bench/manual-scheduling.bench.ts": "time-provider (manual) vs competitors",
+  "bench/sequential-scheduling.bench.ts": "time-provider (sequential) vs competitors",
   "bench/clock-read.bench.ts": "clock reads",
 };
 const resultsDirectory = fileURLToPath(new URL("../bench-results", import.meta.url));
 
 export function runAllPasses(totalPasses: number): void {
   rmSync(resultsDirectory, { recursive: true, force: true });
+  const files = Object.entries(FILES);
+  const steps = totalPasses * files.length;
   for (let pass = 1; pass <= totalPasses; pass++) {
-    console.log(`\n=== pass ${pass}/${totalPasses} ===`);
-    for (const [file, label] of Object.entries(FILES)) {
-      console.log(`\n--- ${label} ---`);
+    for (const [index, [file, label]] of files.entries()) {
+      const step = (pass - 1) * files.length + index;
+      console.log(
+        `\n--- [pass ${pass}/${totalPasses}] (${Math.floor((step / steps) * 100)}%) ${label} ---`,
+      );
       execFileSync("vp", ["test", "bench", "--reporter=verbose", file], {
         stdio: "inherit",
-        env: { ...process.env, TIMEPROVIDER_BENCH_PASS: String(pass) },
+        env: {
+          ...process.env,
+          TIMEPROVIDER_BENCH_PASS: String(pass),
+          TIMEPROVIDER_BENCH_STEP: String(step),
+          TIMEPROVIDER_BENCH_STEPS: String(steps),
+        },
       });
     }
   }

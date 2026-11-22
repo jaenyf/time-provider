@@ -27,6 +27,16 @@ function slugify(name: string): string {
 */
 const currentPass = process.env.TIMEPROVIDER_BENCH_PASS ?? "1";
 
+/**
+ * Returns "[NN%] ", the share of the run done when the `index`-th of `count` scenarios starts,
+ * from the step run-multi.ts passes, or "" outside it.
+ */
+export function progress(index: number, count: number): string {
+  const { TIMEPROVIDER_BENCH_STEP: step, TIMEPROVIDER_BENCH_STEPS: steps } = process.env;
+  if (!step || !steps) return "";
+  return `[${Math.floor(((Number(step) + index / count) / Number(steps)) * 100)}%] `;
+}
+
 export function recordSample(adapterName: string, scenarioName: string, elapsedMs?: number): void {
   ensureResultsDir();
   const file = join(RESULTS_DIR, `${slugify(adapterName)}.ndjson`);
