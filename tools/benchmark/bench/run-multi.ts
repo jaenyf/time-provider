@@ -14,7 +14,8 @@ const FILES = {
 };
 const resultsDirectory = fileURLToPath(new URL("../bench-results", import.meta.url));
 
-export function runAllPasses(totalPasses: number): void {
+/** Runs the suite `totalPasses` times, only the tests whose name matches `testNamePattern` if given. */
+export function runAllPasses(totalPasses: number, testNamePattern?: string): void {
   rmSync(resultsDirectory, { recursive: true, force: true });
   const files = Object.entries(FILES);
   const steps = totalPasses * files.length;
@@ -24,7 +25,8 @@ export function runAllPasses(totalPasses: number): void {
       console.log(
         `\n--- [pass ${pass}/${totalPasses}] (${Math.floor((step / steps) * 100)}%) ${process.env.TIMEPROVIDER_BENCH_BASELINE ? label.replace("competitors", "baseline") : label} ---`,
       );
-      execFileSync("vp", ["test", "bench", "--reporter=verbose", file], {
+      const filter = testNamePattern ? ["-t", testNamePattern] : [];
+      execFileSync("vp", ["test", "bench", "--reporter=verbose", ...filter, file], {
         stdio: "inherit",
         env: {
           ...process.env,
