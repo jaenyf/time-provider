@@ -28,14 +28,20 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return this.#clock!.performance.now();
   }
+  timestampNow(): number {
+    return this.#clock!.Date.now();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return this.#clock!.setTimeout(callback, delayMs);
   }
   clearTimeout(handle: unknown): void {
     this.#clock!.clearTimeout(handle as FakeTimers.TimerId);
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    this.#clock!.setInterval(callback, delayMs);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return this.#clock!.setInterval(callback, delayMs);
+  }
+  clearInterval(handle: unknown): void {
+    this.#clock!.clearInterval(handle as FakeTimers.TimerId);
   }
   drainMicrotasks(): void {
     this.#clock!.runMicrotasks();
@@ -45,6 +51,12 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   }
   advance(): void {
     this.#clock!.tick(this.#delays.next());
+  }
+  advanceTo(timestamp: number): void {
+    this.#clock!.tick(timestamp - this.#clock!.now);
+  }
+  jumpWallClock(ms: number): void {
+    this.#clock!.setSystemTime(this.#clock!.now + ms);
   }
   requestIdleCallback(callback: () => void): void {
     this.#clock!.requestIdleCallback(callback);

@@ -17,10 +17,14 @@ export interface ITimerAdapter {
   now(): unknown;
   /** Reads the adapter's current fake monotonic time (`performance.now()` or equivalent). */
   monotonicNow(): unknown;
+  /** Reads the adapter's current fake "now" as epoch milliseconds (`Date.now()` or equivalent). */
+  timestampNow(): number;
   /** Returns whatever handle `clearTimeout()` takes. */
   setTimeout(callback: () => void, delayMs: number): unknown;
-  setInterval(callback: () => void, delayMs: number): void;
+  /** Returns whatever handle `clearInterval()` takes. */
+  setInterval(callback: () => void, delayMs: number): unknown;
   clearTimeout?(handle: unknown): void;
+  clearInterval?(handle: unknown): void;
   /** Queues `callback` on whatever microtask queue this adapter's library maintains. */
   queueMicrotask(callback: () => void): void;
   /** Drain whatever microtask queue this adapter's library maintains. */
@@ -41,6 +45,10 @@ export interface ITimerAdapter {
    * (see its constructor), synchronously firing whatever becomes due.
    */
   advance(): void;
+  /** Moves the clock to `timestamp`, firing whatever becomes due. */
+  advanceTo?(timestamp: number): void;
+  /** Moves the wall clock by `ms` without firing timers (`setSystemTime()` or equivalent). */
+  jumpWallClock?(ms: number): void;
   /** Fires timers one after another, including ones they schedule, until none is pending. */
   runAll?(): void;
   /** Moves the clock to the next pending timer and fires it. */

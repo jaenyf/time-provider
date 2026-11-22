@@ -41,14 +41,20 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return performance.now();
   }
+  timestampNow(): number {
+    return Date.now();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return globalThis.setTimeout(callback, delayMs);
   }
   clearTimeout(handle: unknown): void {
     globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>);
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    globalThis.setInterval(callback, delayMs);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return globalThis.setInterval(callback, delayMs);
+  }
+  clearInterval(handle: unknown): void {
+    globalThis.clearInterval(handle as ReturnType<typeof setInterval>);
   }
   drainMicrotasks(): void {
     //jest doesn't expose a dedicated method for this (such as runMicrotasks()).
@@ -60,6 +66,12 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   }
   advance(): void {
     this.#timers.advanceTimersByTime(this.#delays.next());
+  }
+  advanceTo(timestamp: number): void {
+    this.#timers.advanceTimersByTime(timestamp - Date.now());
+  }
+  jumpWallClock(ms: number): void {
+    this.#timers.setSystemTime(Date.now() + ms);
   }
   runAll(): void {
     this.#timers.runAllTimers();

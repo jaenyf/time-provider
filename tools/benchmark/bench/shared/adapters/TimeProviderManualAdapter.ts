@@ -2,7 +2,7 @@ import { ITimerAdapter } from "./ITimerAdapter.ts";
 import * as headKit from "./kit.ts";
 import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
-import { IDurationSpec } from "@time-provider/core";
+import type { EpochMilliseconds, IDurationSpec } from "@time-provider/core";
 
 export class TimeProviderManualAdapter implements ITimerAdapter {
   readonly name: string;
@@ -12,7 +12,7 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     scheduler: {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
-        every(ms: IDurationSpec, callback: () => void): unknown;
+        every(ms: IDurationSpec, callback: () => void): { dispose(): void };
       };
       microtasks: {
         queue(callback: () => void): void;
@@ -27,8 +27,10 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
     clock: {
       utcNow(): unknown;
       monotonicNow(): unknown;
+      timestampNow(): number;
       advance(config: { milliseconds: number }): unknown;
-      moveTo(time: "nextTimer" | "lastTimer"): unknown;
+      moveBy(spec: { milliseconds: number }, options: { as: "snap" }): unknown;
+      moveTo(time: "nextTimer" | "lastTimer" | EpochMilliseconds): unknown;
       moveUntil(until: "noTimers"): unknown;
     };
   };
@@ -61,14 +63,20 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return this.#runtime.clock.monotonicNow();
   }
+  timestampNow(): number {
+    return this.#runtime.clock.timestampNow();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
   }
   clearTimeout(handle: unknown): void {
     (handle as { dispose(): void }).dispose();
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  }
+  clearInterval(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   drainMicrotasks(): void {
     this.#runtime.scheduler.microtasks.drain();
@@ -78,6 +86,12 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   }
   advance(): void {
     this.#runtime.clock.advance({ milliseconds: this.#delays.next() });
+  }
+  advanceTo(timestamp: number): void {
+    this.#runtime.clock.moveTo(timestamp as EpochMilliseconds);
+  }
+  jumpWallClock(ms: number): void {
+    this.#runtime.clock.moveBy({ milliseconds: ms }, { as: "snap" });
   }
   requestIdleCallback(callback: () => void): void {
     this.#runtime.scheduler.idle.request(callback);

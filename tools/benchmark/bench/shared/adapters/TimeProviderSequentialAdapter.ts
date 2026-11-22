@@ -13,7 +13,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     scheduler: {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
-        every(ms: IDurationSpec, callback: () => void): unknown;
+        every(ms: IDurationSpec, callback: () => void): { dispose(): void };
       };
       microtasks: {
         queue(callback: () => void): void;
@@ -31,7 +31,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
       };
       animation: { scheduleFrame(callback: () => void): unknown };
     };
-    clock: { utcNow(): unknown; monotonicNow(): unknown };
+    clock: { utcNow(): unknown; monotonicNow(): unknown; timestampNow(): number };
   };
 
   /**
@@ -73,14 +73,20 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return this.#runtime.clock.monotonicNow();
   }
+  timestampNow(): number {
+    return this.#runtime.clock.timestampNow();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
   }
   clearTimeout(handle: unknown): void {
     (handle as { dispose(): void }).dispose();
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  }
+  clearInterval(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   drainMicrotasks(): void {
     this.#runtime.scheduler.microtasks.drain();
@@ -108,7 +114,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime.scheduler.animation.scheduleFrame(callback);
   }
   /*
-    No runAll/runToNext/runToLast: moveUntil() and moveTo() exist only on the manual clock, so
-    those scenarios report "--".
+    No runAll/runToNext/runToLast/advanceTo/jumpWallClock: moveUntil(), moveTo() and moveBy() exist
+    only on the manual clock, so those scenarios report "--".
   */
 }

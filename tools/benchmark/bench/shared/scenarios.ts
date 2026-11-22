@@ -35,6 +35,14 @@ export const clockReadScenarios: Scenario[] = [
       }
     },
   },
+  {
+    name: `read timestamp now ${samplesCount} times`,
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.timestampNow();
+      }
+    },
+  },
 ];
 
 const timeoutsAdvanceMs = 1000;
@@ -86,6 +94,31 @@ export const schedulingScenarios: Scenario[] = [
       }
       for (let i = 0; i < samplesCount; i++) {
         adapter.advance();
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, with ${samplesCount} moves to absolute times 1ms apart`,
+    requires: ["advanceTo"],
+    run: (adapter) => {
+      const start = adapter.timestampNow();
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i);
+      }
+      for (let i = 1; i <= samplesCount; i++) {
+        adapter.advanceTo!(start + i);
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, with ${samplesCount} wall clock jumps of 1ms`,
+    requires: ["jumpWallClock"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+      }
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.jumpWallClock!(1);
       }
     },
   },
@@ -173,6 +206,19 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `schedule ${samplesCount} intervals, and clear them`,
+    requires: ["clearInterval"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.setInterval(() => {}, (i + 1) * 10));
+      }
+      for (const handle of handles) {
+        adapter.clearInterval!(handle);
+      }
+    },
+  },
+  {
     name: `schedule ${samplesCount} intervals, with time advance`,
     advanceDelaysMs: [intervalsAdvanceMs],
     run: (adapter) => {
@@ -222,6 +268,17 @@ export const schedulingScenarios: Scenario[] = [
       for (let i = 0; i < samplesCount; i++) {
         adapter.queueMicrotask(() => {});
       }
+      adapter.drainMicrotasks();
+    },
+  },
+  {
+    name: `chain ${samplesCount} microtasks, each queueing the next, and drain`,
+    run: (adapter) => {
+      let remaining = samplesCount;
+      const next = () => {
+        if (--remaining > 0) adapter.queueMicrotask(next);
+      };
+      adapter.queueMicrotask(next);
       adapter.drainMicrotasks();
     },
   },
