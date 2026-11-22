@@ -23,8 +23,9 @@ class SequentialRuntime extends BaseSequentialRuntime<Temporal.ZonedDateTime> {
       time: string | EpochMilliseconds | number | Temporal.ZonedDateTime;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ) {
-    super(localTimezone, sequentialMoves, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper, timePausedFromDepth);
   }
 }
 

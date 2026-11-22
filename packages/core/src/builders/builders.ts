@@ -148,6 +148,12 @@ export interface ISequentialRuntimeBuilder<TDate, TExtra = unknown>
     sequentialDateTime: string | number | TDate,
     options?: { as?: IMoveOptions["as"] },
   ): ISequentialRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Pauses time for clock reads from this callback nesting depth on; defaults to `Infinity`.
+   * `1` keeps every timer callback's reads at its due time.
+   * @throws If `depth` is neither a positive integer nor `Infinity`.
+   */
+  withTimePausedFromDepth(depth: number): ISequentialRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a sequential deterministic UTC-only Time-Provider. */
@@ -159,6 +165,12 @@ interface IUtcOnlySequentialRuntimeBuilder<TDate, TExtra = unknown> extends ICre
     sequentialDateTime: string | number | TDate,
     options?: { as?: IMoveOptions["as"] },
   ): IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>;
+  /**
+   * Pauses time for clock reads from this callback nesting depth on; defaults to `Infinity`.
+   * `1` keeps every timer callback's reads at its due time.
+   * @throws If `depth` is neither a positive integer nor `Infinity`.
+   */
+  withTimePausedFromDepth(depth: number): IUtcOnlySequentialRuntimeBuilder<TDate, TExtra>;
 }
 
 /** Builds a system Time-Provider, optionally with addons. */

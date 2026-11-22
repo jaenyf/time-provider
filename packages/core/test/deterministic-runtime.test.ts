@@ -28,8 +28,11 @@ class FakeManualRuntime extends BaseManualRuntime<number> {
 }
 
 class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
-  constructor(moves: { time: number; as?: "flow" | "sleep" | "snap" }[]) {
-    super("Etc/UTC", moves, identityConverter);
+  constructor(
+    moves: { time: number; as?: "flow" | "sleep" | "snap" }[],
+    timePausedFromDepth?: number,
+  ) {
+    super("Etc/UTC", moves, identityConverter, timePausedFromDepth);
   }
 }
 
@@ -1285,8 +1288,11 @@ describe("a clock read from a timer firing during a sleep", () => {
     expect(fires).toEqual(1);
   });
 
-  test.fails("doesn't make the other overdue intervals catch up, when the read moves a sequential clock", () => {
-    const sut = new FakeSequentialRuntime([{ time: 0 }, { time: 10, as: "sleep" }, { time: 10 }]);
+  test("doesn't make the other overdue intervals catch up, when reads in callbacks don't step", () => {
+    const sut = new FakeSequentialRuntime(
+      [{ time: 0 }, { time: 10, as: "sleep" }, { time: 10 }],
+      1,
+    );
     let fires = 0;
     sut.clock.utcNow();
     sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
@@ -1295,5 +1301,30 @@ describe("a clock read from a timer firing during a sleep", () => {
     sut.clock.utcNow();
 
     expect(fires).toEqual(1);
+  });
+});
+
+describe("BaseSequentialRuntime time paused from depth", () => {
+  // The read at 10 fires A (depth 1); A's read flows to 20 and fires B (depth 2).
+  const readsWith = (timePausedFromDepth?: number) => {
+    const sut = new FakeSequentialRuntime(
+      [{ time: 0 }, { time: 10 }, { time: 20 }, { time: 30 }],
+      timePausedFromDepth,
+    );
+    const reads: Record<string, number> = {};
+    sut.clock.utcNow();
+    sut.scheduler.timers.once({ milliseconds: 5 }, () => (reads.a = sut.clock.utcNow()));
+    sut.scheduler.timers.once({ milliseconds: 15 }, () => (reads.b = sut.clock.utcNow()));
+    sut.clock.utcNow();
+    reads.next = sut.clock.utcNow();
+    return reads;
+  };
+
+  test.each<[number | undefined, Record<string, number>]>([
+    [undefined, { a: 30, b: 30, next: 30 }],
+    [2, { a: 20, b: 15, next: 30 }],
+    [1, { a: 5, b: 15, next: 20 }],
+  ])("with depth %s, reads see %j", (timePausedFromDepth, expected) => {
+    expect(readsWith(timePausedFromDepth)).toEqual(expected);
   });
 });

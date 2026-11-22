@@ -36,6 +36,31 @@ clock and a forward one flows, firing due timers at their own times.
 `withSequentialTime(time, { as })` picks another move — see
 [Moving the Clock](/guide/moving-the-clock#sequential-clocks).
 
+## Reads inside timer callbacks
+
+A timer callback that reads the clock consumes an instant too, and that read
+moves the clock again, inside the callback, firing more timers. To keep those
+reads from moving it, pause time from a callback nesting depth on:
+
+```ts
+createTimeProvider
+  .for(plugin)
+  .asSequential()
+  .withSequentialTime("2026-01-01T00:00:00.000Z")
+  .withSequentialTime("2026-01-01T00:00:10.000Z")
+  .withTimePausedFromDepth(1)
+  .create();
+```
+
+| Depth                | Which reads consume an instant                                                          |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `Infinity` (default) | every read                                                                              |
+| `1`                  | only reads made outside any timer callback; a callback reads its own due time           |
+| `2`                  | also reads in callbacks fired by such a read, but not reads in the callbacks those fire |
+
+With `1`, a callback that reads the clock during a `sleep` can't make other
+overdue intervals catch up, since its read moves nothing.
+
 Use it for tests that assert on a _sequence_ of changing timestamps read
 from the same code path (e.g. a function that stamps `createdAt` then
 `updatedAt` a moment later) without needing to model elapsed real time the

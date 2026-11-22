@@ -119,6 +119,7 @@ class SequentialRuntimeBuilder<TDate>
   implements ISequentialRuntimeBuilder<TDate>
 {
   #sequentialMoves: { time: string | number | TDate; as?: IMoveOptions["as"] }[] = [];
+  #timePausedFromDepth = Infinity;
   #addonBuilders: readonly IAddonBuilder<IDeterministicAddon<TDate>>[];
 
   constructor(
@@ -138,12 +139,26 @@ class SequentialRuntimeBuilder<TDate>
     return this;
   }
 
+  withTimePausedFromDepth(depth: number): ISequentialRuntimeBuilder<TDate> {
+    if (depth !== Infinity && !(Number.isInteger(depth) && depth >= 1)) {
+      throw new Error(`Invalid withTimePausedFromDepth depth: ${depth}`);
+    }
+    this.#timePausedFromDepth = depth;
+    return this;
+  }
+
   create(): IDeterministicTimeProvider<TDate> {
     const sequentialMoves = this.#sequentialMoves.length ? this.#sequentialMoves : [{ time: 0 }];
+    const timePausedFromDepth = this.#timePausedFromDepth;
     const runtime = this.plugin.supportsLocalTime
-      ? this.plugin.createSequentialRuntime(this.localTimezone, sequentialMoves)
+      ? this.plugin.createSequentialRuntime(
+          this.localTimezone,
+          sequentialMoves,
+          timePausedFromDepth,
+        )
       : (this.plugin.createSequentialRuntime(
           sequentialMoves,
+          timePausedFromDepth,
         ) as unknown as IDeterministicRuntime<TDate>);
     applyAddonBuilders(this.#addonBuilders, runtime);
     return Object.freeze(runtime);

@@ -24,8 +24,9 @@ class SequentialRuntime extends BaseSequentialRuntime<moment.Moment> {
       time: string | EpochMilliseconds | number | moment.Moment;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ) {
-    super(localTimezone, sequentialMoves, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper, timePausedFromDepth);
   }
 }
 

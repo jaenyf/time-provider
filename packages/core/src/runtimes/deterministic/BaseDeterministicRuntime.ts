@@ -94,6 +94,11 @@ export abstract class BaseDeterministicRuntime<TDate>
     return this.utcNowImpl();
   }
 
+  /** Number of callbacks running, nested. */
+  protected get callbackDepth(): number {
+    return this.#dueQueue.drainDepth;
+  }
+
   //#region heap management
   /** Permanently disables {@link mayRunDueCallbacks}. */
   protected disableDueDraining(): void {
@@ -154,7 +159,7 @@ export abstract class BaseDeterministicRuntime<TDate>
    * @param coalesce Fires each overdue timer once; see {@link DueHeap.drainDue}.
    */
   protected mayRunDueCallbacks(coalesce = false): void {
-    if (this.#dueQueue.isDraining) return;
+    if (this.#dueQueue.drainDepth !== 0) return;
     this.#drain(this.#dueTimestampNow(), coalesce);
   }
 
@@ -172,7 +177,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   #drainIfIdle(now: number): void {
     if (
       (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) &&
-      !this.#dueQueue.isDraining
+      this.#dueQueue.drainDepth === 0
     )
       this.#drain(now);
   }
