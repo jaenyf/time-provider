@@ -77,7 +77,9 @@ function measure(testNamePattern?: string): Change[] {
     for (const [adapter, byPass] of byAdapter) {
       const head = adapter.slice(0, -BASELINE_SUFFIX.length);
       if (adapter.endsWith(BASELINE_SUFFIX) && byPass.size === 0 && !byAdapter.has(head)) {
-        console.log(`- ${scenario}: ${head} has no baseline (API not in ${sha}), skipped`);
+        console.log(
+          `- ${scenario}: ${head} has no baseline (unsupported or failing in ${sha}), skipped`,
+        );
       }
     }
     const rows = new Map(buildScenarioRows(byAdapter).map((row) => [row.adapter, row]));
