@@ -39,12 +39,16 @@ export function recordSample(adapterName: string, scenarioName: string, elapsedM
   appendFileSync(file, line + "\n");
 }
 
-function runsOnce(adapter: ITimerAdapter, scenario: Scenario): boolean {
+const WARMUP_ROUNDS = 10;
+
+function warmedUp(adapter: ITimerAdapter, scenario: Scenario): boolean {
   try {
     adapter.setup();
     scenario.run(adapter);
     return true;
-  } catch {
+  } catch (error) {
+    if (!adapter.name.endsWith(BASELINE_SUFFIX)) throw error;
+    recordSample(adapter.name, scenario.name);
     return false;
   } finally {
     adapter.teardown();
@@ -52,15 +56,19 @@ function runsOnce(adapter: ITimerAdapter, scenario: Scenario): boolean {
 }
 
 /**
- * Returns the adapters able to run `scenario`, recording the others as unsupported ("--").
- * A baseline adapter also counts as unsupported when the baseline build throws on the scenario.
+ * Returns the adapters able to run `scenario`, recording the others as unsupported ("--"), after
+ * running them in turn `WARMUP_ROUNDS` times so every row is timed in the same JIT state. The order
+ * is reversed on even passes. A baseline adapter that throws counts as unsupported.
  */
-export function supportedAdapters<T extends ITimerAdapter>(adapters: T[], scenario: Scenario): T[] {
-  return adapters.filter((adapter) => {
-    const supported =
-      (scenario.requires?.every((member) => adapter[member] !== undefined) ?? true) &&
-      (!adapter.name.endsWith(BASELINE_SUFFIX) || runsOnce(adapter, scenario));
+export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario: Scenario): T[] {
+  const ordered = Number(currentPass) % 2 === 0 ? adapters.toReversed() : adapters;
+  let ready = ordered.filter((adapter) => {
+    const supported = scenario.requires?.every((member) => adapter[member] !== undefined) ?? true;
     if (!supported) recordSample(adapter.name, scenario.name);
     return supported;
   });
+  for (let round = 0; round < WARMUP_ROUNDS; round++) {
+    ready = ready.filter((adapter) => warmedUp(adapter, scenario));
+  }
+  return ready;
 }

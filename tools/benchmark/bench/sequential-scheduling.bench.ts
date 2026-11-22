@@ -1,7 +1,7 @@
 import { test } from "vite-plus/test";
 import { schedulingScenarios } from "./shared/scenarios.ts";
 import { GlobalGuard } from "./shared/globalGuard.ts";
-import { recordSample, supportedAdapters } from "./shared/measure.ts";
+import { recordSample, prepareAdapters } from "./shared/measure.ts";
 import { TimeProviderSequentialAdapter } from "./shared/adapters/TimeProviderSequentialAdapter.ts";
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
@@ -21,7 +21,7 @@ for (const scenario of schedulingScenarios) {
       new JestFakeTimersAdapter(scenario.advanceDelaysMs ?? []),
     ];
     await bench.compare(
-      ...supportedAdapters(adapters, scenario).map((adapter) =>
+      ...prepareAdapters(adapters, scenario).map((adapter) =>
         bench(adapter.name, () => {
           adapter.setup();
           const start = realNow();
