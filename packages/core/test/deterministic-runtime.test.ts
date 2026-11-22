@@ -27,6 +27,12 @@ class FakeManualRuntime extends BaseManualRuntime<number> {
   }
 }
 
+class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
+  constructor(moves: { time: number; as?: "flow" | "sleep" | "snap" }[]) {
+    super("Etc/UTC", moves, identityConverter);
+  }
+}
+
 describe("BaseManualRuntime delays past the native 32-bit limit", () => {
   /*
     A system runtime has to arm these in chunks, or the host clamps them to 1ms and runs them at
@@ -1185,12 +1191,6 @@ describe("BaseManualRuntime recurring and ordering", () => {
 });
 
 describe("BaseSequentialRuntime moves", () => {
-  class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
-    constructor(moves: { time: number; as?: "flow" | "sleep" | "snap" }[]) {
-      super("Etc/UTC", moves, identityConverter);
-    }
-  }
-
   test("accepts a backward move given as a snap", () => {
     expect(
       () => new FakeSequentialRuntime([{ time: 200 }, { time: 100, as: "snap" }]),
@@ -1258,5 +1258,31 @@ describe("BaseManualRuntime timers scheduled from a firing timer", () => {
     sut.advance({ milliseconds: 1 });
 
     expect(order).toEqual(["callback end", "microtask"]);
+  });
+});
+
+describe("a clock read from a timer firing during a sleep", () => {
+  // Each overdue interval should fire once, but the read starts a drain that doesn't coalesce.
+  test.fails("doesn't make the other overdue intervals catch up, on a manual runtime", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.moveBy({ milliseconds: 10 }, { as: "sleep" });
+
+    expect(fires).toEqual(1);
+  });
+
+  test.fails("doesn't make the other overdue intervals catch up, on a sequential runtime", () => {
+    const sut = new FakeSequentialRuntime([{ time: 0 }, { time: 10, as: "sleep" }, { time: 10 }]);
+    let fires = 0;
+    sut.clock.utcNow();
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.clock.utcNow();
+
+    expect(fires).toEqual(1);
   });
 });
