@@ -58,14 +58,24 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   jumpWallClock(ms: number): void {
     this.#clock!.setSystemTime(this.#clock!.now + ms);
   }
-  requestIdleCallback(callback: () => void): void {
-    this.#clock!.requestIdleCallback(callback);
+  countTimers(): number {
+    return this.#clock!.countTimers();
+  }
+  requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
+    const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };
+    return this.#clock!.requestIdleCallback(callback, options);
+  }
+  cancelIdleCallback(handle: unknown): void {
+    this.#clock!.cancelIdleCallback(handle as FakeTimers.TimerId);
   }
   drainIdleCallbacks(ms: number): void {
     this.#clock!.tick(ms);
   }
-  requestAnimationFrame(callback: () => void): void {
-    this.#clock!.requestAnimationFrame(callback);
+  requestAnimationFrame(callback: () => void): unknown {
+    return this.#clock!.requestAnimationFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    this.#clock!.cancelAnimationFrame(handle as FakeTimers.TimerId);
   }
   runAll(): void {
     this.#clock!.runAll();

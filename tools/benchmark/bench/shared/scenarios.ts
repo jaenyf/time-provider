@@ -63,6 +63,16 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `schedule ${samplesCount} timeouts, counting pending timers after each`,
+    requires: ["countTimers"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+        adapter.countTimers!();
+      }
+    },
+  },
+  {
     name: `schedule ${samplesCount} timeouts, and clear them`,
     requires: ["clearTimeout"],
     run: (adapter) => {
@@ -310,6 +320,30 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `request ${samplesCount} idle callbacks, and cancel them`,
+    requires: ["requestIdleCallback", "cancelIdleCallback"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.requestIdleCallback!(() => {}));
+      }
+      for (const handle of handles) {
+        adapter.cancelIdleCallback!(handle);
+      }
+    },
+  },
+  {
+    name: `request ${samplesCount} idle callbacks with timeouts, with time advance`,
+    requires: ["requestIdleCallback"],
+    advanceDelaysMs: [samplesCount],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.requestIdleCallback!(() => {}, i + 1);
+      }
+      adapter.advance();
+    },
+  },
+  {
     // One 60Hz frame is 16.67ms, so a 17ms advance reaches the first frame in every adapter.
     name: `request ${samplesCount} animation frames, with time advance`,
     requires: ["requestAnimationFrame"],
@@ -319,6 +353,19 @@ export const schedulingScenarios: Scenario[] = [
         adapter.requestAnimationFrame!(() => {});
       }
       adapter.advance();
+    },
+  },
+  {
+    name: `request ${samplesCount} animation frames, and cancel them`,
+    requires: ["requestAnimationFrame", "cancelAnimationFrame"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.requestAnimationFrame!(() => {}));
+      }
+      for (const handle of handles) {
+        adapter.cancelAnimationFrame!(handle);
+      }
     },
   },
 ];

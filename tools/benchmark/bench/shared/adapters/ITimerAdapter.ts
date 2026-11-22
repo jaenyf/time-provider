@@ -29,8 +29,11 @@ export interface ITimerAdapter {
   queueMicrotask(callback: () => void): void;
   /** Drain whatever microtask queue this adapter's library maintains. */
   drainMicrotasks(): void;
-  /** Requests `callback` to run when this adapter's library considers itself idle. */
-  requestIdleCallback?(callback: () => void): void;
+  /** Number of pending timers. */
+  countTimers?(): number;
+  /** Requests `callback` to run when idle, or after `timeoutMs` at the latest, returning its handle. */
+  requestIdleCallback?(callback: () => void, timeoutMs?: number): unknown;
+  cancelIdleCallback?(handle: unknown): void;
   /**
    * Simulates an idle period of `ms` milliseconds, firing whatever idle callbacks become due.
    * Every adapter supporting them models idle callbacks as a delay-gated timeout under the hood
@@ -39,7 +42,9 @@ export interface ITimerAdapter {
    * "simulate ms passing" shape rather than a callback-count budget.
    */
   drainIdleCallbacks?(ms: number): void;
-  requestAnimationFrame?(callback: () => void): void;
+  /** Returns whatever handle `cancelAnimationFrame()` takes. */
+  requestAnimationFrame?(callback: () => void): unknown;
+  cancelAnimationFrame?(handle: unknown): void;
   /**
    * Advances the fake clock by the next delay from this adapter's pre-planned delay list
    * (see its constructor), synchronously firing whatever becomes due.

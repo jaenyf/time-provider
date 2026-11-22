@@ -14,6 +14,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
         every(ms: IDurationSpec, callback: () => void): { dispose(): void };
+        readonly pendingCount: number;
       };
       microtasks: {
         queue(callback: () => void): void;
@@ -26,10 +27,10 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
         for now - see DeterministicIdleScheduler.drain.
       */
       idle: {
-        request(callback: () => void): unknown;
+        request(callback: () => void, options?: { timeout: number }): unknown;
         drain(maxCount?: number): number;
       };
-      animation: { scheduleFrame(callback: () => void): unknown };
+      animation: { scheduleFrame(callback: () => void): { dispose(): void } };
     };
     clock: { utcNow(): unknown; monotonicNow(): unknown; timestampNow(): number };
   };
@@ -104,14 +105,24 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime.clock.utcNow();
     this.#runtime.clock.utcNow();
   }
-  requestIdleCallback(callback: () => void): void {
-    this.#runtime.scheduler.idle.request(callback);
+  countTimers(): number {
+    return this.#runtime.scheduler.timers.pendingCount;
+  }
+  requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
+    const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };
+    return this.#runtime.scheduler.idle.request(callback, options);
+  }
+  cancelIdleCallback(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   drainIdleCallbacks(ms: number): void {
     this.#runtime.scheduler.idle.drain(ms);
   }
-  requestAnimationFrame(callback: () => void): void {
-    this.#runtime.scheduler.animation.scheduleFrame(callback);
+  requestAnimationFrame(callback: () => void): unknown {
+    return this.#runtime.scheduler.animation.scheduleFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   /*
     No runAll/runToNext/runToLast/advanceTo/jumpWallClock: moveUntil(), moveTo() and moveBy() exist

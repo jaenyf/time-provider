@@ -84,8 +84,14 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   runToLast(): void {
     this.#timers.runOnlyPendingTimers();
   }
-  requestAnimationFrame(callback: () => void): void {
-    globalThis.requestAnimationFrame(callback);
+  countTimers(): number {
+    return this.#timers.getTimerCount();
+  }
+  requestAnimationFrame(callback: () => void): unknown {
+    return globalThis.requestAnimationFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    globalThis.cancelAnimationFrame(handle as number);
   }
   /*
     No requestIdleCallback: jsdom doesn't implement it either, so jest never fakes it and that
