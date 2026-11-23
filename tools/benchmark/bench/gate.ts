@@ -7,6 +7,8 @@
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
  * fails only if it is too slow in every attempt and the 95% confidence interval of its last
  * attempt is entirely below the threshold; otherwise it passes as inconclusive.
+ * The gate is skipped when no source of the measured packages changed since that commit, and runs
+ * in full when a build config or bench file did.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -71,6 +73,26 @@ function prepareBaseline(sha: string): string {
     execFileSync("git", ["worktree", "remove", "--force", worktree], { cwd: ROOT });
   }
   return directory;
+}
+
+/**
+ * The measured packages' source files changed since `sha`, or undefined when a build config or
+ * bench file changed. Node and installed packages are the same for both builds, so they don't count.
+ */
+function changedSources(sha: string): string[] | undefined {
+  const files = execFileSync("git", ["diff", "--name-only", sha], { cwd: ROOT, encoding: "utf8" })
+    .split("\n")
+    .filter(Boolean);
+  const config = "(package\\.json|tsconfig[^/]*\\.json|vite\\.config\\.ts)";
+  const shared = new RegExp(
+    `^(tsconfig[^/]*\\.json|vite\\.config\\.ts|tools/benchmark/.*|packages/(${PACKAGES.join("|")})/${config})$`,
+  );
+  const trigger = files.find((file) => shared.test(file));
+  if (trigger) {
+    console.log(`${trigger} changed since ${sha}: every scenario runs.`);
+    return undefined;
+  }
+  return files.filter((file) => PACKAGES.some((name) => file.startsWith(`packages/${name}/src/`)));
 }
 
 type Change = {
@@ -142,6 +164,11 @@ if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT 
   console.log(
     `Baseline commit ${sha ?? "(none in BENCHMARK.md)"} is not in the local history: gate skipped.`,
   );
+  process.exit(0);
+}
+
+if (changedSources(sha)?.length === 0) {
+  console.log(`Nothing the gate measures changed since ${sha}: gate skipped.`);
   process.exit(0);
 }
 
