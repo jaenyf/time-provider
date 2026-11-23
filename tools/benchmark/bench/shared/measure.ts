@@ -6,6 +6,8 @@ import { BASELINE_SUFFIX, baselineKit } from "./baseline.ts";
 import type { TestContext } from "vite-plus/test";
 import { GlobalGuard } from "./globalGuard.ts";
 import { realNow } from "./realNow.ts";
+import { timeLeft } from "./timeLeft.ts";
+import { PROGRESS_LOG } from "./aggregate.ts";
 
 const RESULTS_DIR = join(import.meta.dirname, "..", "..", "bench-results");
 
@@ -31,13 +33,20 @@ function slugify(name: string): string {
 const currentPass = process.env.TIMEPROVIDER_BENCH_PASS ?? "1";
 
 /**
- * Returns "[NN%] ", the share of the run done when the `index`-th of `count` scenarios starts,
- * from the step run-multi.ts passes, or "" outside it.
+ * Returns "[NN%, ~M min left] ", the share of the run done and the time left when the `index`-th of
+ * `count` scenarios starts, from the step and estimates run-multi.ts passes ("estimating" until it
+ * has some), or "" outside it.
  */
 export function progress(index: number, count: number): string {
-  const { TIMEPROVIDER_BENCH_STEP: step, TIMEPROVIDER_BENCH_STEPS: steps } = process.env;
+  const {
+    TIMEPROVIDER_BENCH_STEP: step,
+    TIMEPROVIDER_BENCH_STEPS: steps,
+    TIMEPROVIDER_BENCH_LEFT_MS: leftMs,
+  } = process.env;
   if (!step || !steps) return "";
-  return `[${Math.floor(((Number(step) + index / count) / Number(steps)) * 100)}%] `;
+  const percent = Math.floor(((Number(step) + index / count) / Number(steps)) * 100);
+  const left = leftMs ? timeLeft((JSON.parse(leftMs) as number[])[index]) : "estimating";
+  return `[${percent}%, ${left}] `;
 }
 
 export function recordSample(adapterName: string, scenarioName: string, elapsedMs?: number): void {
@@ -162,4 +171,6 @@ export async function benchAdapters(
   );
   if (registrations.length > 1) await bench.compare(...registrations);
   else if (registrations.length === 1 && !baselineKit) await registrations[0].run();
+  ensureResultsDir();
+  appendFileSync(PROGRESS_LOG, scenario.name + "\n");
 }

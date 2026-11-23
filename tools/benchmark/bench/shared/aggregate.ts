@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 
 export const RESULTS_DIR = fileURLToPath(new URL("../../bench-results/", import.meta.url));
 
+/** One line per scenario benched, for run-multi.ts to follow the run's progress. */
+export const PROGRESS_LOG = `${RESULTS_DIR}progress.log`;
+
 /** A sample without `elapsedMs` marks the adapter as not supporting the scenario. */
 export type Sample = { adapter: string; scenario: string; elapsedMs?: number; pass?: string };
 

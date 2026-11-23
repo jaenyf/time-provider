@@ -109,7 +109,7 @@ function upsertEntry(existingContent: string | undefined, newEntry: string): str
 }
 
 const totalPasses = Number(args.passes ?? 5);
-runAllPasses(totalPasses);
+await runAllPasses(totalPasses);
 
 const existing = existsSync(BENCHMARK_MD) ? readFileSync(BENCHMARK_MD, "utf8") : undefined;
 const entry = formatEntry(previousScenarios(existing));

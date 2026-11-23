@@ -75,8 +75,12 @@ const key = ({ scenario, adapter }: { scenario: string; adapter: string }) => sc
  * Runs `passCount` passes on the tests matching `testNamePattern` and prints each head row's
  * change, marking the rows outside `judged`, when given, as not retried.
  */
-function measure(passCount: number, testNamePattern?: string, judged?: Set<string>): Change[] {
-  runAllPasses(passCount, testNamePattern);
+async function measure(
+  passCount: number,
+  testNamePattern?: string,
+  judged?: Set<string>,
+): Promise<Change[]> {
+  await runAllPasses(passCount, testNamePattern);
   const changes: Change[] = [];
   console.log(`\nTime-Provider against its ${sha} build, same machine:`);
   for (const [scenario, byAdapter] of groupSamples(readSamples())) {
@@ -126,7 +130,7 @@ let losses: Change[];
 const history = new Map<string, number[]>();
 try {
   process.env.TIMEPROVIDER_BENCH_BASELINE = directory;
-  losses = measure(passes).filter(({ change }) => change < -maxLoss);
+  losses = (await measure(passes)).filter(({ change }) => change < -maxLoss);
   for (const loss of losses) history.set(key(loss), [loss.change]);
   const retry =
     losses.length <= attemptsMaxFailingTests &&
@@ -138,7 +142,7 @@ try {
     );
     const judged = new Set(losses.map(key));
     const pattern = [...new Set(losses.map(({ scenario }) => escape(scenario)))].join("|");
-    losses = measure(attemptPasses, pattern, judged).filter(
+    losses = (await measure(attemptPasses, pattern, judged)).filter(
       (change) => judged.has(key(change)) && change.change < -maxLoss,
     );
     for (const loss of losses) history.get(key(loss))!.push(loss.change);
