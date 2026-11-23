@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
 import { args } from "./shared/args.ts";
+import { logDurationOnExit } from "./shared/duration.ts";
 import {
   buildScenarioRows,
   changeInterval,
@@ -154,6 +155,8 @@ const describe = ({ change, low, high }: Pick<Change, "change" | "low" | "high">
 const percent = (change: number) => `${change < 0 ? "" : "+"}${change.toFixed(1)}%`;
 const list = (changes: Change[]) => changes.map(({ line }) => `- ${line}`).join("\n");
 const escape = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+logDurationOnExit("bench:gate");
 
 const maxLoss = Number(args.percentThreshold ?? 5);
 const attemptsMaxPercentLoss = Number(args.attemptsMaxPercentLoss ?? 20);
