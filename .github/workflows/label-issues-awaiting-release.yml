@@ -93,18 +93,21 @@ jobs:
             let cursor = null;
             let hasNextPage = context.eventName === "pull_request";
 
+            const filesOf = (files) => files.flatMap(({ filename, previous_filename }) => [filename, previous_filename].filter(Boolean));
+
             for (const commit of context.payload.commits ?? []) {
-              for (const [, issueNumber] of commit.message.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)\b/gi)) {
-                addFix(Number(issueNumber), commit.id.slice(0, 7), [...commit.added, ...commit.modified, ...commit.removed]);
-              }
+              const issueNumbers = [...commit.message.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)\b/gi)].map(([, issueNumber]) => Number(issueNumber));
+              if (issueNumbers.length === 0) continue;
+              const files = filesOf(await github.paginate(github.rest.repos.getCommit, { ...context.repo, ref: commit.id }, ({ data }) => data.files));
+              for (const issueNumber of issueNumbers) addFix(issueNumber, commit.id.slice(0, 7), files);
             }
 
             const prFiles = hasNextPage
-              ? (await github.paginate(github.rest.pulls.listFiles, {
+              ? filesOf(await github.paginate(github.rest.pulls.listFiles, {
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: prNumber,
-                })).flatMap(({ filename, previous_filename }) => [filename, previous_filename].filter(Boolean))
+                }))
               : [];
 
             while (hasNextPage) {
