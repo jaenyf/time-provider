@@ -52,7 +52,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
    */
   constructor(delaysMs: readonly number[] = [], baseline?: TimeProviderKit) {
     this.name = `time-provider (sequential)${baseline ? BASELINE_SUFFIX : ""}`;
-    this.#kit = baseline ?? headKit;
+    this.#kit = { ...(baseline ?? headKit) };
     this.#delays = new AdvanceDelayQueue(delaysMs);
     let target = 0;
     this.#plannedTimestamps = delaysMs.map((delta) => (target += delta));

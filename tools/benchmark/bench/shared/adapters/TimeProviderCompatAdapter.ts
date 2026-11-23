@@ -42,7 +42,7 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   constructor(delaysMs: readonly number[] = [], baseline?: TimeProviderKit) {
     this.name = `time-provider (compat)${baseline ? BASELINE_SUFFIX : ""}`;
     this.#delays = new AdvanceDelayQueue(delaysMs);
-    this.#kit = baseline ?? headKit;
+    this.#kit = { ...(baseline ?? headKit) };
   }
 
   setup(): void {

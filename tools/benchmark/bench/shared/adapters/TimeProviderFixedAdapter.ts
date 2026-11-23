@@ -30,7 +30,7 @@ export class TimeProviderFixedAdapter implements ITimerAdapter {
 
   constructor(baseline?: TimeProviderKit) {
     this.name = `time-provider (fixed)${baseline ? BASELINE_SUFFIX : ""}`;
-    this.#kit = baseline ?? headKit;
+    this.#kit = { ...(baseline ?? headKit) };
   }
 
   setup(): void {

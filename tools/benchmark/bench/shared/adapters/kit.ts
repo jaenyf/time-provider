@@ -1,3 +1,4 @@
+// Adapters copy these into a plain object: reads through this namespace cost vitest export getters.
 export { createTimeProvider } from "@time-provider/core/deterministic";
 export { plugin } from "@time-provider/plugin-native/deterministic";
 export { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
