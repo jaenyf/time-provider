@@ -76,6 +76,16 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   teardown(): void {
     this.#runtime.dispose();
   }
+  createAndDispose(): void {
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon } = this.#kit;
+    createTimeProvider
+      .for(plugin)
+      .use(idleAddon)
+      .use(animationFrameAddon)
+      .asSequential()
+      .create()
+      .dispose();
+  }
 
   now(): unknown {
     return this.#runtime.clock.utcNow();

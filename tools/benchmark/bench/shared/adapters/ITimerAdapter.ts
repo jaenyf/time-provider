@@ -78,4 +78,6 @@ export interface ITimerAdapter {
   runToNext?(): void;
   /** Moves the clock to the last timer pending now, firing every timer due until then. */
   runToLast?(): void;
+  /** Creates a fake clock of its own and releases it. */
+  createAndDispose?(): void;
 }

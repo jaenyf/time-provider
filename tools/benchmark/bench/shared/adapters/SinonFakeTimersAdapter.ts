@@ -24,6 +24,10 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
     this.#clock?.uninstall();
     this.#clock = undefined;
   }
+  createAndDispose(): void {
+    // sinon's non-global clock needs no release.
+    FakeTimers.createClock();
+  }
 
   now(): unknown {
     //because time-provider always returns a Date object we also return one here in order to have a clean comparison (and not Date vs number comparison)

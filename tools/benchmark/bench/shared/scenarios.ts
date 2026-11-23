@@ -453,6 +453,15 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `create and dispose ${samplesCount} fake clocks`,
+    requires: ["createAndDispose"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.createAndDispose!();
+      }
+    },
+  },
+  {
     name: `request ${samplesCount} animation frames, and cancel them`,
     requires: ["requestAnimationFrame", "cancelAnimationFrame"],
     run: (adapter) => {

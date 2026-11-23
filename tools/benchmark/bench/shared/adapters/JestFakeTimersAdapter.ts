@@ -37,6 +37,13 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
     // @ts-expect-error : Node's globalThis types don't declare them as optional
     delete globalThis.cancelAnimationFrame;
   }
+  createAndDispose(): void {
+    // jest has no non-global clock: release the installed one, then create and install another.
+    this.#timers.useRealTimers();
+    //@ts-expect-error : Type '{}' is missing the following properties from type 'ProjectConfig': [...]
+    this.#timers = new ModernFakeTimers({ global: globalThis, config: {} });
+    this.#timers.useFakeTimers();
+  }
 
   now(): unknown {
     //because time-provider always returns a Date object we also return one here in order to have a clean comparison (and not Date vs number comparison)

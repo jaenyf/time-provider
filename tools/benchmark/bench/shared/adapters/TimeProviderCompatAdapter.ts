@@ -60,6 +60,17 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   teardown(): void {
     this.#runtime.dispose();
   }
+  createAndDispose(): void {
+    const { createTimeProvider, plugin, compatAddon, idleAddon, animationFrameAddon } = this.#kit;
+    createTimeProvider
+      .for(plugin)
+      .use(compatAddon)
+      .use(idleAddon)
+      .use(animationFrameAddon)
+      .asManual()
+      .create()
+      .dispose();
+  }
 
   monotonicNow(): unknown {
     return this.#runtime.compat.performance.now();
