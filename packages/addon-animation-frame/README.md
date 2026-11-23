@@ -64,7 +64,6 @@ const manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .use(deterministicAddon)
   .asManual()
-  .withInitialTime(0)
   .create();
 manual.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 manual.clock.moveBy({ milliseconds: 20 });
@@ -79,7 +78,6 @@ const manual = createDeterministicTimeProvider
   .use(deterministicAddon)
   .withHostFramesRate(90) //now simulating an animation frame API with 90 FPS
   .asManual()
-  .withInitialTime(0)
   .create();
 ```
 

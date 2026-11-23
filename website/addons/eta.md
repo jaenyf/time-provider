@@ -32,12 +32,7 @@ import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { addon } from "@time-provider/addon-eta/deterministic";
 
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .use(addon)
-  .asManual()
-  .withInitialTime(0)
-  .create();
+const timeProvider = createTimeProvider.for(plugin).use(addon).asManual().create();
 
 const snapshots: number[] = [];
 const job = timeProvider.eta

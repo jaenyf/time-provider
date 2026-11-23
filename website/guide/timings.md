@@ -53,7 +53,7 @@ This makes a measured duration something a test can assert exactly:
 import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
-using timeProvider = createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
+using timeProvider = createTimeProvider.for(plugin).asManual().create();
 
 timeProvider.timings.mark("start");
 timeProvider.clock.moveBy({ seconds: 2 });

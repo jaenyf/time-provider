@@ -62,7 +62,6 @@ const manual = createDeterministicTimeProvider
   .for(deterministicPlugin)
   .use(deterministicAddon)
   .asManual()
-  .withInitialTime(0)
   .create();
 manual.scheduler.idle.request(() => console.log("Idle!"));
 manual.scheduler.idle.drain(); // the idle callback runs here

@@ -86,7 +86,7 @@ import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
 it("sends the reminder after five minutes", () => {
-  using timeProvider = createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
+  using timeProvider = createTimeProvider.for(plugin).asManual().create();
   const send = vi.fn();
 
   scheduleReminder(timeProvider, send);

@@ -141,12 +141,7 @@ narrower type than any annotation you could write, and it carries the extras
 composed in by any [addons](/addons/), which an annotation drops:
 
 ```ts
-using timeProvider = createTimeProvider
-  .for(plugin)
-  .use(addon)
-  .asManual()
-  .withInitialTime(0)
-  .create();
+using timeProvider = createTimeProvider.for(plugin).use(addon).asManual().create();
 // clock.moveBy(), plus the addon's own facade, both inferred
 ```
 

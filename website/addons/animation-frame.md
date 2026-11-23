@@ -41,7 +41,6 @@ const timeProvider = createTimeProvider
   .use(addon)
   .withHostFramesRate(90) // simulate 90 FPS instead of the default 60
   .asManual()
-  .withInitialTime(0)
   .create();
 
 let frames = 0;
@@ -82,20 +81,8 @@ import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { addon } from "@time-provider/addon-animation-frame/deterministic";
 
-const fast = createTimeProvider
-  .for(plugin)
-  .use(addon)
-  .withHostFramesRate(120)
-  .asManual()
-  .withInitialTime(0)
-  .create();
-const slow = createTimeProvider
-  .for(plugin)
-  .use(addon)
-  .withHostFramesRate(24)
-  .asManual()
-  .withInitialTime(0)
-  .create();
+const fast = createTimeProvider.for(plugin).use(addon).withHostFramesRate(120).asManual().create();
+const slow = createTimeProvider.for(plugin).use(addon).withHostFramesRate(24).asManual().create();
 ```
 
 ## The types

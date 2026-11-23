@@ -62,12 +62,7 @@ import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 import { addon } from "@time-provider/addon-animation-frame/deterministic";
 
-const timeProvider = createTimeProvider
-  .for(plugin)
-  .use(addon)
-  .asManual()
-  .withInitialTime(0)
-  .create();
+const timeProvider = createTimeProvider.for(plugin).use(addon).asManual().create();
 
 timeProvider.scheduler.animation.scheduleFrame(() => console.log("Frame!"));
 timeProvider.clock.moveBy({ milliseconds: 20 }); // simulated frame duration elapses

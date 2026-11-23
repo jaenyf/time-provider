@@ -34,7 +34,7 @@ createTimeProvider.for(plugin).create(); // system only - no .asFixed()/.asManua
 import { createTimeProvider } from "@time-provider/core/deterministic";
 import { plugin } from "@time-provider/plugin-native/deterministic";
 
-createTimeProvider.for(plugin).asManual().withInitialTime(0).create();
+createTimeProvider.for(plugin).asManual().create();
 ```
 
 Both `createTimeProvider`s share the same name and shape (`.for(plugin)`,
