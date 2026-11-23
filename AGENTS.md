@@ -107,3 +107,6 @@ and how the test suites are organized.
   globally-installed toolchain.
 - Each plugin's `peerDependencies["@time-provider/core"]` range must be kept
   in sync with whatever `core` version the plugin actually requires.
+- Workflows tell a release apart through `.github/actions/release-context` only
+  (`release-pr`, `release-merge`); never test a release commit's message or branch name
+  elsewhere. `release-please.yml` keeps release-please's own `releases_created`.
