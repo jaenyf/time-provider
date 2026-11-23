@@ -58,6 +58,40 @@ export function percentile(sortedValues: number[], p: number): number {
   return sortedValues[Math.max(0, index)];
 }
 
+/** Seeded pseudo-random numbers in [0, 1) (mulberry32), so a gate run's intervals are reproducible. */
+function seededRandom(seed: number): () => number {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Bootstrap 95% interval of the percent change in hz from `baseline` to `head`, resampling the
+ * samples within each pass and taking the median of pass means, as `buildRow` does.
+ */
+export function changeInterval(
+  head: Map<string, number[]>,
+  baseline: Map<string, number[]>,
+): [low: number, high: number] {
+  const random = seededRandom(1);
+  const resampledMean = (byPass: Map<string, number[]>) =>
+    median(
+      [...byPass.values()].map(
+        (values) =>
+          values.reduce((sum) => sum + values[Math.floor(random() * values.length)], 0) /
+          values.length,
+      ),
+    );
+  const changes = Array.from(
+    { length: 2000 },
+    () => (resampledMean(baseline) / resampledMean(head) - 1) * 100,
+  ).sort((a, b) => a - b);
+  return [percentile(changes, 2.5), percentile(changes, 97.5)];
+}
+
 export type Row = {
   adapter: string;
   hz: number;

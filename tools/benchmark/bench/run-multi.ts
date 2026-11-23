@@ -83,14 +83,16 @@ function leftByScenario(
 }
 
 /**
- * Runs the suite `totalPasses` times, only the tests whose name matches `testNamePattern` if given,
- * estimating the time left with Time-Provider's ETA addon.
+ * Runs the suite `totalPasses` times, only the tests whose name matches `testNamePattern` if given
+ * (skipping the files with none), estimating the time left with Time-Provider's ETA addon.
  */
 export async function runAllPasses(totalPasses: number, testNamePattern?: string): Promise<void> {
   rmSync(resultsDirectory, { recursive: true, force: true });
-  const files = Object.entries(FILES);
-  const steps = totalPasses * files.length;
   const pattern = testNamePattern ? new RegExp(testNamePattern) : undefined;
+  const files = Object.entries(FILES).filter(([, [, scenarios]]) =>
+    scenarios.some(({ name }) => pattern?.test(name) ?? true),
+  );
+  const steps = totalPasses * files.length;
   const scenarioCount = files.reduce(
     (sum, [, [, scenarios]]) =>
       sum + scenarios.filter(({ name }) => pattern?.test(name) ?? true).length,
