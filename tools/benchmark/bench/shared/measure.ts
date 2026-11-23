@@ -54,6 +54,10 @@ export function recordSample(adapterName: string, scenarioName: string, elapsedM
 
 const WARMUP_ROUNDS = 10;
 
+const { gc } = globalThis;
+if (!gc) throw new Error('GC is not exposed, did you forget to run with "--expose-gc"?');
+const collectGarbage = () => gc();
+
 function warmedUp(adapter: ITimerAdapter, scenario: Scenario): boolean {
   try {
     adapter.setup();
@@ -70,8 +74,9 @@ function warmedUp(adapter: ITimerAdapter, scenario: Scenario): boolean {
 
 /**
  * Returns the adapters able to run `scenario`, recording the others as unsupported ("--"), after
- * running them in turn `WARMUP_ROUNDS` times so every row is timed in the same JIT state. The order
- * is reversed on even passes. A baseline adapter that throws counts as unsupported.
+ * running them in turn `WARMUP_ROUNDS` times so every row is timed in the same JIT state, then
+ * collecting garbage. The order is reversed on even passes. A baseline adapter that throws counts
+ * as unsupported.
  */
 export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario: Scenario): T[] {
   const ordered = Number(currentPass) % 2 === 0 ? adapters.toReversed() : adapters;
@@ -83,14 +88,16 @@ export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario
   for (let round = 0; round < WARMUP_ROUNDS; round++) {
     ready = ready.filter((adapter) => warmedUp(adapter, scenario));
   }
+  collectGarbage();
   return ready;
 }
 
 const guard = new GlobalGuard();
 
 /**
- * Times the adapters able to run `scenario`, recording each iteration's elapsed time. A lone
- * adapter runs on its own (`bench.compare()` needs two), except in the gate where it has no baseline.
+ * Times the adapters able to run `scenario`, recording each iteration's elapsed time and collecting
+ * garbage after each row's warm-up and run phases. A lone adapter runs on its own
+ * (`bench.compare()` needs two), except in the gate where it has no baseline.
  */
 export async function benchAdapters(
   bench: TestContext["bench"],
@@ -98,7 +105,7 @@ export async function benchAdapters(
   scenario: Scenario,
 ): Promise<void> {
   const registrations = prepareAdapters(adapters, scenario).map((adapter) =>
-    bench(adapter.name, () => {
+    bench(adapter.name, { afterAll: collectGarbage }, () => {
       adapter.setup();
       const start = realNow();
       try {

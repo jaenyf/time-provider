@@ -2,6 +2,8 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   test: {
+    // measure.ts collects garbage between rows, so a row never pays for the previous one's.
+    execArgv: ["--expose-gc"],
     server: {
       deps: {
         // Workspace packages resolve to packages/*/dist, outside node_modules, so Vite's module runner
