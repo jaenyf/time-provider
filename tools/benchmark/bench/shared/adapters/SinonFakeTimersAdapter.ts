@@ -100,4 +100,10 @@ export class SinonFakeTimersAdapter implements ITimerAdapter {
   runToLast(): void {
     this.#clock!.runToLast();
   }
+  wait(delayMs: number): Promise<void> {
+    return new Promise((resolve) => this.#clock!.setTimeout(() => resolve(), delayMs));
+  }
+  async runAllAsync(): Promise<void> {
+    await this.#clock!.runAllAsync();
+  }
 }

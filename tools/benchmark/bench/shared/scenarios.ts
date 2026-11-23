@@ -13,8 +13,10 @@ export type Scenario = {
   advanceDelaysMs?: number[];
   /** Optional adapter members this scenario calls; an adapter missing one is reported as "--". */
   requires?: readonly (keyof ITimerAdapter)[];
-  run: (adapter: ITimerAdapter) => void;
-};
+} & (
+  | { async?: false; run: (adapter: ITimerAdapter) => void }
+  | { async: true; run: (adapter: ITimerAdapter) => Promise<void> }
+);
 
 const samplesCount = 5000;
 
@@ -472,6 +474,38 @@ export const schedulingScenarios: Scenario[] = [
       for (const handle of handles) {
         adapter.cancelAnimationFrame!(handle);
       }
+    },
+  },
+];
+
+/** Scenarios awaiting their own completion; the awaiting is timed. */
+export const asyncScenarios: Scenario[] = [
+  {
+    name: `wait ${samplesCount} times, with time advance, and await them all`,
+    async: true,
+    advanceDelaysMs: [samplesCount],
+    requires: ["wait"],
+    run: async (adapter) => {
+      const waits = [];
+      for (let i = 0; i < samplesCount; i++) {
+        waits.push(adapter.wait!(i + 1));
+      }
+      adapter.advance();
+      await Promise.all(waits);
+    },
+  },
+  {
+    name: `chain ${samplesCount} awaited waits, each scheduling the next, running all timers asynchronously`,
+    async: true,
+    requires: ["wait", "runAllAsync"],
+    run: async (adapter) => {
+      const chain = (async () => {
+        for (let i = 0; i < samplesCount; i++) {
+          await adapter.wait!(1);
+        }
+      })();
+      await adapter.runAllAsync!();
+      await chain;
     },
   },
 ];

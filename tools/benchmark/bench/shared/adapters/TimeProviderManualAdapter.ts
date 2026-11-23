@@ -3,6 +3,10 @@ import * as headKit from "./kit.ts";
 import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 import type { EpochMilliseconds, IDurationSpec } from "@time-provider/core";
+import * as mimic from "./mimic.ts";
+
+// Read once: the bench module runner turns every imported-name use into a counted getter call.
+const { runAllAsync } = mimic;
 
 export class TimeProviderManualAdapter implements ITimerAdapter {
   readonly name: string;
@@ -20,6 +24,7 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
           options: { signal: AbortSignal },
         ): { dispose(): void };
         recurring(callback: () => IDurationSpec | false, initialDelay: IDurationSpec): unknown;
+        wait(ms: IDurationSpec): Promise<void>;
         readonly pendingCount: number;
       };
       microtasks: {
@@ -179,5 +184,16 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   }
   runToLast(): void {
     this.#runtime.clock.moveTo("lastTimer");
+  }
+  wait(delayMs: number): Promise<void> {
+    return this.#runtime.scheduler.timers.wait({ milliseconds: delayMs });
+  }
+  // Time-Provider has no async move, so this loops the way user code has to.
+  runAllAsync(): Promise<void> {
+    const { scheduler, clock } = this.#runtime;
+    return runAllAsync(
+      () => scheduler.timers.pendingCount,
+      () => clock.moveTo("nextTimer"),
+    );
   }
 }

@@ -110,6 +110,12 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   cancelAnimationFrame(handle: unknown): void {
     globalThis.cancelAnimationFrame(handle as number);
   }
+  wait(delayMs: number): Promise<void> {
+    return new Promise((resolve) => globalThis.setTimeout(resolve, delayMs));
+  }
+  runAllAsync(): Promise<void> {
+    return this.#timers.runAllTimersAsync();
+  }
   /*
     No requestIdleCallback: jsdom doesn't implement it either, so jest never fakes it and that
     scenario reports "--".

@@ -58,15 +58,35 @@ const { gc } = globalThis;
 if (!gc) throw new Error('GC is not exposed, did you forget to run with "--expose-gc"?');
 const collectGarbage = () => gc();
 
-function warmedUp(adapter: ITimerAdapter, scenario: Scenario): boolean {
+/** Records a baseline adapter that throws as unsupported; rethrows for any other adapter. */
+function unsupported(adapter: ITimerAdapter, scenario: Scenario, error: unknown): false {
+  if (!adapter.name.endsWith(BASELINE_SUFFIX)) throw error;
+  recordSample(adapter.name, scenario.name);
+  return false;
+}
+
+function warmedUp(adapter: ITimerAdapter, scenario: Scenario & { async?: false }): boolean {
   try {
     adapter.setup();
     scenario.run(adapter);
     return true;
   } catch (error) {
-    if (!adapter.name.endsWith(BASELINE_SUFFIX)) throw error;
-    recordSample(adapter.name, scenario.name);
-    return false;
+    return unsupported(adapter, scenario, error);
+  } finally {
+    adapter.teardown();
+  }
+}
+
+async function warmedUpAsync(
+  adapter: ITimerAdapter,
+  scenario: Scenario & { async: true },
+): Promise<boolean> {
+  try {
+    adapter.setup();
+    await scenario.run(adapter);
+    return true;
+  } catch (error) {
+    return unsupported(adapter, scenario, error);
   } finally {
     adapter.teardown();
   }
@@ -78,7 +98,10 @@ function warmedUp(adapter: ITimerAdapter, scenario: Scenario): boolean {
  * collecting garbage. The order is reversed on even passes. A baseline adapter that throws counts
  * as unsupported.
  */
-export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario: Scenario): T[] {
+async function prepareAdapters<T extends ITimerAdapter>(
+  adapters: T[],
+  scenario: Scenario,
+): Promise<T[]> {
   const ordered = Number(currentPass) % 2 === 0 ? adapters.toReversed() : adapters;
   let ready = ordered.filter((adapter) => {
     const supported = scenario.requires?.every((member) => adapter[member] !== undefined) ?? true;
@@ -86,7 +109,13 @@ export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario
     return supported;
   });
   for (let round = 0; round < WARMUP_ROUNDS; round++) {
-    ready = ready.filter((adapter) => warmedUp(adapter, scenario));
+    if (!scenario.async) {
+      ready = ready.filter((adapter) => warmedUp(adapter, scenario));
+      continue;
+    }
+    const warm = [];
+    for (const adapter of ready) if (await warmedUpAsync(adapter, scenario)) warm.push(adapter);
+    ready = warm;
   }
   collectGarbage();
   return ready;
@@ -95,8 +124,8 @@ export function prepareAdapters<T extends ITimerAdapter>(adapters: T[], scenario
 const guard = new GlobalGuard();
 
 /**
- * Times the adapters able to run `scenario`, recording each iteration's elapsed time and collecting
- * garbage after each row's warm-up and run phases. A lone adapter runs on its own
+ * Times the adapters able to run `scenario`, recording each iteration's elapsed time, awaited for an
+ * async scenario, and collecting garbage after each row's warm-up and run phases. A lone adapter runs on its own
  * (`bench.compare()` needs two), except in the gate where it has no baseline.
  */
 export async function benchAdapters(
@@ -104,19 +133,32 @@ export async function benchAdapters(
   adapters: ITimerAdapter[],
   scenario: Scenario,
 ): Promise<void> {
-  const registrations = prepareAdapters(adapters, scenario).map((adapter) =>
-    bench(adapter.name, { afterAll: collectGarbage }, () => {
-      adapter.setup();
-      const start = realNow();
-      try {
-        scenario.run(adapter);
-      } finally {
-        const elapsedMs = realNow() - start;
-        adapter.teardown();
-        guard.assertPristine(adapter.name);
-        recordSample(adapter.name, scenario.name, elapsedMs);
-      }
-    }),
+  const finish = (adapter: ITimerAdapter, start: number) => {
+    const elapsedMs = realNow() - start;
+    adapter.teardown();
+    guard.assertPristine(adapter.name);
+    recordSample(adapter.name, scenario.name, elapsedMs);
+  };
+  const registrations = (await prepareAdapters(adapters, scenario)).map((adapter) =>
+    scenario.async
+      ? bench(adapter.name, { async: true, afterAll: collectGarbage }, async () => {
+          adapter.setup();
+          const start = realNow();
+          try {
+            await scenario.run(adapter);
+          } finally {
+            finish(adapter, start);
+          }
+        })
+      : bench(adapter.name, { afterAll: collectGarbage }, () => {
+          adapter.setup();
+          const start = realNow();
+          try {
+            scenario.run(adapter);
+          } finally {
+            finish(adapter, start);
+          }
+        }),
   );
   if (registrations.length > 1) await bench.compare(...registrations);
   else if (registrations.length === 1 && !baselineKit) await registrations[0].run();

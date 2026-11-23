@@ -12,6 +12,7 @@ const FILES = {
   "bench/manual-scheduling.bench.ts": "time-provider (manual) vs competitors",
   "bench/sequential-scheduling.bench.ts": "time-provider (sequential) vs competitors",
   "bench/compat-scheduling.bench.ts": "time-provider (compat) vs competitors",
+  "bench/async-scheduling.bench.ts": "time-provider (manual) async vs competitors",
   "bench/clock-read.bench.ts": "time-provider (manual) clock reads vs competitors",
   "bench/fixed-clock-read.bench.ts": "time-provider (fixed) clock reads vs competitors",
   "bench/compat-clock-read.bench.ts": "time-provider (compat) clock reads vs competitors",

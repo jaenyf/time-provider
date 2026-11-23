@@ -80,4 +80,11 @@ export interface ITimerAdapter {
   runToLast?(): void;
   /** Creates a fake clock of its own and releases it. */
   createAndDispose?(): void;
+  /** Resolves once `delayMs` has passed on the fake clock. */
+  wait?(delayMs: number): Promise<void>;
+  /**
+   * Fires timers one after another until none is pending, letting the host run its microtasks
+   * between timers, so code awaiting a timer schedules its next one in time.
+   */
+  runAllAsync?(): Promise<void>;
 }
