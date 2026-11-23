@@ -3,7 +3,8 @@
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
  * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine.
  * When at most `retryLimit:N` rows (default 5) fail and none is more than `retryThreshold:N`
- * percent (default 20) slower, those scenarios run once more and only their new rows decide.
+ * percent (default 20) slower, those scenarios run again with twice the passes, and a row fails
+ * only if it is too slow in both runs, reported with the smaller loss.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -67,9 +68,9 @@ function prepareBaseline(sha: string): string {
 
 type Change = { scenario: string; adapter: string; change: number; line: string };
 
-/** Runs the passes on the tests matching `testNamePattern` and prints each head row's change. */
-function measure(testNamePattern?: string): Change[] {
-  runAllPasses(passes, testNamePattern);
+/** Runs `passCount` passes on the tests matching `testNamePattern` and prints each head row's change. */
+function measure(passCount: number, testNamePattern?: string): Change[] {
+  runAllPasses(passCount, testNamePattern);
   const changes: Change[] = [];
   console.log(`\nTime-Provider against its ${sha} build, same machine:`);
   for (const [scenario, byAdapter] of groupSamples(readSamples())) {
@@ -114,16 +115,18 @@ const directory = prepareBaseline(sha);
 let losses: Change[];
 try {
   process.env.TIMEPROVIDER_BENCH_BASELINE = directory;
-  losses = measure().filter(({ change }) => change < -maxLoss);
+  losses = measure(passes).filter(({ change }) => change < -maxLoss);
   const retried = losses.filter(({ change }) => change >= -retryLoss);
   if (retried.length === losses.length && retried.length > 0 && retried.length <= retryLimit) {
     console.log(`\nRetrying, slower than ${sha} by more than ${maxLoss}%:\n${list(retried)}`);
-    const keys = new Set(retried.map(({ scenario, adapter }) => scenario + adapter));
+    const first = new Map(retried.map((loss) => [loss.scenario + loss.adapter, loss]));
     const names = [...new Set(retried.map(({ scenario }) => scenario))];
     const pattern = names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-    losses = measure(pattern).filter(
-      ({ scenario, adapter, change }) => keys.has(scenario + adapter) && change < -maxLoss,
-    );
+    losses = measure(passes * 2, pattern).flatMap((retry) => {
+      const loss = first.get(retry.scenario + retry.adapter);
+      if (!loss || retry.change >= -maxLoss) return [];
+      return [retry.change > loss.change ? retry : loss];
+    });
   }
 } finally {
   if (!process.env.CI) rmSync(directory, { recursive: true, force: true });
