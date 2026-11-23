@@ -7,9 +7,10 @@
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
  * fails only if it is too slow in every attempt and the 95% confidence interval of its last
  * attempt is entirely below the threshold; otherwise it passes as inconclusive.
- * The gate runs in full when a build config or bench file changed since that commit. Otherwise it
- * only measures the scenarios that run a function changed since then, found by name in the V8
- * coverage of one run of each scenario, and is skipped when there is none.
+ * The gate runs in full when a root build config or bench file changed since that commit.
+ * Otherwise it only measures the scenarios that, while timed, run a function changed since then
+ * (found by name in V8 coverage) or any code of a package whose own build config changed, and is
+ * skipped when there is none.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -76,26 +77,6 @@ function prepareBaseline(sha: string): string {
     execFileSync("git", ["worktree", "remove", "--force", worktree], { cwd: ROOT });
   }
   return directory;
-}
-
-/**
- * The measured packages' source files changed since `sha`, or undefined when a build config or
- * bench file changed. Node and installed packages are the same for both builds, so they don't count.
- */
-function changedSources(sha: string): string[] | undefined {
-  const files = execFileSync("git", ["diff", "--name-only", sha], { cwd: ROOT, encoding: "utf8" })
-    .split("\n")
-    .filter(Boolean);
-  const config = "(package\\.json|tsconfig[^/]*\\.json|vite\\.config\\.ts)";
-  const shared = new RegExp(
-    `^(tsconfig[^/]*\\.json|vite\\.config\\.ts|tools/benchmark/.*|packages/(${PACKAGES.join("|")})/${config})$`,
-  );
-  const trigger = files.find((file) => shared.test(file));
-  if (trigger) {
-    console.log(`${trigger} changed since ${sha}: every scenario runs.`);
-    return undefined;
-  }
-  return files.filter((file) => PACKAGES.some((name) => file.startsWith(`packages/${name}/src/`)));
 }
 
 type Change = {
@@ -172,8 +153,7 @@ if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT 
   process.exit(0);
 }
 
-const sources = changedSources(sha);
-const scenarios = sources && (await scenariosToGate(ROOT, sha, sources));
+const scenarios = await scenariosToGate(ROOT, sha, PACKAGES);
 if (scenarios?.length === 0) {
   console.log(`Nothing the gate measures changed since ${sha}: gate skipped.`);
   process.exit(0);
