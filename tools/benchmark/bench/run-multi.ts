@@ -12,6 +12,7 @@ import {
   schedulingScenarios,
   type Scenario,
 } from "./shared/scenarios.ts";
+import { logDurationOnExit } from "./shared/duration.ts";
 import { timeLeft } from "./shared/timeLeft.ts";
 
 /*
@@ -143,6 +144,7 @@ export async function runAllPasses(totalPasses: number, testNamePattern?: string
 
 // CLI entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
+  logDurationOnExit("bench:multi");
   const totalPasses = Number(args.passes ?? 5);
   await runAllPasses(totalPasses);
   console.log(`\n=== median across ${totalPasses} passes ===`);

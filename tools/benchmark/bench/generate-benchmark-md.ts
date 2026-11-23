@@ -11,6 +11,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
 import { args } from "./shared/args.ts";
+import { logDurationOnExit } from "./shared/duration.ts";
 import {
   buildScenarioRows,
   groupSamples,
@@ -108,6 +109,7 @@ function upsertEntry(existingContent: string | undefined, newEntry: string): str
   return `${intro}\n${START_MARKER}\n\n${newEntry}\n${END_MARKER}\n`;
 }
 
+logDurationOnExit("bench:changelog");
 const totalPasses = Number(args.passes ?? 5);
 await runAllPasses(totalPasses);
 

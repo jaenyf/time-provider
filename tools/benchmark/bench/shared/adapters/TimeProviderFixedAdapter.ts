@@ -1,4 +1,4 @@
-import { ITimerAdapter } from "./ITimerAdapter.ts";
+import type { ITimerAdapter } from "./ITimerAdapter.ts";
 import * as headKit from "./kit.ts";
 import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 

@@ -7,6 +7,10 @@
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
  * fails only if it is too slow in every attempt and the 95% confidence interval of its last
  * attempt is entirely below the threshold; otherwise it passes as inconclusive.
+ * The gate runs in full when a root build config or bench file changed since that commit.
+ * Otherwise it only measures the scenarios that, while timed, run a function changed since then
+ * (found by name in V8 coverage) or any code of a package whose own build config changed, and is
+ * skipped when there is none.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -23,6 +27,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAllPasses } from "./run-multi.ts";
 import { args } from "./shared/args.ts";
+import { logDurationOnExit } from "./shared/duration.ts";
 import {
   buildScenarioRows,
   changeInterval,
@@ -30,6 +35,7 @@ import {
   readSamples,
 } from "./shared/aggregate.ts";
 import { BASELINE_SUFFIX } from "./shared/baseline.ts";
+import { scenariosToGate } from "./shared/changes.ts";
 import { BENCHMARK_MD, START_MARKER } from "./shared/previous.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -131,6 +137,8 @@ const percent = (change: number) => `${change < 0 ? "" : "+"}${change.toFixed(1)
 const list = (changes: Change[]) => changes.map(({ line }) => `- ${line}`).join("\n");
 const escape = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+logDurationOnExit("bench:gate");
+
 const maxLoss = Number(args.percentThreshold ?? 5);
 const attemptsMaxPercentLoss = Number(args.attemptsMaxPercentLoss ?? 20);
 const attemptsMaxFailingTests = Number(args.attemptsMaxFailingTests ?? 5);
@@ -145,13 +153,21 @@ if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT 
   process.exit(0);
 }
 
+const scenarios = await scenariosToGate(ROOT, sha, PACKAGES);
+if (scenarios?.length === 0) {
+  console.log(`Nothing the gate measures changed since ${sha}: gate skipped.`);
+  process.exit(0);
+}
+
 const directory = prepareBaseline(sha);
 let losses: Change[];
 let retry: boolean;
 const history = new Map<string, Change[]>();
 try {
   process.env.TIMEPROVIDER_BENCH_BASELINE = directory;
-  losses = (await measure(passes)).filter(({ change }) => change < -maxLoss);
+  losses = (await measure(passes, scenarios?.map(escape).join("|"))).filter(
+    ({ change }) => change < -maxLoss,
+  );
   for (const loss of losses) history.set(key(loss), [loss]);
   retry =
     losses.length <= attemptsMaxFailingTests &&
