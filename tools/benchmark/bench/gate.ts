@@ -2,9 +2,10 @@
  * Runs `passes:N` benchmark passes (default 2) with each Time-Provider adapter also running on the
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
  * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine.
- * When at most `retryLimit:N` rows (default 5) fail and none is more than `retryThreshold:N`
- * percent (default 20) slower, those scenarios run again with twice the passes, and a row fails
- * only if it is too slow in both runs, reported with the smaller loss.
+ * When at most `attemptsMaxFailingTests:N` tests (default 5) fail and none is more than
+ * `attemptsMaxPercentLoss:N` percent (default 20) slower, the failing scenarios get up to
+ * `attempts:N` tries in all (default 3), each with twice the passes of the one before. A test
+ * fails only if it is too slow in every attempt, reported with its smallest loss.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -68,8 +69,13 @@ function prepareBaseline(sha: string): string {
 
 type Change = { scenario: string; adapter: string; change: number; line: string };
 
-/** Runs `passCount` passes on the tests matching `testNamePattern` and prints each head row's change. */
-function measure(passCount: number, testNamePattern?: string): Change[] {
+const key = ({ scenario, adapter }: { scenario: string; adapter: string }) => scenario + adapter;
+
+/**
+ * Runs `passCount` passes on the tests matching `testNamePattern` and prints each head row's
+ * change, marking the rows outside `judged`, when given, as not retried.
+ */
+function measure(passCount: number, testNamePattern?: string, judged?: Set<string>): Change[] {
   runAllPasses(passCount, testNamePattern);
   const changes: Change[] = [];
   console.log(`\nTime-Provider against its ${sha} build, same machine:`);
@@ -88,19 +94,23 @@ function measure(passCount: number, testNamePattern?: string): Change[] {
       const baseline = rows.get(adapter + BASELINE_SUFFIX);
       if (!baseline) continue;
       const change = Number(((head.hz / baseline.hz - 1) * 100).toFixed(1));
-      const line = `${scenario}: ${adapter} ${change < 0 ? "" : "+"}${change.toFixed(1)}%`;
-      console.log(`- ${line}`);
+      const line = `${scenario}: ${adapter} ${percent(change)}`;
+      const notRetried = judged && !judged.has(key({ scenario, adapter })) ? " (not retried)" : "";
+      console.log(`- ${line}${notRetried}`);
       changes.push({ scenario, adapter, change, line });
     }
   }
   return changes;
 }
 
+const percent = (change: number) => `${change < 0 ? "" : "+"}${change.toFixed(1)}%`;
 const list = (changes: Change[]) => changes.map(({ line }) => `- ${line}`).join("\n");
+const escape = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const maxLoss = Number(args.percentThreshold ?? 5);
-const retryLoss = Number(args.retryThreshold ?? 20);
-const retryLimit = Number(args.retryLimit ?? 5);
+const attemptsMaxPercentLoss = Number(args.attemptsMaxPercentLoss ?? 20);
+const attemptsMaxFailingTests = Number(args.attemptsMaxFailingTests ?? 5);
+const attempts = Number(args.attempts ?? 3);
 const passes = Number(args.passes ?? 2);
 const entry = readFileSync(BENCHMARK_MD, "utf8").split(START_MARKER)[1] ?? "";
 const sha = /^## .*?\(\[([0-9a-f]+)\]/m.exec(entry)?.[1];
@@ -113,27 +123,38 @@ if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT 
 
 const directory = prepareBaseline(sha);
 let losses: Change[];
+const history = new Map<string, number[]>();
 try {
   process.env.TIMEPROVIDER_BENCH_BASELINE = directory;
   losses = measure(passes).filter(({ change }) => change < -maxLoss);
-  const retried = losses.filter(({ change }) => change >= -retryLoss);
-  if (retried.length === losses.length && retried.length > 0 && retried.length <= retryLimit) {
-    console.log(`\nRetrying, slower than ${sha} by more than ${maxLoss}%:\n${list(retried)}`);
-    const first = new Map(retried.map((loss) => [loss.scenario + loss.adapter, loss]));
-    const names = [...new Set(retried.map(({ scenario }) => scenario))];
-    const pattern = names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-    losses = measure(passes * 2, pattern).flatMap((retry) => {
-      const loss = first.get(retry.scenario + retry.adapter);
-      if (!loss || retry.change >= -maxLoss) return [];
-      return [retry.change > loss.change ? retry : loss];
-    });
+  for (const loss of losses) history.set(key(loss), [loss.change]);
+  const retry =
+    losses.length <= attemptsMaxFailingTests &&
+    losses.every(({ change }) => change >= -attemptsMaxPercentLoss);
+  for (let attempt = 2; retry && attempt <= attempts && losses.length > 0; attempt++) {
+    const attemptPasses = passes * 2 ** (attempt - 1);
+    console.log(
+      `\nAttempt ${attempt}/${attempts} with ${attemptPasses} passes, slower than ${sha} by more than ${maxLoss}%:\n${list(losses)}`,
+    );
+    const judged = new Set(losses.map(key));
+    const pattern = [...new Set(losses.map(({ scenario }) => escape(scenario)))].join("|");
+    losses = measure(attemptPasses, pattern, judged).filter(
+      (change) => judged.has(key(change)) && change.change < -maxLoss,
+    );
+    for (const loss of losses) history.get(key(loss))!.push(loss.change);
   }
 } finally {
   if (!process.env.CI) rmSync(directory, { recursive: true, force: true });
 }
 
 if (losses.length > 0) {
-  console.log(`\nSlower than ${sha} by more than ${maxLoss}%:\n${list(losses)}`);
+  const lines = losses.map((loss) => {
+    const changes = history.get(key(loss))!;
+    const smallest = percent(Math.max(...changes));
+    const all = changes.length > 1 ? ` (attempts: ${changes.map(percent).join(", ")})` : "";
+    return `- ${loss.scenario}: ${loss.adapter} ${smallest}${all}`;
+  });
+  console.log(`\nSlower than ${sha} by more than ${maxLoss}%:\n${lines.join("\n")}`);
   process.exitCode = 1;
 } else {
   console.log(`\nNo scenario is more than ${maxLoss}% slower than ${sha}.`);
