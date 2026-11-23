@@ -9,6 +9,7 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
   readonly #delays: AdvanceDelayQueue;
   readonly #kit: TimeProviderKit;
   #runtime!: {
+    dispose(): void;
     scheduler: {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
@@ -69,7 +70,7 @@ export class TimeProviderManualAdapter implements ITimerAdapter {
       .create();
   }
   teardown(): void {
-    // Nothing to release - the runtime is just discarded.
+    this.#runtime.dispose();
   }
 
   now(): unknown {

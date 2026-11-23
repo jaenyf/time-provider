@@ -10,6 +10,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   readonly #kit: TimeProviderKit;
   readonly #plannedTimestamps: number[];
   #runtime!: {
+    dispose(): void;
     scheduler: {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
@@ -73,7 +74,7 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime = builder.create();
   }
   teardown(): void {
-    // Nothing to release - the runtime is just discarded.
+    this.#runtime.dispose();
   }
 
   now(): unknown {

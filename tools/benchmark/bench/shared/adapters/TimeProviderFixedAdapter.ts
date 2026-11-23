@@ -7,6 +7,7 @@ export class TimeProviderFixedAdapter implements ITimerAdapter {
   readonly name: string;
   readonly #kit: TimeProviderKit;
   #runtime!: {
+    dispose(): void;
     scheduler: {
       timers: {
         once(ms: { milliseconds: number }, callback: () => void): unknown;
@@ -37,7 +38,7 @@ export class TimeProviderFixedAdapter implements ITimerAdapter {
     this.#runtime = createTimeProvider.for(plugin).asFixed().create();
   }
   teardown(): void {
-    // Nothing to release - the runtime is just discarded.
+    this.#runtime.dispose();
   }
 
   now(): unknown {

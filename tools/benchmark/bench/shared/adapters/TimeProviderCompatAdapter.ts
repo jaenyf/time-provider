@@ -13,6 +13,7 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
   readonly #delays: AdvanceDelayQueue;
   readonly #kit: TimeProviderKit;
   #runtime!: {
+    dispose(): void;
     compat: {
       performance: {
         now(): number;
@@ -57,7 +58,7 @@ export class TimeProviderCompatAdapter implements ITimerAdapter {
       .create();
   }
   teardown(): void {
-    // Nothing to release - the runtime is just discarded.
+    this.#runtime.dispose();
   }
 
   monotonicNow(): unknown {
