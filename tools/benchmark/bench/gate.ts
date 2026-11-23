@@ -7,8 +7,9 @@
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
  * fails only if it is too slow in every attempt and the 95% confidence interval of its last
  * attempt is entirely below the threshold; otherwise it passes as inconclusive.
- * The gate is skipped when no source of the measured packages changed since that commit, and runs
- * in full when a build config or bench file did.
+ * The gate runs in full when a build config or bench file changed since that commit. Otherwise it
+ * only measures the scenarios that run a function changed since then, found by name in the V8
+ * coverage of one run of each scenario, and is skipped when there is none.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -32,6 +33,7 @@ import {
   readSamples,
 } from "./shared/aggregate.ts";
 import { BASELINE_SUFFIX } from "./shared/baseline.ts";
+import { scenariosToGate } from "./shared/changes.ts";
 import { BENCHMARK_MD, START_MARKER } from "./shared/previous.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -167,7 +169,9 @@ if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT 
   process.exit(0);
 }
 
-if (changedSources(sha)?.length === 0) {
+const sources = changedSources(sha);
+const scenarios = sources && (await scenariosToGate(ROOT, sha, sources));
+if (scenarios?.length === 0) {
   console.log(`Nothing the gate measures changed since ${sha}: gate skipped.`);
   process.exit(0);
 }
@@ -178,7 +182,9 @@ let retry: boolean;
 const history = new Map<string, Change[]>();
 try {
   process.env.TIMEPROVIDER_BENCH_BASELINE = directory;
-  losses = (await measure(passes)).filter(({ change }) => change < -maxLoss);
+  losses = (await measure(passes, scenarios?.map(escape).join("|"))).filter(
+    ({ change }) => change < -maxLoss,
+  );
   for (const loss of losses) history.set(key(loss), [loss]);
   retry =
     losses.length <= attemptsMaxFailingTests &&
