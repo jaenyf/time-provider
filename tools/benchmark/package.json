@@ -4,15 +4,19 @@
   "description": "Library benchmark",
   "type": "module",
   "scripts": {
-    "bench": "rimraf bench-results && vp test bench --reporter=verbose bench/clock-read.bench.ts && vp test bench --reporter=verbose bench/manual-scheduling.bench.ts && vp test bench --reporter=verbose bench/sequential-scheduling.bench.ts && node bench/shared/report.ts",
-    "bench:multi": "node bench/run-multi.ts",
+    "bench": "rimraf bench-results && vp test bench --reporter=verbose bench/clock-read.bench.ts && vp test bench --reporter=verbose bench/fixed-clock-read.bench.ts && vp test bench --reporter=verbose bench/compat-clock-read.bench.ts && vp test bench --reporter=verbose bench/manual-scheduling.bench.ts && vp test bench --reporter=verbose bench/sequential-scheduling.bench.ts && vp test bench --reporter=verbose bench/compat-scheduling.bench.ts && vp test bench --reporter=verbose bench/async-scheduling.bench.ts && node bench/shared/report.ts",
+    "bench:multi": "node bench/run-multi.ts passes:5",
     "bench:report": "node bench/shared/report.ts",
-    "bench:changelog": "node bench/generate-benchmark-md.ts"
+    "bench:changelog": "node bench/generate-benchmark-md.ts passes:5",
+    "bench:gate": "node bench/gate.ts percentThreshold:5 attemptsMaxPercentLoss:20 attemptsMaxFailingTests:5 attempts:2 passes:2"
   },
   "devDependencies": {
     "@jest/fake-timers": "^30",
     "@sinonjs/fake-timers": "^15.5.0",
     "@time-provider/addon-animation-frame": "workspace:*",
+    "@time-provider/addon-compat": "workspace:*",
+    "@time-provider/addon-cron": "workspace:*",
+    "@time-provider/addon-eta": "workspace:*",
     "@time-provider/addon-idle": "workspace:*",
     "@time-provider/core": "workspace:*",
     "@time-provider/plugin-native": "workspace:*",

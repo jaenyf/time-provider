@@ -94,6 +94,11 @@ export abstract class BaseDeterministicRuntime<TDate>
     return this.utcNowImpl();
   }
 
+  /** Number of callbacks running, nested. */
+  protected get callbackDepth(): number {
+    return this.#dueQueue.drainDepth;
+  }
+
   //#region heap management
   /** Permanently disables {@link mayRunDueCallbacks}. */
   protected disableDueDraining(): void {
@@ -135,10 +140,7 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   //#region microtasks management
   override get microtasks(): IDeterministicMicrotasks {
-    return (this.#microtasksFacade ??= Object.assign(new MicrotasksFacade(this.#microtasks), {
-      queue: (callback: () => void) => this.queue(callback),
-      drain: () => this.drain(),
-    }));
+    return (this.#microtasksFacade ??= new MicrotasksFacade(this, this.#microtasks));
   }
 
   /** Queues `callback` on this runtime's microtask queue. */
@@ -157,6 +159,7 @@ export abstract class BaseDeterministicRuntime<TDate>
    * @param coalesce Fires each overdue timer once; see {@link DueHeap.drainDue}.
    */
   protected mayRunDueCallbacks(coalesce = false): void {
+    if (this.#dueQueue.drainDepth !== 0) return;
     this.#drain(this.#dueTimestampNow(), coalesce);
   }
 
@@ -170,6 +173,15 @@ export abstract class BaseDeterministicRuntime<TDate>
     this.#dueQueue.drainDue(dueNow, microtasks, coalesce);
   }
 
+  /** Drains after a registration, unless a running drain will pick the new entry up. */
+  #drainIfIdle(now: number): void {
+    if (
+      (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) &&
+      this.#dueQueue.drainDepth === 0
+    )
+      this.#drain(now);
+  }
+
   /** Drains due entries while advancing the wall clock. */
   protected drainDueAdvancing(
     targetTimestamp: number,
@@ -181,8 +193,11 @@ export abstract class BaseDeterministicRuntime<TDate>
        due at all. */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     const offset = this.#wallClockTimeOffset;
-    this.#dueQueue.drainDue(targetTimestamp - offset, microtasks, false, (runAt) =>
-      setCurrentTimestamp(runAt + offset),
+    this.#dueQueue.drainDue(
+      targetTimestamp - offset,
+      microtasks,
+      false,
+      offset === 0 ? setCurrentTimestamp : (runAt) => setCurrentTimestamp(runAt + offset),
     );
   }
 
@@ -202,22 +217,20 @@ export abstract class BaseDeterministicRuntime<TDate>
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerTimeout(now + msDelay, callback);
-    this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) msDelay = 0 as DurationMilliseconds;
+    const msDelay = Math.max(toDuration(delay), 0);
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerInterval(now + msDelay, msDelay, callback);
-    this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
@@ -231,7 +244,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     let msInitialDelay = initialDelay !== undefined ? toDuration(initialDelay) : 0;
     const now = this.#dueTimestampNow();
     const entry = this.#dueQueue.registerRecurring(now + msInitialDelay, callback);
-    this.#drain(now);
+    this.#drainIfIdle(now);
     if (options?.signal) BaseRuntime.ensureTimerDisposalOnAbort(entry, options);
     return entry;
   }
@@ -254,7 +267,7 @@ export abstract class BaseDeterministicRuntime<TDate>
       intervalDelay ?? 0,
       callback,
     );
-    this.#drain(now);
+    this.#drainIfIdle(now);
     return entry;
   }
 

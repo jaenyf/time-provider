@@ -27,6 +27,15 @@ class FakeManualRuntime extends BaseManualRuntime<number> {
   }
 }
 
+class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
+  constructor(
+    moves: { time: number; as?: "flow" | "sleep" | "snap" }[],
+    timePausedFromDepth?: number,
+  ) {
+    super("Etc/UTC", moves, identityConverter, timePausedFromDepth);
+  }
+}
+
 describe("BaseManualRuntime delays past the native 32-bit limit", () => {
   /*
     A system runtime has to arm these in chunks, or the host clamps them to 1ms and runs them at
@@ -1185,15 +1194,137 @@ describe("BaseManualRuntime recurring and ordering", () => {
 });
 
 describe("BaseSequentialRuntime moves", () => {
-  class FakeSequentialRuntime extends BaseSequentialRuntime<number> {
-    constructor(moves: { time: number; as?: "flow" | "sleep" | "snap" }[]) {
-      super("Etc/UTC", moves, identityConverter);
-    }
-  }
-
   test("accepts a backward move given as a snap", () => {
     expect(
       () => new FakeSequentialRuntime([{ time: 200 }, { time: 100, as: "snap" }]),
     ).not.toThrow();
+  });
+});
+
+describe("BaseManualRuntime timers scheduled from a firing timer", () => {
+  // About 3x the depth at which these overflowed the default Node stack.
+  const ZERO_DELAY_CHAIN_LENGTH = 5000;
+  const RESCHEDULING_TIMERS = 7500;
+
+  test("a chain of 0ms timers, each scheduling the next, doesn't overflow the stack", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    const next = () => {
+      if (++fires < ZERO_DELAY_CHAIN_LENGTH) sut.scheduler.timers.once({ milliseconds: 0 }, next);
+    };
+
+    sut.scheduler.timers.once({ milliseconds: 0 }, next);
+    sut.advance({ milliseconds: 0 });
+
+    expect(fires).toBe(ZERO_DELAY_CHAIN_LENGTH);
+  });
+
+  test("many 1ms timers rescheduling themselves within one move don't overflow the stack", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    for (let i = 0; i < RESCHEDULING_TIMERS; i++) {
+      let left = 2;
+      const tick = () => {
+        fires++;
+        if (--left > 0) sut.scheduler.timers.once({ milliseconds: 1 }, tick);
+      };
+      sut.scheduler.timers.once({ milliseconds: 1 }, tick);
+    }
+
+    sut.moveBy({ milliseconds: 2 });
+
+    expect(fires).toBe(RESCHEDULING_TIMERS * 2);
+  });
+
+  test("a timer due on insert fires after the callback that scheduled it returns", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.scheduler.timers.once({ milliseconds: 1 }, () => {
+      sut.scheduler.timers.once({ milliseconds: 0 }, () => order.push("scheduled"));
+      order.push("scheduler returned");
+    });
+
+    sut.advance({ milliseconds: 1 });
+
+    expect(order).toEqual(["scheduler returned", "scheduled"]);
+  });
+
+  test("scheduling a timer doesn't run the firing callback's pending microtasks", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    sut.scheduler.timers.once({ milliseconds: 1 }, () => {
+      sut.scheduler.microtasks.queue(() => order.push("microtask"));
+      sut.scheduler.timers.once({ milliseconds: 10 }, () => {});
+      order.push("callback end");
+    });
+
+    sut.advance({ milliseconds: 1 });
+
+    expect(order).toEqual(["callback end", "microtask"]);
+  });
+});
+
+describe("a clock read from a timer firing during a sleep", () => {
+  test("doesn't make the other overdue intervals catch up, on a manual runtime", () => {
+    const sut = new FakeManualRuntime(0);
+    let fires = 0;
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.moveBy({ milliseconds: 10 }, { as: "sleep" });
+
+    expect(fires).toEqual(1);
+  });
+
+  test("doesn't make the other overdue intervals catch up, on a sequential runtime", () => {
+    const sut = new FakeSequentialRuntime([{ time: 0 }, { time: 10, as: "sleep" }]);
+    let fires = 0;
+    sut.clock.utcNow();
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.clock.utcNow();
+
+    expect(fires).toEqual(1);
+  });
+
+  test("doesn't make the other overdue intervals catch up, when reads in callbacks don't step", () => {
+    const sut = new FakeSequentialRuntime(
+      [{ time: 0 }, { time: 10, as: "sleep" }, { time: 10 }],
+      1,
+    );
+    let fires = 0;
+    sut.clock.utcNow();
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => sut.clock.utcNow());
+    sut.scheduler.timers.every({ milliseconds: 1 }, () => ++fires);
+
+    sut.clock.utcNow();
+
+    expect(fires).toEqual(1);
+  });
+});
+
+describe("BaseSequentialRuntime time paused from depth", () => {
+  // The read at 10 fires A (depth 1); A's read flows to 20 and fires B (depth 2).
+  const readsWith = (timePausedFromDepth?: number) => {
+    const sut = new FakeSequentialRuntime(
+      [{ time: 0 }, { time: 10 }, { time: 20 }, { time: 30 }],
+      timePausedFromDepth,
+    );
+    const reads: Record<string, number> = {};
+    sut.clock.utcNow();
+    sut.scheduler.timers.once({ milliseconds: 5 }, () => (reads.a = sut.clock.utcNow()));
+    sut.scheduler.timers.once({ milliseconds: 15 }, () => (reads.b = sut.clock.utcNow()));
+    sut.clock.utcNow();
+    reads.next = sut.clock.utcNow();
+    return reads;
+  };
+
+  test.each<[number | undefined, Record<string, number>]>([
+    [undefined, { a: 30, b: 30, next: 30 }],
+    [2, { a: 20, b: 15, next: 30 }],
+    [1, { a: 5, b: 15, next: 20 }],
+  ])("with depth %s, reads see %j", (timePausedFromDepth, expected) => {
+    expect(readsWith(timePausedFromDepth)).toEqual(expected);
   });
 });

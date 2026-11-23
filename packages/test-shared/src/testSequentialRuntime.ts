@@ -898,6 +898,45 @@ export function testSequentialRuntime<TDate>(
       );
     });
 
+    describe("withTimePausedFromDepth", () => {
+      const t0 = Date.parse("2026-01-01T00:00:00.000Z");
+      const readInCallback = (timePausedFromDepth?: number) => {
+        let builder = getDeterministicBuilderFor(plugin)
+          .asSequential()
+          .withSequentialTime(t0)
+          .withSequentialTime(t0 + 10)
+          .withSequentialTime(t0 + 20);
+        if (timePausedFromDepth !== undefined)
+          builder = builder.withTimePausedFromDepth(timePausedFromDepth);
+        const sut = builder.create();
+        let seen = 0;
+        sut.clock.utcNow();
+        sut.scheduler.timers.once({ milliseconds: 5 }, () => {
+          sut.clock.utcNow();
+          seen = sut.clock.timestampNow();
+        });
+        sut.clock.utcNow();
+        return seen;
+      };
+
+      test("a read in a callback consumes the next time by default", () => {
+        expect(readInCallback()).toBe(t0 + 20);
+      });
+
+      test("with 1, a read in a callback stays at its due time", () => {
+        expect(readInCallback(1)).toBe(t0 + 5);
+      });
+
+      test.each([0, -1, 1.5, Number.NaN, -Infinity])(
+        "withTimePausedFromDepth(%s) throws",
+        (depth) => {
+          expect(() =>
+            getDeterministicBuilderFor(plugin).asSequential().withTimePausedFromDepth(depth),
+          ).toThrow(`Invalid withTimePausedFromDepth depth: ${depth}`);
+        },
+      );
+    });
+
     describe("microtasks", () => {
       testMicrotasks(createSUT);
     });

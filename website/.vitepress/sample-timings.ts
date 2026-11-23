@@ -5,7 +5,7 @@ export type Side = "left" | "right";
 
 export type SampleTimings = Record<
   string,
-  Record<Side, Record<string, number>> & { measuredWith: string }
+  Record<Side, Record<string, number>> & { measuredWith: string; version: string }
 >;
 
 export const pages = { "vs-sinon": "sinon", "vs-jest": "jest" } as const;
@@ -35,7 +35,9 @@ function fill(md: string, page: string, timings: SampleTimings): string {
       return line.replace(placeholder, `roughly measured to run in ${ms.toFixed(1)} ms`);
     });
   });
-  return filled.replace("<!-- measured-with -->", timings[page]!.measuredWith);
+  return filled
+    .replace("<!-- measured-with -->", timings[page]!.measuredWith)
+    .replace("<!-- version -->", timings[page]!.version);
 }
 
 export function sampleTimings() {

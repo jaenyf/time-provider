@@ -1,6 +1,10 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
 import { ModernFakeTimers } from "@jest/fake-timers";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
+import * as mimic from "./mimic.ts";
+
+// Read once: the bench module runner turns every imported-name use into a counted getter call.
+const { recurringTimeout, timeoutWithSignal } = mimic;
 
 export class JestFakeTimersAdapter implements ITimerAdapter {
   readonly name = "jest fake-timers (modern)";
@@ -33,6 +37,13 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
     // @ts-expect-error : Node's globalThis types don't declare them as optional
     delete globalThis.cancelAnimationFrame;
   }
+  createAndDispose(): void {
+    // jest has no non-global clock: release the installed one, then create and install another.
+    this.#timers.useRealTimers();
+    //@ts-expect-error : Type '{}' is missing the following properties from type 'ProjectConfig': [...]
+    this.#timers = new ModernFakeTimers({ global: globalThis, config: {} });
+    this.#timers.useFakeTimers();
+  }
 
   now(): unknown {
     //because time-provider always returns a Date object we also return one here in order to have a clean comparison (and not Date vs number comparison)
@@ -41,14 +52,20 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return performance.now();
   }
+  timestampNow(): number {
+    return Date.now();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return globalThis.setTimeout(callback, delayMs);
   }
   clearTimeout(handle: unknown): void {
     globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>);
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    globalThis.setInterval(callback, delayMs);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return globalThis.setInterval(callback, delayMs);
+  }
+  clearInterval(handle: unknown): void {
+    globalThis.clearInterval(handle as ReturnType<typeof setInterval>);
   }
   drainMicrotasks(): void {
     //jest doesn't expose a dedicated method for this (such as runMicrotasks()).
@@ -61,6 +78,18 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   advance(): void {
     this.#timers.advanceTimersByTime(this.#delays.next());
   }
+  advanceTo(timestamp: number): void {
+    this.#timers.advanceTimersByTime(timestamp - Date.now());
+  }
+  jumpWallClock(ms: number): void {
+    this.#timers.setSystemTime(Date.now() + ms);
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    timeoutWithSignal(this, callback, delayMs, signal);
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    recurringTimeout(this, callback, initialDelayMs);
+  }
   runAll(): void {
     this.#timers.runAllTimers();
   }
@@ -72,8 +101,20 @@ export class JestFakeTimersAdapter implements ITimerAdapter {
   runToLast(): void {
     this.#timers.runOnlyPendingTimers();
   }
-  requestAnimationFrame(callback: () => void): void {
-    globalThis.requestAnimationFrame(callback);
+  countTimers(): number {
+    return this.#timers.getTimerCount();
+  }
+  requestAnimationFrame(callback: () => void): unknown {
+    return globalThis.requestAnimationFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    globalThis.cancelAnimationFrame(handle as number);
+  }
+  wait(delayMs: number): Promise<void> {
+    return new Promise((resolve) => globalThis.setTimeout(resolve, delayMs));
+  }
+  runAllAsync(): Promise<void> {
+    return this.#timers.runAllTimersAsync();
   }
   /*
     No requestIdleCallback: jsdom doesn't implement it either, so jest never fakes it and that

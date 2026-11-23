@@ -23,12 +23,19 @@ jobs:
     if: >
       github.event_name == 'push' || (
         github.event.pull_request.merged == true &&
-        github.event.pull_request.base.ref == 'main' &&
-        !startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
+        github.event.pull_request.base.ref == 'main'
       )
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: .github/actions
+
+      - id: release
+        uses: ./.github/actions/release-context
+
+      - if: steps.release.outputs.release-pr == 'false'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const prNumber = context.payload.pull_request?.number;

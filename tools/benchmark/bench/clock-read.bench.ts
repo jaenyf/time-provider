@@ -1,36 +1,20 @@
 import { test } from "vite-plus/test";
 import { clockReadScenarios } from "./shared/scenarios.ts";
-import { GlobalGuard } from "./shared/globalGuard.ts";
-import { recordSample, supportedAdapters } from "./shared/measure.ts";
+import { benchAdapters, progress } from "./shared/measure.ts";
 import { TimeProviderManualAdapter } from "./shared/adapters/TimeProviderManualAdapter.ts";
 import { SinonFakeTimersAdapter } from "./shared/adapters/SinonFakeTimersAdapter.ts";
 import { JestFakeTimersAdapter } from "./shared/adapters/JestFakeTimersAdapter.ts";
-import { realNow } from "./shared/realNow.ts";
+import { baselineKit } from "./shared/baseline.ts";
 
-const guard = new GlobalGuard();
 const adapters = [
   new TimeProviderManualAdapter(),
-  new SinonFakeTimersAdapter(),
-  new JestFakeTimersAdapter(),
+  ...(baselineKit
+    ? [new TimeProviderManualAdapter([], baselineKit)]
+    : [new SinonFakeTimersAdapter(), new JestFakeTimersAdapter()]),
 ];
 
-for (const scenario of clockReadScenarios) {
-  test(scenario.name, async ({ bench }) => {
-    await bench.compare(
-      ...supportedAdapters(adapters, scenario).map((adapter) =>
-        bench(adapter.name, () => {
-          adapter.setup();
-          const start = realNow();
-          try {
-            scenario.run(adapter);
-          } finally {
-            const elapsedMs = realNow() - start;
-            adapter.teardown();
-            guard.assertPristine(adapter.name);
-            recordSample(adapter.name, scenario.name, elapsedMs);
-          }
-        }),
-      ),
-    );
+for (const [index, scenario] of clockReadScenarios.entries()) {
+  test(progress(index, clockReadScenarios.length) + scenario.name, async ({ bench }) => {
+    await benchAdapters(bench, adapters, scenario);
   });
 }

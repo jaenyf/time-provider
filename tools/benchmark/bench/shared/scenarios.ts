@@ -13,17 +13,26 @@ export type Scenario = {
   advanceDelaysMs?: number[];
   /** Optional adapter members this scenario calls; an adapter missing one is reported as "--". */
   requires?: readonly (keyof ITimerAdapter)[];
-  run: (adapter: ITimerAdapter) => void;
-};
+} & (
+  | { async?: false; run: (adapter: ITimerAdapter) => void }
+  | { async: true; run: (adapter: ITimerAdapter) => Promise<void> }
+);
 
 const samplesCount = 5000;
+
+const isoStrings = Array.from({ length: samplesCount }, (_, i) =>
+  new Date(i * 60_000).toISOString(),
+);
+const markNames = Array.from({ length: samplesCount }, (_, i) => `mark ${i}`);
+const measureNames = Array.from({ length: samplesCount }, (_, i) => `measure ${i}`);
 
 export const clockReadScenarios: Scenario[] = [
   {
     name: `read now ${samplesCount} times`,
+    requires: ["now"],
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
-        adapter.now();
+        adapter.now!();
       }
     },
   },
@@ -33,6 +42,36 @@ export const clockReadScenarios: Scenario[] = [
       for (let i = 0; i < samplesCount; i++) {
         adapter.monotonicNow();
       }
+    },
+  },
+  {
+    name: `read timestamp now ${samplesCount} times`,
+    requires: ["timestampNow"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.timestampNow!();
+      }
+    },
+  },
+  {
+    name: `convert ${samplesCount} ISO strings to UTC dates`,
+    requires: ["convertToUtc"],
+    run: (adapter) => {
+      for (const time of isoStrings) {
+        adapter.convertToUtc!(time);
+      }
+    },
+  },
+  {
+    name: `record ${samplesCount} marks, measure between each pair, and read the entries`,
+    requires: ["mark", "measure", "timingEntries"],
+    run: (adapter) => {
+      adapter.mark!(markNames[0]);
+      for (let i = 1; i < samplesCount; i++) {
+        adapter.mark!(markNames[i]);
+        adapter.measure!(measureNames[i], markNames[i - 1], markNames[i]);
+      }
+      adapter.timingEntries!();
     },
   },
 ];
@@ -51,6 +90,16 @@ export const schedulingScenarios: Scenario[] = [
     run: (adapter) => {
       for (let i = 0; i < samplesCount; i++) {
         adapter.setTimeout(() => {}, i);
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, counting pending timers after each`,
+    requires: ["countTimers"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+        adapter.countTimers!();
       }
     },
   },
@@ -90,6 +139,31 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `schedule ${samplesCount} timeouts, with ${samplesCount} moves to absolute times 1ms apart`,
+    requires: ["advanceTo"],
+    run: (adapter) => {
+      const start = adapter.timestampNow!();
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i);
+      }
+      for (let i = 1; i <= samplesCount; i++) {
+        adapter.advanceTo!(start + i);
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, with ${samplesCount} wall clock jumps of 1ms`,
+    requires: ["jumpWallClock"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+      }
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.jumpWallClock!(1);
+      }
+    },
+  },
+  {
     name: `chain ${samplesCount} timeouts, each scheduling the next, with time advance`,
     advanceDelaysMs: [samplesCount],
     run: (adapter) => {
@@ -99,6 +173,64 @@ export const schedulingScenarios: Scenario[] = [
       };
       adapter.setTimeout(next, 1);
       adapter.advance();
+    },
+  },
+  {
+    name: `chain ${samplesCount} 0ms timeouts, each scheduling the next, with time advance`,
+    advanceDelaysMs: [0],
+    run: (adapter) => {
+      let remaining = samplesCount;
+      const next = () => {
+        if (--remaining > 0) adapter.setTimeout(next, 0);
+      };
+      adapter.setTimeout(next, 0);
+      adapter.advance();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts with an AbortSignal, and abort them`,
+    requires: ["setTimeoutWithSignal"],
+    run: (adapter) => {
+      const controllers = [];
+      for (let i = 0; i < samplesCount; i++) {
+        const controller = new AbortController();
+        adapter.setTimeoutWithSignal!(() => {}, i + 1, controller.signal);
+        controllers.push(controller);
+      }
+      for (const controller of controllers) {
+        controller.abort();
+      }
+    },
+  },
+  {
+    name: `schedule ${samplesCount} recurring timers firing 10 times each, with time advance`,
+    requires: ["recurring"],
+    advanceDelaysMs: [10],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        let left = 10;
+        adapter.recurring!(() => (--left > 0 ? 1 : false), 1);
+      }
+      adapter.advance();
+    },
+  },
+  {
+    name: `fire an every-minute cron ${samplesCount} times, with time advance`,
+    requires: ["cron"],
+    advanceDelaysMs: [samplesCount * 60_000],
+    run: (adapter) => {
+      adapter.cron!("* * * * *", () => {});
+      adapter.advance();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} timeouts, and sleep until none is pending`,
+    requires: ["sleepUntilNoTimers"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setTimeout(() => {}, i + 1);
+      }
+      adapter.sleepUntilNoTimers!();
     },
   },
   {
@@ -173,6 +305,19 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `schedule ${samplesCount} intervals, and clear them`,
+    requires: ["clearInterval"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.setInterval(() => {}, (i + 1) * 10));
+      }
+      for (const handle of handles) {
+        adapter.clearInterval!(handle);
+      }
+    },
+  },
+  {
     name: `schedule ${samplesCount} intervals, with time advance`,
     advanceDelaysMs: [intervalsAdvanceMs],
     run: (adapter) => {
@@ -180,6 +325,16 @@ export const schedulingScenarios: Scenario[] = [
         adapter.setInterval(() => {}, (i + 1) * 10);
       }
       adapter.advance();
+    },
+  },
+  {
+    name: `schedule ${samplesCount} intervals, with one sleep past them`,
+    requires: ["sleep"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.setInterval(() => {}, (i + 1) * 10);
+      }
+      adapter.sleep!(intervalsAdvanceMs);
     },
   },
   /*
@@ -226,6 +381,17 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `chain ${samplesCount} microtasks, each queueing the next, and drain`,
+    run: (adapter) => {
+      let remaining = samplesCount;
+      const next = () => {
+        if (--remaining > 0) adapter.queueMicrotask(next);
+      };
+      adapter.queueMicrotask(next);
+      adapter.drainMicrotasks();
+    },
+  },
+  {
     name: `queue ${samplesCount} microtasks, with time advance and drain`,
     advanceDelaysMs: [timeoutsAdvanceMs],
     run: (adapter) => {
@@ -253,6 +419,30 @@ export const schedulingScenarios: Scenario[] = [
     },
   },
   {
+    name: `request ${samplesCount} idle callbacks, and cancel them`,
+    requires: ["requestIdleCallback", "cancelIdleCallback"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.requestIdleCallback!(() => {}));
+      }
+      for (const handle of handles) {
+        adapter.cancelIdleCallback!(handle);
+      }
+    },
+  },
+  {
+    name: `request ${samplesCount} idle callbacks with timeouts, with time advance`,
+    requires: ["requestIdleCallback"],
+    advanceDelaysMs: [samplesCount],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.requestIdleCallback!(() => {}, i + 1);
+      }
+      adapter.advance();
+    },
+  },
+  {
     // One 60Hz frame is 16.67ms, so a 17ms advance reaches the first frame in every adapter.
     name: `request ${samplesCount} animation frames, with time advance`,
     requires: ["requestAnimationFrame"],
@@ -262,6 +452,60 @@ export const schedulingScenarios: Scenario[] = [
         adapter.requestAnimationFrame!(() => {});
       }
       adapter.advance();
+    },
+  },
+  {
+    name: `create and dispose ${samplesCount} fake clocks`,
+    requires: ["createAndDispose"],
+    run: (adapter) => {
+      for (let i = 0; i < samplesCount; i++) {
+        adapter.createAndDispose!();
+      }
+    },
+  },
+  {
+    name: `request ${samplesCount} animation frames, and cancel them`,
+    requires: ["requestAnimationFrame", "cancelAnimationFrame"],
+    run: (adapter) => {
+      const handles = [];
+      for (let i = 0; i < samplesCount; i++) {
+        handles.push(adapter.requestAnimationFrame!(() => {}));
+      }
+      for (const handle of handles) {
+        adapter.cancelAnimationFrame!(handle);
+      }
+    },
+  },
+];
+
+/** Scenarios awaiting their own completion; the awaiting is timed. */
+export const asyncScenarios: Scenario[] = [
+  {
+    name: `wait ${samplesCount} times, with time advance, and await them all`,
+    async: true,
+    advanceDelaysMs: [samplesCount],
+    requires: ["wait"],
+    run: async (adapter) => {
+      const waits = [];
+      for (let i = 0; i < samplesCount; i++) {
+        waits.push(adapter.wait!(i + 1));
+      }
+      adapter.advance();
+      await Promise.all(waits);
+    },
+  },
+  {
+    name: `chain ${samplesCount} awaited waits, each scheduling the next, running all timers asynchronously`,
+    async: true,
+    requires: ["wait", "runAllAsync"],
+    run: async (adapter) => {
+      const chain = (async () => {
+        for (let i = 0; i < samplesCount; i++) {
+          await adapter.wait!(1);
+        }
+      })();
+      await adapter.runAllAsync!();
+      await chain;
     },
   },
 ];

@@ -792,6 +792,7 @@ export interface IDeterministicPlugin<TDate> {
   /**
    * Creates a sequential-time runtime.
    * @param sequentialTimes Empty means the clock stays at the Unix epoch.
+   * @param timePausedFromDepth Callback nesting from which a clock read stops consuming a timestamp; defaults to `Infinity`.
    */
   createSequentialRuntime(
     localTimezone: TimezoneDefinition,
@@ -799,6 +800,7 @@ export interface IDeterministicPlugin<TDate> {
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ): IDeterministicRuntime<TDate>;
 }
 
@@ -821,12 +823,14 @@ export interface IUtcOnlyDeterministicPlugin<TDate> {
   /**
    * Creates a sequential-time runtime.
    * @param sequentialTimes Empty means the clock stays at the Unix epoch.
+   * @param timePausedFromDepth Callback nesting from which a clock read stops consuming a timestamp; defaults to `Infinity`.
    */
   createSequentialRuntime(
     sequentialMoves: {
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ): IUtcOnlyDeterministicRuntime<TDate>;
 }
 //#endregion

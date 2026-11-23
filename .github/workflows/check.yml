@@ -119,12 +119,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     env:
       # A push to a branch with an open PR also runs as pull_request - mutate once, not twice.
       RUN_STRYKER: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # bench:gate builds the newest BENCHMARK.md entry's commit when its cache misses.
+          fetch-depth: 0
+
+      # The benchmark gate runs on main pushes, except release merges: they only bump versions,
+      # and the commit before them was already gated. Its steps run when release-merge is "false".
+      - name: Detect a release merge
+        id: release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: ./.github/actions/release-context
 
       - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
@@ -222,8 +233,33 @@ jobs:
           message: ${{ steps.extract-tests-count.outputs.count }}
           color: brightgreen
 
-      # Only main writes the incremental cache: a pull_request cache is scoped to its merge ref,
-      # so nothing else could read it. Caches are immutable, hence one key per commit.
+      # The gate's baseline is the build of the newest BENCHMARK.md entry's commit, saved on a miss.
+      # Its key hashes the files that decide its content, so adding a package rebuilds it.
+      - name: Find benchmark baseline
+        if: steps.release.outputs.release-merge == 'false'
+        id: baseline
+        run: echo "sha=$(grep -m1 -oP '^## .*?\(\[\K[0-9a-f]+' BENCHMARK.md)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore benchmark baseline
+        if: steps.release.outputs.release-merge == 'false'
+        id: baseline-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/time-provider-baseline-${{ steps.baseline.outputs.sha }}
+          key: bench-dist-${{ steps.baseline.outputs.sha }}-${{ hashFiles('tools/benchmark/bench/gate.ts', 'tools/benchmark/bench/shared/adapters/kit.ts') }}
+
+      # Fails when a Time-Provider adapter is more than the percentThreshold in tools/benchmark's
+      # bench:gate script slower than the same adapter on the baseline, measured on this runner.
+      - if: steps.release.outputs.release-merge == 'false'
+        run: vp run @time-provider/benchmark#bench:gate
+
+      - name: Save benchmark baseline
+        if: ${{ !cancelled() && steps.release.outputs.release-merge == 'false' && steps.baseline-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/time-provider-baseline-${{ steps.baseline.outputs.sha }}
+          key: bench-dist-${{ steps.baseline.outputs.sha }}-${{ hashFiles('tools/benchmark/bench/gate.ts', 'tools/benchmark/bench/shared/adapters/kit.ts') }}
+
       - name: Restore Stryker incremental results
         if: env.RUN_STRYKER == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -235,6 +271,8 @@ jobs:
       - if: env.RUN_STRYKER == 'true'
         run: vp run stryker
 
+      # Only main writes the incremental cache: a pull_request cache is scoped to its merge ref,
+      # so nothing else could read it. Caches are immutable, hence one key per commit.
       - name: Save Stryker incremental results
         if: ${{ !cancelled() && env.RUN_STRYKER == 'true' && github.ref == 'refs/heads/main' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

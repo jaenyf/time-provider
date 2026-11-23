@@ -100,8 +100,8 @@ const median = (values: number[]) => values.toSorted((a, b) => a - b)[values.len
 const times: Record<string, Record<string, number[]>> = JSON.parse(readFileSync(timesFile, "utf8"));
 const commit = execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { encoding: "utf8" }).trim();
 const commonVersions = [
-  `Node ${process.version}`,
-  `@time-provider/core ${version("@time-provider/core")} (from main, [${commit}](https://github.com/jaenyf/time-provider/commit/${commit}))`,
+  `node ${process.version}`,
+  `@time-provider/core v${version("@time-provider/core")} (from main, [${commit}](https://github.com/jaenyf/time-provider/commit/${commit}))`,
 ];
 const measuredOn = new Date().toISOString().slice(0, 10);
 
@@ -111,10 +111,11 @@ for (const [page, framework] of Object.entries(pages)) {
     Object.fromEntries(
       Object.entries(times[`${page}-${side}`] ?? {}).map(([name, ms]) => [name, median(ms)]),
     );
-  const runner = framework === "jest" ? [] : [`vitest ${version("vitest")}`];
-  const versions = [...commonVersions, ...runner, `${framework} ${version(framework)}`];
+  const runner = framework === "jest" ? [] : [`vitest v${version("vitest")}`];
+  const versions = [...commonVersions, ...runner, `${framework} v${version(framework)}`];
   timings[page] = {
     measuredWith: `Measured on ${measuredOn} with: ${versions.join(" · ")}`,
+    version: version(framework),
     left: medians("left"),
     right: medians("right"),
   };

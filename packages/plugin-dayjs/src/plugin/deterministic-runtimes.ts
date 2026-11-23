@@ -24,8 +24,9 @@ class SequentialRuntime extends BaseSequentialRuntime<dayjs.Dayjs> {
       time: string | EpochMilliseconds | number | dayjs.Dayjs;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ) {
-    super(localTimezone, sequentialMoves, RuntimeHelper);
+    super(localTimezone, sequentialMoves, RuntimeHelper, timePausedFromDepth);
   }
 }
 

@@ -34,6 +34,7 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ) => IDeterministicRuntime<TDate>;
 
   createManualRuntime(
@@ -57,8 +58,9 @@ export abstract class BaseDeterministicPlugin<TDate> implements IDeterministicPl
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ): IDeterministicRuntime<TDate> {
-    return new this.SequentialRuntimeCtor(localTimezone, sequentialMoves);
+    return new this.SequentialRuntimeCtor(localTimezone, sequentialMoves, timePausedFromDepth);
   }
 }
 
@@ -88,6 +90,7 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ) => IUtcOnlyDeterministicRuntime<TDate>;
 
   #utcTimezone: TimezoneDefinition = "Etc/UTC";
@@ -110,7 +113,8 @@ export abstract class BaseUtcOnlyDeterministicPlugin<
       time: string | EpochMilliseconds | number | TDate;
       as?: IMoveOptions["as"];
     }[],
+    timePausedFromDepth?: number,
   ): IUtcOnlyDeterministicRuntime<TDate> {
-    return new this.SequentialRuntimeCtor(this.#utcTimezone, sequentialMoves);
+    return new this.SequentialRuntimeCtor(this.#utcTimezone, sequentialMoves, timePausedFromDepth);
   }
 }

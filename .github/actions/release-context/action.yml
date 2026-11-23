@@ -1,0 +1,24 @@
+name: Release context
+description: Tells whether this run comes from a release branch. The single place that knows how releases are made.
+outputs:
+  release-pr:
+    description: '"true" when the pull request comes from a release branch'
+    value: ${{ steps.context.outputs.release-pr }}
+  release-merge:
+    description: '"true" when the pushed commit comes from a merged release pull request'
+    value: ${{ steps.context.outputs.release-merge }}
+runs:
+  using: composite
+  steps:
+    - id: context
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      with:
+        script: |
+          const isReleaseBranch = (ref) => ref.startsWith("release-please--branches--");
+          core.setOutput("release-pr", String(isReleaseBranch(context.payload.pull_request?.head.ref ?? "")));
+          if (context.eventName !== "push") return core.setOutput("release-merge", "false");
+          const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            ...context.repo,
+            commit_sha: context.sha,
+          });
+          core.setOutput("release-merge", String(data.some((pr) => pr.merged_at && isReleaseBranch(pr.head.ref))));

@@ -66,11 +66,11 @@ Chainable off `.for(plugin)`:
 Chainable off `.for(plugin)`, in addition to `.withTimezone(...)` and
 `.use(addon)` above:
 
-| Call              | Returns a builder for…                                       |
-| ----------------- | ------------------------------------------------------------ |
-| `.asFixed()`      | fixed clock — then `.withFixedTime(t)`                       |
-| `.asManual()`     | manual clock — then `.withInitialTime(t)`                    |
-| `.asSequential()` | sequential clock — then one or more `.withSequentialTime(t)` |
+| Call              | Returns a builder for…                                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `.asFixed()`      | fixed clock — then `.withFixedTime(t)`                                                                     |
+| `.asManual()`     | manual clock — then `.withInitialTime(t)`                                                                  |
+| `.asSequential()` | sequential clock — then one or more `.withSequentialTime(t)`, optionally `.withTimePausedFromDepth(depth)` |
 
 Each of those, in turn, has its own `.create()` — see
 [Clock Strategies](/guide/clock-strategies).

@@ -1,19 +1,27 @@
 import { ITimerAdapter } from "./ITimerAdapter.ts";
-import { createTimeProvider, type IDurationSpec } from "@time-provider/core/deterministic";
-import { plugin } from "@time-provider/plugin-native/deterministic";
-import { addon as idleAddon } from "@time-provider/addon-idle/deterministic";
-import { addon as animationFrameAddon } from "@time-provider/addon-animation-frame/deterministic";
+import type { IDurationSpec } from "@time-provider/core/deterministic";
+import * as headKit from "./kit.ts";
+import { BASELINE_SUFFIX, type TimeProviderKit } from "../baseline.ts";
 import { AdvanceDelayQueue } from "./AdvanceDelayQueue.ts";
 
 export class TimeProviderSequentialAdapter implements ITimerAdapter {
-  readonly name = "time-provider (sequential)";
+  readonly name: string;
   readonly #delays: AdvanceDelayQueue;
+  readonly #kit: TimeProviderKit;
   readonly #plannedTimestamps: number[];
   #runtime!: {
+    dispose(): void;
     scheduler: {
       timers: {
         once(ms: IDurationSpec, callback: () => void): { dispose(): void };
-        every(ms: IDurationSpec, callback: () => void): unknown;
+        every(ms: IDurationSpec, callback: () => void): { dispose(): void };
+        once(
+          ms: IDurationSpec,
+          callback: () => void,
+          options: { signal: AbortSignal },
+        ): { dispose(): void };
+        recurring(callback: () => IDurationSpec | false, initialDelay: IDurationSpec): unknown;
+        readonly pendingCount: number;
       };
       microtasks: {
         queue(callback: () => void): void;
@@ -26,12 +34,13 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
         for now - see DeterministicIdleScheduler.drain.
       */
       idle: {
-        request(callback: () => void): unknown;
+        request(callback: () => void, options?: { timeout: number }): unknown;
         drain(maxCount?: number): number;
       };
-      animation: { scheduleFrame(callback: () => void): unknown };
+      cron: { schedule(expression: string, callback: () => void): unknown };
+      animation: { scheduleFrame(callback: () => void): { dispose(): void } };
     };
-    clock: { utcNow(): unknown; monotonicNow(): unknown };
+    clock: { utcNow(): unknown; monotonicNow(): unknown; timestampNow(): number };
   };
 
   /**
@@ -41,7 +50,9 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
    * front: `delaysMs` (the same deltas every other adapter gets) is folded here into absolute,
    * cumulative timestamps and pre-seeded in setup().
    */
-  constructor(delaysMs: readonly number[] = []) {
+  constructor(delaysMs: readonly number[] = [], baseline?: TimeProviderKit) {
+    this.name = `time-provider (sequential)${baseline ? BASELINE_SUFFIX : ""}`;
+    this.#kit = { ...(baseline ?? headKit) };
     this.#delays = new AdvanceDelayQueue(delaysMs);
     let target = 0;
     this.#plannedTimestamps = delaysMs.map((delta) => (target += delta));
@@ -49,10 +60,12 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
 
   setup(): void {
     this.#delays.reset();
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon, cronAddon } = this.#kit;
     const builder = createTimeProvider
       .for(plugin)
       .use(idleAddon)
       .use(animationFrameAddon)
+      .use(cronAddon)
       .asSequential()
       .withSequentialTime(0);
     for (const timestamp of this.#plannedTimestamps) {
@@ -61,7 +74,17 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime = builder.create();
   }
   teardown(): void {
-    // Nothing to release - the runtime is just discarded.
+    this.#runtime.dispose();
+  }
+  createAndDispose(): void {
+    const { createTimeProvider, plugin, idleAddon, animationFrameAddon } = this.#kit;
+    createTimeProvider
+      .for(plugin)
+      .use(idleAddon)
+      .use(animationFrameAddon)
+      .asSequential()
+      .create()
+      .dispose();
   }
 
   now(): unknown {
@@ -70,14 +93,20 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
   monotonicNow(): unknown {
     return this.#runtime.clock.monotonicNow();
   }
+  timestampNow(): number {
+    return this.#runtime.clock.timestampNow();
+  }
   setTimeout(callback: () => void, delayMs: number): unknown {
     return this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback);
   }
   clearTimeout(handle: unknown): void {
     (handle as { dispose(): void }).dispose();
   }
-  setInterval(callback: () => void, delayMs: number): void {
-    this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  setInterval(callback: () => void, delayMs: number): unknown {
+    return this.#runtime.scheduler.timers.every({ milliseconds: delayMs }, callback);
+  }
+  clearInterval(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   drainMicrotasks(): void {
     this.#runtime.scheduler.microtasks.drain();
@@ -95,17 +124,42 @@ export class TimeProviderSequentialAdapter implements ITimerAdapter {
     this.#runtime.clock.utcNow();
     this.#runtime.clock.utcNow();
   }
-  requestIdleCallback(callback: () => void): void {
-    this.#runtime.scheduler.idle.request(callback);
+  countTimers(): number {
+    return this.#runtime.scheduler.timers.pendingCount;
+  }
+  setTimeoutWithSignal(callback: () => void, delayMs: number, signal: AbortSignal): void {
+    this.#runtime.scheduler.timers.once({ milliseconds: delayMs }, callback, { signal });
+  }
+  recurring(callback: () => number | false, initialDelayMs: number): void {
+    this.#runtime.scheduler.timers.recurring(
+      () => {
+        const delayMs = callback();
+        return delayMs === false ? false : { milliseconds: delayMs };
+      },
+      { milliseconds: initialDelayMs },
+    );
+  }
+  cron(expression: string, callback: () => void): void {
+    this.#runtime.scheduler.cron.schedule(expression, callback);
+  }
+  requestIdleCallback(callback: () => void, timeoutMs?: number): unknown {
+    const options = timeoutMs === undefined ? undefined : { timeout: timeoutMs };
+    return this.#runtime.scheduler.idle.request(callback, options);
+  }
+  cancelIdleCallback(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   drainIdleCallbacks(ms: number): void {
     this.#runtime.scheduler.idle.drain(ms);
   }
-  requestAnimationFrame(callback: () => void): void {
-    this.#runtime.scheduler.animation.scheduleFrame(callback);
+  requestAnimationFrame(callback: () => void): unknown {
+    return this.#runtime.scheduler.animation.scheduleFrame(callback);
+  }
+  cancelAnimationFrame(handle: unknown): void {
+    (handle as { dispose(): void }).dispose();
   }
   /*
-    No runAll/runToNext/runToLast: moveUntil() and moveTo() exist only on the manual clock, so
-    those scenarios report "--".
+    No runAll/runToNext/runToLast/advanceTo/jumpWallClock: moveUntil(), moveTo() and moveBy() exist
+    only on the manual clock, so those scenarios report "--".
   */
 }

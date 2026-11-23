@@ -21,11 +21,13 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
   protected _sequentialMoves: { time: number; as: IMoveOptions["as"] }[];
   #sequentialIndex = 0;
   #hasBeenRead = false;
+  #timePausedFromDepth: number;
 
   /**
    * @param localTimezone The runtime timezone.
    * @param sequentialMoves Timestamps consumed one per clock read.
    * @param converter The runtime time converter.
+   * @param timePausedFromDepth Callback nesting from which a clock read stops consuming a timestamp.
    */
   constructor(
     localTimezone: TimezoneDefinition,
@@ -34,8 +36,10 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
       as?: IMoveOptions["as"];
     }[],
     converter: ITimeConverter<TDate>,
+    timePausedFromDepth = Infinity,
   ) {
     super(localTimezone, converter);
+    this.#timePausedFromDepth = timePausedFromDepth;
     this._sequentialMoves = this.initializeSequentialMoves(sequentialMoves);
     this.startMonotonicClock();
   }
@@ -102,7 +106,11 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     const moves = this._sequentialMoves;
     const index = this.#sequentialIndex;
 
-    if (this.#hasBeenRead && index < moves.length - 1) {
+    if (
+      this.#hasBeenRead &&
+      index < moves.length - 1 &&
+      this.callbackDepth < this.#timePausedFromDepth
+    ) {
       const next = moves[index + 1];
       const target = next.time as EpochMilliseconds;
 
