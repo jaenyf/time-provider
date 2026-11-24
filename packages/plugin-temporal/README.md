@@ -60,3 +60,9 @@ declare global {
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-temporal/CHANGELOG.md)
+
+## Minimum requirements
+
+- TypeScript: 6.0 or later with `esnext.temporal` in `lib`, or 5.2 with your own global `Temporal` types; either way with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`
