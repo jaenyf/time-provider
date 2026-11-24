@@ -3,6 +3,7 @@
 import type { IDeterministicPlugin } from "@time-provider/core/deterministic";
 import { DeterministicPlugin } from "./plugin/deterministic-runtimes.ts";
 import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 dayjs.extend(utc);
@@ -13,4 +14,4 @@ dayjs.extend(timezone);
  * Supports timezones and local time. Use with `createTimeProvider.for(plugin)` from
  * `@time-provider/core/deterministic`.
  */
-export const plugin: IDeterministicPlugin<dayjs.Dayjs> = new DeterministicPlugin();
+export const plugin: IDeterministicPlugin<Dayjs> = new DeterministicPlugin();
