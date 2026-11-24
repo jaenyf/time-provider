@@ -9,5 +9,6 @@
       "@time-provider/*/deterministic": ["./packages/*/src/deterministic"],
       "@time-provider/*": ["./packages/*/src"]
     }
-  }
+  },
+  "include": ["*.ts", "scripts/**/*.ts", "tools/**/*.ts", "website/scripts/**/*.ts"]
 }
