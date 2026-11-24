@@ -5,6 +5,7 @@
     "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "paths": {
       "@time-provider/*/deterministic": ["./packages/*/src/deterministic"],
       "@time-provider/*": ["./packages/*/src"]
