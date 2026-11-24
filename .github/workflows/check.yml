@@ -155,7 +155,7 @@ jobs:
 
       # The test suites import the build output by path, so they never see the
       # tarball npm would actually publish. Pack it and check it here instead.
-      - run: node scripts/verify-packages.ts
+      - run: vp run verify-packages
 
       - run: vp test --coverage
       - run: test -f coverage/lcov.info

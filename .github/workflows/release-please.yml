@@ -67,7 +67,7 @@ jobs:
       # actually gets published. publish waits on this job, so a failure here stops the upload -
       # leaving a tag with nothing published, which workflow_dispatch's `paths` input rescues.
       - name: Verify the packed packages
-        run: node scripts/verify-packages.ts
+        run: vp run verify-packages
 
       - name: Aggregate changelog
         run: node scripts/aggregate-changelog.ts

@@ -8,14 +8,15 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp run build && vp run check && node scripts/verify-packages.ts && vp run test --coverage && vp run @time-provider/benchmark#bench:gate && vp run stryker",
+    "ready": "vp run build && vp run check && vp run verify-packages && vp run test --coverage && vp run @time-provider/benchmark#bench:gate && vp run stryker",
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage reports/mutation",
     "test": "vp test",
     "check": "vp check && vp run -r check",
-    "stryker": "node scripts/check-stryker-runner.ts && stryker run"
+    "stryker": "node scripts/check-stryker-runner.ts && stryker run",
+    "verify-packages": "node scripts/verify-packages.ts"
   },
   "devDependencies": {
     "@barney-media/crap-typescript-vitest": "^2.0.2",
@@ -25,7 +26,6 @@
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "26.6.6",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "5.1.0",
     "jsonc-parser": "^3.3.1",
     "rimraf": "^6.1.4",

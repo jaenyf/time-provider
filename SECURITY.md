@@ -45,7 +45,7 @@ Every published package declares **no runtime dependencies**. A plugin or addon
 declares only peer dependencies - `@time-provider/core`, and the date library it
 adapts - which your application installs and picks the version of. Nothing this
 repository installs to build and test itself is reachable from a published package.
-`scripts/verify-packages.ts` enforces that: it fails if a publishable package declares
+`vp run verify-packages` enforces that: it fails if a publishable package declares
 `dependencies` or `optionalDependencies`, and it runs in CI and again before publishing.
 
 That is why the two dependency checks in CI are deliberately asymmetric:

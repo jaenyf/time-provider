@@ -1,4 +1,8 @@
 {
   "extends": "../../tsconfig.packages.json",
+  "compilerOptions": {
+    "lib": ["es2023", "esnext.temporal"],
+    "skipLibCheck": false
+  },
   "include": ["src/**/*.ts"]
 }
