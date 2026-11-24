@@ -25,7 +25,6 @@
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "26.6.6",
-    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "5.1.0",
     "jsonc-parser": "^3.3.1",
     "rimraf": "^6.1.4",
