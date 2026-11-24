@@ -116,6 +116,12 @@ rule (see `ITimers`): the exception propagates in a Node-like environment, and i
 browser-like one. Either way that schedule stops, exactly as a `recurring` timer callback that throws
 does - catch inside your own callback if a failing run shouldn't end the job.
 
+## Minimum requirements
+
+- TypeScript: 5.4 or later, with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`
+
 ## License
 
 MIT

@@ -65,3 +65,9 @@ If you need to keep using the native `Date` object, you can extend it by adding 
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-native/CHANGELOG.md)
+
+## Minimum requirements
+
+- TypeScript: 5.2 or later, with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`

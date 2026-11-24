@@ -87,6 +87,12 @@ const manual = createDeterministicTimeProvider
 
 Compose [`@time-provider/addon-compat`](https://www.npmjs.com/package/@time-provider/addon-compat) **before** this addon and its `.compat` facade also gets `requestAnimationFrame`/`cancelAnimationFrame`, delegating to `scheduleFrame` and to the handle's `dispose()`. They are declared as an optional `compat?` on `WithAnimationFrameApi`, since they are only there when both addons are composed.
 
+## Minimum requirements
+
+- TypeScript: 5.2 or later, with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`
+
 ## License
 
 MIT

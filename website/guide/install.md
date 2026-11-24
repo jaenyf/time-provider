@@ -39,8 +39,12 @@ date library? See [Addons](/addons/) — e.g.
   [JSR](https://jsr.io/@time-provider). 1.39.1 is the first release that
   resolves JSR package exports, and `deno check --all` needs 1.43, which is
   where an older Deno bug on branded types was fixed.
-- TypeScript is not required, but every type is exported and the whole
-  library is written in it.
+- TypeScript is optional. To use the types: 5.2 or later, with
+  `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`.
+  `@time-provider/addon-cron` needs 5.4. `@time-provider/plugin-temporal`
+  needs 6.0 with `esnext.temporal` in `lib`, or 5.2 with your own global
+  `Temporal` types.
+- JavaScript: ES2022, as ESM or CommonJS.
 
 ## Package layout
 
