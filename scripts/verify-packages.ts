@@ -40,8 +40,8 @@
 //      npm only packs one sitting in the package directory and twelve
 //      copies drift without being read.
 //
-// Needs `vp run build` to have run first. Run it with Node 24+:
-// node scripts/verify-packages.ts
+// Needs `vp run build` to have run first.
+// Run it with: vp run verify-packages
 
 import { execFileSync } from "node:child_process";
 import {
