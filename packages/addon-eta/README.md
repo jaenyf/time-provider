@@ -138,6 +138,12 @@ one figure.
 
 Both are idempotent: calling either again after a schedule has already ended is a no-op.
 
+## Minimum requirements
+
+- TypeScript: 5.2 or later, with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`
+
 ## License
 
 MIT

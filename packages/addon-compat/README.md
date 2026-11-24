@@ -89,6 +89,12 @@ manual.compat.clearTimeout(handle);
 
 Composing `@time-provider/addon-animation-frame` or `@time-provider/addon-idle` **after** this addon adds their native-shaped aliases to the same `.compat` facade: `requestAnimationFrame`/`cancelAnimationFrame` and `requestIdleCallback`/`cancelIdleCallback`. Each `cancel*` takes the handle its `request*` returned. Compose this addon first - the facade has to exist by the time they are applied, and composed the other way round the aliases are simply absent.
 
+## Minimum requirements
+
+- TypeScript: 5.2 or later, with `esnext.disposable` (or `esnext`) in `lib`, or `@types/node`
+- JavaScript: ES2022, as ESM or CommonJS
+- Node.js: `^18.18.0 || >=20.4.0`, or Deno: `~1.39.1 || >=1.43`
+
 ## License
 
 MIT
