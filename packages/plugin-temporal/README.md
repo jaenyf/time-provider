@@ -44,6 +44,19 @@ if (!("Temporal" in globalThis)) {
 }
 ```
 
+For the types, add `esnext.temporal` to `lib` in your tsconfig (TypeScript 6+).
+On TypeScript 5, declare the global namespace from the polyfill yourself:
+
+```typescript
+// temporal.d.ts
+import type { Temporal as Polyfill } from "@js-temporal/polyfill";
+declare global {
+  namespace Temporal {
+    type ZonedDateTime = Polyfill.ZonedDateTime;
+  }
+}
+```
+
 ## Changelog
 
 See [CHANGELOG.md](https://github.com/jaenyf/time-provider/blob/main/packages/plugin-temporal/CHANGELOG.md)
