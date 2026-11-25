@@ -34,7 +34,7 @@ export function testManualRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   const createManualRuntime = (
     timezone: TimezoneDefinition,
     initialTime: string | number | TDate,

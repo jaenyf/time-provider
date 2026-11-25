@@ -6,7 +6,9 @@ import {
   type IUtcOnlyRuntime,
 } from "@time-provider/core";
 
-export function testRuntime<TDate>(createSUT: () => IRuntime<TDate> | IUtcOnlyRuntime<TDate>) {
+export function testRuntime<TDate>(
+  createSUT: () => IRuntime<TDate> | IUtcOnlyRuntime<TDate>,
+): void {
   describe("dispose", () => {
     test("calling explicit dispose multiple times does not throw", () => {
       const sut = createSUT();

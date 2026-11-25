@@ -55,7 +55,7 @@ function testEtaAcrossBackwardStep(setup: () => Harness) {
 
 export function testAddonEtaManual<TDate>(
   getBuilder: () => IDeterministicPluggedRuntimeBuilder<TDate>,
-) {
+): void {
   testEtaAcrossBackwardStep(() => {
     const timeProvider = getBuilder()
       .use(deterministicEtaAddon)
@@ -70,7 +70,9 @@ export function testAddonEtaManual<TDate>(
   });
 }
 
-export function testAddonEtaSystem<TDate>(getBuilder: () => ISystemPluggedRuntimeBuilder<TDate>) {
+export function testAddonEtaSystem<TDate>(
+  getBuilder: () => ISystemPluggedRuntimeBuilder<TDate>,
+): void {
   describe("system", () => {
     beforeEach(() => {
       vi.useFakeTimers();

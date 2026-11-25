@@ -5,7 +5,7 @@ import type { IDeterministicMicrotasks } from "@time-provider/core/deterministic
 export function testMicrotasks(
   createSUT: () => IDeterministicMicrotasks & Pick<ITimers, "once"> & { dispose(): void },
   isTimeFrozen: boolean = false,
-) {
+): void {
   describe("queue", () => {
     test("does not run the callback in-line", () => {
       const sut = createSUT();

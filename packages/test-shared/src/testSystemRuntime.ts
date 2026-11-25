@@ -24,7 +24,7 @@ export function testSystemRuntime<TDate>(
   plugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   const createSystemRuntime = (timezone: TimezoneDefinition) =>
     plugin.supportsLocalTime ? plugin.createSystemRuntime(timezone) : plugin.createSystemRuntime();
   const createSUT = () => createSystemRuntime("Pacific/Kiritimati");

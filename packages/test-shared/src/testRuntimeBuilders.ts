@@ -16,7 +16,7 @@ import {
 export function testRuntimeBuilders<TDate>(
   systemPlugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   deterministicPlugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
-) {
+): void {
   describe("for", () => {
     test.each([undefined, null])(
       "throws when forcing an undefined plugin",

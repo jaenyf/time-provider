@@ -16,7 +16,7 @@ import type {
 export function testAll<TDate>(
   systemPlugin: ISystemPlugin<TDate> | IUtcOnlySystemPlugin<TDate>,
   deterministicPlugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
-) {
+): void {
   const throwInvalidOperation = function () {
     throw new Error("Invalid operation");
   };

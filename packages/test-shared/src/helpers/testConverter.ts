@@ -6,7 +6,7 @@ export function testConverter<TDate>(
   createSut: () => IConverter<TDate> | IUtcOnlyConverter<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   /*
     `roundtrip` stands in for a TDate sample in each `test.each` case list. The sample must
     be resolved lazily, inside the test body, rather than eagerly while building the case list.
