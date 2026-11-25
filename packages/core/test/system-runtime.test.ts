@@ -221,6 +221,12 @@ describe("BaseSystemRuntime", () => {
       expect(callbackCounts).toEqual(2);
     });
 
+    test("leaves its handle disposed once the callback returns false", () => {
+      const handle = sut.recurring(() => false, { milliseconds: 10 });
+      vi.advanceTimersByTime(10);
+      expect(handle.isDisposed).toBe(true);
+    });
+
     test("disposes the handle and rethrows when the callback throws, same as returning false", () => {
       const error = new Error("boom");
       const handle = sut.recurring(
@@ -350,6 +356,20 @@ describe("BaseSystemRuntime", () => {
         );
       },
     );
+  });
+
+  describe("disposing a handle twice", () => {
+    test.each([
+      ["once", "clearTimeout", () => sut.once({ milliseconds: 10 }, () => {})],
+      ["every", "clearInterval", () => sut.every({ milliseconds: 10 }, () => {})],
+      ["recurring", "clearTimeout", () => sut.recurring(() => false, { milliseconds: 10 })],
+    ] as const)("%s: a second dispose() doesn't call %s again", (_, hostClear, schedule) => {
+      const clear = vi.spyOn(globalThis, hostClear);
+      const handle = schedule();
+      handle.dispose();
+      handle.dispose();
+      expect(clear).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("clearTimer", () => {

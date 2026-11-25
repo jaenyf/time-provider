@@ -23,10 +23,13 @@ class CompleteRateEstimator implements IRateEstimator {
   }
 
   estimateRate(): number | undefined {
-    if (!this.#first || !this.#latest || this.#latest.time === this.#first.time) {
+    // Set together with #latest.
+    const first = this.#first!;
+    const latest = this.#latest;
+    if (!latest || latest.time === first.time) {
       return undefined;
     }
-    return (this.#latest.done - this.#first.done) / (this.#latest.time - this.#first.time);
+    return (latest.done - first.done) / (latest.time - first.time);
   }
 }
 

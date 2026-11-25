@@ -1,7 +1,6 @@
 import { toDuration, type IDurationSpec } from "../helpers/branded-types.ts";
 import { SystemTimings } from "../timings/system-timings.ts";
 import type {
-  DurationMilliseconds,
   EpochMilliseconds,
   ITimeConverter,
   ITimings,
@@ -85,10 +84,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) {
-      msDelay = 0 as DurationMilliseconds;
-    }
+    const msDelay = Math.max(0, toDuration(delay));
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
     const nativeHandle = armTimeout(
@@ -101,7 +97,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
           handle?.dispose();
         }
       },
-      (rearmed) => handle?.setNativeHandle(rearmed),
+      (rearmed) => handle!.setNativeHandle(rearmed),
     );
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, nativeHandle);
     return this.trackHandle(handle, options);
@@ -109,10 +105,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 1) {
-      msDelay = 1 as DurationMilliseconds;
-    }
+    const msDelay = Math.max(1, toDuration(delay));
     if (msDelay <= MAX_NATIVE_DELAY) {
       return this.trackHandle(
         new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
@@ -125,7 +118,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
     const rearm = (nativeHandle: ReturnTypeOfSetTimeout): void => {
-      handle?.setNativeHandle(nativeHandle);
+      handle!.setNativeHandle(nativeHandle);
     };
     const arm = (): ReturnTypeOfSetTimeout =>
       armTimeout(
@@ -159,21 +152,21 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       const nativeHandle = armTimeout(
         msInitialDelay,
         () => {
-          if (handle !== undefined && handle.isDisposed) {
-            return false;
+          if (handle!.isDisposed) {
+            return;
           }
           let next: IDurationSpec | false;
           try {
             next = callback();
           } catch (error) {
             // Nothing left to dispose once the schedule has stopped, including by throwing.
-            handle?.dispose();
+            handle!.dispose();
             throw error;
           }
           if (next !== false) {
             arm(toDuration(next));
           } else {
-            handle?.dispose();
+            handle!.dispose();
           }
         },
         rearm,

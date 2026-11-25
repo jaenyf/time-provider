@@ -80,7 +80,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
 
   localNowImpl(): TDate {
     const nowSpec = this.consumeNextSequentialMove();
-    this.mayRunDueCallbacks();
+    this.runDueCallbacks(false);
     // Already a validated epoch-milliseconds value (see timestampNowImpl below) - no need to
     // round-trip it back through toInstant()'s spec-object validation.
     return this.convertToLocalDateImpl(this.localTimezone, nowSpec.time as EpochMilliseconds);
@@ -88,7 +88,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
 
   utcNowImpl(): TDate {
     const nowSpec = this.consumeNextSequentialMove();
-    this.mayRunDueCallbacks();
+    this.runDueCallbacks(false);
     return this.convertToUtcDateImpl(nowSpec.time as EpochMilliseconds);
   }
 
@@ -174,7 +174,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
     if (monotonic === "paused") this.snapWallClockTime(delta);
 
     this._sequentialMoves[this.#sequentialIndex].time = targetTimestamp;
-    this.mayRunDueCallbacks(true);
+    this.runDueCallbacks(true);
   }
 
   private isValidMonotonic(as: MoveKind, monotonic: MonotonicKind): boolean {

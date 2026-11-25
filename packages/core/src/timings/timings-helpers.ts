@@ -8,12 +8,12 @@ function matchesKind(entry: ITimingEntry, filter?: ITimingsFilter): boolean {
   return filter?.kind === undefined || entry.entryType === filter.kind;
 }
 
-function hasBothBounds(options?: ITimingMeasureOptions): boolean {
-  return options?.start !== undefined && options?.end !== undefined;
+function hasBothBounds(options: ITimingMeasureOptions): boolean {
+  return options.start !== undefined && options.end !== undefined;
 }
 
-function hasNeitherBound(options?: ITimingMeasureOptions): boolean {
-  return options?.start === undefined && options?.end === undefined;
+function hasNeitherBound(options: ITimingMeasureOptions): boolean {
+  return options.start === undefined && options.end === undefined;
 }
 
 /** Whether `entry` matches `filter`. */

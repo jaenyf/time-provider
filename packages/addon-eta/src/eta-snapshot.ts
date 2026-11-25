@@ -25,11 +25,9 @@ class Lazy<T> {
 function estimateEta(
   now: EpochMilliseconds,
   remaining: number,
-  rate: number | undefined,
+  rate = 0,
 ): EpochMilliseconds | undefined {
-  return rate !== undefined && rate > 0
-    ? ((now + remaining / rate) as EpochMilliseconds)
-    : undefined;
+  return rate > 0 ? ((now + remaining / rate) as EpochMilliseconds) : undefined;
 }
 
 export class EtaProgressSnapshot implements IEtaProgressSnapshot {

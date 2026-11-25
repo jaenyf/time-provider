@@ -198,8 +198,7 @@ class ProgressEtaTrackBuilder<TDate>
   }
 
   withNotificationInterval(milliseconds: DurationMilliseconds): this {
-    this.#notificationIntervalMilliseconds =
-      milliseconds < 0 ? (0 as DurationMilliseconds) : milliseconds;
+    this.#notificationIntervalMilliseconds = Math.max(0, milliseconds) as DurationMilliseconds;
     return this;
   }
 
@@ -292,8 +291,7 @@ class DurationEtaTrackBuilder<TDate> implements IDurationEtaTrackBuilder {
   }
 
   withNotificationInterval(milliseconds: DurationMilliseconds): this {
-    this.#notificationIntervalMilliseconds =
-      milliseconds < 0 ? (0 as DurationMilliseconds) : milliseconds;
+    this.#notificationIntervalMilliseconds = Math.max(0, milliseconds) as DurationMilliseconds;
     return this;
   }
 

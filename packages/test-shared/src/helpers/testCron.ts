@@ -96,7 +96,7 @@ export function testAddonCronManual<TDate>(
 }
 
 /*
- * A fixed clock never advances (BaseFixedRuntime.mayRunDueCallbacks is a no-op), so a scheduled
+ * A fixed clock never advances (BaseFixedRuntime.runDueCallbacks is a no-op), so a scheduled
  * occurrence can never become due - this only verifies scheduling doesn't fire prematurely or
  * throw on a frozen clock.
  */
