@@ -22,6 +22,12 @@ export default withCrapTypescriptVitest(
     },
     run: {
       cache: true,
+      tasks: {
+        check: {
+          command: "vp check && vp run -r check",
+          cache: { input: [{ auto: true }, "!coverage/**"] },
+        },
+      },
     },
     resolve: {
       tsconfigPaths: true,
