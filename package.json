@@ -26,7 +26,7 @@
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "26.6.6",
-    "@vitest/coverage-v8": "5.1.0",
+    "@vitest/coverage-v8": "5.1.1",
     "jsonc-parser": "^3.3.1",
     "rimraf": "^6.1.4",
     "typescript": "^7.0.2",
@@ -44,7 +44,7 @@
   },
   "packageManager": "bun@1.4.4",
   "catalog": {
-    "vite-plus": "~1.7.0",
+    "vite-plus": "~1.8.0",
     "vitest": "~5.1.0"
   },
   "patchedDependencies": {
