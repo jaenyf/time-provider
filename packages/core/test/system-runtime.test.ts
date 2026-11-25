@@ -358,6 +358,20 @@ describe("BaseSystemRuntime", () => {
     );
   });
 
+  describe("disposing a handle twice", () => {
+    test.each([
+      ["once", "clearTimeout", () => sut.once({ milliseconds: 10 }, () => {})],
+      ["every", "clearInterval", () => sut.every({ milliseconds: 10 }, () => {})],
+      ["recurring", "clearTimeout", () => sut.recurring(() => false, { milliseconds: 10 })],
+    ] as const)("%s: a second dispose() doesn't call %s again", (_, hostClear, schedule) => {
+      const clear = vi.spyOn(globalThis, hostClear);
+      const handle = schedule();
+      handle.dispose();
+      handle.dispose();
+      expect(clear).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("clearTimer", () => {
     test.each([-1, 4, 5, 6])("throws when trying to clear unexpected kind", (wrongKind) => {
       const handleWithWrongKind = {
