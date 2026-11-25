@@ -82,6 +82,7 @@ type-check or run, since workspace packages resolve through their built
   Keep it as short as possible, with the tags (`@param`, `@returns`,
   `@throws`, ...) kept and just as short.
 - Exported declarations need explicit types (`isolatedDeclarations` in `tsconfig.packages.json`).
+- `packages/test-e2e` `check` also type-checks the built types on the README minimum TypeScript versions (`check:ts-5.2`, `check:ts-5.4`). Move those with the READMEs.
 - No comment that restates what the code does - it has to read on its own. A
   short comment is right where the reason isn't in the code: why a choice was
   made, why the obvious alternative is wrong, or what a test pins down.

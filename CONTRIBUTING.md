@@ -103,12 +103,20 @@ from the repo root.
   (per package) or `vp run -r check` (whole repo). Fix everything it
   reports; `vp check --fix` will auto-fix what it can, and the pre-commit
   hook already runs it on staged files.
-  There is no separate `tsc` step: `vp check` type-checks with the
+  There is no separate `tsc` step (apart from the minimum TypeScript checks
+  below): `vp check` type-checks with the
   TypeScript checker bundled in Vite+, and the website's `check` script adds
   `vue-tsc` for its Vue files.
 - **Exported declarations need explicit types** (`isolatedDeclarations`),
   so the `.d.ts` files can be emitted without the type checker. `vp check`
   doesn't catch a missing annotation, the package build (`vp pack`) fails on it.
+- **The published types are checked on the minimum TypeScript versions**
+  listed in each README's "Minimum requirements". `packages/test-e2e`'s
+  `check` runs `check:ts-5.2` and `check:ts-5.4`, which type-check the e2e
+  tests (ESM `.d.mts`) and every built `.d.cts` (`node10`, no
+  `esModuleInterop`) with those compilers. Only addon-cron needs 5.4
+  (`NoInfer`), so the 5.2 configs shim it. When a floor moves, change the
+  `typescript-5.x` alias, its configs and scripts with the READMEs.
 - **`@time-provider/core` has zero runtime dependencies**, each plugin
   depends only on `core` and the date library it adapts, and each addon
   depends only on `core`. Don't add a new runtime dependency without a strong

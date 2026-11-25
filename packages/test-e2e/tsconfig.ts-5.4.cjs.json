@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.ts-5.4.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "esModuleInterop": false
+  },
+  "include": ["../*/dist/*.d.cts", "ts-floor/temporal.d.ts"]
+}
