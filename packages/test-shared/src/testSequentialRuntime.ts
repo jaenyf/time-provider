@@ -29,7 +29,7 @@ export function testSequentialRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   const createSequentialRuntime = (
     timezone: TimezoneDefinition,
     sequentialMoves: {

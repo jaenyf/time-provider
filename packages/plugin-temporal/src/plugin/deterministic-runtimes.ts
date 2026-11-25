@@ -46,7 +46,7 @@ class ManualRuntime extends BaseManualRuntime<Temporal.ZonedDateTime> {
 }
 
 export class DeterministicPlugin extends BaseDeterministicPlugin<Temporal.ZonedDateTime> {
-  protected readonly ManualRuntimeCtor = ManualRuntime;
-  protected readonly FixedRuntimeCtor = FixedRuntime;
-  protected readonly SequentialRuntimeCtor = SequentialRuntime;
+  protected readonly ManualRuntimeCtor: typeof ManualRuntime = ManualRuntime;
+  protected readonly FixedRuntimeCtor: typeof FixedRuntime = FixedRuntime;
+  protected readonly SequentialRuntimeCtor: typeof SequentialRuntime = SequentialRuntime;
 }

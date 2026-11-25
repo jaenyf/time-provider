@@ -376,17 +376,20 @@ export interface IConverter<TDate> extends IUtcOnlyConverter<TDate>, ILocalOnlyC
 /** Default limit of {@link IManualClock.moveUntil}. */
 export const DEFAULT_MOVE_UNTIL_TIMERS_LIMIT = 1000;
 
-/** Discriminates the source of an {@link IScheduledHandle}. */
-export const SCHEDULED_TIMER_KIND_TIMEOUT = 0;
-export const SCHEDULED_TIMER_KIND_INTERVAL = 1;
-export const SCHEDULED_TIMER_KIND_RECURRING = 2;
-
 /** Identifies the timer method used to obtain an {@link IScheduledHandle}. */
 export enum ScheduledHandleKind {
-  timeout = SCHEDULED_TIMER_KIND_TIMEOUT,
-  interval = SCHEDULED_TIMER_KIND_INTERVAL,
-  recurring = SCHEDULED_TIMER_KIND_RECURRING,
+  timeout = 0,
+  interval = 1,
+  recurring = 2,
 }
+
+/** Discriminates the source of an {@link IScheduledHandle}. */
+export const SCHEDULED_TIMER_KIND_TIMEOUT: ScheduledHandleKind.timeout =
+  ScheduledHandleKind.timeout;
+export const SCHEDULED_TIMER_KIND_INTERVAL: ScheduledHandleKind.interval =
+  ScheduledHandleKind.interval;
+export const SCHEDULED_TIMER_KIND_RECURRING: ScheduledHandleKind.recurring =
+  ScheduledHandleKind.recurring;
 
 /** Handle returned by timer methods. */
 export interface IScheduledHandle extends IDisposable, IHasAbortSignal {}

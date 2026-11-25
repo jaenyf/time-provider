@@ -7,11 +7,11 @@ import type {
 /** Milliseconds per second. */
 export const MILLISECONDS_PER_SECOND = 1_000;
 /** Milliseconds per minute. */
-export const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND;
+export const MILLISECONDS_PER_MINUTE: number = 60 * MILLISECONDS_PER_SECOND;
 /** Milliseconds per hour. */
-export const MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE;
+export const MILLISECONDS_PER_HOUR: number = 60 * MILLISECONDS_PER_MINUTE;
 /** Milliseconds per day. */
-export const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR;
+export const MILLISECONDS_PER_DAY: number = 24 * MILLISECONDS_PER_HOUR;
 
 /**
  * Validates a millisecond total.

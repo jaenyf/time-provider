@@ -28,5 +28,5 @@ class SystemRuntime extends BaseSystemRuntime<moment.Moment> {
 }
 
 export class SystemPlugin extends BaseSystemPlugin<moment.Moment> {
-  protected readonly SystemRuntimeCtor = SystemRuntime;
+  protected readonly SystemRuntimeCtor: typeof SystemRuntime = SystemRuntime;
 }

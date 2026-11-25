@@ -106,6 +106,9 @@ from the repo root.
   There is no separate `tsc` step: `vp check` type-checks with the
   TypeScript checker bundled in Vite+, and the website's `check` script adds
   `vue-tsc` for its Vue files.
+- **Exported declarations need explicit types** (`isolatedDeclarations`),
+  so the `.d.ts` files can be emitted without the type checker. `vp check`
+  doesn't catch a missing annotation, the package build (`vp pack`) fails on it.
 - **`@time-provider/core` has zero runtime dependencies**, each plugin
   depends only on `core` and the date library it adapts, and each addon
   depends only on `core`. Don't add a new runtime dependency without a strong

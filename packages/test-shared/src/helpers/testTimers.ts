@@ -1,7 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import { asap, type IScheduledHandle, type ITimers } from "@time-provider/core";
 
-export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = false) {
+export function testTimers(createSUT: () => ITimers, isTimeFrozen: boolean = false): void {
   describe("once", () => {
     test("returns a disposable handle (dispose)", () => {
       const sut = createSUT();

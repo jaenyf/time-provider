@@ -176,7 +176,10 @@ export abstract class BaseRuntime<TDate> implements IRuntime<TDate> {
   }
   abstract get timings(): ITimings;
 
-  protected static ensureTimerDisposalOnAbort(handle: IScheduledHandle, options?: ITimerOptions) {
+  protected static ensureTimerDisposalOnAbort(
+    handle: IScheduledHandle,
+    options?: ITimerOptions,
+  ): void {
     if (options?.signal) {
       if (options.signal.aborted) {
         handle.dispose();

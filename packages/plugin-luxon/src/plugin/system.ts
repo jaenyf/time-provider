@@ -29,5 +29,5 @@ class SystemRuntime extends BaseSystemRuntime<DateTime> {
 }
 
 export class SystemPlugin extends BaseSystemPlugin<DateTime> {
-  protected readonly SystemRuntimeCtor = SystemRuntime;
+  protected readonly SystemRuntimeCtor: typeof SystemRuntime = SystemRuntime;
 }

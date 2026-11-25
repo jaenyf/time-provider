@@ -24,5 +24,5 @@ class SystemRuntime extends BaseSystemRuntime<dayjs.Dayjs> {
 }
 
 export class SystemPlugin extends BaseSystemPlugin<dayjs.Dayjs> {
-  protected readonly SystemRuntimeCtor = SystemRuntime;
+  protected readonly SystemRuntimeCtor: typeof SystemRuntime = SystemRuntime;
 }

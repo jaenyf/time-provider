@@ -10,7 +10,7 @@ import type { ICalendarScheme } from "@time-provider/core";
 export function testCalendarSchemeDst<TDate>(
   supportsLocalTime: boolean,
   getCalendarScheme: () => ICalendarScheme<TDate>,
-) {
+): void {
   describe.skipIf(!supportsLocalTime)("DST resolution (Europe/Paris)", () => {
     const paris = "Europe/Paris";
 

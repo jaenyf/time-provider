@@ -40,7 +40,7 @@ export function getDeterministicBuilderFor<TDate>(
   ) as IDeterministicPluggedRuntimeBuilder<TDate>;
 }
 
-export function testCreatedValue<T>(getSut: () => T) {
+export function testCreatedValue<T>(getSut: () => T): void {
   test.each([null, undefined])("returns a value", (undefinedValue) => {
     expect(getSut()).not.toBe(undefinedValue);
   });
@@ -64,7 +64,7 @@ export function testBuilder<
     withHostTimezone(): TSut;
     withDefaultTimezone(): TSut;
   },
-) {
+): void {
   describe.skipIf(!supportsLocalTime)("withTimezone", () => {
     test.each(["Pacific/Kiritimati", "Asia/Tokyo", "Europe/London"])(
       "withTimezone defines the runtime local timezone",
@@ -92,7 +92,7 @@ export function testBuilder<
 
 export function testDefaultEpochTime<TDate>(
   getSut: () => { clock: { utcNow(): TDate }; converter: { convertToUtc(value: number): TDate } },
-) {
+): void {
   test("uses default epoch time", () => {
     const sut = getSut();
     expect(sut.clock.utcNow()).toEqual(sut.converter.convertToUtc(0));
@@ -104,7 +104,7 @@ export function testConstructorArgs<TDate>(
   createSUT: () => unknown,
   constructWith?: (initialValue: string | number | TDate) => void,
   parseTimeToUtc?: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   describe(describeName, () => {
     testCreatedValue(createSUT);
     if (constructWith && parseTimeToUtc) {
@@ -124,7 +124,7 @@ export function testConstructorArgs<TDate>(
 export function testWithTimezone<TDate>(
   supportsLocalTime: boolean,
   getSut: () => { clock: unknown },
-) {
+): void {
   describe.skipIf(!supportsLocalTime)("hostTimezone", () => {
     test("doesn't throw", () => {
       const clock = getSut().clock as unknown as IClock<TDate>;
@@ -171,7 +171,7 @@ export function testLocalNow<TDate>(
   supportsLocalTime: boolean,
   getSut: () => { clock: unknown },
   getExpectedFixedValue?: () => TDate,
-) {
+): void {
   describe.skipIf(!supportsLocalTime)("localNow", () => {
     test("doesn't throw", () => {
       const clock = getSut().clock as unknown as IClock<TDate>;
@@ -195,7 +195,7 @@ export function testLocalNow<TDate>(
   });
 }
 
-export function testTimestampNow<TDate>(getSut: () => { clock: unknown }) {
+export function testTimestampNow<TDate>(getSut: () => { clock: unknown }): void {
   describe("timestampNow", () => {
     test("doesn't throw", () => {
       const clock = getSut().clock as unknown as IClock<TDate>;
@@ -210,7 +210,7 @@ export function testTimestampNow<TDate>(getSut: () => { clock: unknown }) {
 
 export function testTimestampNowMatchesLastRead<TDate>(
   getSut: () => { clock: unknown; converter: unknown },
-) {
+): void {
   test("timestampNow() is the instant last read", () => {
     const sut = getSut();
     const clock = sut.clock as IClock<TDate>;
@@ -225,7 +225,7 @@ export function testTimestampNowMatchesLastRead<TDate>(
 export function testUtcNow<TDate>(
   getSut: () => { clock: { utcNow(): TDate } },
   getExpectedFixedValue?: () => TDate,
-) {
+): void {
   describe("utcNow", () => {
     test("doesn't throw", () => {
       expect(() => getSut().clock.utcNow()).not.toThrow();

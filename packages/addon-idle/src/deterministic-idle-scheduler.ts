@@ -121,7 +121,7 @@ export class DeterministicIdleScheduler<TDate>
     return this.runtime.countSpecific(IDLE_TAG);
   }
 
-  drain(maxCount = Number.POSITIVE_INFINITY): number {
+  drain(maxCount: number = Number.POSITIVE_INFINITY): number {
     const callbacks = this.runtime.takeOutSpecificCallbacks(IDLE_TAG, maxCount);
     for (const callback of callbacks) callback();
     return callbacks.length;

@@ -5,7 +5,7 @@ import { testCreatedValue } from "./helpers/testHelpers.ts";
 export function testTimeProvider<TDate>(
   getTimeProvider: () => ITimeProvider<TDate> | IUtcOnlyTimeProvider<TDate>,
   getExpectedUtcNow?: () => TDate,
-) {
+): void {
   describe("createTimeProvider", () => {
     testCreatedValue(getTimeProvider);
 

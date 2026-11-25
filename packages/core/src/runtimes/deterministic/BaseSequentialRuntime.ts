@@ -36,7 +36,7 @@ export abstract class BaseSequentialRuntime<TDate> extends BaseDeterministicRunt
       as?: IMoveOptions["as"];
     }[],
     converter: ITimeConverter<TDate>,
-    timePausedFromDepth = Infinity,
+    timePausedFromDepth: number = Infinity,
   ) {
     super(localTimezone, converter);
     this.#timePausedFromDepth = timePausedFromDepth;

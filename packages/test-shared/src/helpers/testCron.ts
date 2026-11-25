@@ -24,7 +24,7 @@ const WALL_STEP_CASES: [string, string, string[]][] = [
  */
 export function testAddonCronManual<TDate>(
   getBuilder: () => IDeterministicPluggedRuntimeBuilder<TDate>,
-) {
+): void {
   const createSUT = function () {
     return getBuilder()
       .use(deterministicCronAddon)
@@ -102,7 +102,7 @@ export function testAddonCronManual<TDate>(
  */
 export function testAddonCronFixed<TDate>(
   getBuilder: () => IDeterministicPluggedRuntimeBuilder<TDate>,
-) {
+): void {
   const createSUT = function () {
     return getBuilder()
       .use(deterministicCronAddon)
@@ -138,7 +138,7 @@ export function testAddonCronFixed<TDate>(
  */
 export function testAddonCronSequential<TDate>(
   getBuilder: () => IDeterministicPluggedRuntimeBuilder<TDate>,
-) {
+): void {
   describe("CronScheduler integration (sequential)", () => {
     test("fires every occurrence a single read crosses, not just the first", () => {
       using sut = getBuilder()
@@ -215,7 +215,9 @@ export function testAddonCronSequential<TDate>(
  * clock.advance()/reading the sequence - vi.advanceTimersByTime() plays the same role here that
  * clock.advance() plays for the manual runtime.
  */
-export function testAddonCronSystem<TDate>(getBuilder: () => ISystemPluggedRuntimeBuilder<TDate>) {
+export function testAddonCronSystem<TDate>(
+  getBuilder: () => ISystemPluggedRuntimeBuilder<TDate>,
+): void {
   const createSUT = () => getBuilder().use(systemCronAddon).create();
 
   describe("CronScheduler integration (system)", () => {

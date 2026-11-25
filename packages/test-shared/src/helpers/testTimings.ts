@@ -17,7 +17,7 @@ type TimingsTestSUT<TDate> = ITimers & {
   };
 };
 
-export function testMonotonicClock<TDate>(createSUT: () => TimingsTestSUT<TDate>) {
+export function testMonotonicClock<TDate>(createSUT: () => TimingsTestSUT<TDate>): void {
   describe("monotonicNow", () => {
     test("returns a number", () => {
       const sut = createSUT();
@@ -64,7 +64,7 @@ export function testMonotonicClock<TDate>(createSUT: () => TimingsTestSUT<TDate>
   });
 }
 
-export function testTimings<TDate>(createSUT: () => TimingsTestSUT<TDate>) {
+export function testTimings<TDate>(createSUT: () => TimingsTestSUT<TDate>): void {
   /*
    * Ensure the system runtime also produce a clean SUT
    */

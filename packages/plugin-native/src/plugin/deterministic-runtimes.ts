@@ -58,7 +58,7 @@ class ManualRuntime extends BaseManualRuntime<Date> {
 }
 
 export class DeterministicPlugin extends BaseUtcOnlyDeterministicPlugin<Date> {
-  protected readonly ManualRuntimeCtor = ManualRuntime;
-  protected readonly FixedRuntimeCtor = FixedRuntime;
-  protected readonly SequentialRuntimeCtor = SequentialRuntime;
+  protected readonly ManualRuntimeCtor: typeof ManualRuntime = ManualRuntime;
+  protected readonly FixedRuntimeCtor: typeof FixedRuntime = FixedRuntime;
+  protected readonly SequentialRuntimeCtor: typeof SequentialRuntime = SequentialRuntime;
 }

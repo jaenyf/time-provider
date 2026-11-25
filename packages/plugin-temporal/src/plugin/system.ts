@@ -23,5 +23,5 @@ class SystemRuntime extends BaseSystemRuntime<Temporal.ZonedDateTime> {
 }
 
 export class SystemPlugin extends BaseSystemPlugin<Temporal.ZonedDateTime> {
-  protected readonly SystemRuntimeCtor = SystemRuntime;
+  protected readonly SystemRuntimeCtor: typeof SystemRuntime = SystemRuntime;
 }

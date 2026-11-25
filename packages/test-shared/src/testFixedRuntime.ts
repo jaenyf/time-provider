@@ -24,7 +24,7 @@ export function testFixedRuntime<TDate>(
   plugin: IDeterministicPlugin<TDate> | IUtcOnlyDeterministicPlugin<TDate>,
   parseTimeToUtc: (initialValue: string | number | TDate) => TDate,
   parseTimeToLocal: (initialValue: string | number | TDate) => TDate,
-) {
+): void {
   const createFixedRuntime = (timezone: TimezoneDefinition, initialTime: string | number | TDate) =>
     plugin.supportsLocalTime
       ? plugin.createFixedRuntime(timezone, initialTime)
