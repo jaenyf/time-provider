@@ -923,6 +923,10 @@ export function testSequentialRuntime<TDate>(
         expect(readInCallback()).toBe(t0 + 20);
       });
 
+      test("with Infinity, a read in a callback consumes the next time, as by default", () => {
+        expect(readInCallback(Infinity)).toBe(t0 + 20);
+      });
+
       test("with 1, a read in a callback stays at its due time", () => {
         expect(readInCallback(1)).toBe(t0 + 5);
       });

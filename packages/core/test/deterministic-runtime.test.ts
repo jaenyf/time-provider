@@ -176,6 +176,88 @@ describe("BaseManualRuntime scheduling (heap internals)", () => {
     sut.advance({ milliseconds: 100 });
     expect(fired).toEqual([2, 3, 10, 11]);
   });
+
+  /** Heap: tag@1, 100, tag@2, 200, 300, 400, 10, tag@1000: untagged extremes away from the root. */
+  function mixedHeap() {
+    const sut = new FakeManualRuntime(0);
+    const tagged = (ms: number) =>
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: ms }, () => {});
+    const once = (ms: number) => sut.scheduler.timers.once({ milliseconds: ms }, () => {});
+    tagged(1);
+    once(100);
+    tagged(2);
+    once(200);
+    once(300);
+    once(400);
+    once(10);
+    tagged(1000);
+    return sut;
+  }
+
+  test("nextDueTime is the earliest untagged timer, even below tagged ones", () => {
+    expect(mixedHeap().scheduler.timers.nextDueTime).toBe(10);
+  });
+
+  test("lastDueTime is the latest untagged timer, whatever its heap position", () => {
+    expect(mixedHeap().scheduler.timers.lastDueTime).toBe(400);
+  });
+
+  test("moveUntil counts every timer due at the next time against its limit", () => {
+    const sut = new FakeManualRuntime(0, 2);
+    let fired = 0;
+    for (let i = 0; i < 3; i++) sut.scheduler.timers.once({ milliseconds: 10 }, () => ++fired);
+    expect(() => sut.moveUntil("noTimers")).toThrow("Timers still pending after 2 fired");
+    expect(fired).toBe(0);
+  });
+
+  test("pendingCount is unchanged when a tagged timer fires", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: 10 }, () => {});
+    sut.scheduler.timers.once({ milliseconds: 20 }, () => {});
+    sut.advance({ milliseconds: 10 });
+    expect(sut.scheduler.timers.pendingCount).toBe(1);
+  });
+
+  describe("an interval re-armed to the due time of two pending timeouts fires after them", () => {
+    const run = (timeouts: [string, number][]) => {
+      const sut = new FakeManualRuntime(0);
+      const fired: string[] = [];
+      sut.scheduler.timers.every({ milliseconds: 10 }, () => fired.push(`A@${sut.timestampNow()}`));
+      for (const [name, ms] of timeouts)
+        sut.scheduler.timers.once({ milliseconds: ms }, () => fired.push(`${name}@${ms}`));
+      sut.advance({ milliseconds: 30 });
+      return fired;
+    };
+
+    test("registered in order", () => {
+      expect(
+        run([
+          ["B", 20],
+          ["C", 20],
+        ]),
+      ).toEqual(["A@10", "B@20", "C@20", "A@20", "A@30"]);
+    });
+
+    test("the later one sifted above the earlier one", () => {
+      expect(
+        run([
+          ["P", 30],
+          ["B", 20],
+          ["C", 20],
+        ]),
+      ).toEqual(["A@10", "B@20", "C@20", "A@20", "P@30", "A@30"]);
+    });
+
+    test("with an earlier timeout registered last", () => {
+      expect(
+        run([
+          ["P", 30],
+          ["B", 20],
+          ["C", 15],
+        ]),
+      ).toEqual(["A@10", "C@15", "B@20", "A@20", "P@30", "A@30"]);
+    });
+  });
 });
 
 describe("issue#147", () => {
@@ -1097,6 +1179,22 @@ describe("BaseManualRuntime recurring and ordering", () => {
     expect(handle.isDisposed).toBe(true);
   });
 
+  test("clearTimer cancels the timer", () => {
+    const sut = new FakeManualRuntime(0);
+    let fired = false;
+    const handle = sut.scheduler.timers.once({ milliseconds: 10 }, () => (fired = true));
+    sut.clearTimer(handle);
+    sut.advance({ milliseconds: 10 });
+    expect(fired).toBe(false);
+    expect(handle.isDisposed).toBe(true);
+  });
+
+  test("queue() on a disposed runtime throws", () => {
+    const sut = new FakeManualRuntime(0);
+    sut.dispose();
+    expect(() => sut.queue(() => {})).toThrow("Invalid operation on a disposed runtime");
+  });
+
   test("clearing another runtime's handle leaves that handle's schedule alone", () => {
     const sut = new FakeManualRuntime(0);
     const other = new FakeManualRuntime(0);
@@ -1199,6 +1297,23 @@ describe("BaseSequentialRuntime moves", () => {
       () => new FakeSequentialRuntime([{ time: 200 }, { time: 100, as: "snap" }]),
     ).not.toThrow();
   });
+
+  test("accepts a flow to the same time as the previous move", () => {
+    expect(
+      () => new FakeSequentialRuntime([{ time: 100 }, { time: 100, as: "flow" }]),
+    ).not.toThrow();
+  });
+
+  test.each(["localNow", "utcNow"] as const)(
+    "a %s() read that doesn't move the clock still runs queued microtasks",
+    (read) => {
+      const sut = new FakeSequentialRuntime([{ time: 100 }]);
+      let ran = false;
+      sut.scheduler.microtasks.queue(() => (ran = true));
+      sut.clock[read]();
+      expect(ran).toBe(true);
+    },
+  );
 });
 
 describe("BaseManualRuntime timers scheduled from a firing timer", () => {

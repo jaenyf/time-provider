@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import {
+  asap,
   asEpoch,
   epochArithmetic,
   monotonicArithmetic,
@@ -14,6 +15,12 @@ const FIELDS = ["milliseconds", "seconds", "minutes", "hours", "days"] as const;
 describe("asEpoch", () => {
   test("returns a spec with 0 milliseconds", () => {
     expect(asEpoch().milliseconds).toBe(0);
+  });
+});
+
+describe("asap", () => {
+  test("returns a spec with 0 milliseconds", () => {
+    expect(asap().milliseconds).toBe(0);
   });
 });
 
