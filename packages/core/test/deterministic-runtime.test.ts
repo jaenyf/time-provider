@@ -1242,6 +1242,21 @@ describe("BaseManualRuntime recurring and ordering", () => {
     ).toThrow("Invalid operation on a disposed runtime");
   });
 
+  test("specific() called from a firing timer clamps a negative delay, keeping registration order", () => {
+    const sut = new FakeManualRuntime(0);
+    const order: string[] = [];
+    const register = (name: string, ms: number) =>
+      sut.specific("tag", ScheduledHandleKind.timeout, { milliseconds: ms }, () =>
+        order.push(name),
+      );
+    sut.scheduler.timers.once({ milliseconds: 10 }, () => {
+      register("zero", 0);
+      register("negative", -5);
+    });
+    sut.advance({ milliseconds: 10 });
+    expect(order).toEqual(["zero", "negative"]);
+  });
+
   test("a tagged interval keeps its period", () => {
     const sut = new FakeManualRuntime(0);
     let runs = 0;
