@@ -1,12 +1,17 @@
-import { TimeInputValidator, toInstant, type TimezoneDefinition } from "@time-provider/core";
+import {
+  TimeInputValidator,
+  toInstant,
+  type EpochMilliseconds,
+  type TimezoneDefinition,
+} from "@time-provider/core";
 
 export class RuntimeHelper {
   /* @__INLINE__ */
-  static convertToTimestamp = (time: string | number | Date) =>
+  static convertToTimestamp = (time: string | number | Date): EpochMilliseconds =>
     toInstant({ milliseconds: RuntimeHelper.convertToUtcDate(time).getTime() });
 
   /* @__INLINE__ */
-  static convertToUtcDate = (time: string | number | Date) => {
+  static convertToUtcDate = (time: string | number | Date): Date => {
     TimeInputValidator.assertValid(time);
     const result = new Date(time);
     if (Number.isNaN(result.getTime())) {

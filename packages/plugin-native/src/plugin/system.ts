@@ -23,5 +23,5 @@ class SystemRuntime extends BaseSystemRuntime<Date> {
 }
 
 export class SystemPlugin extends BaseUtcOnlySystemPlugin<Date> {
-  protected readonly SystemRuntimeCtor = SystemRuntime;
+  protected readonly SystemRuntimeCtor: typeof SystemRuntime = SystemRuntime;
 }

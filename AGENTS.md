@@ -81,6 +81,7 @@ type-check or run, since workspace packages resolve through their built
 - Every public API needs JSDoc, to keep JSR's documentation score at 100%.
   Keep it as short as possible, with the tags (`@param`, `@returns`,
   `@throws`, ...) kept and just as short.
+- Exported declarations need explicit types (`isolatedDeclarations` in `tsconfig.packages.json`); test-shared and test-e2e opt out.
 - No comment that restates what the code does - it has to read on its own. A
   short comment is right where the reason isn't in the code: why a choice was
   made, why the obvious alternative is wrong, or what a test pins down.

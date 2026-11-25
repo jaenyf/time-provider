@@ -47,7 +47,7 @@ class ManualRuntime extends BaseManualRuntime<moment.Moment> {
 }
 
 export class DeterministicPlugin extends BaseDeterministicPlugin<moment.Moment> {
-  protected readonly ManualRuntimeCtor = ManualRuntime;
-  protected readonly FixedRuntimeCtor = FixedRuntime;
-  protected readonly SequentialRuntimeCtor = SequentialRuntime;
+  protected readonly ManualRuntimeCtor: typeof ManualRuntime = ManualRuntime;
+  protected readonly FixedRuntimeCtor: typeof FixedRuntime = FixedRuntime;
+  protected readonly SequentialRuntimeCtor: typeof SequentialRuntime = SequentialRuntime;
 }
