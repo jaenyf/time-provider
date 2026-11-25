@@ -100,7 +100,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   }
 
   //#region heap management
-  /** Permanently disables {@link mayRunDueCallbacks}. */
+  /** Permanently disables {@link runDueCallbacks}. */
   protected disableDueDraining(): void {
     this.#dueDrainingDisabled = true;
   }
@@ -158,9 +158,17 @@ export abstract class BaseDeterministicRuntime<TDate>
    * Runs the callbacks due now.
    * @param coalesce Fires each overdue timer once; see {@link DueHeap.drainDue}.
    */
-  protected mayRunDueCallbacks(coalesce = false): void {
+  protected runDueCallbacks(coalesce: boolean): void {
     if (this.#dueQueue.drainDepth !== 0) return;
     this.#drain(this.#dueTimestampNow(), coalesce);
+  }
+
+  /**
+   * Runs the callbacks due now.
+   * @deprecated Use {@link runDueCallbacks}.
+   */
+  protected mayRunDueCallbacks(coalesce = false): void {
+    this.runDueCallbacks(coalesce);
   }
 
   #drain(dueNow: number, coalesce: boolean): void {
@@ -189,7 +197,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   ): void {
     const microtasks = this.#microtasks;
     /* A move ends a task like any other call that may run due callbacks - see
-       mayRunDueCallbacks - so its microtasks are owed up front, even if this walk finds nothing
+       runDueCallbacks - so its microtasks are owed up front, even if this walk finds nothing
        due at all. */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     const offset = this.#wallClockTimeOffset;

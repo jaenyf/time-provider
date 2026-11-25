@@ -437,7 +437,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let runCount = 0;
       sut.scheduler.microtasks.queue(() => {
         runCount++;
-        // Scheduling a timer runs mayRunDueCallbacks, which would restart the checkpoint on the
+        // Scheduling a timer runs runDueCallbacks, which would restart the checkpoint on the
         // same, not-yet-cleared queue without the reentrancy guard.
         sut.scheduler.timers.once({ milliseconds: 1000 }, () => {});
       });
@@ -453,7 +453,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
       let runCount = 0;
       sut.scheduler.microtasks.queue(() => {
         runCount++;
-        // A sequential/manual clock read also runs mayRunDueCallbacks.
+        // A sequential/manual clock read also runs runDueCallbacks.
         sut.clock.utcNow();
       });
 
@@ -498,7 +498,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
     test("a due callback's microtasks run before the next due callback sharing its runAt", () => {
       // Both timers are already due by the time either runs - a single advance() call fires them
       // both from the same drainDue batch, unlike two separate once() calls (each of which gets
-      // its own mayRunDueCallbacks turn regardless of how the checkpoint is placed). Only a
+      // its own runDueCallbacks turn regardless of how the checkpoint is placed). Only a
       // per-callback checkpoint inside that shared batch gets this order right.
       stubNodeLike();
       const sut = new FakeManualRuntime(0);
@@ -532,7 +532,7 @@ describe("BaseManualRuntime drainDue exception handling", () => {
     });
 
     test("advance() drains pending microtasks even when nothing ends up due", () => {
-      // advance() reaches drainDueAdvancing directly, bypassing mayRunDueCallbacks - so unlike a
+      // advance() reaches drainDueAdvancing directly, bypassing runDueCallbacks - so unlike a
       // once()/every()/recurring() call, it has no pre-checkpoint of its own by default.
       // The drainDue loop only checkpoints as a side effect of a due callback actually
       // running, so with nothing due at all it would never run one without an explicit guard.
@@ -1303,6 +1303,21 @@ describe("BaseManualRuntime recurring and ordering", () => {
     sut.scheduler.timers.once({ milliseconds: 20 }, () => fired.push(20));
     expect(() => sut.moveUntil("noTimers")).toThrow("Timers still pending after 1 fired");
     expect(fired).toEqual([10]);
+  });
+});
+
+describe("BaseDeterministicRuntime deprecated mayRunDueCallbacks", () => {
+  test("still runs what is due", () => {
+    class LegacyRuntime extends FakeManualRuntime {
+      runNow() {
+        this.mayRunDueCallbacks();
+      }
+    }
+    const sut = new LegacyRuntime(0);
+    let ran = false;
+    sut.scheduler.microtasks.queue(() => (ran = true));
+    sut.runNow();
+    expect(ran).toBe(true);
   });
 });
 
