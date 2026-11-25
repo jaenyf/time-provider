@@ -41,7 +41,7 @@ export class E2eHelper {
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
-  ) {
+  ): void {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
       // compat first: the animation and idle addons add their native-shaped aliases to its
@@ -107,7 +107,7 @@ export class E2eHelper {
     underlyingISOString: () => string,
     underlyingStringifier: (time: TDate) => string,
     underlyingToMs: (time: TDate) => number,
-  ) {
+  ): void {
     const systemBuilder = createSystemTimeProvider
       .for(systemPlugin)
       // compat first: the animation and idle addons add their native-shaped aliases to its
