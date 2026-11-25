@@ -448,9 +448,8 @@ export class DueHeap<TDate> {
               let nextMs = toDuration(next);
               root.runAt = previousRunAt + (nextMs < 1 ? 1 : nextMs);
               this._insert(root);
-            } else if (!root.cancelled) {
-              // Exhausted naturally (returned false): nothing left to dispose. A concurrent
-              // dispose() during the callback already did this itself (root.cancelled would be true).
+            } else {
+              // Returned false, or already disposed during the callback (dispose() then returns at once).
               root.dispose();
             }
             break;
