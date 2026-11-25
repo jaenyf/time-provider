@@ -8,7 +8,6 @@ export default withCrapTypescriptVitest(
     },
     fmt: {
       ignorePatterns: [
-        "coverage/**",
         "dist/**",
         "**/CHANGELOG.md",
         "**/.vitepress/cache/**",
@@ -19,7 +18,7 @@ export default withCrapTypescriptVitest(
       jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
       rules: { "vite-plus/prefer-vite-plus-imports": "error" },
       options: { typeAware: true, typeCheck: true },
-      ignorePatterns: ["coverage/**", "dist/**", "**/.vitepress/cache/**", "**/ts-floor/**"],
+      ignorePatterns: ["dist/**", "**/.vitepress/cache/**", "**/ts-floor/**"],
     },
     run: {
       cache: true,

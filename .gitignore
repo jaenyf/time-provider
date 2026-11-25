@@ -35,7 +35,7 @@ dist-ssr
 test-report.junit.xml
 
 # code coverage files
-coverage/*
+**/coverage/*
 
 # stryker temp files
 .stryker-tmp
