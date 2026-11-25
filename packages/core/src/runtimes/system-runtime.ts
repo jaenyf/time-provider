@@ -1,7 +1,6 @@
 import { toDuration, type IDurationSpec } from "../helpers/branded-types.ts";
 import { SystemTimings } from "../timings/system-timings.ts";
 import type {
-  DurationMilliseconds,
   EpochMilliseconds,
   ITimeConverter,
   ITimings,
@@ -85,10 +84,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
 
   once(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 0) {
-      msDelay = 0 as DurationMilliseconds;
-    }
+    const msDelay = Math.max(0, toDuration(delay));
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
     const nativeHandle = armTimeout(
@@ -109,10 +105,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
 
   every(delay: IDurationSpec, callback: () => void, options?: ITimerOptions): IScheduledHandle {
     this.assertIsNotDisposed();
-    let msDelay = toDuration(delay);
-    if (msDelay < 1) {
-      msDelay = 1 as DurationMilliseconds;
-    }
+    const msDelay = Math.max(1, toDuration(delay));
     if (msDelay <= MAX_NATIVE_DELAY) {
       return this.trackHandle(
         new ScheduledHandle(SCHEDULED_TIMER_KIND_INTERVAL, this, setInterval(callback, msDelay)),
