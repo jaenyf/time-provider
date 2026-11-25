@@ -163,7 +163,7 @@ export abstract class BaseDeterministicRuntime<TDate>
     this.#drain(this.#dueTimestampNow(), coalesce);
   }
 
-  #drain(dueNow: number, coalesce = false): void {
+  #drain(dueNow: number, coalesce: boolean): void {
     const microtasks = this.#microtasks;
     /* the call that got us here ends a task, so its microtasks are owed before any timer runs */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
@@ -179,7 +179,7 @@ export abstract class BaseDeterministicRuntime<TDate>
       (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) &&
       this.#dueQueue.drainDepth === 0
     )
-      this.#drain(now);
+      this.#drain(now, false);
   }
 
   /** Drains due entries while advancing the wall clock. */

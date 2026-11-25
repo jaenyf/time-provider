@@ -318,7 +318,7 @@ export class DueHeap<TDate> {
   drainDue(
     now: number,
     microtasks: MicrotaskQueue,
-    coalesce = false,
+    coalesce: boolean,
     onDueTime?: (runAt: number) => void,
   ): void {
     const entries = this._entries;
