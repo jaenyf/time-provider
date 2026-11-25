@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.ts-5.4.cjs.json",
+  "include": ["../*/dist/*.d.cts", "ts-floor/temporal.d.ts", "ts-floor/no-infer.d.ts"]
+}

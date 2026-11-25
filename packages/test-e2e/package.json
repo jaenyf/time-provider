@@ -11,7 +11,9 @@
     "build": "vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
-    "check": "vp check",
+    "check": "vp check && vp run check:ts-5.2 && vp run check:ts-5.4",
+    "check:ts-5.2": "node node_modules/typescript-5.2/bin/tsc -p tsconfig.ts-5.2.json && node node_modules/typescript-5.2/bin/tsc -p tsconfig.ts-5.2.cjs.json",
+    "check:ts-5.4": "node node_modules/typescript-5.4/bin/tsc -p tsconfig.ts-5.4.json && node node_modules/typescript-5.4/bin/tsc -p tsconfig.ts-5.4.cjs.json",
     "prepublishOnly": "vp run build"
   },
   "dependencies": {
@@ -34,5 +36,9 @@
     "luxon": "^3.7.2",
     "moment": "~2.31.0",
     "moment-timezone": "0.6.6"
+  },
+  "devDependencies": {
+    "typescript-5.2": "npm:typescript@5.2.2",
+    "typescript-5.4": "npm:typescript@5.4.5"
   }
 }
