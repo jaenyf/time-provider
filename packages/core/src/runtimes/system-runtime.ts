@@ -160,7 +160,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
         msInitialDelay,
         () => {
           if (handle !== undefined && handle.isDisposed) {
-            return false;
+            return;
           }
           let next: IDurationSpec | false;
           try {

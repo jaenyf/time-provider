@@ -302,7 +302,7 @@ function assertSpecValueInRange(value: number, bounds: FieldBounds, fieldName: s
 function resolveSpecAtom(atom: number | string, bounds: FieldBounds, fieldName: string): number {
   const value = typeof atom === "string" ? resolveSpecString(atom, bounds, fieldName) : atom;
 
-  if (typeof atom === "number" && !Number.isInteger(value)) {
+  if (!Number.isInteger(value)) {
     throwInvalidCronSpec(fieldName, `${value} is not a valid value`);
   }
 
