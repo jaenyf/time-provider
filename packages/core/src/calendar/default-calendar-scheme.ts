@@ -18,22 +18,6 @@ import { IntlFormatterCache } from "./intl-formatter-cache.ts";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-function onlyBeforeRoundTrips(before: boolean, after: boolean): boolean {
-  return before && !after;
-}
-
-function onlyAfterRoundTrips(before: boolean, after: boolean): boolean {
-  return after && !before;
-}
-
-function selectAmbiguousCandidate(
-  before: number,
-  after: number,
-  roundTripsBefore: boolean,
-): number {
-  return roundTripsBefore ? Math.min(before, after) : Math.max(before, after);
-}
-
 /** Default shared Gregorian/`Intl` {@link ICalendarScheme}. */
 export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
   TDate,
@@ -129,22 +113,6 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
     );
   }
 
-  static #selectTransitionCandidate(
-    candidateBefore: number,
-    candidateAfter: number,
-    roundTripsBefore: boolean,
-    roundTripsAfter: boolean,
-  ): number {
-    if (onlyBeforeRoundTrips(roundTripsBefore, roundTripsAfter)) {
-      return candidateBefore;
-    }
-    if (onlyAfterRoundTrips(roundTripsBefore, roundTripsAfter)) {
-      return candidateAfter;
-    }
-
-    return selectAmbiguousCandidate(candidateBefore, candidateAfter, roundTripsBefore);
-  }
-
   static #resolveTransition(
     target: number,
     fields: ComposableCalendarSchemeFields,
@@ -164,13 +132,9 @@ export class DefaultCalendarScheme<TDate> implements ICalendarScheme<
       fields,
     );
 
+    // An overlap (both round-trip) and a gap (neither does) both resolve to the before candidate.
     return toInstant({
-      milliseconds: DefaultCalendarScheme.#selectTransitionCandidate(
-        candidateBefore,
-        candidateAfter,
-        roundTripsBefore,
-        roundTripsAfter,
-      ),
+      milliseconds: roundTripsAfter && !roundTripsBefore ? candidateAfter : candidateBefore,
     });
   }
 
