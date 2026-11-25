@@ -101,7 +101,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
           handle?.dispose();
         }
       },
-      (rearmed) => handle?.setNativeHandle(rearmed),
+      (rearmed) => handle!.setNativeHandle(rearmed),
     );
     handle = new ScheduledHandle(SCHEDULED_TIMER_KIND_TIMEOUT, this, nativeHandle);
     return this.trackHandle(handle, options);
@@ -125,7 +125,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
     let handle: ScheduledHandle<TDate | EpochMilliseconds, ReturnTypeOfSetTimeout> | undefined =
       undefined;
     const rearm = (nativeHandle: ReturnTypeOfSetTimeout): void => {
-      handle?.setNativeHandle(nativeHandle);
+      handle!.setNativeHandle(nativeHandle);
     };
     const arm = (): ReturnTypeOfSetTimeout =>
       armTimeout(
@@ -159,7 +159,7 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
       const nativeHandle = armTimeout(
         msInitialDelay,
         () => {
-          if (handle !== undefined && handle.isDisposed) {
+          if (handle!.isDisposed) {
             return;
           }
           let next: IDurationSpec | false;
@@ -167,13 +167,13 @@ export abstract class BaseSystemRuntime<TDate> extends BaseRuntime<TDate> {
             next = callback();
           } catch (error) {
             // Nothing left to dispose once the schedule has stopped, including by throwing.
-            handle?.dispose();
+            handle!.dispose();
             throw error;
           }
           if (next !== false) {
             arm(toDuration(next));
           } else {
-            handle?.dispose();
+            handle!.dispose();
           }
         },
         rearm,
