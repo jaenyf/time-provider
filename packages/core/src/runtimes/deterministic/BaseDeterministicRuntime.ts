@@ -100,7 +100,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   }
 
   //#region heap management
-  /** Permanently disables {@link runDueCallbacks}. */
+  /** Permanently disables {@link mayRunDueCallbacks}. */
   protected disableDueDraining(): void {
     this.#dueDrainingDisabled = true;
   }
@@ -158,20 +158,12 @@ export abstract class BaseDeterministicRuntime<TDate>
    * Runs the callbacks due now.
    * @param coalesce Fires each overdue timer once; see {@link DueHeap.drainDue}.
    */
-  protected runDueCallbacks(coalesce: boolean): void {
+  protected mayRunDueCallbacks(coalesce = false): void {
     if (this.#dueQueue.drainDepth !== 0) return;
     this.#drain(this.#dueTimestampNow(), coalesce);
   }
 
-  /**
-   * Runs the callbacks due now.
-   * @deprecated Use {@link runDueCallbacks}.
-   */
-  protected mayRunDueCallbacks(coalesce = false): void {
-    this.runDueCallbacks(coalesce);
-  }
-
-  #drain(dueNow: number, coalesce: boolean): void {
+  #drain(dueNow: number, coalesce = false): void {
     const microtasks = this.#microtasks;
     /* the call that got us here ends a task, so its microtasks are owed before any timer runs */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
@@ -187,7 +179,7 @@ export abstract class BaseDeterministicRuntime<TDate>
       (this.#microtasks.length !== 0 || this.#dueQueue.hasDueBy(now)) &&
       this.#dueQueue.drainDepth === 0
     )
-      this.#drain(now, false);
+      this.#drain(now);
   }
 
   /** Drains due entries while advancing the wall clock. */
@@ -197,7 +189,7 @@ export abstract class BaseDeterministicRuntime<TDate>
   ): void {
     const microtasks = this.#microtasks;
     /* A move ends a task like any other call that may run due callbacks - see
-       runDueCallbacks - so its microtasks are owed up front, even if this walk finds nothing
+       mayRunDueCallbacks - so its microtasks are owed up front, even if this walk finds nothing
        due at all. */
     if (microtasks.length !== 0) microtasks.runCheckpoint(this.#rethrowTimerErrors);
     const offset = this.#wallClockTimeOffset;
