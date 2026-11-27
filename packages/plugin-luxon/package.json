@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-luxon",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": false,
   "description": "Luxon plugin for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [

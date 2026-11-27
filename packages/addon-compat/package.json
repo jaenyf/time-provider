@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-compat",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": false,
   "description": "Native-style compatibility addon for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [

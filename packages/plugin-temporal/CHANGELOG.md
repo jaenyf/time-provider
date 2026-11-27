@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.0](https://github.com/jaenyf/time-provider/compare/plugin-temporal-v0.7.1...plugin-temporal-v0.8.0) (2026-11-27)
+
+
+### Features
+
+* **core,plugins:** add withTimePausedFromDepth to pause time inside callbacks ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
+
+### Bug Fixes
+
+* **core:** stop clock reads inside callbacks from catching up timers during a sleep move ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** stop nested timer drains from overflowing the stack ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **plugin-temporal:** add minimum requirements and update usage exemple ([#205](https://github.com/jaenyf/time-provider/issues/205)) ([a9f532e](https://github.com/jaenyf/time-provider/commit/a9f532e1e672468fb640278b84d47a597a49ae3e))
+
+
+### Performance Improvements
+
+* **core:** declare DueEntry fields instead of initializing them ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** give the microtasks facade its own queue and drain ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** sift re-armed entries top-down, popped roots bottom-up ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip non-due children when counting due timers ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip the drain call when nothing is due after scheduling ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
 ## [0.7.1](https://github.com/jaenyf/time-provider/compare/plugin-temporal-v0.7.0...plugin-temporal-v0.7.1) (2026-10-29)
 
 

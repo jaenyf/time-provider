@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-temporal",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": false,
   "description": "Temporal plugin for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [

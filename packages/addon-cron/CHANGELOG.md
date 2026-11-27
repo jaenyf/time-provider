@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.6.0...addon-cron-v0.6.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* add minimum requirements to package README ([#208](https://github.com/jaenyf/time-provider/issues/208)) ([f060817](https://github.com/jaenyf/time-provider/commit/f060817a7b69bbfcff0d9cd4e709d32d94ae7fb3))
+
 ## [0.6.0](https://github.com/jaenyf/time-provider/compare/addon-cron-v0.5.0...addon-cron-v0.6.0) (2026-11-16)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/addon-animation-frame",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": false,
   "description": "Animation frame addon for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [
