@@ -1,5 +1,6 @@
-import { type EpochMilliseconds, toDuration } from "../../deterministic.ts";
+import { toDuration } from "../../helpers/branded-types.ts";
 import type {
+  EpochMilliseconds,
   IManualRuntime,
   TimezoneDefinition,
   ITimeConverter,

@@ -1,5 +1,4 @@
-import type { EpochMilliseconds } from "../../deterministic.ts";
-import type { TimezoneDefinition, ITimeConverter } from "../../types/types.ts";
+import type { EpochMilliseconds, TimezoneDefinition, ITimeConverter } from "../../types/types.ts";
 import { BaseSequentialRuntime } from "./BaseSequentialRuntime.ts";
 
 /** Base class for deterministic fixed runtimes. */

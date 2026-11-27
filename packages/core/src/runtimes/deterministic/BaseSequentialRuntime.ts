@@ -1,5 +1,5 @@
-import type { EpochMilliseconds } from "../../deterministic.ts";
 import type {
+  EpochMilliseconds,
   IMoveOptions,
   TimezoneDefinition,
   ITimeConverter,

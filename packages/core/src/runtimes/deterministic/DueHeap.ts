@@ -1,4 +1,4 @@
-import { type IDurationSpec, toDuration } from "../../deterministic.ts";
+import { type IDurationSpec, toDuration } from "../../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../../environment.ts";
 import {
   type ScheduledHandleKind,

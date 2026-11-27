@@ -1,17 +1,14 @@
-import {
-  type IDeterministicRuntime,
-  type IDeterministicMicrotasks,
-  type EpochMilliseconds,
-  type MonotonicMilliseconds,
-  type IDeterministicScheduler,
-  type IDeterministicTimers,
-  type IDurationSpec,
-  toDuration,
-  type DurationMilliseconds,
-} from "../../deterministic.ts";
+import { type IDurationSpec, toDuration } from "../../helpers/branded-types.ts";
 import { shouldRethrowTimerErrors } from "../../environment.ts";
 import { DeterministicTimings } from "../../timings/deterministic-timings.ts";
 import type {
+  IDeterministicRuntime,
+  IDeterministicMicrotasks,
+  EpochMilliseconds,
+  MonotonicMilliseconds,
+  IDeterministicScheduler,
+  IDeterministicTimers,
+  DurationMilliseconds,
   TimezoneDefinition,
   ITimeConverter,
   ITimings,

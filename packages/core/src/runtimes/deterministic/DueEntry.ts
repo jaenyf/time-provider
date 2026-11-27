@@ -1,4 +1,4 @@
-import type { IDurationSpec } from "../../deterministic.ts";
+import type { IDurationSpec } from "../../helpers/branded-types.ts";
 import type { IScheduledHandle, ScheduledHandleKind } from "../../types/types.ts";
 import type { DueHeap } from "./DueHeap.ts";
 import { BaseRuntime } from "../runtime-base.ts";
