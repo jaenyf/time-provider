@@ -1,7 +1,8 @@
 /**
  * Runs `passes:N` benchmark passes (default 2) with each Time-Provider adapter also running on the
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
- * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine.
+ * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine. Head and
+ * baseline run in alternating blocks, the first one swapped on each pass.
  * When at most `attemptsMaxFailingTests:N` tests (default 5) fail and none is more than
  * `attemptsMaxPercentLoss:N` percent (default 20) slower, the failing scenarios get up to
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test

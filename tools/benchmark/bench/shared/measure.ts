@@ -132,45 +132,82 @@ async function prepareAdapters<T extends ITimerAdapter>(
 
 const guard = new GlobalGuard();
 
+const BLOCKS = 4;
+
+/**
+ * Runs `adapters` in turn, `BLOCKS` times, each block lasting at least `timeMs / BLOCKS` and
+ * `iterations / BLOCKS` iterations, so slow drift on the machine weighs on every adapter alike.
+ */
+async function interleave(
+  adapters: ITimerAdapter[],
+  iterate: (adapter: ITimerAdapter, record: boolean) => unknown,
+  timeMs: number,
+  iterations: number,
+  record: boolean,
+): Promise<void> {
+  for (let block = 0; block < BLOCKS; block++) {
+    for (const adapter of adapters) {
+      const start = realNow();
+      for (let i = 0; i < iterations / BLOCKS || realNow() - start < timeMs / BLOCKS; i++) {
+        await iterate(adapter, record);
+      }
+    }
+  }
+}
+
 /**
  * Times the adapters able to run `scenario`, recording each iteration's elapsed time, awaited for an
  * async scenario, and collecting garbage after each row's warm-up and run phases. A lone adapter runs on its own
- * (`bench.compare()` needs two), except in the gate where it has no baseline.
+ * (`bench.compare()` needs two), except in the gate where it has no baseline. In the gate, head and
+ * baseline run in alternating blocks with tinybench's default budget, in the pass's order.
  */
 export async function benchAdapters(
   bench: TestContext["bench"],
   adapters: ITimerAdapter[],
   scenario: Scenario,
 ): Promise<void> {
-  const finish = (adapter: ITimerAdapter, start: number) => {
+  const finish = (adapter: ITimerAdapter, start: number, record: boolean) => {
     const elapsedMs = realNow() - start;
     adapter.teardown();
     guard.assertPristine(adapter.name);
-    recordSample(adapter.name, scenario.name, elapsedMs);
+    if (record) recordSample(adapter.name, scenario.name, elapsedMs);
   };
-  const registrations = (await prepareAdapters(adapters, scenario)).map((adapter) =>
-    scenario.async
-      ? bench(adapter.name, { async: true, afterAll: collectGarbage }, async () => {
-          adapter.setup();
-          const start = realNow();
-          try {
-            await scenario.run(adapter);
-          } finally {
-            finish(adapter, start);
-          }
-        })
-      : bench(adapter.name, { afterAll: collectGarbage }, () => {
-          adapter.setup();
-          const start = realNow();
-          try {
-            scenario.run(adapter);
-          } finally {
-            finish(adapter, start);
-          }
-        }),
-  );
-  if (registrations.length > 1) await bench.compare(...registrations);
-  else if (registrations.length === 1 && !baselineKit) await registrations[0].run();
+  const iterate = scenario.async
+    ? async (adapter: ITimerAdapter, record: boolean) => {
+        adapter.setup();
+        const start = realNow();
+        try {
+          await scenario.run(adapter);
+        } finally {
+          finish(adapter, start, record);
+        }
+      }
+    : (adapter: ITimerAdapter, record: boolean) => {
+        adapter.setup();
+        const start = realNow();
+        try {
+          scenario.run(adapter);
+        } finally {
+          finish(adapter, start, record);
+        }
+      };
+  const ready = await prepareAdapters(adapters, scenario);
+  if (baselineKit) {
+    if (ready.length > 1) {
+      await interleave(ready, iterate, 250, 16, false);
+      collectGarbage();
+      await interleave(ready, iterate, 1000, 64, true);
+      collectGarbage();
+    }
+  } else {
+    const registrations = ready.map((adapter) =>
+      bench(adapter.name, { async: scenario.async, afterAll: collectGarbage }, () =>
+        iterate(adapter, true),
+      ),
+    );
+    if (registrations.length > 1) await bench.compare(...registrations);
+    else if (registrations.length === 1) await registrations[0].run();
+  }
   ensureResultsDir();
   appendFileSync(PROGRESS_LOG, scenario.name + "\n");
 }
