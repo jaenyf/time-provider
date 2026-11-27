@@ -159,7 +159,8 @@ async function interleave(
  * Times the adapters able to run `scenario`, recording each iteration's elapsed time, awaited for an
  * async scenario, and collecting garbage after each row's warm-up and run phases. A lone adapter runs on its own
  * (`bench.compare()` needs two), except in the gate where it has no baseline. In the gate, head and
- * baseline run in alternating blocks with tinybench's default budget, in the pass's order.
+ * baseline run in alternating blocks with half tinybench's default budget, in the pass's order:
+ * more, shorter passes average out more of the noise each process brings.
  */
 export async function benchAdapters(
   bench: TestContext["bench"],
@@ -194,9 +195,9 @@ export async function benchAdapters(
   const ready = await prepareAdapters(adapters, scenario);
   if (baselineKit) {
     if (ready.length > 1) {
-      await interleave(ready, iterate, 250, 16, false);
+      await interleave(ready, iterate, 125, 8, false);
       collectGarbage();
-      await interleave(ready, iterate, 1000, 64, true);
+      await interleave(ready, iterate, 500, 32, true);
       collectGarbage();
     }
   } else {

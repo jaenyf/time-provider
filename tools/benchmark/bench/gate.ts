@@ -1,5 +1,5 @@
 /**
- * Runs `passes:N` benchmark passes (default 2) with each Time-Provider adapter also running on the
+ * Runs `passes:N` benchmark passes (default 4) with each Time-Provider adapter also running on the
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
  * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine. Head and
  * baseline run in alternating blocks, the first one swapped on each pass, and each row is the
@@ -148,7 +148,7 @@ const maxLoss = Number(args.percentThreshold ?? 5);
 const attemptsMaxPercentLoss = Number(args.attemptsMaxPercentLoss ?? 20);
 const attemptsMaxFailingTests = Number(args.attemptsMaxFailingTests ?? 5);
 const attempts = Number(args.attempts ?? 2);
-const passes = Number(args.passes ?? 2);
+const passes = Number(args.passes ?? 4);
 const entry = readFileSync(BENCHMARK_MD, "utf8").split(START_MARKER)[1] ?? "";
 const sha = /^## .*?\(\[([0-9a-f]+)\]/m.exec(entry)?.[1];
 if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT }).status !== 0) {
