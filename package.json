@@ -8,13 +8,14 @@
   ],
   "type": "module",
   "scripts": {
-    "ready": "vp run build && vp run check && vp run verify-packages && vp run test --coverage && vp run @time-provider/benchmark#bench:gate && vp run stryker",
+    "ready": "vp run fallow && vp run build && vp run check && vp run verify-packages && vp run test --coverage && vp run @time-provider/benchmark#bench:gate && vp run stryker",
     "dev": "vp run website#dev",
     "prepare": "vp config",
     "build": "vp run -r build",
     "clean": "rimraf -g node_modules packages/**/dist/** packages/**/node_modules/** .stryker-tmp coverage/* reports/mutation",
     "test": "vp test",
     "stryker": "node scripts/check-stryker-runner.ts && stryker run",
+    "fallow": "fallow --ci",
     "verify-packages": "node scripts/verify-packages.ts"
   },
   "devDependencies": {

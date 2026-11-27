@@ -150,6 +150,7 @@ jobs:
           deno-version: v2.x
 
       - run: vp install --frozen-lockfile
+      - run: vp run fallow
       - run: vp run build
       - run: vp run check
 
