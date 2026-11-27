@@ -3,7 +3,7 @@
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
  * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine. Head and
  * baseline run in alternating blocks, the first one swapped on each pass, and each row is the
- * median of its passes' medians.
+ * median of its passes' 10% trimmed means.
  * When at most `attemptsMaxFailingTests:N` tests (default 5) fail and none is more than
  * `attemptsMaxPercentLoss:N` percent (default 20) slower, the failing scenarios get up to
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
@@ -34,7 +34,7 @@ import {
   buildScenarioRows,
   changeInterval,
   groupSamples,
-  median,
+  trimmedMean,
   readSamples,
 } from "./shared/aggregate.ts";
 import { BASELINE_SUFFIX } from "./shared/baseline.ts";
@@ -115,7 +115,9 @@ async function measure(
         );
       }
     }
-    const rows = new Map(buildScenarioRows(byAdapter, median).map((row) => [row.adapter, row]));
+    const rows = new Map(
+      buildScenarioRows(byAdapter, trimmedMean).map((row) => [row.adapter, row]),
+    );
     for (const [adapter, head] of rows) {
       const baseline = rows.get(adapter + BASELINE_SUFFIX);
       if (!baseline) continue;

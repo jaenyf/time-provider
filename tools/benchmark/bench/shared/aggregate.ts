@@ -71,9 +71,30 @@ function seededRandom(seed: number): () => number {
   };
 }
 
+const TRIM = 0.1;
+
+/** Mean of `values` without their fastest and slowest `TRIM` share. */
+export function trimmedMean(values: number[]): number {
+  const sorted = values.toSorted((a, b) => a - b);
+  const cut = Math.floor(sorted.length * TRIM);
+  return mean(sorted.slice(cut, sorted.length - cut));
+}
+
+/** Standard error of `trimmedMean(values)`, from their winsorized variance. */
+function trimmedMeanError(values: number[]): number {
+  const sorted = values.toSorted((a, b) => a - b);
+  const n = sorted.length;
+  const cut = Math.floor(n * TRIM);
+  const winsorized = sorted.map((_, i) => sorted[Math.min(n - 1 - cut, Math.max(cut, i))]);
+  const center = mean(winsorized);
+  const variance = winsorized.reduce((sum, v) => sum + (v - center) ** 2, 0) / Math.max(1, n - 1);
+  return Math.sqrt(variance) / ((1 - 2 * TRIM) * Math.sqrt(n));
+}
+
 /**
- * Bootstrap 95% interval of the percent change in hz from `baseline` to `head`, resampling the
- * samples within each pass and taking the median of pass medians, as the gate's rows do.
+ * Bootstrap 95% interval of the percent change in hz from `baseline` to `head`, drawing each
+ * pass's trimmed mean from its sampling distribution and taking the median of them, as the gate's
+ * rows do.
  */
 export function changeInterval(
   head: Map<string, number[]>,
@@ -81,20 +102,14 @@ export function changeInterval(
 ): [low: number, high: number] {
   const random = seededRandom(1);
   const gaussian = () => Math.sqrt(-2 * Math.log(1 - random())) * Math.cos(2 * Math.PI * random());
-  // A resample's median sits at a Beta(n/2, n/2) quantile of the sample, about N(1/2, 1/4n).
-  const resampledMedian = (sorted: number[]) => {
-    const n = sorted.length;
-    const index = Math.floor((0.5 + gaussian() / (2 * Math.sqrt(n))) * n);
-    return sorted[Math.min(n - 1, Math.max(0, index))];
-  };
-  const sortedPasses = (byPass: Map<string, number[]>) =>
-    [...byPass.values()].map((values) => values.toSorted((a, b) => a - b));
-  const [headPasses, baselinePasses] = [sortedPasses(head), sortedPasses(baseline)];
+  const estimates = (byPass: Map<string, number[]>) =>
+    [...byPass.values()].map((values) => [trimmedMean(values), trimmedMeanError(values)] as const);
+  const [headPasses, baselinePasses] = [estimates(head), estimates(baseline)];
+  const draw = (passes: (readonly [number, number])[]) =>
+    median(passes.map(([center, error]) => center + gaussian() * error));
   const changes = Array.from(
     { length: 2000 },
-    () =>
-      (median(baselinePasses.map(resampledMedian)) / median(headPasses.map(resampledMedian)) - 1) *
-      100,
+    () => (draw(baselinePasses) / draw(headPasses) - 1) * 100,
   ).sort((a, b) => a - b);
   return [percentile(changes, 2.5), percentile(changes, 97.5)];
 }
