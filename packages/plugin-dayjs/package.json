@@ -1,6 +1,6 @@
 {
   "name": "@time-provider/plugin-dayjs",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": false,
   "description": "Day.js plugin for Time-Provider. Solid clock. Own time. Better tests.",
   "keywords": [

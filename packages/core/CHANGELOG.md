@@ -1,5 +1,30 @@
 # Changelog
 
+## [4.3.0](https://github.com/jaenyf/time-provider/compare/core-v4.2.0...core-v4.3.0) (2026-11-27)
+
+
+### Features
+
+* **core,plugins:** add withTimePausedFromDepth to pause time inside callbacks ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
+
+### Bug Fixes
+
+* add minimum requirements to package README ([#208](https://github.com/jaenyf/time-provider/issues/208)) ([f060817](https://github.com/jaenyf/time-provider/commit/f060817a7b69bbfcff0d9cd4e709d32d94ae7fb3))
+* **core:** stop clock reads inside callbacks from catching up timers during a sleep move ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** stop nested timer drains from overflowing the stack ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
+
+### Performance Improvements
+
+* **core:** bring back the coalesce default on the due drain ([ee6db6d](https://github.com/jaenyf/time-provider/commit/ee6db6d6345cb33b94a4ad5d4b97d017103f4c1a))
+* **core:** declare DueEntry fields instead of initializing them ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** give the microtasks facade its own queue and drain ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** improvement of core performances and better benchmark logging ([#194](https://github.com/jaenyf/time-provider/issues/194)) ([decd19f](https://github.com/jaenyf/time-provider/commit/decd19f328f1a4fcd715e66a38b0f60ccf25e53f))
+* **core:** sift re-armed entries top-down, popped roots bottom-up ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip non-due children when counting due timers ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip the drain call when nothing is due after scheduling ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
 ## [4.2.0](https://github.com/jaenyf/time-provider/compare/core-v4.1.1...core-v4.2.0) (2026-11-16)
 
 

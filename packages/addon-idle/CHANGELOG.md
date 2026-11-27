@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.3.1...addon-idle-v0.3.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* add minimum requirements to package README ([#208](https://github.com/jaenyf/time-provider/issues/208)) ([f060817](https://github.com/jaenyf/time-provider/commit/f060817a7b69bbfcff0d9cd4e709d32d94ae7fb3))
+
 ## [0.3.1](https://github.com/jaenyf/time-provider/compare/addon-idle-v0.3.0...addon-idle-v0.3.1) (2026-10-29)
 
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.7.0](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.6.1...plugin-moment-timezone-v0.7.0) (2026-11-27)
+
+
+### Features
+
+* **core,plugins:** add withTimePausedFromDepth to pause time inside callbacks ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
+
+### Bug Fixes
+
+* add minimum requirements to package README ([#208](https://github.com/jaenyf/time-provider/issues/208)) ([f060817](https://github.com/jaenyf/time-provider/commit/f060817a7b69bbfcff0d9cd4e709d32d94ae7fb3))
+* **core:** stop clock reads inside callbacks from catching up timers during a sleep move ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** stop nested timer drains from overflowing the stack ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **plugin-moment, plugin-moment-timezone:** named type imports in public types ([#206](https://github.com/jaenyf/time-provider/issues/206)) ([0538016](https://github.com/jaenyf/time-provider/commit/0538016c739cdec6e292d0cf2541324eeea8a189))
+
+
+### Performance Improvements
+
+* **core:** declare DueEntry fields instead of initializing them ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** give the microtasks facade its own queue and drain ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** sift re-armed entries top-down, popped roots bottom-up ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip non-due children when counting due timers ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+* **core:** skip the drain call when nothing is due after scheduling ([e4a8ac5](https://github.com/jaenyf/time-provider/commit/e4a8ac5f4e62df098f67d6f4f68203222613cea9))
+
 ## [0.6.1](https://github.com/jaenyf/time-provider/compare/plugin-moment-timezone-v0.6.0...plugin-moment-timezone-v0.6.1) (2026-10-29)
 
 
