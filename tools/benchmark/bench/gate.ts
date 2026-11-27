@@ -1,7 +1,9 @@
 /**
- * Runs `passes:N` benchmark passes (default 2) with each Time-Provider adapter also running on the
+ * Runs `passes:N` benchmark passes (default 4) with each Time-Provider adapter also running on the
  * build of the newest BENCHMARK.md entry's commit, and fails when one is more than
- * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine.
+ * `percentThreshold:N` percent (default 5) slower than its baseline on the same machine. Head and
+ * baseline run in alternating blocks, the first one swapped on each pass, and each row is the
+ * median of its passes' 10% trimmed means.
  * When at most `attemptsMaxFailingTests:N` tests (default 5) fail and none is more than
  * `attemptsMaxPercentLoss:N` percent (default 20) slower, the failing scenarios get up to
  * `attempts:N` tries in all (default 2), each with twice the passes of the one before. A test
@@ -32,6 +34,7 @@ import {
   buildScenarioRows,
   changeInterval,
   groupSamples,
+  trimmedMean,
   readSamples,
 } from "./shared/aggregate.ts";
 import { BASELINE_SUFFIX } from "./shared/baseline.ts";
@@ -112,7 +115,9 @@ async function measure(
         );
       }
     }
-    const rows = new Map(buildScenarioRows(byAdapter).map((row) => [row.adapter, row]));
+    const rows = new Map(
+      buildScenarioRows(byAdapter, trimmedMean).map((row) => [row.adapter, row]),
+    );
     for (const [adapter, head] of rows) {
       const baseline = rows.get(adapter + BASELINE_SUFFIX);
       if (!baseline) continue;
@@ -143,7 +148,7 @@ const maxLoss = Number(args.percentThreshold ?? 5);
 const attemptsMaxPercentLoss = Number(args.attemptsMaxPercentLoss ?? 20);
 const attemptsMaxFailingTests = Number(args.attemptsMaxFailingTests ?? 5);
 const attempts = Number(args.attempts ?? 2);
-const passes = Number(args.passes ?? 2);
+const passes = Number(args.passes ?? 4);
 const entry = readFileSync(BENCHMARK_MD, "utf8").split(START_MARKER)[1] ?? "";
 const sha = /^## .*?\(\[([0-9a-f]+)\]/m.exec(entry)?.[1];
 if (!sha || spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd: ROOT }).status !== 0) {
