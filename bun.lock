@@ -8,7 +8,6 @@
         "@barney-media/crap-typescript-vitest": "^2.0.2",
         "@commitlint/cli": "^21.2.4",
         "@commitlint/config-conventional": "^21.2.4",
-        "@js-temporal/polyfill": "~0.5.1",
         "@stryker-mutator/core": "^10.1.1",
         "@stryker-mutator/vitest-runner": "^10.1.1",
         "@types/node": "26.6.11",
