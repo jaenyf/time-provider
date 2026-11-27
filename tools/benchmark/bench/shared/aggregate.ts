@@ -43,8 +43,11 @@ export function groupSamples(samples: Sample[]): ScenarioMap {
 
 export function summarize(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  return { count: values.length, mean, min: sorted[0], max: sorted.at(-1)! };
+  return { count: values.length, mean: mean(values), min: sorted[0], max: sorted.at(-1)! };
+}
+
+export function mean(values: number[]): number {
+  return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
 export function median(values: number[]): number {
@@ -70,24 +73,28 @@ function seededRandom(seed: number): () => number {
 
 /**
  * Bootstrap 95% interval of the percent change in hz from `baseline` to `head`, resampling the
- * samples within each pass and taking the median of pass means, as `buildRow` does.
+ * samples within each pass and taking the median of pass medians, as the gate's rows do.
  */
 export function changeInterval(
   head: Map<string, number[]>,
   baseline: Map<string, number[]>,
 ): [low: number, high: number] {
   const random = seededRandom(1);
-  const resampledMean = (byPass: Map<string, number[]>) =>
-    median(
-      [...byPass.values()].map(
-        (values) =>
-          values.reduce((sum) => sum + values[Math.floor(random() * values.length)], 0) /
-          values.length,
-      ),
-    );
+  const gaussian = () => Math.sqrt(-2 * Math.log(1 - random())) * Math.cos(2 * Math.PI * random());
+  // A resample's median sits at a Beta(n/2, n/2) quantile of the sample, about N(1/2, 1/4n).
+  const resampledMedian = (sorted: number[]) => {
+    const n = sorted.length;
+    const index = Math.floor((0.5 + gaussian() / (2 * Math.sqrt(n))) * n);
+    return sorted[Math.min(n - 1, Math.max(0, index))];
+  };
+  const sortedPasses = (byPass: Map<string, number[]>) =>
+    [...byPass.values()].map((values) => values.toSorted((a, b) => a - b));
+  const [headPasses, baselinePasses] = [sortedPasses(head), sortedPasses(baseline)];
   const changes = Array.from(
     { length: 2000 },
-    () => (resampledMean(baseline) / resampledMean(head) - 1) * 100,
+    () =>
+      (median(baselinePasses.map(resampledMedian)) / median(headPasses.map(resampledMedian)) - 1) *
+      100,
   ).sort((a, b) => a - b);
   return [percentile(changes, 2.5), percentile(changes, 97.5)];
 }
@@ -107,16 +114,17 @@ export type Row = {
 };
 
 // Builds one row per adapter, shaped like vitest's own bench table, but with `mean`/`hz` driven by
-// the median of each pass's own mean rather than the naive pool-everything-together average - a
+// the median of each pass's own `center` (mean by default) rather than the naive pool-everything-together average - a
 // single unusually slow (or fast) pass can't dominate just because it happened to contain more
 // individual samples than the others.
-export function buildRow(adapter: string, byPass: Map<string, number[]>): Row {
+export function buildRow(
+  adapter: string,
+  byPass: Map<string, number[]>,
+  center: (values: number[]) => number = mean,
+): Row {
   const allValues = [...byPass.values()].flat();
   const sorted = [...allValues].sort((a, b) => a - b);
-  const passMeans = [...byPass.values()].map(
-    (values) => values.reduce((sum, v) => sum + v, 0) / values.length,
-  );
-  const robustMean = median(passMeans);
+  const robustMean = median([...byPass.values()].map(center));
 
   const n = allValues.length;
   const variance =
@@ -141,10 +149,13 @@ export function buildRow(adapter: string, byPass: Map<string, number[]>): Row {
   };
 }
 
-export function buildScenarioRows(byAdapter: Map<string, Map<string, number[]>>): Row[] {
+export function buildScenarioRows(
+  byAdapter: Map<string, Map<string, number[]>>,
+  center?: (values: number[]) => number,
+): Row[] {
   return [...byAdapter.entries()]
     .filter(([, byPass]) => byPass.size > 0)
-    .map(([adapter, byPass]) => buildRow(adapter, byPass))
+    .map(([adapter, byPass]) => buildRow(adapter, byPass, center))
     .sort((a, b) => b.hz - a.hz);
 }
 
