@@ -20,6 +20,22 @@ export function testConverter<TDate>(
   const resolveUtc = (toParse: LocalCase): string | number | TDate =>
     toParse === roundtrip ? parseTimeToUtc("2026-01-01T00:00:00.000Z") : toParse;
 
+  const invalidTimes: (string | number | TDate)[] = [
+    "not a valid iso timestamp string",
+    "",
+    "202B-01-01T00:00Z",
+    "2026-0I-01T00:00Z",
+    "2026-01-0IT00:00Z",
+    "2026-01-01TOO:00Z",
+    "2026-01-01T00:OOZ",
+    Number("NaN"),
+    undefined as unknown as number,
+    null as unknown as number,
+    undefined as unknown as string,
+    null as unknown as string,
+    undefined as unknown as TDate,
+    null as unknown as TDate,
+  ];
   describe.skipIf(!supportsLocalTime)("convertToLocal", () => {
     test.each<LocalCase>(["2026-01-01T00:00Z", 100, roundtrip])("doesn't throw", (toParse) => {
       expect(() =>
@@ -40,22 +56,7 @@ export function testConverter<TDate>(
         );
       },
     );
-    test.each([
-      "not a valid iso timestamp string",
-      "",
-      "202B-01-01T00:00Z",
-      "2026-0I-01T00:00Z",
-      "2026-01-0IT00:00Z",
-      "2026-01-01TOO:00Z",
-      "2026-01-01T00:OOZ",
-      Number("NaN"),
-      undefined as unknown as number,
-      null as unknown as number,
-      undefined as unknown as string,
-      null as unknown as string,
-      undefined as unknown as TDate,
-      null as unknown as TDate,
-    ])("throws on invalid time", (toParse: string | number | TDate) => {
+    test.each(invalidTimes)("throws on invalid time", (toParse: string | number | TDate) => {
       expect(() => {
         (createSut() as IConverter<TDate>).convertToLocal(toParse);
       }).toThrow();
@@ -77,22 +78,7 @@ export function testConverter<TDate>(
         expect(createSut().convertToUtc(parsed)).toEqual(parseTimeToUtc(parsed));
       },
     );
-    test.each([
-      "not a valid iso timestamp string",
-      "",
-      "202B-01-01T00:00Z",
-      "2026-0I-01T00:00Z",
-      "2026-01-0IT00:00Z",
-      "2026-01-01TOO:00Z",
-      "2026-01-01T00:OOZ",
-      Number("NaN"),
-      undefined as unknown as number,
-      null as unknown as number,
-      undefined as unknown as string,
-      null as unknown as string,
-      undefined as unknown as TDate,
-      null as unknown as TDate,
-    ])("throws on invalid time", (toParse: string | number | TDate) => {
+    test.each(invalidTimes)("throws on invalid time", (toParse: string | number | TDate) => {
       expect(() => {
         createSut().convertToUtc(toParse);
       }).toThrow();
