@@ -7,9 +7,7 @@ import type { TestContext } from "vite-plus/test";
 import { GlobalGuard } from "./globalGuard.ts";
 import { realNow } from "./realNow.ts";
 import { timeLeft } from "./timeLeft.ts";
-import { PROGRESS_LOG } from "./aggregate.ts";
-
-const RESULTS_DIR = join(import.meta.dirname, "..", "..", "bench-results");
+import { PROGRESS_LOG, RESULTS_DIR } from "./aggregate.ts";
 
 let resultsDirReady = false;
 function ensureResultsDir(): void {
@@ -49,7 +47,7 @@ export function progress(index: number, count: number): string {
   return `[${percent}%, ${left}] `;
 }
 
-export function recordSample(adapterName: string, scenarioName: string, elapsedMs?: number): void {
+function recordSample(adapterName: string, scenarioName: string, elapsedMs?: number): void {
   ensureResultsDir();
   const file = join(RESULTS_DIR, `${slugify(adapterName)}.ndjson`);
   const line = JSON.stringify({

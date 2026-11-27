@@ -46,7 +46,7 @@ export function summarize(values: number[]) {
   return { count: values.length, mean: mean(values), min: sorted[0], max: sorted.at(-1)! };
 }
 
-export function mean(values: number[]): number {
+function mean(values: number[]): number {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
@@ -56,7 +56,7 @@ export function median(values: number[]): number {
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export function percentile(sortedValues: number[], p: number): number {
+function percentile(sortedValues: number[], p: number): number {
   const index = Math.min(sortedValues.length - 1, Math.ceil((p / 100) * sortedValues.length) - 1);
   return sortedValues[Math.max(0, index)];
 }
@@ -132,7 +132,7 @@ export type Row = {
 // the median of each pass's own `center` (mean by default) rather than the naive pool-everything-together average - a
 // single unusually slow (or fast) pass can't dominate just because it happened to contain more
 // individual samples than the others.
-export function buildRow(
+function buildRow(
   adapter: string,
   byPass: Map<string, number[]>,
   center: (values: number[]) => number = mean,
