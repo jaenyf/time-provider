@@ -30,7 +30,6 @@
     "@time-provider/plugin-moment-timezone": "workspace:*",
     "@time-provider/plugin-native": "workspace:*",
     "@time-provider/plugin-temporal": "workspace:*",
-    "@time-provider/test-shared": "workspace:*",
     "@types/luxon": "^3.7.6",
     "dayjs": "~1.11.23",
     "luxon": "^3.7.2",
