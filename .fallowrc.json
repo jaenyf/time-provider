@@ -21,9 +21,19 @@
   ],
   "overrides": [
     {
+      // public API reached through interfaces; implementing classes are private
+      "files": ["packages/core/src/{builders,runtimes}/**"],
+      "rules": { "unused-class-members": "off" }
+    },
+    {
       // addons and plugins keep a default export alongside the named `addon` or `plugin` (public API)
       "files": ["packages/{addon,plugin}-*/src/{index,deterministic}.ts"],
       "rules": { "duplicate-export-aliases": "off" }
+    },
+    {
+      // benchmark adapters exposed public contracts that are used to perform benchmarking
+      "files": ["tools/benchmark/bench/shared/adapters/*.ts"],
+      "rules": { "unused-class-members": "off" }
     }
   ],
   "publicPackages": ["@time-provider/*"],
