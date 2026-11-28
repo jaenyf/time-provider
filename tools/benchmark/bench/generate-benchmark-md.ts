@@ -41,6 +41,7 @@ function currentCommitRef(): string {
 
 function versionsLine(): string {
   const require = createRequire(import.meta.url);
+  // fallow-ignore-next-line security-sink -- reviewed: only called with literal package names
   const version = (name: string) => `${name} ${require(`${name}/package.json`).version}`;
   return [
     `Benchmarked with: Node ${process.version}`,

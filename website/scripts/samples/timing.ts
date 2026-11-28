@@ -27,6 +27,7 @@ it = new Proxy(it, {
 
 afterAll(() => {
   const file = process.env.TIMES_OUT!;
+  // fallow-ignore-next-line security-sink -- reviewed: TIMES_OUT is set by measure-samples.ts to its own cache file
   const all = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : {};
   const key = path.basename(expect.getState().testPath, ".test.ts");
   all[key] ??= {};

@@ -17,6 +17,7 @@
           />
         </div>
         <!-- eslint-disable-next-line vue/no-v-html -->
+        <!-- fallow-ignore-next-line security-sink -- reviewed: Shiki output, which escapes the highlighted text -->
         <div v-if="productionHtml" v-html="productionHtml"></div>
         <pre v-else><code>{{ productionCode }}</code></pre>
       </div>
@@ -32,6 +33,7 @@
           />
         </div>
         <!-- eslint-disable-next-line vue/no-v-html -->
+        <!-- fallow-ignore-next-line security-sink -- reviewed: Shiki output, which escapes the highlighted text -->
         <div v-if="testHtml" v-html="testHtml"></div>
         <pre v-else><code>{{ testCode }}</code></pre>
       </div>

@@ -113,6 +113,7 @@ export async function runAllPasses(totalPasses: number, testNamePattern?: string
         const step = (pass - 1) * files.length + index;
         const leftMs = estimate?.remainingMilliseconds;
         const left = leftMs === undefined ? "estimating" : timeLeft(leftMs);
+        // fallow-ignore-next-line security-sink -- reviewed: the env flag only picks the label, its value is never logged
         console.log(
           `\n--- [pass ${pass}/${totalPasses}] (${Math.floor((step / steps) * 100)}%, ${left}) ${process.env.TIMEPROVIDER_BENCH_BASELINE ? label.replace("competitors", "baseline") : label} ---`,
         );

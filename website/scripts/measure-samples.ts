@@ -15,6 +15,7 @@ const website = new URL("..", import.meta.url).pathname;
 const outDir = join(website, ".vitepress/cache/samples");
 const timesFile = join(outDir, "times.json");
 const require = createRequire(import.meta.url);
+// fallow-ignore-next-line security-sink -- reviewed: only called with literal package names or the constant `pages` frameworks
 const version = (name: string) => require(`${name}/package.json`).version as string;
 
 function testFile(blocks: string[], shared: string[], header: string[], fails: string): string {

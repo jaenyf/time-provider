@@ -11,6 +11,7 @@
       />
     </div>
     <!-- eslint-disable-next-line vue/no-v-html -->
+    <!-- fallow-ignore-next-line security-sink -- reviewed: Shiki output, which escapes the highlighted text -->
     <div class="pg-code" v-if="codeHtml" v-html="codeHtml"></div>
     <pre v-else class="pg-code"><code>{{ codeSnippet }}</code></pre>
   </div>
