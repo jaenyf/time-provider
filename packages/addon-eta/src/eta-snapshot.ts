@@ -30,17 +30,51 @@ function estimateEta(
   return rate > 0 ? ((now + remaining / rate) as EpochMilliseconds) : undefined;
 }
 
-export class EtaProgressSnapshot implements IEtaProgressSnapshot {
+abstract class EstimatedSnapshot {
   readonly status: EtaStatus;
   readonly startTime: EpochMilliseconds;
-  readonly completed: number;
-  readonly total: number;
   readonly elapsedMilliseconds: DurationMilliseconds;
-  #remaining: Lazy<number>;
-  #percentage: Lazy<number>;
   #rate: Lazy<number | undefined>;
   #eta: Lazy<EpochMilliseconds | undefined>;
   #remainingMilliseconds: Lazy<DurationMilliseconds | undefined>;
+
+  constructor(
+    status: EtaStatus,
+    startTime: EpochMilliseconds,
+    now: EpochMilliseconds,
+    elapsedMilliseconds: DurationMilliseconds,
+    remainingWork: number,
+    rateEstimator: IRateEstimator | undefined,
+  ) {
+    this.status = status;
+    this.startTime = startTime;
+    this.elapsedMilliseconds = elapsedMilliseconds;
+    this.#rate = new Lazy(() => rateEstimator?.estimateRate());
+    this.#eta = new Lazy(() =>
+      status === "abandoned" ? undefined : estimateEta(now, remainingWork, this.#rate.value),
+    );
+    this.#remainingMilliseconds = new Lazy(() => {
+      const eta = this.#eta.value;
+      return eta === undefined ? undefined : epochArithmetic.subtract(eta, now);
+    });
+  }
+
+  get rate(): number | undefined {
+    return this.#rate.value;
+  }
+  get eta(): EpochMilliseconds | undefined {
+    return this.#eta.value;
+  }
+  get remainingMilliseconds(): DurationMilliseconds | undefined {
+    return this.#remainingMilliseconds.value;
+  }
+}
+
+export class EtaProgressSnapshot extends EstimatedSnapshot implements IEtaProgressSnapshot {
+  readonly completed: number;
+  readonly total: number;
+  #remaining: Lazy<number>;
+  #percentage: Lazy<number>;
 
   constructor(
     status: EtaStatus,
@@ -51,23 +85,11 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
     total: number,
     rateEstimator: IRateEstimator | undefined,
   ) {
-    this.status = status;
-    this.startTime = startTime;
+    super(status, startTime, now, elapsedMilliseconds, total - completed, rateEstimator);
     this.completed = completed;
     this.total = total;
-    this.elapsedMilliseconds = elapsedMilliseconds;
     this.#remaining = new Lazy(() => this.total - this.completed);
     this.#percentage = new Lazy(() => (this.total > 0 ? (this.completed / this.total) * 100 : 0));
-    this.#rate = new Lazy(() => rateEstimator?.estimateRate());
-    this.#eta = new Lazy(() =>
-      status === "abandoned"
-        ? undefined
-        : estimateEta(now, this.#remaining.value, this.#rate.value),
-    );
-    this.#remainingMilliseconds = new Lazy(() => {
-      const eta = this.#eta.value;
-      return eta === undefined ? undefined : epochArithmetic.subtract(eta, now);
-    });
   }
 
   get remaining(): number {
@@ -76,30 +98,18 @@ export class EtaProgressSnapshot implements IEtaProgressSnapshot {
   get percentage(): number {
     return this.#percentage.value;
   }
-  get rate(): number | undefined {
-    return this.#rate.value;
-  }
-  get eta(): number | undefined {
-    return this.#eta.value;
-  }
-  get remainingMilliseconds(): number | undefined {
-    return this.#remainingMilliseconds.value;
-  }
 }
 
-export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedEtaProgressSnapshot {
-  readonly status: EtaStatus;
-  readonly startTime: EpochMilliseconds;
+export class StagedEtaProgressSnapshot
+  extends EstimatedSnapshot
+  implements IEtaProgressSnapshot, IStagedEtaProgressSnapshot
+{
   readonly stageCompleted: number;
   readonly stageTotal: number;
-  readonly elapsedMilliseconds: DurationMilliseconds;
   readonly currentStageIndex: number;
   readonly stageCount: number;
   #stageRemaining: Lazy<number>;
   #stagePercentage: Lazy<number>;
-  #rate: Lazy<number | undefined>;
-  #eta: Lazy<number | undefined>;
-  #remainingMilliseconds: Lazy<number | undefined>;
 
   constructor(
     status: EtaStatus,
@@ -115,25 +125,15 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
     overallFraction: number,
     overallRateEstimator: IRateEstimator | undefined,
   ) {
-    this.status = status;
-    this.startTime = startTime;
+    super(status, startTime, now, elapsedMilliseconds, 1 - overallFraction, overallRateEstimator);
     this.stageCompleted = stageCompleted;
     this.stageTotal = stageTotal;
-    this.elapsedMilliseconds = elapsedMilliseconds;
     this.currentStageIndex = currentStageIndex;
     this.stageCount = stageCount;
     this.#stageRemaining = new Lazy(() => this.stageTotal - this.stageCompleted);
     this.#stagePercentage = new Lazy(() =>
       this.stageTotal > 0 ? (this.stageCompleted / this.stageTotal) * 100 : 0,
     );
-    this.#rate = new Lazy(() => overallRateEstimator?.estimateRate());
-    this.#eta = new Lazy(() =>
-      status === "abandoned" ? undefined : estimateEta(now, 1 - overallFraction, this.#rate.value),
-    );
-    this.#remainingMilliseconds = new Lazy(() => {
-      const eta = this.#eta.value;
-      return eta === undefined ? undefined : eta - now;
-    });
   }
 
   get stageRemaining(): number {
@@ -157,16 +157,6 @@ export class StagedEtaProgressSnapshot implements IEtaProgressSnapshot, IStagedE
   /** {@link IEtaProgressSnapshot.percentage}; aliases {@link stagePercentage}. */
   get percentage(): number {
     return this.#stagePercentage.value;
-  }
-  /** Overall rate across all stages. */
-  get rate(): number | undefined {
-    return this.#rate.value;
-  }
-  get eta(): number | undefined {
-    return this.#eta.value;
-  }
-  get remainingMilliseconds(): number | undefined {
-    return this.#remainingMilliseconds.value;
   }
 }
 

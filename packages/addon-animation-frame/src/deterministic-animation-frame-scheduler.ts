@@ -1,11 +1,7 @@
-import {
-  AddonBase,
-  AddonHelper,
-  ScheduledHandleKind,
-  type IScheduledHandle,
-} from "@time-provider/core";
+import { AddonBase, ScheduledHandleKind, type IScheduledHandle } from "@time-provider/core";
 import type { AnimationFrameCallback, IDeterministicAnimationFrameScheduler } from "./types.ts";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
+import { applyAnimationFrameApi } from "./animation-frame-api.ts";
 
 const ANIMATION_FRAME_TAG = Symbol("animation frame");
 
@@ -45,26 +41,12 @@ export class DeterministicAnimationFrameScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IDeterministicRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(
+    const scheduleFrame = this.scheduleFrame.bind(this);
+    applyAnimationFrameApi(
       runtime,
-      "scheduler.animation",
-      Object.assign(new AnimationFacade(this), { scheduleFrame: this.scheduleFrame.bind(this) }),
       this,
-    );
-    // The native-shaped aliases, added only when the compat addon is composed before this one.
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.requestAnimationFrame",
-      this.scheduleFrame.bind(this),
-      this,
-      true,
-    );
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.cancelAnimationFrame",
-      (handle: IScheduledHandle) => handle.dispose(),
-      this,
-      true,
+      Object.assign(new AnimationFacade(this), { scheduleFrame }),
+      scheduleFrame,
     );
   }
 

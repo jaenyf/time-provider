@@ -41,25 +41,14 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { copyToClipboard } from "../clipboard";
 import { highlightTs } from "../shiki";
 
 const copied = ref<"production" | "test" | null>(null);
 let resetTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function copyCode(code: string, key: "production" | "test") {
-  try {
-    await navigator.clipboard.writeText(code);
-  } catch {
-    // Clipboard API unavailable (e.g. an insecure context) - fall back to the legacy copy command.
-    const textarea = document.createElement("textarea");
-    textarea.value = code;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-  }
+  await copyToClipboard(code);
   copied.value = key;
   clearTimeout(resetTimer);
   resetTimer = setTimeout(() => {

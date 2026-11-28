@@ -1,5 +1,6 @@
-import { AddonBase, AddonHelper, type IRuntime, type IScheduledHandle } from "@time-provider/core";
+import { AddonBase, type IRuntime, type IScheduledHandle } from "@time-provider/core";
 import type { IIdleApi, IIdleDeadline, IIdleRequestOptions } from "./types.ts";
+import { applyIdleApi } from "./idle-api.ts";
 
 type NativeIdleHandle = ReturnType<typeof requestIdleCallback>;
 
@@ -78,27 +79,8 @@ export class SystemIdleScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "scheduler.idle",
-      { request: this.request.bind(this) },
-      this,
-    );
-    // The native-shaped aliases, added only when the compat addon is composed before this one.
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.requestIdleCallback",
-      this.request.bind(this),
-      this,
-      true,
-    );
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.cancelIdleCallback",
-      (handle: IScheduledHandle) => handle.dispose(),
-      this,
-      true,
-    );
+    const request = this.request.bind(this);
+    applyIdleApi(runtime, this, { request }, request);
   }
 
   request(

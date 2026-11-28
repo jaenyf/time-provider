@@ -942,6 +942,7 @@ import { addon as etaAddon } from "@time-provider/addon-eta";
 import { addon as etaDeterministicAddon } from "@time-provider/addon-eta/deterministic";
 import { addon as idleAddon } from "@time-provider/addon-idle";
 import { addon as idleDeterministicAddon } from "@time-provider/addon-idle/deterministic";
+import { copyToClipboard } from "../clipboard";
 import { highlightTs } from "../shiki";
 import type { ITimingEntry, ITimingsFilter } from "@time-provider/core";
 import type { IManualTimeProvider } from "@time-provider/core/deterministic";
@@ -2025,19 +2026,7 @@ watch(
 const codeCopied = ref(false);
 let codeCopyResetTimer: ReturnType<typeof setTimeout> | undefined;
 async function copyEquivalentCode() {
-  try {
-    await navigator.clipboard.writeText(codeSnippet.value);
-  } catch {
-    // Clipboard API unavailable (e.g. an insecure context) - fall back to the legacy copy command.
-    const textarea = document.createElement("textarea");
-    textarea.value = codeSnippet.value;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-  }
+  await copyToClipboard(codeSnippet.value);
   codeCopied.value = true;
   clearTimeout(codeCopyResetTimer);
   codeCopyResetTimer = setTimeout(() => {

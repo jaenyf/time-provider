@@ -1,11 +1,7 @@
-import {
-  AddonBase,
-  AddonHelper,
-  ScheduledHandleKind,
-  type IScheduledHandle,
-} from "@time-provider/core";
+import { AddonBase, ScheduledHandleKind, type IScheduledHandle } from "@time-provider/core";
 import type { IDeterministicAddon, IDeterministicRuntime } from "@time-provider/core/deterministic";
 import type { IDeterministicIdleApi, IIdleDeadline, IIdleRequestOptions } from "./types.ts";
+import { applyIdleApi } from "./idle-api.ts";
 
 /**
  * Tag for all entries registered by this addon.
@@ -63,29 +59,12 @@ export class DeterministicIdleScheduler<TDate>
   }
 
   applyToRuntimeImpl(runtime: IDeterministicRuntime<TDate>): void {
-    AddonHelper.extendRuntimeWithProperty(
+    const request = this.request.bind(this);
+    applyIdleApi(
       runtime,
-      "scheduler.idle",
-      Object.assign(new IdleFacade(this), {
-        request: this.request.bind(this),
-        drain: this.drain.bind(this),
-      }),
       this,
-    );
-    // The native-shaped aliases, added only when the compat addon is composed before this one.
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.requestIdleCallback",
-      this.request.bind(this),
-      this,
-      true,
-    );
-    AddonHelper.extendRuntimeWithProperty(
-      runtime,
-      "compat.cancelIdleCallback",
-      (handle: IScheduledHandle) => handle.dispose(),
-      this,
-      true,
+      Object.assign(new IdleFacade(this), { request, drain: this.drain.bind(this) }),
+      request,
     );
   }
 
