@@ -12,10 +12,10 @@ export const RESULTS_DIR = fileURLToPath(new URL("../../bench-results/", import.
 export const PROGRESS_LOG = `${RESULTS_DIR}progress.log`;
 
 /** A sample without `elapsedMs` marks the adapter as not supporting the scenario. */
-export type Sample = { adapter: string; scenario: string; elapsedMs?: number; pass?: string };
+type Sample = { adapter: string; scenario: string; elapsedMs?: number; pass?: string };
 
 // scenario -> adapter -> pass -> elapsedMs[] (an empty pass map for an unsupported adapter)
-export type ScenarioMap = Map<string, Map<string, Map<string, number[]>>>;
+type ScenarioMap = Map<string, Map<string, Map<string, number[]>>>;
 
 export function readSamples(): Sample[] {
   const samples: Sample[] = [];
@@ -114,7 +114,7 @@ export function changeInterval(
   return [percentile(changes, 2.5), percentile(changes, 97.5)];
 }
 
-export type Row = {
+type Row = {
   adapter: string;
   hz: number;
   min: number;
