@@ -71,14 +71,17 @@ class SmoothedRateEstimator implements IRateEstimator {
   #rate: number | undefined;
 
   addSample(time: number, done: number): void {
-    if (this.#previous && time > this.#previous.time) {
-      const instantaneous = (done - this.#previous.done) / (time - this.#previous.time);
-      this.#rate =
-        this.#rate === undefined
-          ? instantaneous
-          : SMOOTHING_FACTOR * instantaneous + (1 - SMOOTHING_FACTOR) * this.#rate;
+    const previous = this.#previous;
+    if (previous && time > previous.time) {
+      this.#rate = this.#blend((done - previous.done) / (time - previous.time));
     }
     this.#previous = { time, done };
+  }
+
+  #blend(instantaneous: number): number {
+    return this.#rate === undefined
+      ? instantaneous
+      : SMOOTHING_FACTOR * instantaneous + (1 - SMOOTHING_FACTOR) * this.#rate;
   }
 
   estimateRate(): number | undefined {

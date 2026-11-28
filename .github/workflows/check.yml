@@ -181,7 +181,7 @@ jobs:
           COLOR=$(node -e "
             const score = Number(process.argv[1]);
             console.log(
-              score <= 5 ? 'brightgreen' :
+              score <= 6 ? 'brightgreen' :
               score <= 15 ? 'yellow' :
               score <= 30 ? 'orange' :
               'red'

@@ -44,6 +44,17 @@
         "maxCrap": 1000
       },
       {
+        "files": ["packages/core/src/runtimes/deterministic/BaseDeterministicRuntime.ts"],
+        "functions": ["#drain", "#drainIfIdle"],
+        "reason": "Hot path kept inline",
+        "maxCrap": 1000
+      },
+      {
+        "files": ["packages/{test,test-*}/**", "**/*.test.ts"],
+        "reason": "Tests files or packages are not covered by tests, thus affecting CRAP score",
+        "maxCrap": 1000
+      },
+      {
         "files": ["website/**/*"],
         "reason": "Website files are not covered by tests, thus affecting CRAP score",
         "maxCrap": 1000

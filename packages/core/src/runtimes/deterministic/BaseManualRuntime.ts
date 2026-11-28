@@ -112,12 +112,17 @@ export abstract class BaseManualRuntime<TDate>
       return (this.timestampNow() + duration) as EpochMilliseconds;
     }
 
+    return (this.#calendarShifted(spec) + duration) as EpochMilliseconds;
+  }
+
+  /** Returns the current time shifted by the `years` and `months` of `spec`. */
+  #calendarShifted(spec: IMoveSpec): number {
     let time = this.convertToUtcDateImpl(this.timestampNow() as EpochMilliseconds);
 
     if (spec.years) time = this.advanceYears(time, spec.years);
     if (spec.months) time = this.advanceMonths(time, spec.months);
 
-    return (this.convertToEpochTimestampImpl(time) + duration) as EpochMilliseconds;
+    return this.convertToEpochTimestampImpl(time);
   }
 
   /** Returns `time` shifted by `years`. */
