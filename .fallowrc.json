@@ -15,6 +15,10 @@
     // force correct audited version of vite for vitepress
     { "package": "vitepress>vite", "source": "package.json" }
   ],
+  "ignoreUnresolvedImports": [
+    // in plugin-dayjs, fallow mis-resolves imports of dayjs files that exist
+    "/dayjs/plugin/**"
+  ],
   "workspaces": {
     "settings": {
       "packages/test-e2e": {
