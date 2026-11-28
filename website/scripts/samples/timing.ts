@@ -1,3 +1,5 @@
+// fallow-ignore-file unused-file
+// This file is loaded dynamically by measure-samples.ts
 import fs from "node:fs";
 import path from "node:path";
 
