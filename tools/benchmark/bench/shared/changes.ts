@@ -17,10 +17,11 @@ import {
 
 type Program = ReturnType<typeof parseSync>["program"];
 type Node = { start: number; end: number };
-type ClassMember = Extract<
-  Program["body"][number],
-  { superClass: unknown }
->["body"]["body"][number];
+type Statement = Program["body"][number];
+type ClassDeclaration = Extract<Statement, { superClass: unknown }>;
+type ClassMember = ClassDeclaration["body"]["body"][number];
+type VariableDeclaration = Extract<Statement, { type: "VariableDeclaration" }>;
+type AddCode = (name: string, node: Node) => void;
 
 /** The Time-Provider adapters each bench file runs a scenario list with. */
 const SUITES: [Scenario[], (delaysMs: number[]) => ITimerAdapter[]][] = [
@@ -76,32 +77,39 @@ function functionCode(path: string, source: string): Map<string, string> {
   const { program, errors } = parseSync(path, source);
   if (errors.length > 0) add("", program);
   for (const statement of program.body) {
-    const node =
-      (statement.type === "ExportNamedDeclaration" ||
-        statement.type === "ExportDefaultDeclaration") &&
-      statement.declaration
-        ? statement.declaration
-        : statement;
+    const node = declarationOf(statement);
     if (node.type === "FunctionDeclaration") add(node.id?.name ?? "", node);
-    else if (node.type === "ClassDeclaration" && !node.declare) {
-      for (const member of node.body.body) {
-        if (member.type === "PropertyDefinition" && member.declare) continue;
-        if (member.type.startsWith("TS")) continue;
-        add(memberName(member, node.id?.name ?? "", source), member);
-      }
-    } else if (node.type === "VariableDeclaration" && !node.declare) {
-      for (const declarator of node.declarations) {
-        const isFunction =
-          declarator.init?.type === "ArrowFunctionExpression" ||
-          declarator.init?.type === "FunctionExpression";
-        add(
-          isFunction && declarator.id.type === "Identifier" ? declarator.id.name : "",
-          declarator,
-        );
-      }
-    } else if (!isDeclarationOnly(node)) add("", node);
+    else if (node.type === "ClassDeclaration" && !node.declare) addClassMembers(node, source, add);
+    else if (node.type === "VariableDeclaration" && !node.declare) addVariables(node, add);
+    else if (!isDeclarationOnly(node)) add("", node);
   }
   return code;
+}
+
+/** The declaration an `export` statement wraps, or the statement itself. */
+function declarationOf(statement: Statement) {
+  return (statement.type === "ExportNamedDeclaration" ||
+    statement.type === "ExportDefaultDeclaration") &&
+    statement.declaration
+    ? statement.declaration
+    : statement;
+}
+
+function addClassMembers(node: ClassDeclaration, source: string, add: AddCode): void {
+  for (const member of node.body.body) {
+    if (member.type === "PropertyDefinition" && member.declare) continue;
+    if (member.type.startsWith("TS")) continue;
+    add(memberName(member, node.id?.name ?? "", source), member);
+  }
+}
+
+function addVariables(node: VariableDeclaration, add: AddCode): void {
+  for (const declarator of node.declarations) {
+    const isFunction =
+      declarator.init?.type === "ArrowFunctionExpression" ||
+      declarator.init?.type === "FunctionExpression";
+    add(isFunction && declarator.id.type === "Identifier" ? declarator.id.name : "", declarator);
+  }
 }
 
 /** Whether `node` emits no code: an import, a re-export or a type. */

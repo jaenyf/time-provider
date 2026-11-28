@@ -106,31 +106,41 @@ async function measure(
   const changes: Change[] = [];
   console.log(`\nTime-Provider against its ${sha} build, same machine:`);
   for (const [scenario, byAdapter] of groupSamples(readSamples())) {
-    // An adapter skipped by `requires` records its own "--" row; one with no row ran fine.
-    for (const [adapter, byPass] of byAdapter) {
-      const head = adapter.slice(0, -BASELINE_SUFFIX.length);
-      if (adapter.endsWith(BASELINE_SUFFIX) && byPass.size === 0 && !byAdapter.has(head)) {
-        console.log(
-          `- ${scenario}: ${head} has no baseline (unsupported or failing in ${sha}), skipped`,
-        );
-      }
+    logMissingBaselines(scenario, byAdapter);
+    changes.push(...scenarioChanges(scenario, byAdapter, judged));
+  }
+  return changes;
+}
+
+type ByAdapter = Parameters<typeof buildScenarioRows>[0];
+
+/** An adapter skipped by `requires` records its own "--" row; one with no row ran fine. */
+function logMissingBaselines(scenario: string, byAdapter: ByAdapter): void {
+  for (const [adapter, byPass] of byAdapter) {
+    const head = adapter.slice(0, -BASELINE_SUFFIX.length);
+    if (adapter.endsWith(BASELINE_SUFFIX) && byPass.size === 0 && !byAdapter.has(head)) {
+      console.log(
+        `- ${scenario}: ${head} has no baseline (unsupported or failing in ${sha}), skipped`,
+      );
     }
-    const rows = new Map(
-      buildScenarioRows(byAdapter, trimmedMean).map((row) => [row.adapter, row]),
-    );
-    for (const [adapter, head] of rows) {
-      const baseline = rows.get(adapter + BASELINE_SUFFIX);
-      if (!baseline) continue;
-      const change = round((head.hz / baseline.hz - 1) * 100);
-      const [low, high] = changeInterval(
-        byAdapter.get(adapter)!,
-        byAdapter.get(adapter + BASELINE_SUFFIX)!,
-      ).map(round);
-      const line = `${scenario}: ${adapter} ${describe({ change, low, high })}`;
-      const notRetried = judged && !judged.has(key({ scenario, adapter })) ? " (not retried)" : "";
-      console.log(`- ${line}${notRetried}`);
-      changes.push({ scenario, adapter, change, low, high, line });
-    }
+  }
+}
+
+function scenarioChanges(scenario: string, byAdapter: ByAdapter, judged?: Set<string>): Change[] {
+  const changes: Change[] = [];
+  const rows = new Map(buildScenarioRows(byAdapter, trimmedMean).map((row) => [row.adapter, row]));
+  for (const [adapter, head] of rows) {
+    const baseline = rows.get(adapter + BASELINE_SUFFIX);
+    if (!baseline) continue;
+    const change = round((head.hz / baseline.hz - 1) * 100);
+    const [low, high] = changeInterval(
+      byAdapter.get(adapter)!,
+      byAdapter.get(adapter + BASELINE_SUFFIX)!,
+    ).map(round);
+    const line = `${scenario}: ${adapter} ${describe({ change, low, high })}`;
+    const notRetried = judged && !judged.has(key({ scenario, adapter })) ? " (not retried)" : "";
+    console.log(`- ${line}${notRetried}`);
+    changes.push({ scenario, adapter, change, low, high, line });
   }
   return changes;
 }

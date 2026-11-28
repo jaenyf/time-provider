@@ -52,6 +52,11 @@
         "files": ["scripts/*.ts"],
         "reason": "Chore scripts files are not covered by tests, thus affecting CRAP score",
         "maxCrap": 1000
+      },
+      {
+        "files": ["tools/benchmark/**"],
+        "reason": "Benchmarking code files are not covered by tests, thus affecting CRAP score",
+        "maxCrap": 1000
       }
     ]
   },

@@ -59,41 +59,55 @@ function formatEntry(previous: Map<string, PreviousScenario>): string {
   const lines: string[] = [`## ${timestamp} - ${commitLink}`, "", versionsLine(), ""];
 
   for (const [scenario, byAdapter] of byScenario) {
-    const rows = buildScenarioRows(byAdapter);
-    const passCount = passCountFor(byAdapter);
-
-    lines.push(`### ${scenario} _(median across ${passCount} pass${passCount === 1 ? "" : "es"})_`);
-    //lines.push(`_median across ${passCount} pass${passCount === 1 ? "" : "es"}_`);
-    lines.push("");
-    lines.push("| name | hz | mean (ms) | p99 (ms) | samples |");
-    lines.push("| --- | ---: | ---: | ---: | ---: |");
-    for (const row of rows) {
-      lines.push(
-        `| ${row.adapter} | ${row.hz.toFixed(2)} | ${row.mean.toFixed(4)} | ${row.p99.toFixed(4)} | ${row.samples} |`,
-      );
-    }
-    for (const adapter of unsupportedAdapters(byAdapter)) {
-      lines.push(`| ${adapter} | -- | -- | -- | -- |`);
-    }
-    lines.push("");
-
-    if (rows.length > 1) {
-      const [fastest, ...rest] = rows;
-      lines.push(
-        `**${fastest.adapter.startsWith("time-provider") ? "✅" : "❌"} ${fastest.adapter}** is fastest:`,
-      );
-      for (const row of rest) {
-        const ratio = (fastest.hz / row.hz).toFixed(2);
-        const before = previousRatio(previous.get(scenario), fastest.adapter, row.adapter);
-        lines.push(
-          `- ${ratio}x faster than ${row.adapter}${before ? delta(fastest.hz / row.hz, before) : ""}`,
-        );
-      }
-      lines.push("");
-    }
+    lines.push(...formatScenario(scenario, byAdapter, previous.get(scenario)));
   }
 
   return lines.join("\n");
+}
+
+function formatScenario(
+  scenario: string,
+  byAdapter: Parameters<typeof buildScenarioRows>[0],
+  previous: PreviousScenario | undefined,
+): string[] {
+  const lines: string[] = [];
+  const rows = buildScenarioRows(byAdapter);
+  const passCount = passCountFor(byAdapter);
+
+  lines.push(`### ${scenario} _(median across ${passCount} pass${passCount === 1 ? "" : "es"})_`);
+  //lines.push(`_median across ${passCount} pass${passCount === 1 ? "" : "es"}_`);
+  lines.push("");
+  lines.push("| name | hz | mean (ms) | p99 (ms) | samples |");
+  lines.push("| --- | ---: | ---: | ---: | ---: |");
+  for (const row of rows) {
+    lines.push(
+      `| ${row.adapter} | ${row.hz.toFixed(2)} | ${row.mean.toFixed(4)} | ${row.p99.toFixed(4)} | ${row.samples} |`,
+    );
+  }
+  for (const adapter of unsupportedAdapters(byAdapter)) {
+    lines.push(`| ${adapter} | -- | -- | -- | -- |`);
+  }
+  lines.push("");
+  if (rows.length > 1) lines.push(...formatRanking(rows, previous), "");
+  return lines;
+}
+
+function formatRanking(
+  rows: ReturnType<typeof buildScenarioRows>,
+  previous: PreviousScenario | undefined,
+): string[] {
+  const [fastest, ...rest] = rows;
+  const lines = [
+    `**${fastest.adapter.startsWith("time-provider") ? "✅" : "❌"} ${fastest.adapter}** is fastest:`,
+  ];
+  for (const row of rest) {
+    const ratio = (fastest.hz / row.hz).toFixed(2);
+    const before = previousRatio(previous, fastest.adapter, row.adapter);
+    lines.push(
+      `- ${ratio}x faster than ${row.adapter}${before ? delta(fastest.hz / row.hz, before) : ""}`,
+    );
+  }
+  return lines;
 }
 
 function upsertEntry(existingContent: string | undefined, newEntry: string): string {
