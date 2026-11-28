@@ -42,6 +42,11 @@
         "maxCyclomatic": 1000,
         "maxCognitive": 1000,
         "maxCrap": 1000
+      },
+      {
+        "files": ["website/**/*"],
+        "reason": "Website files are not covered by tests, thus affecting CRAP score",
+        "maxCrap": 1000
       }
     ]
   },
