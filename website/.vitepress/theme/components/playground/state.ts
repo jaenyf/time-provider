@@ -557,8 +557,7 @@ function createPlayground() {
     if (isLocal && typeof v.format === "function") return (v.format as () => string)();
     if (typeof v.toISO === "function") return (v.toISO as () => string)();
     if (typeof v.toISOString === "function") return (v.toISOString as () => string)();
-    if (typeof v.toString === "function") return String(v);
-    return String(value);
+    return String(value as { toString(): string });
   }
 
   function useHostTimezone() {
