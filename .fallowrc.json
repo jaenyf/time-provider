@@ -34,6 +34,17 @@
       "tools/benchmark/bench/shared/scenarios.ts"
     ]
   },
+  "health": {
+    "thresholdOverrides": [
+      {
+        "files": ["packages/core/src/runtimes/deterministic/DueHeap.ts"],
+        "reason": "Inlined hot path for performance",
+        "maxCyclomatic": 1000,
+        "maxCognitive": 1000,
+        "maxCrap": 1000
+      }
+    ]
+  },
   "ignoreDependencies": [
     // imported by the Stryker patch (patches/), until Stryker fixes it upstream
     "jsonc-parser",
