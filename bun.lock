@@ -8,6 +8,7 @@
         "@barney-media/crap-typescript-vitest": "^2.0.2",
         "@commitlint/cli": "^21.2.4",
         "@commitlint/config-conventional": "^21.2.4",
+        "@fallow-cli/fallow-cov": "^0.5.2",
         "@stryker-mutator/core": "^10.1.1",
         "@stryker-mutator/vitest-runner": "^10.1.1",
         "@types/node": "26.6.11",
@@ -550,6 +551,22 @@
     "@fallow-cli/darwin-arm64": ["@fallow-cli/darwin-arm64@3.50.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-0TgisLPSwGx6xGgS1I2XMu1N09BbJCvtA+6Ef0cLPC9FQ8CjiIxOtk02xbdSwjZfg061gVtLuIhHwnjQoVh0FA=="],
 
     "@fallow-cli/darwin-x64": ["@fallow-cli/darwin-x64@3.50.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-IknywK2fA3XlGV2bxH1jFr3X04odl+lc3DzZ4LwtComvXA0Yg8mjAu55xvd3ROlIEGFmg6tg9hJ5zH5Lg0kVPA=="],
+
+    "@fallow-cli/fallow-cov": ["@fallow-cli/fallow-cov@0.5.2", "", { "dependencies": { "detect-libc": "2.1.2" }, "optionalDependencies": { "@fallow-cli/fallow-cov-darwin-arm64": "0.5.2", "@fallow-cli/fallow-cov-darwin-x64": "0.5.2", "@fallow-cli/fallow-cov-linux-arm64-gnu": "0.5.2", "@fallow-cli/fallow-cov-linux-arm64-musl": "0.5.2", "@fallow-cli/fallow-cov-linux-x64-gnu": "0.5.2", "@fallow-cli/fallow-cov-linux-x64-musl": "0.5.2", "@fallow-cli/fallow-cov-win32-x64-msvc": "0.5.2" }, "hasInstallScript": true, "bin": { "fallow-cov": "bin/fallow-cov" } }, "sha512-IJ5cfAHvza4amHuAvhyT98/ZxXH7qZMLpmoRjLBc/xcPVp1inRVzSiYJrqBlJMtIHDOebFRR884DXmPAz7khKQ=="],
+
+    "@fallow-cli/fallow-cov-darwin-arm64": ["@fallow-cli/fallow-cov-darwin-arm64@0.5.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-/ripY17RRyLCRoALcsZcECCM6voLMkPXHEb/yQyhB2ROuEAgqyLE6Y2qaM+wjP/chQXEGbjgxtWH8oeaerM+4w=="],
+
+    "@fallow-cli/fallow-cov-darwin-x64": ["@fallow-cli/fallow-cov-darwin-x64@0.5.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-TRpFR2DCHh/kmEr8Ofrw2qnUYMt71px+tAG28cGz7P1mRszUMg0V/7UwcL6mQfHMt6RUi0RUBmQQqJutqwapsw=="],
+
+    "@fallow-cli/fallow-cov-linux-arm64-gnu": ["@fallow-cli/fallow-cov-linux-arm64-gnu@0.5.2", "", { "os": "linux", "cpu": "arm64", "libc": "glibc" }, "sha512-mabb92e3nxcqLU+xyC3mpxSPfFsDkangJklI/BbevPYZcviFe+0sMTROXoC/uD1HueNjlzkAfBe62EfbAAvaEg=="],
+
+    "@fallow-cli/fallow-cov-linux-arm64-musl": ["@fallow-cli/fallow-cov-linux-arm64-musl@0.5.2", "", { "os": "linux", "cpu": "arm64", "libc": "musl" }, "sha512-WDP6BRAeDDDd9HydMiKaLutCjUng9plJ6brWIOjU99wuBqgk/2WRSYHpkvsaAMaZhfcR+rp0MGDYESfEKAI6xQ=="],
+
+    "@fallow-cli/fallow-cov-linux-x64-gnu": ["@fallow-cli/fallow-cov-linux-x64-gnu@0.5.2", "", { "os": "linux", "cpu": "x64", "libc": "glibc" }, "sha512-BUfpnaqFwZUIVGg7V/cb5RWkRe1rMYlzSeE6V9ddInlFlaTjDp3m0eAVzupeWwwAILePeydwhImwjLMTUdsFLQ=="],
+
+    "@fallow-cli/fallow-cov-linux-x64-musl": ["@fallow-cli/fallow-cov-linux-x64-musl@0.5.2", "", { "os": "linux", "cpu": "x64", "libc": "musl" }, "sha512-gkkPBbBDTf1lAph5HFAixAGmmMoWntJo2vQf805Z3SZQ5IxG/1fuqgl/ZNIlOoNDiOhAdEPDqhsoD9tu3imWpA=="],
+
+    "@fallow-cli/fallow-cov-win32-x64-msvc": ["@fallow-cli/fallow-cov-win32-x64-msvc@0.5.2", "", { "os": "win32", "cpu": "x64" }, "sha512-zA7XCG//QV+5dxjbkvJXotSszj6g+RE07l+c+t0kR8ehKwGbb94wNeQJcOdLK+G0byuEiIXreyg5dJ3Y0ldF3Q=="],
 
     "@fallow-cli/linux-arm64-gnu": ["@fallow-cli/linux-arm64-gnu@3.50.0", "", { "os": "linux", "cpu": "arm64", "libc": "glibc" }, "sha512-mBo3V0f0MXVj27TrBznXFmq/3HPTKAXf7WP1OGn3QSF+JPcJLxhJWuzvY1VZ4yEfbJKG0OYEKWk1uHQsQcBolw=="],
 
