@@ -142,7 +142,12 @@ function workspacePackageDirs(): string[] {
 function checkReleaseConfig(configured: string[], manifest: Record<string, string>): void {
   const inConfig = new Set(configured);
   const inManifest = new Set(Object.keys(manifest));
+  checkPublishablePackages(inConfig, inManifest);
+  checkConfigAndManifest(inConfig, inManifest);
+  checkHotfixConfig(inConfig);
+}
 
+function checkPublishablePackages(inConfig: Set<string>, inManifest: Set<string>): void {
   for (const dir of workspacePackageDirs()) {
     const pkg = readPackageJson(join(ROOT, dir));
     if (pkg.private === true) continue;
@@ -158,7 +163,9 @@ function checkReleaseConfig(configured: string[], manifest: Record<string, strin
       );
     }
   }
+}
 
+function checkConfigAndManifest(inConfig: Set<string>, inManifest: Set<string>): void {
   for (const dir of inConfig) {
     if (!existsSync(join(ROOT, dir, "package.json"))) {
       failures.push(`release-please-config.json lists "${dir}", which has no package.json`);
@@ -171,7 +178,9 @@ function checkReleaseConfig(configured: string[], manifest: Record<string, strin
       );
     }
   }
+}
 
+function checkHotfixConfig(inConfig: Set<string>): void {
   const inHotfixConfig = new Set(
     Object.keys(
       readJson<{ packages: Record<string, unknown> }>("release-please-config.hotfix.json").packages,
@@ -342,8 +351,20 @@ function checkLicense(dir: string, pkg: PackageJson, rootLicense: string): void 
 /** A package declares its types, and every file its manifest points at is in the tarball. */
 function checkDeclaredFiles(pkg: PackageJson, files: PackedFile[]): void {
   const packed = new Set(files.map(({ path }) => path));
-  const declared = new Set<string>();
+  if (pkg.types === undefined) {
+    fail(pkg.name, "declares no `types`, so older TypeScript setups and the types badge miss them");
+  }
 
+  for (const target of declaredFiles(pkg)) {
+    const normalized = target.replace(/^\.\//, "");
+    if (!packed.has(normalized)) {
+      fail(pkg.name, `declares "${target}" but the tarball doesn't contain it`);
+    }
+  }
+}
+
+function declaredFiles(pkg: PackageJson): Set<string> {
+  const declared = new Set<string>();
   for (const [subpath, target] of Object.entries(pkg.exports ?? {})) {
     if (subpath === "./package.json") continue;
     for (const file of typeof target === "string" ? [target] : Object.values(target)) {
@@ -351,23 +372,13 @@ function checkDeclaredFiles(pkg: PackageJson, files: PackedFile[]): void {
     }
   }
   if (pkg.main !== undefined) declared.add(pkg.main);
+  if (pkg.types !== undefined) declared.add(pkg.types);
   for (const file of Object.values(pkg.typesVersions ?? {})
     .flatMap(Object.values)
     .flat()) {
     declared.add(file);
   }
-  if (pkg.types === undefined) {
-    fail(pkg.name, "declares no `types`, so older TypeScript setups and the types badge miss them");
-  } else {
-    declared.add(pkg.types);
-  }
-
-  for (const target of declared) {
-    const normalized = target.replace(/^\.\//, "");
-    if (!packed.has(normalized)) {
-      fail(pkg.name, `declares "${target}" but the tarball doesn't contain it`);
-    }
-  }
+  return declared;
 }
 
 function extract(tarball: string, into: string): void {

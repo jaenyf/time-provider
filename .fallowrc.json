@@ -47,6 +47,11 @@
         "files": ["website/**/*"],
         "reason": "Website files are not covered by tests, thus affecting CRAP score",
         "maxCrap": 1000
+      },
+      {
+        "files": ["scripts/*.ts"],
+        "reason": "Chore scripts files are not covered by tests, thus affecting CRAP score",
+        "maxCrap": 1000
       }
     ]
   },

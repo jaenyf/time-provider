@@ -67,12 +67,13 @@ function parseChangelog(changelogPath: string): ChangelogEntry[] {
   }
   if (current) entries.push(current);
 
-  for (const entry of entries) {
-    while (entry.body.length && entry.body[0].trim() === "") entry.body.shift();
-    while (entry.body.length && entry.body.at(-1)?.trim() === "") entry.body.pop();
-  }
-
+  for (const entry of entries) trimBlankLines(entry.body);
   return entries;
+}
+
+function trimBlankLines(lines: string[]): void {
+  while (lines.length && lines[0].trim() === "") lines.shift();
+  while (lines.length && lines.at(-1)?.trim() === "") lines.pop();
 }
 
 /**
