@@ -237,12 +237,12 @@ jobs:
       # The gate's baseline is the build of the newest BENCHMARK.md entry's commit, saved on a miss.
       # Its key hashes the files that decide its content, so adding a package rebuilds it.
       - name: Find benchmark baseline
-        if: steps.release.outputs.release-merge == 'false'
+        if: steps.release.outputs.release-merge != 'true'
         id: baseline
         run: echo "sha=$(grep -m1 -oP '^## .*?\(\[\K[0-9a-f]+' BENCHMARK.md)" >> "$GITHUB_OUTPUT"
 
       - name: Restore benchmark baseline
-        if: steps.release.outputs.release-merge == 'false'
+        if: steps.release.outputs.release-merge != 'true'
         id: baseline-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -251,11 +251,11 @@ jobs:
 
       # Fails when a Time-Provider adapter is more than the percentThreshold in tools/benchmark's
       # bench:gate script slower than the same adapter on the baseline, measured on this runner.
-      - if: steps.release.outputs.release-merge == 'false'
+      - if: steps.release.outputs.release-merge != 'true'
         run: vp run @time-provider/benchmark#bench:gate
 
       - name: Save benchmark baseline
-        if: ${{ !cancelled() && steps.release.outputs.release-merge == 'false' && steps.baseline-cache.outputs.cache-hit != 'true' }}
+        if: ${{ !cancelled() && steps.release.outputs.release-merge != 'true' && steps.baseline-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/time-provider-baseline-${{ steps.baseline.outputs.sha }}
