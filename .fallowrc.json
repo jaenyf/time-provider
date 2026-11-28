@@ -26,6 +26,7 @@
       "rules": { "duplicate-export-aliases": "off" }
     }
   ],
+  "publicPackages": ["@time-provider/*"],
   "workspaces": {
     "settings": {
       "packages/test-e2e": {
