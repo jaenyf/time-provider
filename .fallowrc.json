@@ -1,7 +1,40 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
   "duplicates": {
-    "ignore": ["packages/test-shared/**", "packages/test-e2e/**", "packages/test-treeshake/**"]
+    "ignoredClones": [
+      // ignore inlined signal getter similarity accros BaseRuntime and ScheduledHandle
+      "dup:7128addb:2",
+      // ignore the similarity of dispose/isDisposed/[Symbol.dispose] accros time-provider/addons (animation-frame,compat,cron,eta,idle)
+      "dup:30dffa00:5",
+      // ignore the similarity of dispose/isDisposed/[Symbol.dispose] accros time-provider/addons (animation-frame,eta,idle)
+      "dup:a2aca506:3",
+      // ignore the similarity of dispose/isDisposed/[Symbol.dispose] accros time-provider/addons (animation-frame,eta,idle)
+      "dup:1af2e256:3",
+      // ignore the similarity of dispose/isDisposed/[Symbol.dispose] accros time-provider/addons (animation-frame,idle)
+      "dup:becf4bf4:2",
+      // ignore the similarity of dispose/isDisposed/[Symbol.dispose] accros time-provider/addons (animation-frame,idle)
+      "dup:d170dae2:2",
+      // BaseDeterministicRuntime contains code inlined for performance (every vs once)
+      "dup:88f92297:2",
+      // ignore similarity of deterministic runtime initialization across plugin-moment and plugin-moment-timezone, that would require a useless additional dependency
+      "dup:a024a889:2",
+      // ignore similarity of runtime-helper across plugin-moment and plugin-moment-timezone, that would require a useless additional dependency
+      "dup:4317260c:2"
+    ],
+    "ignore": [
+      // DueHeap contains code inlined for performance
+      "packages/core/src/runtimes/deterministic/DueHeap.ts",
+      // test-shared maintains duplicated code for test intent clarity and readability
+      "packages/test-shared/**",
+      "packages/test-e2e/**",
+      "packages/test-treeshake/**",
+      // benchmark adapters may duplicate code by intent on their public interface
+      "tools/benchmark/bench/shared/adapters/*.ts",
+      // benchmark scenario declarations are similar
+      "tools/benchmark/bench/*-{clock-read,scheduling}.bench.ts",
+      // some benchmark scenarii are very similar but still different
+      "tools/benchmark/bench/shared/scenarios.ts"
+    ]
   },
   "ignoreDependencies": [
     // imported by the Stryker patch (patches/), until Stryker fixes it upstream
