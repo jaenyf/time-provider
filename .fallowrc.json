@@ -2,5 +2,33 @@
   "$schema": "./node_modules/fallow/schema.json",
   "duplicates": {
     "ignore": ["packages/test-shared/**", "packages/test-e2e/**", "packages/test-treeshake/**"]
+  },
+  "ignoreDependencies": [
+    // imported by the Stryker patch (patches/), until Stryker fixes it upstream
+    "jsonc-parser",
+    // binary used by the fallow VS Code extension
+    "@fallow-cli/fallow-cov"
+  ],
+  "ignoreDependencyOverrides": [
+    // force correct audited version of minimatch for stryker
+    { "package": "@stryker-mutator/core>minimatch", "source": "package.json" },
+    // force correct audited version of vite for vitepress
+    { "package": "vitepress>vite", "source": "package.json" }
+  ],
+  "workspaces": {
+    "settings": {
+      "packages/test-e2e": {
+        // test-e2e imports time-provider dependencies by paths, directly from build output and also tests typescript 5.2/5.4 floor compatibility
+        "ignoreDependencies": ["@time-provider/*", "typescript-5.2", "typescript-5.4"]
+      },
+      "packages/test-treeshake": {
+        // test-treeshake imports time-provider dependencies by paths
+        "ignoreDependencies": ["@time-provider/*"]
+      },
+      "website": {
+        // website build also generates test speed comparison against sinon and jest
+        "ignoreDependencies": ["sinon", "jest-environment-jsdom"]
+      }
+    }
   }
 }
