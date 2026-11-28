@@ -150,7 +150,6 @@ jobs:
           deno-version: v2.x
 
       - run: vp install --frozen-lockfile
-      - run: vp run fallow
       - run: vp run build
       - run: vp run check
 
@@ -160,6 +159,7 @@ jobs:
 
       - run: vp test --coverage
       - run: test -f coverage/lcov.info
+      - run: vp run fallow --ci
 
       - name: Extract maximum CRAP score
         id: crap-score
