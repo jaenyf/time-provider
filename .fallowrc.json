@@ -19,6 +19,13 @@
     // in plugin-dayjs, fallow mis-resolves imports of dayjs files that exist
     "/dayjs/plugin/**"
   ],
+  "overrides": [
+    {
+      // addons and plugins keep a default export alongside the named `addon` or `plugin` (public API)
+      "files": ["packages/{addon,plugin}-*/src/{index,deterministic}.ts"],
+      "rules": { "duplicate-export-aliases": "off" }
+    }
+  ],
   "workspaces": {
     "settings": {
       "packages/test-e2e": {
